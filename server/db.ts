@@ -1,20 +1,18 @@
 /**
  * Database Configuration
  * 
- * Configures and exports the PostgreSQL database connection using Neon serverless.
+ * Configures and exports the PostgreSQL database connection using Supabase.
  * Uses Drizzle ORM for type-safe database operations.
  * 
  * Environment Variables:
- * - DATABASE_URL: Required PostgreSQL connection string from Neon
+ * - DATABASE_URL: Required PostgreSQL connection string from Supabase
+ * 
+ * Important: Uses prepare: false for Supabase Transaction pooler compatibility
  */
 
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from "@shared/schema";
-
-// Configure WebSocket for Neon serverless connection
-neonConfig.webSocketConstructor = ws;
 
 // Ensure database connection string is configured
 if (!process.env.DATABASE_URL) {
@@ -23,6 +21,11 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create connection pool and Drizzle ORM instance
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Create PostgreSQL client with Supabase-compatible settings
+// IMPORTANT: prepare: false is required for Supabase Transaction pooler
+export const client = postgres(process.env.DATABASE_URL, { 
+  prepare: false // Required for Supabase Transaction pooler (port 6543)
+});
+
+// Create Drizzle ORM instance
+export const db = drizzle(client, { schema });

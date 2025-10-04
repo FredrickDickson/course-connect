@@ -61,7 +61,7 @@ Preferred communication style: Simple, everyday language.
 - **File Uploads**: Multer integration with organized file storage structure
 
 ### Database Design
-- **Primary Database**: PostgreSQL with connection pooling via Neon serverless
+- **Primary Database**: PostgreSQL via Supabase with Transaction pooler
 - **Schema Management**: Drizzle ORM with automatic migrations and rollback support
 - **Core Entities**: 
   - Users (students, instructors, admins)
@@ -114,7 +114,7 @@ Preferred communication style: Simple, everyday language.
 
 ### External Dependencies
 - **Paystack**: Payment processing and subscription management
-- **Neon Database**: Serverless PostgreSQL with automatic scaling
+- **Supabase**: PostgreSQL database with real-time capabilities and automatic scaling
 - **Replit Auth**: OpenID Connect authentication provider
 - **File Storage**: Organized upload system with security controls
 
@@ -144,7 +144,14 @@ Preferred communication style: Simple, everyday language.
 - **Platform Health**: Error monitoring and performance tracking
 - **Admin Insights**: Comprehensive dashboard with actionable metrics
 
-## Recent Updates (January 2025)
+## Recent Updates (October 2025)
+
+### Database Migration to Supabase
+- Migrated from Neon to Supabase for PostgreSQL hosting
+- Updated database connection to use `postgres` package with Transaction pooler
+- Generated complete SQL migration file for easy database setup
+- Created comprehensive setup guide (SUPABASE_SETUP.md) with step-by-step instructions
+- Configured connection for optimal performance with Supabase's pooling system
 
 ### Admin Dashboard Implementation
 - Complete administrative interface for platform management
