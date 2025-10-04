@@ -1,3 +1,19 @@
+/**
+ * API Routes Configuration
+ * 
+ * This file defines all HTTP endpoints for the CIMA Learning Platform.
+ * It handles authentication, course management, enrollments, payments,
+ * discussions, and administrative functions.
+ * 
+ * Route Categories:
+ * - Admin: Platform setup and management
+ * - Courses: Course CRUD operations
+ * - Enrollment: User course enrollments and progress
+ * - Payment: Paystack payment integration
+ * - Discussions: Community forum and Q&A
+ * - Instructor: Instructor-specific operations
+ */
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
@@ -42,39 +58,57 @@ import {
   insertInstructorApplicationSchema,
 } from "@shared/schema";
 
+// Paystack payment gateway configuration
+// Secret key is optional - payment features will be disabled if not configured
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
+/**
+ * Registers all API routes and middleware with the Express application
+ * @param app - Express application instance
+ * @returns HTTP server instance
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply security middleware conditionally for development
+  // Apply security middleware in production only (CORS, Helmet, rate limiting)
   if (process.env.NODE_ENV === 'production') {
     app.use(securityMiddleware);
   }
   
-  // Serve static files
+  // Serve uploaded files (images, videos, documents) from /uploads directory
   app.use('/uploads', express.static('uploads'));
   
-  // Auth middleware
+  // Configure Replit authentication and session management
   await setupAuth(app);
 
-  // Admin setup routes (for initial platform setup)
+  // ============================================================================
+  // ADMIN ROUTES
+  // Routes for platform administration and initial setup
+  // ============================================================================
+
+  /**
+   * POST /api/admin/setup
+   * Grants admin privileges to an existing user
+   * 
+   * Required: setupKey (platform setup key), email (user's email)
+   * Returns: Updated user object with admin role
+   */
   app.post('/api/admin/setup', asyncHandler(async (req: any, res: any) => {
     const { email, setupKey } = req.body;
     
-    // Simple setup key validation (in production, use environment variable)
+    // Validate the setup key to prevent unauthorized admin access
     const validSetupKey = "CIMA_ADMIN_SETUP_2024";
     
     if (setupKey !== validSetupKey) {
       return res.status(401).json({ message: "Invalid setup key" });
     }
 
-    // Find user by email
+    // Look up user by email
     const user = await storage.getUserByEmail(email);
     if (!user) {
       return res.status(404).json({ message: "User not found. Please register first." });
     }
 
-    // Update user role to admin
+    // Upgrade user's role to admin
     const updatedUser = await storage.updateUserRole(user.id, 'admin');
     
     res.json({ 
@@ -87,6 +121,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }));
 
+  /**
+   * POST /api/admin/check-user
+   * Verifies if a user exists in the system
+   * 
+   * Required: email
+   * Returns: User existence status and basic user data
+   */
   app.post('/api/admin/check-user', asyncHandler(async (req: any, res: any) => {
     const { email } = req.body;
     
@@ -112,24 +153,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Debug endpoint to manually create user for admin setup (development only)
+  /**
+   * POST /api/admin/create-user
+   * Development-only endpoint to manually create admin users
+   * 
+   * Required: email, setupKey
+   * Optional: firstName, lastName
+   * Returns: Newly created user with admin role
+   * Note: Only available in development environment
+   */
   app.post('/api/admin/create-user', asyncHandler(async (req: any, res: any) => {
+    // Block this endpoint in production for security
     if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({ message: "Not available in production" });
     }
     
     const { email, firstName, lastName, setupKey } = req.body;
     
-    // Validate setup key
+    // Validate the setup key
     const validSetupKey = "CIMA_ADMIN_SETUP_2024";
     if (setupKey !== validSetupKey) {
       return res.status(401).json({ message: "Invalid setup key" });
     }
     
     try {
-      // Create user for admin setup
+      // Create a new user with admin privileges
       const newUser = await storage.upsertUser({
-        id: `manual_${Date.now()}`, // temporary ID
+        id: `manual_${Date.now()}`, // Generate temporary ID
         email: email,
         firstName: firstName || 'Admin',
         lastName: lastName || 'User',
@@ -151,8 +201,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Debug endpoint to check system status
+  /**
+   * GET /api/debug/status
+   * Development-only endpoint to check database connection and user data
+   * 
+   * Returns: System status including database connection and recent users
+   * Note: Only available in development environment
+   */
   app.get('/api/debug/status', asyncHandler(async (req: any, res: any) => {
+    // Block this endpoint in production for security
     if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({ message: "Not available in production" });
     }
@@ -173,7 +230,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Enhanced Auth routes
+  // ============================================================================
+  // USER & AUTHENTICATION ROUTES
+  // Routes for user profile management and authentication
+  // ============================================================================
+
+  /**
+   * GET /api/auth/user
+   * Retrieves current authenticated user's profile data
+   * 
+   * Auth: Required
+   * Returns: Full user object
+   */
   app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res: any) => {
     const userId = req.user.claims.sub;
     const user = await storage.getUser(userId);
@@ -183,7 +251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   }));
 
-  // Profile management
+  /**
+   * PUT /api/auth/profile
+   * Updates user's profile information (bio, country, timezone)
+   * 
+   * Auth: Required
+   * Body: bio, country, timezone (all optional)
+   * Returns: Updated user object
+   */
   app.put('/api/auth/profile', isAuthenticated, asyncHandler(async (req: any, res: any) => {
     const userId = req.user.claims.sub;
     const { bio, country, timezone } = req.body;
@@ -207,7 +282,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedUser);
   }));
 
-  // Profile image upload
+  /**
+   * POST /api/auth/profile/image
+   * Uploads and sets user's profile image
+   * 
+   * Auth: Required
+   * Body: multipart/form-data with 'image' file
+   * Returns: Updated profile image URL
+   * Rate Limited: Upload limiter applied
+   */
   app.post('/api/auth/profile/image', 
     isAuthenticated, 
     uploadLimiter,
@@ -239,7 +322,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  // Categories
+  // ============================================================================
+  // CATEGORY ROUTES
+  // Routes for course category management
+  // ============================================================================
+
+  /**
+   * GET /api/categories
+   * Retrieves all course categories
+   * 
+   * Auth: Not required
+   * Returns: Array of category objects
+   */
   app.get('/api/categories', asyncHandler(async (req: any, res: any) => {
     const categories = await storage.getCategories();
     res.json(categories);
@@ -262,7 +356,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Courses with pagination and filtering
+  // ============================================================================
+  // COURSE ROUTES
+  // Routes for course catalog, CRUD operations, and content management
+  // ============================================================================
+
+  /**
+   * GET /api/courses
+   * Retrieves courses with optional filtering and pagination
+   * 
+   * Auth: Not required
+   * Query Params: category, search, level, featured, page, limit
+   * Returns: Array of course objects (max 100 per page)
+   */
   app.get('/api/courses', async (req, res) => {
     try {
       const { category, search, level, featured, page = 1, limit = 20 } = req.query;
@@ -272,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         level: level as string,
         featured: featured === 'true',
         page: parseInt(page as string),
-        limit: Math.min(parseInt(limit as string), 100), // Cap at 100
+        limit: Math.min(parseInt(limit as string), 100), // Cap at 100 to prevent overload
       };
       const result = await storage.getCourses();
       res.json(result);
@@ -282,12 +388,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * GET /api/courses/featured
+   * Retrieves courses marked as featured for homepage display
+   * 
+   * Auth: Not required
+   * Returns: Array of featured course objects
+   */
   app.get('/api/courses/featured', asyncHandler(async (req: any, res: any) => {
     const courses = await storage.getFeaturedCourses();
     res.json(courses);
   }));
 
-  // File Upload Endpoints
+  // ============================================================================
+  // FILE UPLOAD ROUTES
+  // Routes for uploading course content (videos, images, documents)
+  // ============================================================================
   app.post('/api/upload/video', 
     isAuthenticated,
     requireInstructor(),
@@ -406,7 +522,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enrollments
+  // ============================================================================
+  // ENROLLMENT ROUTES  
+  // Routes for course enrollment and student progress tracking
+  // ============================================================================
+
+  /**
+   * POST /api/enrollments
+   * Enrolls a user in a course
+   * 
+   * Auth: Required
+   * Body: courseId
+   * Returns: Enrollment object
+   * Validates: User not already enrolled in course
+   */
   app.post('/api/enrollments', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -624,7 +753,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Discussions
+  // ============================================================================
+  // DISCUSSION & COMMUNITY ROUTES
+  // Routes for course discussions, Q&A forums, and community engagement
+  // ============================================================================
+
+  /**
+   * POST /api/discussions
+   * Creates a new discussion topic in a course
+   * 
+   * Auth: Required
+   * Body: courseId, title, content
+   * Returns: Discussion object
+   */
   app.post('/api/discussions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -683,9 +824,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment integration with Paystack
+  // ============================================================================
+  // PAYMENT ROUTES
+  // Paystack payment integration for course purchases
+  // ============================================================================
+
+  /**
+   * POST /api/initialize-payment
+   * Initializes a Paystack payment transaction for course purchase
+   * 
+   * Auth: Required
+   * Body: courseId
+   * Returns: Payment authorization URL and reference
+   * Validates: Payment system configured, user not already enrolled
+   */
   app.post("/api/initialize-payment", isAuthenticated, async (req: any, res) => {
     try {
+      // Check if payment system is configured
       if (!PAYSTACK_SECRET_KEY) {
         return res.status(503).json({ message: "Payment system is not configured. Please contact the administrator." });
       }
@@ -850,7 +1005,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Instructor routes
+  // ============================================================================
+  // INSTRUCTOR ROUTES
+  // Routes for instructor dashboard, course management, and analytics
+  // ============================================================================
+
+  /**
+   * GET /api/instructor/courses
+   * Retrieves all courses created by the authenticated instructor
+   * 
+   * Auth: Required (Instructor role)
+   * Returns: Array of instructor's courses
+   */
   app.get('/api/instructor/courses', isAuthenticated, requireInstructor(), async (req: any, res) => {
     try {
       const instructorId = req.user.claims.sub;
