@@ -1,3 +1,21 @@
+/**
+ * Main Application Component
+ * 
+ * Root component that sets up routing, authentication, and global providers.
+ * 
+ * Features:
+ * - Client-side routing with wouter
+ * - React Query for server state management
+ * - Multi-language support
+ * - Authentication-based route protection
+ * - Public and protected route separation
+ * 
+ * Route Types:
+ * - Landing/Home: Conditional based on auth status
+ * - Public: Accessible to everyone (course catalog, legal pages, etc.)
+ * - Protected: Requires authentication (dashboard, instructor tools, etc.)
+ */
+
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";

@@ -1,3 +1,24 @@
+/**
+ * Database Schema
+ * 
+ * Defines the complete data model for the CIMA Learning Platform using Drizzle ORM.
+ * This schema is shared between frontend and backend for type safety.
+ * 
+ * Key Entities:
+ * - Users: Authentication and profile data (integrated with Replit Auth)
+ * - Courses: Course catalog with pricing and metadata
+ * - Modules & Lessons: Hierarchical course content structure
+ * - Enrollments: Student course registrations and progress
+ * - Discussions: Community forums and Q&A
+ * - Payments: Paystack integration for course purchases
+ * - Quizzes & Assignments: Assessment tools for learning
+ * - Certifications: Course completion certificates
+ * - Instructor Analytics: Payouts and performance metrics
+ * 
+ * All tables use UUID primary keys except users (Replit Auth uses varchar IDs).
+ * Timestamps are automatically managed with defaultNow() and updatedAt triggers.
+ */
+
 import { sql } from 'drizzle-orm';
 import {
   index,
@@ -16,7 +37,15 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table (required for Replit Auth)
+// ============================================================================
+// AUTHENTICATION & SESSION TABLES
+// Required for Replit Auth integration
+// ============================================================================
+
+/**
+ * Sessions table - Stores user session data for authentication
+ * Required by express-session with PostgreSQL store
+ */
 export const sessions = pgTable(
   "sessions",
   {
