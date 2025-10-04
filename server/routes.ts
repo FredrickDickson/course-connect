@@ -42,11 +42,7 @@ import {
   insertInstructorApplicationSchema,
 } from "@shared/schema";
 
-if (!process.env.PAYSTACK_SECRET_KEY) {
-  throw new Error('Missing required Paystack secret: PAYSTACK_SECRET_KEY');
-}
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -690,6 +686,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment integration with Paystack
   app.post("/api/initialize-payment", isAuthenticated, async (req: any, res) => {
     try {
+      if (!PAYSTACK_SECRET_KEY) {
+        return res.status(503).json({ message: "Payment system is not configured. Please contact the administrator." });
+      }
+
       const { courseId } = req.body;
       const userId = req.user.claims.sub;
 
@@ -766,7 +766,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Webhook to handle successful payments
   app.post('/api/paystack-webhook', express.raw({type: 'application/json'}), async (req, res) => {
-    const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY!).update(req.body).digest('hex');
+    if (!PAYSTACK_SECRET_KEY) {
+      return res.status(503).json({ message: "Payment system is not configured" });
+    }
+
+    const hash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY).update(req.body).digest('hex');
     const signature = req.headers['x-paystack-signature'] as string;
 
     if (hash !== signature) {
@@ -797,6 +801,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Verify payment status
   app.post('/api/verify-payment', isAuthenticated, async (req: any, res) => {
     try {
+      if (!PAYSTACK_SECRET_KEY) {
+        return res.status(503).json({ message: "Payment system is not configured. Please contact the administrator." });
+      }
+
       const { reference } = req.body;
       const userId = req.user.claims.sub;
 
