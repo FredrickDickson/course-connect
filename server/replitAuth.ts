@@ -1,3 +1,22 @@
+/**
+ * Replit Authentication Integration
+ * 
+ * Configures OAuth2/OpenID Connect authentication using Replit's identity provider.
+ * Handles user sessions, token management, and automatic user creation.
+ * 
+ * Key Features:
+ * - OpenID Connect authentication flow
+ * - Session management with PostgreSQL or memory store
+ * - Automatic token refresh
+ * - User profile synchronization
+ * 
+ * Environment Variables:
+ * - REPLIT_DOMAINS: Required - Replit domain for OAuth
+ * - SESSION_SECRET: Required - Secret key for session encryption
+ * - DATABASE_URL: Optional - PostgreSQL connection for session storage
+ * - ISSUER_URL: Optional - Custom OIDC issuer URL
+ */
+
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 
@@ -9,10 +28,15 @@ import connectPg from "connect-pg-simple";
 import MemoryStore from "memorystore";
 import { storage } from "./storage";
 
+// Validate required environment variables
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
+/**
+ * Memoized OIDC configuration discovery
+ * Caches the OpenID configuration for 1 hour to reduce network calls
+ */
 const getOidcConfig = memoize(
   async () => {
     return await client.discovery(
@@ -23,20 +47,26 @@ const getOidcConfig = memoize(
   { maxAge: 3600 * 1000 }
 );
 
+/**
+ * Configures session middleware with appropriate storage backend
+ * - Development: Uses in-memory store for simplicity
+ * - Production: Uses PostgreSQL for persistence, falls back to memory if unavailable
+ * @returns Express session middleware
+ */
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const isDevelopment = process.env.NODE_ENV !== 'production';
   
-  // Use memory store for now to avoid database connection issues
   let sessionStore;
   if (isDevelopment) {
+    // Use in-memory store for development
     console.log('Using memory session store for development');
     const MemStore = MemoryStore(session);
     sessionStore = new MemStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
+      checkPeriod: 86400000, // Prune expired entries every 24 hours
     });
   } else {
-    // In production, try PostgreSQL but fall back to memory store
+    // Production: prefer PostgreSQL for distributed session storage
     try {
       const pgStore = connectPg(session);
       sessionStore = new pgStore({
@@ -62,13 +92,18 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: !isDevelopment, // Allow non-secure cookies in development
+      secure: !isDevelopment, // HTTPS-only cookies in production
       maxAge: sessionTtl,
-      sameSite: isDevelopment ? 'lax' : 'strict', // More permissive in development
+      sameSite: isDevelopment ? 'lax' : 'strict', // CSRF protection
     },
   });
 }
 
+/**
+ * Updates user session with new OAuth tokens
+ * @param user - User session object
+ * @param tokens - OAuth token response from provider
+ */
 function updateUserSession(
   user: any,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
@@ -79,6 +114,10 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+/**
+ * Creates or updates user record from OAuth claims
+ * @param claims - OpenID Connect claims from identity provider
+ */
 async function upsertUser(
   claims: any,
 ) {
@@ -91,6 +130,10 @@ async function upsertUser(
   });
 }
 
+/**
+ * Initializes Passport.js with Replit OAuth strategy and configures auth routes
+ * @param app - Express application instance
+ */
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());

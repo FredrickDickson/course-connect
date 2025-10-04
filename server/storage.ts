@@ -1,3 +1,18 @@
+/**
+ * Storage Layer
+ * 
+ * Implements all database operations for the CIMA Learning Platform.
+ * Provides a clean abstraction layer over Drizzle ORM for data access.
+ * 
+ * Key Responsibilities:
+ * - User management and authentication
+ * - Course catalog and content management
+ * - Enrollment and progress tracking
+ * - Payment and order processing
+ * - Discussion forums and community features
+ * - Instructor analytics and payouts
+ */
+
 import {
   users,
   courses,
@@ -66,8 +81,12 @@ import {
 import { db } from "./db";
 import { eq, desc, and, like, sql, avg, count } from "drizzle-orm";
 
+/**
+ * Storage Interface
+ * Defines all database operations available in the application
+ */
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations (required for Replit Auth integration)
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;

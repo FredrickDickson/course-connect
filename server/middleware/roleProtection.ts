@@ -1,8 +1,24 @@
+/**
+ * Role-Based Access Control Middleware
+ * 
+ * Implements authorization middleware for protecting routes based on user roles.
+ * 
+ * Roles Hierarchy:
+ * - Student: Basic access to enrolled courses
+ * - Instructor: Can create and manage courses
+ * - Admin: Full platform access (overrides all other roles)
+ * 
+ * Usage:
+ * - Use requireRole() for exact role matching
+ * - Use requireInstructor() to allow both instructors and admins
+ * - Use requireAdmin() for admin-only access
+ */
+
 import type { RequestHandler } from 'express';
 import type { User } from '@shared/schema';
 import { storage } from '../storage';
 
-// Extend Express Request type to include user
+// Extend Express Request type to include authenticated user
 declare global {
   namespace Express {
     interface Request {
@@ -11,6 +27,12 @@ declare global {
   }
 }
 
+/**
+ * Requires user to have a specific role to access the route
+ * Admin role bypasses all role checks
+ * @param role - Required role: 'student', 'instructor', or 'admin'
+ * @returns Express middleware function
+ */
 export function requireRole(role: 'student' | 'instructor' | 'admin'): RequestHandler {
   return async (req, res, next) => {
     try {

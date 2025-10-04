@@ -1,3 +1,16 @@
+/**
+ * Security Middleware
+ * 
+ * Provides comprehensive security controls for the application including:
+ * - Rate limiting to prevent abuse
+ * - HTTP security headers via Helmet
+ * - CORS configuration
+ * - Request validation
+ * - Input sanitization
+ * 
+ * All middleware is applied selectively based on environment and route patterns.
+ */
+
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -5,10 +18,18 @@ import compression from 'compression';
 import { body, query, param, validationResult } from 'express-validator';
 import type { Request, Response, NextFunction } from 'express';
 
-// Rate limiting configurations
+// ============================================================================
+// RATE LIMITING
+// Prevents abuse by limiting requests per IP address
+// ============================================================================
+
+/**
+ * Auth rate limiter - Strict limits for authentication endpoints
+ * Prevents brute force attacks on login/signup
+ */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: 5, // Max 5 auth attempts per window
   message: {
     error: 'Too many authentication attempts, please try again later.',
   },
@@ -16,16 +37,20 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/**
+ * General rate limiter - Applied to most API endpoints
+ * Relaxed in development, strict in production
+ */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased limit for development
+  max: 1000, // Generous limit for normal usage
   message: {
     error: 'Too many requests, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for static assets and development
+    // Skip rate limiting for static assets and development environment
     return req.url.startsWith('/uploads') || 
            req.url.startsWith('/assets') || 
            req.url.includes('vite') ||
