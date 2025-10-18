@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import cimaLogo from "@/assets/cima-logo.png";
 
@@ -14,6 +14,7 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -118,15 +119,29 @@ export default function Login() {
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   data-testid="password-input"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  data-testid="password-toggle"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
 
