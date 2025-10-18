@@ -40,8 +40,16 @@ interface Quiz {
   questions: QuizQuestion[];
 }
 
+interface QuizAttempt {
+  id: string;
+  score: number | string;
+  passed: boolean;
+  timeSpentMinutes?: number;
+  completedAt?: string;
+}
+
 export default function QuizPage() {
-  const { quizId } = useParams();
+  const { quizId } = useParams<{ quizId: string }>();
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
@@ -68,12 +76,12 @@ export default function QuizPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: quiz, isLoading: quizLoading } = useQuery({
+  const { data: quiz = null, isLoading: quizLoading } = useQuery<Quiz | null>({
     queryKey: [`/api/quizzes/${quizId}`],
     enabled: !!quizId && isAuthenticated,
   });
 
-  const { data: attempts = [] } = useQuery({
+  const { data: attempts = [] } = useQuery<QuizAttempt[]>({
     queryKey: [`/api/quizzes/${quizId}/attempts`],
     enabled: !!quizId && isAuthenticated,
   });
@@ -100,7 +108,7 @@ export default function QuizPage() {
     mutationFn: async (quizAnswers: Record<string, string>) => {
       const response = await apiRequest("POST", `/api/quizzes/${quizId}/submit`, {
         answers: quizAnswers,
-        timeSpent: quiz?.timeLimit - timeRemaining
+        timeSpent: quiz ? quiz.timeLimit - timeRemaining : 0
       });
       return response.json();
     },
@@ -151,14 +159,14 @@ export default function QuizPage() {
     submitQuizMutation.mutate(answers);
   };
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < (quiz?.questions?.length || 0) - 1) {
+    if (quiz && currentQuestion < (quiz.questions?.length || 0) - 1) {
       setCurrentQuestion(prev => prev + 1);
     }
   };
@@ -296,7 +304,7 @@ export default function QuizPage() {
                     {attempts.length > 0 ? (
                       <div>
                         <div>Attempts: {attempts.length} / {quiz.maxAttempts}</div>
-                        <div>Best Score: {Math.max(...attempts.map(a => parseInt(a.score || '0')))}%</div>
+                        <div>Best Score: {Math.max(...attempts.map((a: QuizAttempt) => parseInt(String(a.score || '0'))))}%</div>
                       </div>
                     ) : (
                       <div>No previous attempts</div>
@@ -365,12 +373,12 @@ export default function QuizPage() {
               {currentQ.type === 'multiple_choice' && currentQ.answers && (
                 <RadioGroup
                   value={answers[currentQ.id] || ""}
-                  onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
+                  onValueChange={(value: string) => handleAnswerChange(currentQ.id, value)}
                   data-testid="multiple-choice-answers"
                 >
                   {currentQ.answers
-                    .sort((a, b) => a.order - b.order)
-                    .map((answer) => (
+                    .sort((a: QuizAnswer, b: QuizAnswer) => a.order - b.order)
+                    .map((answer: QuizAnswer) => (
                       <div key={answer.id} className="flex items-center space-x-2">
                         <RadioGroupItem value={answer.id} id={answer.id} />
                         <Label htmlFor={answer.id} className="flex-1 cursor-pointer">
@@ -435,7 +443,7 @@ export default function QuizPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-              {quiz.questions?.map((q, index) => (
+              {quiz.questions?.map((q: QuizQuestion, index: number) => (
                 <Button
                   key={q.id}
                   variant={index === currentQuestion ? "default" : answers[q.id] ? "secondary" : "outline"}
