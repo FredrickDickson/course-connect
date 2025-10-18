@@ -1,3 +1,4 @@
+// ============ SPANISH TRANSLATIONS ============
 export const es = {
   // Navigation
   nav: {
@@ -23,7 +24,41 @@ export const es = {
     countries: 'Países',
     whyChooseTitle: '¿Por qué elegir CIMA Learn?',
     featuredCoursesTitle: 'Cursos destacados',
-    testimonialTitle: 'Lo que dicen nuestros estudiantes'
+    testimonialTitle: 'Lo que dicen nuestros estudiantes',
+    // Featured Programs
+    maProgramTitle: 'Programa Global M&A',
+    maProgramCategory: 'Arbitraje Internacional y Mediación',
+    maProgramDescription: 'Una ruta acelerada para el desarrollo profesional en resolución de disputas M&A internacional. Domina transacciones y disputas complejas transfronterizas.',
+    maProgramFeature1: '12 semanas intensivas',
+    maProgramFeature2: 'Facultad internacional',
+    maProgramFeature3: 'Certificación profesional',
+    maProgramBadge: 'Destacado',
+    fellowshipTitle: 'Fellowship FCIMArb',
+    fellowshipCategory: 'Calificación profesional',
+    fellowshipDescription: 'Calificación reconocida y respetada internacionalmente al completar el programa. Únete a una comunidad de élite de árbitros y mediadores certificados.',
+    fellowshipFeature1: 'Designación de fellow',
+    fellowshipFeature2: 'Acceso a red global',
+    fellowshipFeature3: 'Membresía de por vida',
+    fellowshipBadge: 'Premium',
+    fellowshipBadgeText: 'Reconocimiento internacional',
+    // Community Section
+    worldwidePresenceTitle: 'Presencia mundial',
+    worldwidePresenceDescription: 'Únete a una comunidad global distinguida con conexiones a organizaciones internacionales prestigiosas en los principales centros financieros y legales.',
+    professionalNetworkTitle: 'Red profesional',
+    professionalNetworkDesc: 'Conéctate con 5,000+ profesionales de RAD globalmente',
+    careerOpportunitiesTitle: 'Oportunidades de carrera',
+    careerOpportunitiesDesc: 'Accede a ofertas de trabajo exclusivas y recomendaciones',
+    internationalRecognitionTitle: 'Reconocimiento internacional',
+    internationalRecognitionDesc: 'Credenciales reconocidas mundialmente',
+    // Featured Course Card
+    mostPopularBadge: 'Más popular',
+    premiumBadge: 'Premium',
+    featuredCourseTitle: 'Programa Global M&A',
+    featuredCourseCategory: 'Arbitraje Internacional y Mediación',
+    featuredCourseDescription: 'Domina la resolución de disputas M&A internacional con practicantes líderes de Londres, Dubái y más allá.',
+    featuredCourseFeature1: 'Instrucción de expertos',
+    featuredCourseFeature2: 'Acceso de por vida',
+    featuredCourseFeature3: 'Reconocimiento internacional'
   },
 
   // Courses Page
@@ -93,7 +128,8 @@ export const es = {
     removeFromFavorites: 'Quitar de favoritos',
     share: 'Compartir',
     modules: 'módulos',
-    lessons: 'lecciones'
+    lessons: 'lecciones',
+    learnMore: 'Saber más'
   },
 
   // Common

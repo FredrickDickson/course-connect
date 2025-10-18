@@ -23,7 +23,41 @@ export const zh = {
     countries: '国家',
     whyChooseTitle: '为什么选择CIMA Learn？',
     featuredCoursesTitle: '精选课程',
-    testimonialTitle: '学员评价'
+    testimonialTitle: '学员评价',
+    // Featured Programs
+    maProgramTitle: '全球M&A课程',
+    maProgramCategory: '国际仲裁与调解',
+    maProgramDescription: '国际M&A争议解决职业发展的加速路径。掌握复杂的跨境交易和争议。',
+    maProgramFeature1: '12周密集培训',
+    maProgramFeature2: '国际师资',
+    maProgramFeature3: '专业认证',
+    maProgramBadge: '精选',
+    fellowshipTitle: 'FCIMArb研究员',
+    fellowshipCategory: '专业资格',
+    fellowshipDescription: '完成课程后获得国际公认和尊重的资格。加入认证仲裁员和调解员的精英社区。',
+    fellowshipFeature1: '研究员称号',
+    fellowshipFeature2: '全球网络接入',
+    fellowshipFeature3: '终身会员',
+    fellowshipBadge: '高级',
+    fellowshipBadgeText: '国际认可',
+    // Community Section
+    worldwidePresenceTitle: '全球存在',
+    worldwidePresenceDescription: '加入一个杰出的全球社区，与主要金融和法律中心的著名国际组织建立联系。',
+    professionalNetworkTitle: '专业网络',
+    professionalNetworkDesc: '与全球5000多名争议解决专业人士联系',
+    careerOpportunitiesTitle: '职业机会',
+    careerOpportunitiesDesc: '获取独家工作机会和推荐',
+    internationalRecognitionTitle: '国际认可',
+    internationalRecognitionDesc: '证书在全球得到认可',
+    // Featured Course Card
+    mostPopularBadge: '最受欢迎',
+    premiumBadge: '高级',
+    featuredCourseTitle: '全球M&A课程',
+    featuredCourseCategory: '国际仲裁与调解',
+    featuredCourseDescription: '与来自伦敦、迪拜等地的领先从业者一起掌握国际M&A争议解决。',
+    featuredCourseFeature1: '专家教学',
+    featuredCourseFeature2: '终身获取',
+    featuredCourseFeature3: '国际认可'
   },
 
   // Courses Page
@@ -93,7 +127,8 @@ export const zh = {
     removeFromFavorites: '从收藏中移除',
     share: '分享',
     modules: '模块',
-    lessons: '课时'
+    lessons: '课时',
+    learnMore: '了解更多'
   },
 
   // Common

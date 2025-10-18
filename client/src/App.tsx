@@ -53,6 +53,8 @@ import Resources from "@/pages/resources";
 import CommunityForum from "@/pages/community-forum";
 import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -65,6 +67,8 @@ function Router() {
       </Route>
       
       {/* Public routes available to everyone */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
       <Route path="/admin-setup" component={AdminSetup} />

@@ -2,23 +2,75 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
+// import { useState } from "react";
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
+  // const [formData, setFormData] = useState({
+  //   name: '',
+  //   email: '',
+  //   subject: '',
+  //   message: ''
+  // });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Contact form submitted:', formData);
-  };
+  // // State management for form submission
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  // const [errorMessage, setErrorMessage] = useState('');
+
+  // /**
+  //  * Handle form submission
+  //  * Sends email via Resend API and provides user feedback
+  //  */
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+  //   setSubmitStatus('idle');
+  //   setErrorMessage('');
+
+  //   try {
+  //     // Call backend API to send email via Resend
+  //     const response = await fetch('/api/send-email', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         name: formData.name,
+  //         email: formData.email,
+  //         subject: formData.subject,
+  //         message: formData.message,
+  //       }),
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to send email');
+  //     }
+
+  //     const data = await response.json();
+      
+  //     // Success - clear form and show success message
+  //     setFormData({
+  //       name: '',
+  //       email: '',
+  //       subject: '',
+  //       message: ''
+  //     });
+  //     setSubmitStatus('success');
+  //     console.log('Email sent successfully:', data);
+
+  //     // Clear success message after 5 seconds
+  //     setTimeout(() => setSubmitStatus('idle'), 5000);
+  //   } catch (error) {
+  //     // Error - show error message
+  //     setSubmitStatus('error');
+  //     setErrorMessage(error instanceof Error ? error.message : 'An error occurred while sending your message');
+  //     console.error('Error sending email:', error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,14 +99,37 @@ export default function Contact() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <Card>
+            {/* CONTACT FORM - COMMENTED OUT */}
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Send us a Message</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Success Message */}
+                {/* {submitStatus === 'success' && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3">
+                    <i className="fas fa-check-circle text-green-600 text-xl"></i>
+                    <div>
+                      <h4 className="font-medium text-green-900">Message Sent Successfully!</h4>
+                      <p className="text-sm text-green-700">We'll get back to you as soon as possible.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {/* {submitStatus === 'error' && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
+                    <i className="fas fa-exclamation-circle text-red-600 text-xl"></i>
+                    <div>
+                      <h4 className="font-medium text-red-900">Error Sending Message</h4>
+                      <p className="text-sm text-red-700">{errorMessage}</p>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Name and Email Fields */}
+                  {/* <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Name *
@@ -63,8 +138,10 @@ export default function Contact() {
                         type="text"
                         required
                         data-testid="input-name"
+                        placeholder="Your Name"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -75,13 +152,16 @@ export default function Contact() {
                         type="email"
                         required
                         data-testid="input-email"
+                        placeholder="your@email.com"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
                   
-                  <div>
+                  {/* Subject Field */}
+                  {/* <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Subject *
                     </label>
@@ -89,12 +169,15 @@ export default function Contact() {
                       type="text"
                       required
                       data-testid="input-subject"
+                      placeholder="What is this about?"
                       value={formData.subject}
                       onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      disabled={isLoading}
                     />
                   </div>
                   
-                  <div>
+                  {/* Message Field */}
+                  {/* <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Message *
                     </label>
@@ -102,21 +185,38 @@ export default function Contact() {
                       rows={6}
                       required
                       data-testid="textarea-message"
+                      placeholder="Your message here..."
                       value={formData.message}
                       onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      disabled={isLoading}
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" data-testid="button-send">
-                    <i className="fas fa-paper-plane mr-2"></i>
-                    Send Message
+                  {/* Submit Button */}
+                  {/* <Button 
+                    type="submit" 
+                    className="w-full" 
+                    data-testid="button-send"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin mr-2"></i>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane mr-2"></i>
+                        Send Message
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Contact Information */}
-            <div className="space-y-8">
+            <div className="space-y-8 lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Get in Touch</CardTitle>

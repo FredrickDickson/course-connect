@@ -86,7 +86,7 @@ export default function Header() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <a href="/api/logout" className="cursor-pointer">
+          <a href="/api/auth/logout" className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             {t('nav.logout')}
           </a>
@@ -143,18 +143,18 @@ export default function Header() {
                 <UserMenu />
               ) : (
                 <div className="flex items-center space-x-2">
-                  <a href="/api/login">
+                  <Link href="/login">
                     <Button variant="ghost" size="sm" data-testid="button-sign-in">
                       <User className="h-4 w-4 mr-2" />
                       {t('nav.login')}
                     </Button>
-                  </a>
-                  <a href="/api/login">
+                  </Link>
+                  <Link href="/register">
                     <Button size="sm" data-testid="button-get-started">
                       <GraduationCap className="h-4 w-4 mr-2" />
                       {t('landing.getStarted')}
                     </Button>
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>
@@ -243,7 +243,7 @@ export default function Header() {
                               {t('nav.profile')}
                             </Button>
                           </Link>
-                          <a href="/api/logout">
+                          <a href="/api/auth/logout">
                             <Button variant="ghost" className="w-full justify-start">
                               <LogOut className="mr-3 h-4 w-4" />
                               {t('nav.logout')}
@@ -253,18 +253,18 @@ export default function Header() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                           <Button variant="ghost" className="w-full justify-start" data-testid="mobile-sign-in">
                             <User className="mr-3 h-4 w-4" />
                             {t('nav.login')}
                           </Button>
-                        </a>
-                        <a href="/api/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        </Link>
+                        <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
                           <Button className="w-full justify-start" data-testid="mobile-get-started">
                             <GraduationCap className="mr-3 h-4 w-4" />
                             {t('landing.getStarted')}
                           </Button>
-                        </a>
+                        </Link>
                       </div>
                     )}
                   </div>

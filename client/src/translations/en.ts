@@ -23,7 +23,41 @@ export const en = {
     countries: 'Countries',
     whyChooseTitle: 'Why Choose CIMA Learn?',
     featuredCoursesTitle: 'Featured Courses',
-    testimonialTitle: 'What Our Students Say'
+    testimonialTitle: 'What Our Students Say',
+    // Featured Programs
+    maProgramTitle: 'Global M&A Program',
+    maProgramCategory: 'International Arbitration & Mediation',
+    maProgramDescription: 'An expedited route for career development in international M&A dispute resolution. Master complex cross-border transactions and disputes.',
+    maProgramFeature1: '12 weeks intensive',
+    maProgramFeature2: 'International faculty',
+    maProgramFeature3: 'Professional certification',
+    maProgramBadge: 'Featured',
+    fellowshipTitle: 'FCIMArb Fellowship',
+    fellowshipCategory: 'Professional Qualification',
+    fellowshipDescription: 'Internationally recognized and respected qualification upon program completion. Join an elite community of certified arbitrators and mediators.',
+    fellowshipFeature1: 'Fellow designation',
+    fellowshipFeature2: 'Global network access',
+    fellowshipFeature3: 'Lifetime membership',
+    fellowshipBadge: 'Premium',
+    fellowshipBadgeText: 'International Recognition',
+    // Community Section
+    worldwidePresenceTitle: 'Worldwide Presence',
+    worldwidePresenceDescription: 'Join a distinguished global community with connections to prestigious international organizations in major financial and legal centers.',
+    professionalNetworkTitle: 'Professional Network',
+    professionalNetworkDesc: 'Connect with 5,000+ ADR professionals globally',
+    careerOpportunitiesTitle: 'Career Opportunities',
+    careerOpportunitiesDesc: 'Access exclusive job postings and referrals',
+    internationalRecognitionTitle: 'International Recognition',
+    internationalRecognitionDesc: 'Credentials recognized worldwide',
+    // Featured Course Card
+    mostPopularBadge: 'Most Popular',
+    premiumBadge: 'Premium',
+    featuredCourseTitle: 'Global M&A Program',
+    featuredCourseCategory: 'International Arbitration & Mediation',
+    featuredCourseDescription: 'Master international M&A dispute resolution with leading practitioners from London, Dubai, and beyond.',
+    featuredCourseFeature1: 'Expert-led instruction',
+    featuredCourseFeature2: 'Lifetime access',
+    featuredCourseFeature3: 'International recognition'
   },
 
   // Courses Page
@@ -93,7 +127,8 @@ export const en = {
     removeFromFavorites: 'Remove from Favorites',
     share: 'Share',
     modules: 'modules',
-    lessons: 'lessons'
+    lessons: 'lessons',
+    learnMore: 'Learn More'
   },
 
   // Common
