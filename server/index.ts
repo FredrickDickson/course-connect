@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { registerAuthRoutes } from "./auth-routes"; // NEW: Import auth routes
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./supabaseAuth";
 
@@ -43,6 +44,9 @@ app.use((req, res, next) => {
   // Initialize Supabase authentication middleware
   setupAuth(app);
 
+  // Register auth routes (NEW)
+  registerAuthRoutes(app);
+
   // Register API routes
   const server = await registerRoutes(app);
 
@@ -61,7 +65,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Start the server (removed reusePort - not supported on Windows)
+  // Start the server
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(port, "0.0.0.0", () => {
     log(`Server running on http://localhost:${port}`);
