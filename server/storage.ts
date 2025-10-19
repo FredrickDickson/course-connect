@@ -185,25 +185,35 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (required for Replit Auth)
+  // ============================================================================
+  // USER OPERATIONS
+  // ============================================================================
+  
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()));
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({
+        ...userData,
+        email: userData.email?.toLowerCase(),
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: {
           ...userData,
+          email: userData.email?.toLowerCase(),
           updatedAt: new Date(),
         },
       })
@@ -243,7 +253,10 @@ export class DatabaseStorage implements IStorage {
       .orderBy(users.firstName, users.lastName);
   }
 
-  // Category operations
+  // ============================================================================
+  // CATEGORY OPERATIONS
+  // ============================================================================
+
   async getCategories(): Promise<Category[]> {
     return await db.select().from(categories).orderBy(categories.name);
   }
@@ -253,7 +266,10 @@ export class DatabaseStorage implements IStorage {
     return newCategory;
   }
 
-  // Basic course operations
+  // ============================================================================
+  // COURSE OPERATIONS
+  // ============================================================================
+
   async getCourses(): Promise<any[]> {
     return await db.select().from(courses).where(eq(courses.isPublished, true));
   }
@@ -299,7 +315,10 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Basic enrollment operations
+  // ============================================================================
+  // ENROLLMENT OPERATIONS
+  // ============================================================================
+
   async enrollUser(enrollment: InsertEnrollment): Promise<Enrollment> {
     const [newEnrollment] = await db.insert(enrollments).values(enrollment).returning();
     return newEnrollment;
@@ -325,7 +344,10 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)));
   }
 
-  // Stub implementations for other methods
+  // ============================================================================
+  // PROGRESS OPERATIONS
+  // ============================================================================
+
   async updateProgress(progressData: InsertProgress): Promise<Progress> {
     const [newProgress] = await db.insert(progress).values(progressData).returning();
     return newProgress;
@@ -339,6 +361,10 @@ export class DatabaseStorage implements IStorage {
     return { totalCourses: 0, completedCourses: 0, totalHours: 0 };
   }
 
+  // ============================================================================
+  // REVIEW OPERATIONS
+  // ============================================================================
+
   async createReview(review: InsertReview): Promise<Review> {
     const [newReview] = await db.insert(reviews).values(review).returning();
     return newReview;
@@ -351,6 +377,10 @@ export class DatabaseStorage implements IStorage {
   async updateCourseRating(courseId: string): Promise<void> {
     // Stub
   }
+
+  // ============================================================================
+  // DISCUSSION OPERATIONS
+  // ============================================================================
 
   async createDiscussion(discussion: InsertDiscussion): Promise<Discussion> {
     const [newDiscussion] = await db.insert(discussions).values(discussion).returning();
@@ -370,6 +400,10 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
 
+  // ============================================================================
+  // CERTIFICATION OPERATIONS
+  // ============================================================================
+
   async createCertification(certification: InsertCertification): Promise<Certification> {
     const [newCertification] = await db.insert(certifications).values(certification).returning();
     return newCertification;
@@ -378,6 +412,10 @@ export class DatabaseStorage implements IStorage {
   async getUserCertifications(userId: string): Promise<any[]> {
     return [];
   }
+
+  // ============================================================================
+  // ORDER OPERATIONS
+  // ============================================================================
 
   async createOrder(order: InsertOrder): Promise<Order> {
     const [newOrder] = await db.insert(orders).values(order).returning();
@@ -411,7 +449,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(orders).where(eq(orders.userId, userId));
   }
 
-  // Quiz operations
+  // ============================================================================
+  // QUIZ OPERATIONS
+  // ============================================================================
+
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
     const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
     return newQuiz;
@@ -446,23 +487,16 @@ export class DatabaseStorage implements IStorage {
     return newResponse;
   }
 
-  async getUserQuizAttempts(userId: string, quizId: string): Promise<QuizAttempt[]> {
-    return await db
-      .select()
-      .from(quizAttempts)
-      .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId)));
-  }
-
-  async getCourseQuizzes(courseId: string): Promise<Quiz[]> {
-    return await db.select().from(quizzes).where(eq(quizzes.lessonId, courseId));
-  }
-
   async getQuizAttempts(userId: string, quizId: string): Promise<QuizAttempt[]> {
     return await db
       .select()
       .from(quizAttempts)
       .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId)))
       .orderBy(desc(quizAttempts.startedAt));
+  }
+
+  async getCourseQuizzes(courseId: string): Promise<Quiz[]> {
+    return await db.select().from(quizzes).where(eq(quizzes.lessonId, courseId));
   }
 
   async getEnrollment(userId: string, courseId: string): Promise<Enrollment | undefined> {
@@ -473,7 +507,10 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  // Assignment operations
+  // ============================================================================
+  // ASSIGNMENT OPERATIONS
+  // ============================================================================
+
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
     const [newAssignment] = await db.insert(assignments).values(assignment).returning();
     return newAssignment;
@@ -514,7 +551,10 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(assignmentSubmissions.userId, userId), eq(assignmentSubmissions.assignmentId, assignmentId)));
   }
 
-  // Instructor payout operations
+  // ============================================================================
+  // INSTRUCTOR PAYOUT OPERATIONS
+  // ============================================================================
+
   async createInstructorPayout(payout: InsertInstructorPayout): Promise<InstructorPayout> {
     const [newPayout] = await db.insert(instructorPayouts).values(payout).returning();
     return newPayout;
@@ -539,7 +579,10 @@ export class DatabaseStorage implements IStorage {
     return updatedPayout;
   }
 
-  // Instructor application operations
+  // ============================================================================
+  // INSTRUCTOR APPLICATION OPERATIONS
+  // ============================================================================
+
   async createInstructorApplication(application: InsertInstructorApplication): Promise<InstructorApplication> {
     const [newApplication] = await db.insert(instructorApplications).values(application).returning();
     return newApplication;
@@ -583,7 +626,10 @@ export class DatabaseStorage implements IStorage {
     return updatedApplication;
   }
 
-  // Admin operations
+  // ============================================================================
+  // ADMIN OPERATIONS
+  // ============================================================================
+
   async getAdminStats(): Promise<{ 
     totalUsers: number; 
     totalInstructors: number; 
