@@ -129,9 +129,9 @@ export default function Landing() {
                 {/* Header with gradient background */}
                 <div className="bg-gradient-to-r from-primary to-blue-700 p-6 border-b border-amber-200">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                    {/* <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
                       <i className="fas fa-star text-primary text-xl"></i>
-                    </div>
+                    </div> */}
                     <div>
                       <div className="inline-block bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold mb-2">
                         {currentCourse.badge}

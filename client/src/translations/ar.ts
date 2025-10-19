@@ -23,7 +23,41 @@ export const ar = {
     countries: 'البلدان',
     whyChooseTitle: 'لماذا تختار CIMA Learn؟',
     featuredCoursesTitle: 'الدورات المميزة',
-    testimonialTitle: 'ماذا يقول طلابنا'
+    testimonialTitle: 'ماذا يقول طلابنا',
+    // Featured Programs
+    maProgramTitle: 'برنامج M&A العالمي',
+    maProgramCategory: 'التحكيم الدولي والوساطة',
+    maProgramDescription: 'طريق سريع للتطور الوظيفي في فض منازعات M&A الدولية. أتقن المعاملات والمنازعات المعقدة عبر الحدود.',
+    maProgramFeature1: '12 أسبوع مكثف',
+    maProgramFeature2: 'أساتذة دوليون',
+    maProgramFeature3: 'شهادة احترافية',
+    maProgramBadge: 'مميز',
+    fellowshipTitle: 'زمالة FCIMArb',
+    fellowshipCategory: 'مؤهل احترافي',
+    fellowshipDescription: 'مؤهل معترف به ودولي الاحترام عند إكمال البرنامج. انضم إلى مجتمع نخبة من المحكمين والوسطاء المعتمدين.',
+    fellowshipFeature1: 'تعيين الزميل',
+    fellowshipFeature2: 'الوصول إلى الشبكة العالمية',
+    fellowshipFeature3: 'العضوية مدى الحياة',
+    fellowshipBadge: 'متميز',
+    fellowshipBadgeText: 'الاعتراف الدولي',
+    // Community Section
+    worldwidePresenceTitle: 'الحضور العالمي',
+    worldwidePresenceDescription: 'انضم إلى مجتمع عالمي مميز مع ارتباطات بمنظمات دولية مرموقة في المراكز المالية والقانونية الرئيسية.',
+    professionalNetworkTitle: 'شبكة احترافية',
+    professionalNetworkDesc: 'تواصل مع 5000+ محترف في فض النزاعات البديلة عالمياً',
+    careerOpportunitiesTitle: 'فرص وظيفية',
+    careerOpportunitiesDesc: 'الوصول إلى إعلانات وظائف حصرية وإحالات',
+    internationalRecognitionTitle: 'الاعتراف الدولي',
+    internationalRecognitionDesc: 'بيانات الاعتماد معترف بها عالمياً',
+    // Featured Course Card
+    mostPopularBadge: 'الأكثر شعبية',
+    premiumBadge: 'متميز',
+    featuredCourseTitle: 'برنامج M&A العالمي',
+    featuredCourseCategory: 'التحكيم الدولي والوساطة',
+    featuredCourseDescription: 'أتقن فض منازعات M&A الدولية مع المحترفين الرائدين من لندن ودبي وخارجها.',
+    featuredCourseFeature1: 'تعليم من قبل خبراء',
+    featuredCourseFeature2: 'الوصول مدى الحياة',
+    featuredCourseFeature3: 'الاعتراف الدولي'
   },
 
   // Courses Page
@@ -93,7 +127,74 @@ export const ar = {
     removeFromFavorites: 'إزالة من المفضلة',
     share: 'شارك',
     modules: 'وحدات',
-    lessons: 'دروس'
+    lessons: 'دروس',
+    learnMore: 'اعرف المزيد'
+  },
+
+  // Auth - Register
+  auth: {
+    register: {
+      title: 'ابدأ الآن',
+      subtitle: 'إنشاء حسابك في CIMA Learn',
+      firstName: 'الاسم الأول',
+      firstNamePlaceholder: 'محمد',
+      lastName: 'اسم العائلة',
+      lastNamePlaceholder: 'أحمد',
+      email: 'البريد الإلكتروني',
+      emailPlaceholder: 'بريدك@مثال.com',
+      password: 'كلمة المرور',
+      passwordPlaceholder: '••••••••',
+      confirmPassword: 'تأكيد كلمة المرور',
+      confirmPasswordPlaceholder: '••••••••',
+      createAccount: 'إنشاء حساب',
+      creatingAccount: 'جاري إنشاء الحساب...',
+      agreeToTerms: 'أوافق على',
+      termsOfService: 'شروط الخدمة',
+      and: 'و',
+      privacyPolicy: 'سياسة الخصوصية',
+      alreadyHaveAccount: 'هل لديك حساب بالفعل؟',
+      signIn: 'تسجيل الدخول',
+      orSignUpWith: 'أو اشترك عبر',
+      continueWithGoogle: 'المتابعة مع Google',
+      continueWithMicrosoft: 'المتابعة مع Microsoft',
+      passwordRequirements: {
+        minLength: '8 أحرف على الأقل',
+        uppercase: 'حرف واحد كبير',
+        lowercase: 'حرف واحد صغير',
+        number: 'رقم واحد',
+        specialChar: 'حرف خاص واحد'
+      },
+      passwordsMatch: 'كلمات المرور متطابقة',
+      passwordsNotMatch: 'كلمات المرور غير متطابقة',
+      errors: {
+        agreeToTerms: 'يجب أن توافق على شروط الخدمة وسياسة الخصوصية',
+        passwordNotValid: 'كلمة المرور لا تفي بمتطلبات الأمان',
+        passwordsNoMatch: 'كلمات المرور غير متطابقة',
+        registrationFailed: 'فشل التسجيل',
+        errorOccurred: 'حدث خطأ أثناء التسجيل'
+      },
+      success: {
+        title: 'تم إنشاء الحساب بنجاح!',
+        description: 'أهلا وسهلا بك في CIMA Learn. لنبدأ.'
+      }
+    },
+    login: {
+      title: 'مرحبا بعودتك',
+      subtitle: 'سجل الدخول إلى حسابك في CIMA Learn',
+      email: 'البريد الإلكتروني',
+      emailPlaceholder: 'بريدك@مثال.com',
+      password: 'كلمة المرور',
+      passwordPlaceholder: '••••••••',
+      rememberMe: 'تذكرني',
+      forgotPassword: 'هل نسيت كلمة المرور؟',
+      signIn: 'تسجيل الدخول',
+      signingIn: 'جاري تسجيل الدخول...',
+      orSignInWith: 'أو سجل الدخول عبر',
+      continueWithGoogle: 'المتابعة مع Google',
+      continueWithMicrosoft: 'المتابعة مع Microsoft',
+      dontHaveAccount: 'ليس لديك حساب؟',
+      createOne: 'إنشاء واحد'
+    }
   },
 
   // Common
