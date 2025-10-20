@@ -1059,6 +1059,102 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ============================================================================
+  // QUIZ AND ASSIGNMENT OPERATIONS
+  // ============================================================================
+
+  async createOrUpdateQuiz(lessonId: string, quizData: any) {
+    // Check if quiz already exists for this lesson
+    const existing = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lessonId))
+      .limit(1);
+
+    const quizPayload = {
+      lessonId,
+      title: quizData.title,
+      description: quizData.description,
+      passingScore: quizData.passingScore,
+      timeLimit: quizData.timeLimit,
+      maxAttempts: quizData.maxAttempts,
+      randomizeQuestions: quizData.randomizeQuestions,
+      showResults: quizData.showResults,
+      questions: JSON.stringify(quizData.questions || []),
+    };
+
+    if (existing.length > 0) {
+      // Update existing quiz
+      const [updated] = await db
+        .update(quizzes)
+        .set(quizPayload)
+        .where(eq(quizzes.id, existing[0].id))
+        .returning();
+      
+      return {
+        ...updated,
+        questions: updated.questions ? JSON.parse(updated.questions as string) : [],
+      };
+    } else {
+      // Create new quiz
+      const [created] = await db
+        .insert(quizzes)
+        .values(quizPayload)
+        .returning();
+      
+      return {
+        ...created,
+        questions: created.questions ? JSON.parse(created.questions as string) : [],
+      };
+    }
+  }
+
+  async createOrUpdateAssignment(lessonId: string, assignmentData: any) {
+    // Check if assignment already exists for this lesson
+    const existing = await db
+      .select()
+      .from(assignments)
+      .where(eq(assignments.lessonId, lessonId))
+      .limit(1);
+
+    const assignmentPayload = {
+      lessonId,
+      title: assignmentData.title,
+      description: assignmentData.description,
+      instructions: assignmentData.instructions,
+      maxPoints: assignmentData.maxPoints,
+      dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
+      allowLateSubmission: assignmentData.allowLateSubmission,
+      submissionType: assignmentData.submissionType,
+      rubric: JSON.stringify(assignmentData.rubric || []),
+    };
+
+    if (existing.length > 0) {
+      // Update existing assignment
+      const [updated] = await db
+        .update(assignments)
+        .set(assignmentPayload)
+        .where(eq(assignments.id, existing[0].id))
+        .returning();
+      
+      return {
+        ...updated,
+        rubric: updated.rubric ? JSON.parse(updated.rubric as string) : [],
+      };
+    } else {
+      // Create new assignment
+      const [created] = await db
+        .insert(assignments)
+        .values(assignmentPayload)
+        .returning();
+      
+      return {
+        ...created,
+        rubric: created.rubric ? JSON.parse(created.rubric as string) : [],
+      };
+    }
+  }
+
+  // ============================================================================
   // COURSE PUBLISHING OPERATIONS
   // ============================================================================
 

@@ -1052,6 +1052,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, message: 'Course unpublished successfully' });
   }));
 
+  // Create or update quiz for a lesson
+  app.post('/api/instructor/lessons/:lessonId/quiz', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quizData = req.body;
+    
+    const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
+    res.json(quiz);
+  }));
+
+  // Create or update assignment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/assignment', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignmentData = req.body;
+    
+    const assignment = await storage.createOrUpdateAssignment(lessonId, assignmentData);
+    res.json(assignment);
+  }));
+
   // Quiz routes
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;
