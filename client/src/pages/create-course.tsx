@@ -80,9 +80,9 @@ export default function CreateCourse() {
       queryClient.invalidateQueries({ queryKey: ['/api/instructor/stats'] });
       toast({
         title: "Success",
-        description: "Course created successfully",
+        description: "Course created successfully. Now add your curriculum!",
       });
-      setLocation(`/instructor/courses/${course.id}/edit`);
+      setLocation(`/instructor/courses/${course.id}/curriculum`);
     },
     onError: (error) => {
       toast({
