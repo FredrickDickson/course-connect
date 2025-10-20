@@ -136,6 +136,16 @@ export interface IStorage {
 
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
+
+  // Curriculum management operations
+  getCourseModules(courseId: string): Promise<any[]>;
+  createModule(module: InsertModule): Promise<Module>;
+  updateModule(id: string, updates: Partial<InsertModule>): Promise<Module>;
+  deleteModule(id: string): Promise<void>;
+  
+  createLesson(lesson: InsertLesson): Promise<Lesson>;
+  updateLesson(id: string, updates: Partial<InsertLesson>): Promise<Lesson>;
+  deleteLesson(id: string): Promise<void>;
   updateOrderStatus(id: string, status: string, paymentIntentId?: string): Promise<Order>;
   updateOrderByReference(reference: string, status: string): Promise<Order>;
   getUserOrders(userId: string): Promise<any[]>;
@@ -712,6 +722,95 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query;
+  }
+
+  // ============================================================================
+  // CURRICULUM MANAGEMENT OPERATIONS
+  // ============================================================================
+
+  async getCourseModules(courseId: string): Promise<any[]> {
+    const modulesList = await db
+      .select()
+      .from(modules)
+      .where(sql`${modules.courseId} = ${courseId}`)
+      .orderBy(modules.order);
+    
+    const modulesWithLessons = await Promise.all(
+      modulesList.map(async (module) => {
+        const lessonsList = await db
+          .select()
+          .from(lessons)
+          .where(sql`${lessons.moduleId} = ${module.id}`)
+          .orderBy(lessons.order);
+        
+        return {
+          ...module,
+          lessons: lessonsList,
+        };
+      })
+    );
+    
+    return modulesWithLessons;
+  }
+
+  async createModule(module: InsertModule): Promise<Module> {
+    const maxOrderResult = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${modules.order}), -1)` })
+      .from(modules)
+      .where(sql`${modules.courseId} = ${module.courseId}`);
+    
+    const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+    
+    const [newModule] = await db
+      .insert(modules)
+      .values({ ...module, order: nextOrder })
+      .returning();
+    
+    return newModule;
+  }
+
+  async updateModule(id: string, updates: Partial<InsertModule>): Promise<Module> {
+    const [updated] = await db
+      .update(modules)
+      .set(updates)
+      .where(eq(modules.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteModule(id: string): Promise<void> {
+    await db.delete(modules).where(eq(modules.id, id));
+  }
+
+  async createLesson(lesson: InsertLesson): Promise<Lesson> {
+    const maxOrderResult = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${lessons.order}), -1)` })
+      .from(lessons)
+      .where(sql`${lessons.moduleId} = ${lesson.moduleId}`);
+    
+    const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+    
+    const [newLesson] = await db
+      .insert(lessons)
+      .values({ ...lesson, order: nextOrder })
+      .returning();
+    
+    return newLesson;
+  }
+
+  async updateLesson(id: string, updates: Partial<InsertLesson>): Promise<Lesson> {
+    const [updated] = await db
+      .update(lessons)
+      .set(updates)
+      .where(eq(lessons.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteLesson(id: string): Promise<void> {
+    await db.delete(lessons).where(eq(lessons.id, id));
   }
 }
 

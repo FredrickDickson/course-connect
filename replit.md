@@ -146,6 +146,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (October 2025)
 
+### Udemy-Style Curriculum Builder (October 20, 2025)
+- Implemented hierarchical course structure: Courses → Modules (Sections) → Lectures
+- Added course curriculum management page at `/instructor/courses/:courseId/curriculum`
+- Created backend API routes for managing modules and lessons with proper ordering
+- Added `course_resources` table for downloadable materials (PDFs, files) attached to lectures
+- Built intuitive curriculum builder UI with expandable sections
+- Support for different lecture types: video, text, quiz, assignment
+- Instructors can now add/edit/delete sections and lectures like Udemy
+- Integrated with existing course creation workflow
+
 ### Database Migration to Supabase
 - Migrated from Neon to Supabase for PostgreSQL hosting
 - Updated database connection to use `postgres` package with Transaction pooler

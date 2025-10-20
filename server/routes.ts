@@ -776,6 +776,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   }));
 
+  // ============================================================================
+  // CURRICULUM MANAGEMENT ROUTES (Modules & Lessons)
+  // ============================================================================
+
+  // Get course modules with lessons
+  app.get('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const instructorId = req.user.claims.sub;
+    const { courseId } = req.params;
+    
+    const course = await storage.getCourseById(courseId);
+    if (!course || course.instructorId !== instructorId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const modules = await storage.getCourseModules(courseId);
+    res.json(modules);
+  }));
+
+  // Create a new module
+  app.post('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const instructorId = req.user.claims.sub;
+    const { courseId } = req.params;
+    
+    const course = await storage.getCourseById(courseId);
+    if (!course || course.instructorId !== instructorId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { title, description } = req.body;
+    const module = await storage.createModule({ courseId, title, description, order: 0 });
+    res.status(201).json(module);
+  }));
+
+  // Update a module
+  app.put('/api/instructor/modules/:moduleId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { title, description, order } = req.body;
+    
+    const module = await storage.updateModule(moduleId, { title, description, order });
+    res.json(module);
+  }));
+
+  // Delete a module
+  app.delete('/api/instructor/modules/:moduleId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    await storage.deleteModule(moduleId);
+    res.json({ success: true });
+  }));
+
+  // Create a new lesson
+  app.post('/api/instructor/modules/:moduleId/lessons', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { title, description, contentType, videoUrl, duration, content } = req.body;
+    
+    const lesson = await storage.createLesson({ 
+      moduleId, 
+      title, 
+      description, 
+      contentType, 
+      videoUrl, 
+      duration,
+      content,
+      order: 0 
+    });
+    res.status(201).json(lesson);
+  }));
+
+  // Update a lesson
+  app.put('/api/instructor/lessons/:lessonId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const updates = req.body;
+    
+    const lesson = await storage.updateLesson(lessonId, updates);
+    res.json(lesson);
+  }));
+
+  // Delete a lesson
+  app.delete('/api/instructor/lessons/:lessonId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    await storage.deleteLesson(lessonId);
+    res.json({ success: true });
+  }));
+
   // Quiz routes
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;
