@@ -18,6 +18,7 @@ import { useLocation } from "wouter";
 import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
+import { ImageUploader } from "@/components/ImageUploader";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
@@ -284,14 +285,33 @@ export default function CreateCourse() {
                       name="thumbnailUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Thumbnail URL</FormLabel>
+                          <FormLabel>Course Thumbnail</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="url"
-                              placeholder="https://example.com/image.jpg" 
-                              {...field} 
-                              data-testid="input-course-thumbnail"
-                            />
+                            <div className="space-y-4">
+                              <ImageUploader
+                                currentImageUrl={field.value}
+                                onUploadComplete={(url) => {
+                                  field.onChange(url);
+                                }}
+                              />
+                              <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                  <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                  <span className="bg-background px-2 text-muted-foreground">
+                                    Or enter URL
+                                  </span>
+                                </div>
+                              </div>
+                              <Input 
+                                type="url"
+                                placeholder="https://example.com/image.jpg" 
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                data-testid="input-course-thumbnail-url"
+                              />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

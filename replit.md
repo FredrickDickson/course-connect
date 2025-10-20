@@ -23,6 +23,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Course Management
 - **Creation Tools**: Multi-step course builder with sections, lectures, and assessments
+- **Thumbnail Upload**: Direct image upload or URL input for course thumbnails during creation
 - **Content Upload**: Video lectures, documents, quizzes, and assignments
 - **Publishing Workflow**: Draft → Review → Approval → Live publishing
 - **Revenue Sharing**: Instructor earnings and platform fee management
