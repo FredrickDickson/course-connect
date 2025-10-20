@@ -312,7 +312,8 @@ export default function CourseCurriculum() {
     setLectureEditorOpen(true);
   };
 
-  const handleEditLecture = (lesson: Lesson) => {
+  const handleEditLecture = (lesson: Lesson, moduleId: string) => {
+    setCurrentModuleId(moduleId);
     setEditingLesson(lesson);
     setLectureEditorOpen(true);
   };
@@ -517,7 +518,7 @@ export default function CourseCurriculum() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => handleEditLecture(lesson)}
+                                      onClick={() => handleEditLecture(lesson, module.id)}
                                       data-testid={`button-edit-lesson-${lesson.id}`}
                                     >
                                       <Edit className="h-3 w-3" />
