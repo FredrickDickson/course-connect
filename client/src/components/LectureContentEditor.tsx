@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -46,73 +46,7 @@ export function LectureContentEditor({
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || '');
   const [articleContent, setArticleContent] = useState(lesson?.content || '');
   const [saving, setSaving] = useState(false);
-  const [draftLesson, setDraftLesson] = useState<typeof lesson>(lesson);
-  const [creatingDraft, setCreatingDraft] = useState(false);
-  const draftPromiseRef = useRef<Promise<any> | null>(null);
-  const { toast} = useToast();
-
-  // Auto-create draft lesson to enable content uploads
-  const ensureLessonDraft = async () => {
-    if (draftLesson?.id || !title.trim()) {
-      return draftLesson;
-    }
-
-    // If draft creation is already in progress, wait for it
-    if (draftPromiseRef.current) {
-      return await draftPromiseRef.current;
-    }
-
-    // Create new draft
-    const promise = (async () => {
-      try {
-        setCreatingDraft(true);
-        const newLesson = await apiRequest('POST', `/api/instructor/modules/${moduleId}/lessons`, {
-          title,
-          description,
-          contentType,
-        });
-
-        setDraftLesson(newLesson);
-        
-        // Invalidate curriculum cache to show new draft in list
-        queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'modules'] });
-        
-        return newLesson;
-      } catch (error) {
-        console.error('Error creating draft lesson:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create draft lesson',
-          variant: 'destructive',
-        });
-        return null;
-      } finally {
-        setCreatingDraft(false);
-        draftPromiseRef.current = null;
-      }
-    })();
-
-    draftPromiseRef.current = promise;
-    return await promise;
-  };
-
-  // Auto-create draft when title is entered and viewing upload-dependent tab
-  useEffect(() => {
-    const needsDraft = !lesson && !draftLesson?.id && title.trim() && 
-      (contentType === 'video' || contentType === 'quiz' || contentType === 'assignment');
-    
-    if (needsDraft && !creatingDraft) {
-      ensureLessonDraft();
-    }
-  }, [title, contentType, lesson, draftLesson, creatingDraft]);
-
-  // Trigger draft creation when title is entered and user tries to add content
-  const handleTabChange = async (newTab: string) => {
-    if (!lesson && title.trim() && (newTab === 'video' || newTab === 'quiz' || newTab === 'assignment')) {
-      await ensureLessonDraft();
-    }
-    setContentType(newTab as any);
-  };
+  const { toast } = useToast();
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -127,17 +61,9 @@ export function LectureContentEditor({
     setSaving(true);
 
     try {
-      // Ensure draft exists for upload-dependent content types
-      let lessonToUpdate = draftLesson || lesson;
-      
-      if (!lessonToUpdate && (contentType === 'video' || contentType === 'quiz' || contentType === 'assignment')) {
-        // Create draft if not exists
-        lessonToUpdate = await ensureLessonDraft();
-      }
-      
-      if (lessonToUpdate?.id) {
-        // Update existing or draft lesson
-        await apiRequest('PUT', `/api/instructor/lessons/${lessonToUpdate.id}`, {
+      if (lesson?.id) {
+        // Update existing lesson
+        await apiRequest('PUT', `/api/instructor/lessons/${lesson.id}`, {
           title,
           description,
           contentType,
@@ -150,7 +76,7 @@ export function LectureContentEditor({
           description: 'Lecture updated successfully',
         });
       } else {
-        // Create new lesson for text content or if draft creation failed
+        // Create new lesson
         await apiRequest('POST', `/api/instructor/modules/${moduleId}/lessons`, {
           title,
           description,
@@ -220,7 +146,7 @@ export function LectureContentEditor({
 
           <div>
             <Label className="mb-3 block">Lecture Type</Label>
-            <Tabs value={contentType} onValueChange={handleTabChange}>
+            <Tabs value={contentType} onValueChange={(value) => setContentType(value as any)}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="video" data-testid="tab-video">
                   <Video className="w-4 h-4 mr-2" />
@@ -241,26 +167,18 @@ export function LectureContentEditor({
               </TabsList>
 
               <TabsContent value="video" className="mt-6">
-                {(lesson?.id || draftLesson?.id) ? (
+                {lesson?.id ? (
                   <VideoUploader
-                    lessonId={(lesson?.id || draftLesson?.id)!}
+                    lessonId={lesson.id}
                     currentVideoUrl={videoUrl}
                     onUploadComplete={(url) => setVideoUrl(url)}
                   />
-                ) : creatingDraft ? (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4" />
-                      <p className="text-blue-900 font-medium">Creating draft...</p>
-                      <p className="text-sm text-blue-700 mt-2">Please wait while we prepare your lecture</p>
-                    </div>
-                  </div>
                 ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <Video className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                    <p className="text-blue-900 font-medium mb-2">Enter a title to enable video upload</p>
-                    <p className="text-sm text-blue-700">
-                      A draft will be created automatically when you provide a title
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
+                    <Video className="w-12 h-12 mx-auto mb-4 text-amber-600" />
+                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable video upload</p>
+                    <p className="text-sm text-amber-700">
+                      Please save this lecture, then click Edit to upload videos
                     </p>
                   </div>
                 )}
@@ -275,13 +193,12 @@ export function LectureContentEditor({
               </TabsContent>
 
               <TabsContent value="quiz" className="mt-6">
-                {(lesson?.id || draftLesson?.id) ? (
+                {lesson?.id ? (
                   <QuizBuilder
-                    lessonId={(lesson?.id || draftLesson?.id)!}
+                    lessonId={lesson.id}
                     onSave={async (quizData) => {
                       try {
-                        const lessonId = lesson?.id || draftLesson?.id;
-                        await apiRequest('POST', `/api/instructor/lessons/${lessonId}/quiz`, quizData);
+                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/quiz`, quizData);
                         toast({
                           title: 'Success',
                           description: 'Quiz saved successfully',
@@ -295,33 +212,24 @@ export function LectureContentEditor({
                       }
                     }}
                   />
-                ) : creatingDraft ? (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4" />
-                      <p className="text-blue-900 font-medium">Creating draft...</p>
-                      <p className="text-sm text-blue-700 mt-2">Please wait while we prepare your lecture</p>
-                    </div>
-                  </div>
                 ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                    <p className="text-blue-900 font-medium mb-2">Enter a title to enable quiz creation</p>
-                    <p className="text-sm text-blue-700">
-                      A draft will be created automatically when you provide a title
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
+                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-amber-600" />
+                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable quiz creation</p>
+                    <p className="text-sm text-amber-700">
+                      Please save this lecture, then click Edit to create quizzes
                     </p>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="assignment" className="mt-6">
-                {(lesson?.id || draftLesson?.id) ? (
+                {lesson?.id ? (
                   <AssignmentBuilder
-                    lessonId={(lesson?.id || draftLesson?.id)!}
+                    lessonId={lesson.id}
                     onSave={async (assignmentData) => {
                       try {
-                        const lessonId = lesson?.id || draftLesson?.id;
-                        await apiRequest('POST', `/api/instructor/lessons/${lessonId}/assignment`, assignmentData);
+                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/assignment`, assignmentData);
                         toast({
                           title: 'Success',
                           description: 'Assignment saved successfully',
@@ -335,20 +243,12 @@ export function LectureContentEditor({
                       }
                     }}
                   />
-                ) : creatingDraft ? (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4" />
-                      <p className="text-blue-900 font-medium">Creating draft...</p>
-                      <p className="text-sm text-blue-700 mt-2">Please wait while we prepare your lecture</p>
-                    </div>
-                  </div>
                 ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-blue-50 border-blue-200">
-                    <FileUp className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                    <p className="text-blue-900 font-medium mb-2">Enter a title to enable assignment creation</p>
-                    <p className="text-sm text-blue-700">
-                      A draft will be created automatically when you provide a title
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
+                    <FileUp className="w-12 h-12 mx-auto mb-4 text-amber-600" />
+                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable assignment creation</p>
+                    <p className="text-sm text-amber-700">
+                      Please save this lecture, then click Edit to create assignments
                     </p>
                   </div>
                 )}
