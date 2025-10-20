@@ -141,6 +141,23 @@ export default function CourseCurriculum() {
     enabled: !!courseId,
   });
 
+  // Calculate total course duration
+  const totalDuration = modules.reduce((total, module) => {
+    const moduleDuration = module.lessons?.reduce((sum, lesson) => {
+      return sum + (lesson.duration || 0);
+    }, 0) || 0;
+    return total + moduleDuration;
+  }, 0);
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -313,6 +330,23 @@ export default function CourseCurriculum() {
               <p className="text-muted-foreground">
                 Build your course content with sections and lectures
               </p>
+              <div className="flex items-center gap-4 mt-2">
+                <span className="text-sm font-medium">
+                  {modules.length} Section{modules.length !== 1 ? 's' : ''}
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-sm font-medium">
+                  {modules.reduce((total, m) => total + (m.lessons?.length || 0), 0)} Lecture{modules.reduce((total, m) => total + (m.lessons?.length || 0), 0) !== 1 ? 's' : ''}
+                </span>
+                {totalDuration > 0 && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-sm font-medium">
+                      {formatDuration(totalDuration)} total duration
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
             <Link href="/instructor-dashboard">
               <Button variant="outline">← Back to Dashboard</Button>
@@ -482,12 +516,12 @@ export default function CourseCurriculum() {
                   </div>
                 </CardContent>
               )}
-                    </Card>
-                  )}
-                </SortableModule>
-              ))}
+            </Card>
+          )}
+        </SortableModule>
+      ))}
 
-              {/* Add Module Section */}
+      {/* Add Module Section */}
               {isAddingModule ? (
                 <Card className="border-dashed border-2">
                   <CardContent className="pt-6">
