@@ -156,6 +156,33 @@ Preferred communication style: Simple, everyday language.
 - Instructors can now add/edit/delete sections and lectures like Udemy
 - Integrated with existing course creation workflow
 
+### Advanced Lecture Content Builders (October 20, 2025)
+- **Video Upload System**: Drag-and-drop video uploader with real-time progress tracking
+  - Supports MP4, AVI, MOV, WebM formats up to 500MB
+  - Automatic video duration extraction
+  - Visual upload progress indicators
+- **Rich Text Editor**: Full-featured article editor using TipTap
+  - Text formatting (bold, italic, underline, headings)
+  - Lists (bullet and numbered)
+  - Text alignment (left, center, right)
+  - Blockquotes and code blocks
+  - Image and link insertion
+  - Live preview of formatted content
+- **Resource Upload System**: Downloadable file attachments for lectures
+  - PDF, DOC, DOCX, TXT, RTF support
+  - File size tracking and display
+  - Easy resource management per lecture
+- **Comprehensive Lecture Editor**: Modal-based content builder
+  - Tabbed interface for different content types
+  - Video, article, quiz, and assignment tabs
+  - Seamless switching between content types
+  - Auto-save and validation
+- **API Endpoints**: Complete CRUD operations for lecture content
+  - `/api/instructor/lessons/:lessonId/video` - Video uploads
+  - `/api/instructor/lessons/:lessonId/resources` - Resource attachments
+  - `/api/instructor/modules/:moduleId/lessons` - Lecture creation
+  - `/api/instructor/lessons/:lessonId` - Update and delete operations
+
 ### Database Migration to Supabase
 - Migrated from Neon to Supabase for PostgreSQL hosting
 - Updated database connection to use `postgres` package with Transaction pooler
