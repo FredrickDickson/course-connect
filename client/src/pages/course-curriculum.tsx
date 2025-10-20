@@ -153,7 +153,7 @@ export default function CourseCurriculum() {
   });
 
   // Fetch course details to check publish status
-  const { data: courseDetails } = useQuery({
+  const { data: courseDetails } = useQuery<{ isPublished: boolean; title: string; }>({
     queryKey: ['/api/instructor/courses', courseId],
     enabled: !!courseId,
   });

@@ -147,6 +147,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (October 2025)
 
+### Critical Bug Fixes - Publishing & UI (October 20, 2025)
+- **Course Publishing UI Fix**: Fixed publish/unpublish button not updating UI state
+  - Added comprehensive query cache invalidation after publish/unpublish operations
+  - UI now immediately reflects published/unpublished status
+  - Fixed TypeScript errors in course curriculum page
+  - Publish workflow fully functional with real-time feedback
+
 ### Image Upload & Video Upload Fix (October 20, 2025)
 - **Thumbnail Upload Feature**: Added drag-and-drop image uploader for course thumbnails
   - Integrated ImageUploader component with dual input method (upload or URL)
