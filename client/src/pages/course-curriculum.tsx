@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { LectureContentEditor } from "@/components/LectureContentEditor";
+import { LecturePreview } from "@/components/LecturePreview";
 import {
   DndContext,
   closestCenter,
@@ -41,6 +42,7 @@ import {
   ChevronDown,
   ChevronRight,
   Play,
+  Eye,
 } from "lucide-react";
 
 interface Module {
@@ -134,6 +136,10 @@ export default function CourseCurriculum() {
   const [lectureEditorOpen, setLectureEditorOpen] = useState(false);
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  
+  // Lecture preview state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
 
   // Fetch course curriculum
   const { data: modules = [], isLoading } = useQuery<Module[]>({
@@ -298,6 +304,11 @@ export default function CourseCurriculum() {
   const handleEditLecture = (lesson: Lesson) => {
     setEditingLesson(lesson);
     setLectureEditorOpen(true);
+  };
+
+  const handlePreviewLecture = (lesson: Lesson) => {
+    setPreviewLesson(lesson);
+    setPreviewOpen(true);
   };
 
   const handleLectureSaved = () => {
@@ -476,6 +487,15 @@ export default function CourseCurriculum() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
+                                      onClick={() => handlePreviewLecture(lesson)}
+                                      data-testid={`button-preview-lesson-${lesson.id}`}
+                                      title="Preview as student"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
                                       onClick={() => handleEditLecture(lesson)}
                                       data-testid={`button-edit-lesson-${lesson.id}`}
                                     >
@@ -581,6 +601,17 @@ export default function CourseCurriculum() {
           moduleId={currentModuleId}
           lesson={editingLesson || undefined}
           onSave={handleLectureSaved}
+        />
+      )}
+
+      {/* Lecture Preview Modal */}
+      {previewLesson && (
+        <LecturePreview
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          lessonId={previewLesson.id}
+          lessonTitle={previewLesson.title}
+          lessonType={previewLesson.contentType}
         />
       )}
     </div>
