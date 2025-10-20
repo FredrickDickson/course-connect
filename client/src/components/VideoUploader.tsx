@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
-import { Upload, Video, X, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Video, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { ObjectUploader } from '@/components/ObjectUploader';
+import type { UploadResult } from "@uppy/core";
 
 interface VideoUploaderProps {
   lessonId: string;
@@ -12,203 +13,123 @@ interface VideoUploaderProps {
 }
 
 export function VideoUploader({ lessonId, currentVideoUrl, onUploadComplete }: VideoUploaderProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState(currentVideoUrl);
   const { toast } = useToast();
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+  const handleGetUploadParameters = async () => {
+    try {
+      const response = await apiRequest('POST', '/api/objects/upload');
+      const data = await response.json() as { uploadURL: string };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    const videoFile = files.find(file => file.type.startsWith('video/'));
-
-    if (videoFile) {
-      setVideoFile(videoFile);
-    } else {
+      return {
+        method: 'PUT' as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      console.error('Error getting upload URL:', error);
       toast({
-        title: 'Invalid File',
-        description: 'Please upload a video file (MP4, AVI, MOV, etc.)',
+        title: 'Upload Failed',
+        description: 'Failed to get upload URL',
         variant: 'destructive',
       });
-    }
-  }, [toast]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      setVideoFile(files[0]);
+      throw error;
     }
   };
 
-  const uploadVideo = async () => {
-    if (!videoFile) return;
-
-    setUploading(true);
-    setProgress(0);
-
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     try {
-      const formData = new FormData();
-      formData.append('video', videoFile);
-
-      // Get video duration (optional)
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.onloadedmetadata = () => {
-        window.URL.revokeObjectURL(video.src);
-        const duration = Math.round(video.duration);
-        formData.append('duration', duration.toString());
-      };
-      video.src = URL.createObjectURL(videoFile);
-
-      // Simulate progress (since we can't track real upload progress easily)
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 500);
-
-      // Use fetch directly for FormData uploads
-      const res = await fetch(`/api/instructor/lessons/${lessonId}/video`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error || 'Upload failed');
+      if (!result.successful || result.successful.length === 0) {
+        throw new Error('Upload failed');
       }
 
-      const response = await res.json();
+      const uploadedFile = result.successful[0];
+      const videoUrl = uploadedFile.uploadURL;
 
-      clearInterval(progressInterval);
-      setProgress(100);
+      // Extract video duration from the uploaded file
+      let duration: number | null = null;
+      if (uploadedFile.data instanceof File) {
+        duration = await getVideoDuration(uploadedFile.data);
+      }
 
-      setUploadedUrl(response.videoUrl);
-      onUploadComplete(response.videoUrl);
+      // Update the lesson with the video URL and duration
+      const response = await apiRequest(
+        'PUT',
+        `/api/instructor/lessons/${lessonId}/video-url`,
+        {
+          videoUrl,
+          duration,
+        }
+      );
+
+      const data = await response.json() as { objectPath: string; lesson: any };
+
+      setUploadedUrl(data.objectPath);
+      onUploadComplete(data.objectPath);
 
       toast({
         title: 'Success',
         description: 'Video uploaded successfully',
       });
-
-      // Reset after a short delay
-      setTimeout(() => {
-        setVideoFile(null);
-        setProgress(0);
-        setUploading(false);
-      }, 1000);
     } catch (error) {
-      console.error('Error uploading video:', error);
+      console.error('Error completing upload:', error);
       toast({
         title: 'Upload Failed',
-        description: error instanceof Error ? error.message : 'Failed to upload video',
+        description: error instanceof Error ? error.message : 'Failed to complete upload',
         variant: 'destructive',
       });
-      setUploading(false);
-      setProgress(0);
     }
   };
 
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(Math.round(video.duration));
+      };
+      video.onerror = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(0); // Default to 0 if duration can't be determined
+      };
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
   const removeVideo = () => {
-    setVideoFile(null);
     setUploadedUrl(undefined);
   };
 
   return (
     <div className="space-y-4" data-testid="video-uploader">
-      {!uploadedUrl && !videoFile && (
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary'}
-          `}
-          data-testid="dropzone"
-        >
-          <input
-            type="file"
-            id="video-upload"
-            accept="video/*"
-            className="hidden"
-            onChange={handleFileSelect}
-            data-testid="input-video"
-          />
-          <label htmlFor="video-upload" className="cursor-pointer">
-            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">Drop video here or click to upload</h3>
-            <p className="text-sm text-gray-500">
-              Supports MP4, AVI, MOV, WebM (max 500MB)
-            </p>
-          </label>
-        </div>
-      )}
-
-      {videoFile && !uploading && !uploadedUrl && (
-        <div className="border rounded-lg p-4 flex items-center justify-between" data-testid="video-preview">
-          <div className="flex items-center gap-3">
-            <Video className="w-8 h-8 text-primary" />
-            <div>
-              <p className="font-medium">{videoFile.name}</p>
-              <p className="text-sm text-gray-500">
-                {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-              </p>
+      {!uploadedUrl ? (
+        <div>
+          <ObjectUploader
+            maxNumberOfFiles={1}
+            maxFileSize={524288000}
+            onGetUploadParameters={handleGetUploadParameters}
+            onComplete={handleUploadComplete}
+            buttonClassName="w-full"
+          >
+            <div className="flex flex-col items-center gap-2 py-4">
+              <Video className="w-12 h-12 text-gray-400" />
+              <div>
+                <h3 className="text-lg font-semibold text-center">Upload Video</h3>
+                <p className="text-sm text-gray-500 text-center">
+                  Supports MP4, AVI, MOV, WebM (max 500MB)
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={uploadVideo} data-testid="button-upload">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
-            <Button variant="ghost" size="icon" onClick={removeVideo} data-testid="button-remove">
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          </ObjectUploader>
         </div>
-      )}
-
-      {uploading && (
-        <div className="border rounded-lg p-4" data-testid="upload-progress">
-          <div className="flex items-center gap-3 mb-3">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            <div className="flex-1">
-              <p className="font-medium">Uploading video...</p>
-              <p className="text-sm text-gray-500">{videoFile?.name}</p>
-            </div>
-            <span className="text-sm font-medium">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
-
-      {uploadedUrl && (
+      ) : (
         <div className="border rounded-lg p-4 bg-green-50" data-testid="upload-complete">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
               <div>
                 <p className="font-medium text-green-900">Video uploaded successfully</p>
-                <p className="text-sm text-green-700">{videoFile?.name || 'Current video'}</p>
+                <p className="text-sm text-green-700">Stored in cloud storage</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={removeVideo} data-testid="button-change">
