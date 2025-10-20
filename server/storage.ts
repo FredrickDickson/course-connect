@@ -1057,6 +1057,86 @@ export class DatabaseStorage implements IStorage {
   async deleteAssignment(assignmentId: string): Promise<void> {
     await db.delete(assignments).where(eq(assignments.id, assignmentId));
   }
+
+  // ============================================================================
+  // COURSE PUBLISHING OPERATIONS
+  // ============================================================================
+
+  async validateCourseForPublishing(courseId: string): Promise<{
+    isValid: boolean;
+    checks: {
+      hasTitle: boolean;
+      hasDescription: boolean;
+      hasPrice: boolean;
+      hasCategory: boolean;
+      hasThumbnail: boolean;
+      hasModules: boolean;
+      hasLectures: boolean;
+      hasVideoContent: boolean;
+    };
+    errors: string[];
+  }> {
+    const course = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
+    if (course.length === 0) {
+      throw new Error('Course not found');
+    }
+
+    const courseData = course[0];
+    const courseModules = await db
+      .select()
+      .from(modules)
+      .where(eq(modules.courseId, courseId));
+    
+    const totalLessons = await db
+      .select()
+      .from(lessons)
+      .where(
+        sql`${lessons.moduleId} IN (SELECT id FROM ${modules} WHERE ${modules.courseId} = ${courseId})`
+      );
+
+    const videoLessons = totalLessons.filter((lesson) => lesson.contentType === 'video');
+
+    const checks = {
+      hasTitle: !!courseData.title && courseData.title.trim().length > 0,
+      hasDescription: !!courseData.description && courseData.description.trim().length > 0,
+      hasPrice: courseData.price !== null && courseData.price !== undefined,
+      hasCategory: !!courseData.categoryId,
+      hasThumbnail: !!courseData.thumbnailUrl,
+      hasModules: courseModules.length > 0,
+      hasLectures: totalLessons.length > 0,
+      hasVideoContent: videoLessons.length > 0,
+    };
+
+    const errors: string[] = [];
+    if (!checks.hasTitle) errors.push('Course must have a title');
+    if (!checks.hasDescription) errors.push('Course must have a description');
+    if (!checks.hasPrice) errors.push('Course must have a price set');
+    if (!checks.hasCategory) errors.push('Course must be assigned to a category');
+    if (!checks.hasThumbnail) errors.push('Course must have a thumbnail image');
+    if (!checks.hasModules) errors.push('Course must have at least one section');
+    if (!checks.hasLectures) errors.push('Course must have at least one lecture');
+    if (!checks.hasVideoContent) errors.push('Course must have at least one video lecture');
+
+    return {
+      isValid: errors.length === 0,
+      checks,
+      errors,
+    };
+  }
+
+  async publishCourse(courseId: string): Promise<void> {
+    await db
+      .update(courses)
+      .set({ isPublished: true, updatedAt: new Date() })
+      .where(eq(courses.id, courseId));
+  }
+
+  async unpublishCourse(courseId: string): Promise<void> {
+    await db
+      .update(courses)
+      .set({ isPublished: false, updatedAt: new Date() })
+      .where(eq(courses.id, courseId));
+  }
 }
 
 export const storage = new DatabaseStorage();

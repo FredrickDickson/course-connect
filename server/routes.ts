@@ -1017,6 +1017,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   }));
 
+  // ============================================================================
+  // COURSE PUBLISHING ROUTES
+  // ============================================================================
+
+  // Validate course before publishing
+  app.get('/api/instructor/courses/:courseId/validation', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const validation = await storage.validateCourseForPublishing(courseId);
+    res.json(validation);
+  }));
+
+  // Publish course
+  app.post('/api/instructor/courses/:courseId/publish', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const validation = await storage.validateCourseForPublishing(courseId);
+    
+    if (!validation.isValid) {
+      res.status(400).json({ 
+        error: 'Course validation failed', 
+        validation 
+      });
+      return;
+    }
+
+    await storage.publishCourse(courseId);
+    res.json({ success: true, message: 'Course published successfully' });
+  }));
+
+  // Unpublish course
+  app.post('/api/instructor/courses/:courseId/unpublish', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    await storage.unpublishCourse(courseId);
+    res.json({ success: true, message: 'Course unpublished successfully' });
+  }));
+
   // Quiz routes
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;

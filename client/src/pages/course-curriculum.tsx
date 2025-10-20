@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { LectureContentEditor } from "@/components/LectureContentEditor";
 import { LecturePreview } from "@/components/LecturePreview";
+import { PublishCourseDialog } from "@/components/PublishCourseDialog";
 import {
   DndContext,
   closestCenter,
@@ -43,6 +44,7 @@ import {
   ChevronRight,
   Play,
   Eye,
+  Rocket,
 } from "lucide-react";
 
 interface Module {
@@ -140,10 +142,19 @@ export default function CourseCurriculum() {
   // Lecture preview state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  
+  // Publish dialog state
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   // Fetch course curriculum
   const { data: modules = [], isLoading } = useQuery<Module[]>({
     queryKey: ['/api/instructor/courses', courseId, 'modules'],
+    enabled: !!courseId,
+  });
+
+  // Fetch course details to check publish status
+  const { data: courseDetails } = useQuery({
+    queryKey: ['/api/instructor/courses', courseId],
     enabled: !!courseId,
   });
 
@@ -359,9 +370,19 @@ export default function CourseCurriculum() {
                 )}
               </div>
             </div>
-            <Link href="/instructor-dashboard">
-              <Button variant="outline">← Back to Dashboard</Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Button
+                variant={courseDetails?.isPublished ? "outline" : "default"}
+                onClick={() => setPublishDialogOpen(true)}
+                data-testid="button-publish-course"
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                {courseDetails?.isPublished ? 'Unpublish Course' : 'Publish Course'}
+              </Button>
+              <Link href="/instructor-dashboard">
+                <Button variant="outline">← Back to Dashboard</Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -612,6 +633,16 @@ export default function CourseCurriculum() {
           lessonId={previewLesson.id}
           lessonTitle={previewLesson.title}
           lessonType={previewLesson.contentType}
+        />
+      )}
+
+      {/* Publish Course Dialog */}
+      {courseId && (
+        <PublishCourseDialog
+          open={publishDialogOpen}
+          onOpenChange={setPublishDialogOpen}
+          courseId={courseId}
+          isPublished={courseDetails?.isPublished || false}
         />
       )}
     </div>
