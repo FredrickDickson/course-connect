@@ -147,6 +147,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (October 2025)
 
+### Image Upload & Video Upload Fix (October 20, 2025)
+- **Thumbnail Upload Feature**: Added drag-and-drop image uploader for course thumbnails
+  - Integrated ImageUploader component with dual input method (upload or URL)
+  - Supports JPG, PNG, WebP formats up to 5MB
+  - Live preview and upload progress tracking
+  - Seamless integration with course creation form
+  
+- **Critical Video Upload Fix**: Resolved video upload modal not displaying
+  - Added missing Uppy CSS imports (`@uppy/core/css/style.css` and `@uppy/dashboard/css/style.css`)
+  - Fixed issue where upload button appeared but modal was invisible
+  - Video uploads now work correctly in edit lecture mode
+  - Modal displays properly with full drag-and-drop functionality
+
 ### Complete Udemy-Style LMS Features (October 20, 2025)
 - **Hierarchical Curriculum Builder**: Courses → Modules (Sections) → Lectures structure
   - Intuitive curriculum management page at `/instructor/courses/:courseId/curriculum`
