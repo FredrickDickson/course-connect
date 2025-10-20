@@ -56,6 +56,8 @@ import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import Profile from "@/pages/profile";
+import PaymentSuccess from "@/pages/payment-success";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -81,6 +83,7 @@ function Router() {
       <Route path="/technical-support" component={TechnicalSupport} />
       <Route path="/academic-advising" component={AcademicAdvising} />
       <Route path="/course-catalog" component={CourseCatalog} />
+      <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/global-ma-program" component={GlobalMAProgram} />
       <Route path="/fcrimarb-fellowship" component={FCIMarbFellowship} />
       <Route path="/certification" component={Certification} />
@@ -91,6 +94,7 @@ function Router() {
       {/* Protected routes - only for authenticated users */}
       {isAuthenticated && (
         <>
+          <Route path="/profile" component={Profile} />
           <Route path="/courses" component={Courses} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/instructor" component={InstructorDashboard} />

@@ -199,24 +199,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/auth/profile', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
-    const { bio, country, timezone } = req.body;
+    const { firstName, lastName, bio, country, timezone } = req.body;
     
-    const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const updateData: any = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (country !== undefined) updateData.country = country;
+    if (timezone !== undefined) updateData.timezone = timezone;
 
-    const updatedUser = await storage.upsertUser({
-      id: userId,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      profileImageUrl: user.profileImageUrl,
-      bio: bio || user.bio,
-      country: country || user.country,
-      timezone: timezone || user.timezone,
-    });
+    const updatedUser = await storage.updateUser(userId, updateData);
+    res.json(updatedUser);
+  }));
+
+  app.patch('/api/user/profile', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.claims.sub;
+    const { firstName, lastName, bio, country, timezone } = req.body;
     
+    const updateData: any = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (country !== undefined) updateData.country = country;
+    if (timezone !== undefined) updateData.timezone = timezone;
+
+    const updatedUser = await storage.updateUser(userId, updateData);
     res.json(updatedUser);
   }));
 
