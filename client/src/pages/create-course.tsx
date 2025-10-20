@@ -270,7 +270,7 @@ export default function CreateCourse() {
                                 <SelectItem value="USD">USD</SelectItem>
                                 <SelectItem value="EUR">EUR</SelectItem>
                                 <SelectItem value="GBP">GBP</SelectItem>
-                                <SelectItem value="NGN">NGN</SelectItem>
+                                <SelectItem value="GHS">GHS</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
