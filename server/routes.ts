@@ -859,6 +859,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   }));
 
+  // ============================================================================
+  // VIDEO & RESOURCE UPLOAD ROUTES
+  // ============================================================================
+
+  // Upload video for a lesson
+  app.post('/api/instructor/lessons/:lessonId/video',
+    isAuthenticated,
+    requireInstructor(),
+    uploadLimiter,
+    videoUpload.single('video'),
+    handleUploadError,
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No video file provided' });
+      }
+
+      const { lessonId } = req.params;
+      const videoUrl = getFileUrl(req, req.file.filename, 'video');
+      
+      // Extract video duration from request body (sent from frontend after processing)
+      const duration = req.body.duration ? parseInt(req.body.duration) : null;
+
+      // Update lesson with video URL and duration
+      const lesson = await storage.updateLesson(lessonId, {
+        videoUrl,
+        duration,
+      });
+
+      res.json({
+        message: 'Video uploaded successfully',
+        videoUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        lesson,
+      });
+    })
+  );
+
+  // Upload resource/attachment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/resources',
+    isAuthenticated,
+    requireInstructor(),
+    uploadLimiter,
+    documentUpload.single('resource'),
+    handleUploadError,
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No resource file provided' });
+      }
+
+      const { lessonId } = req.params;
+      const { title, description } = req.body;
+      
+      const fileUrl = getFileUrl(req, req.file.filename, 'document');
+      const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase() || '';
+
+      // Create resource record in database
+      const resource = await storage.createCourseResource({
+        lessonId,
+        title: title || req.file.originalname,
+        description,
+        fileUrl,
+        fileName: req.file.originalname,
+        fileType: fileExtension,
+        fileSize: req.file.size,
+      });
+
+      res.status(201).json({
+        message: 'Resource uploaded successfully',
+        resource,
+      });
+    })
+  );
+
+  // Get resources for a lesson
+  app.get('/api/lessons/:lessonId/resources', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const resources = await storage.getLessonResources(lessonId);
+    res.json(resources);
+  }));
+
+  // Delete a resource
+  app.delete('/api/instructor/resources/:resourceId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { resourceId } = req.params;
+    await storage.deleteCourseResource(resourceId);
+    res.json({ success: true });
+  }));
+
   // Quiz routes
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;

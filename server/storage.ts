@@ -26,6 +26,7 @@ import {
   certifications,
   orders,
   categories,
+  courseResources,
   quizzes,
   quizQuestions,
   quizAnswers,
@@ -59,6 +60,8 @@ import {
   type InsertOrder,
   type Category,
   type InsertCategory,
+  type CourseResource,
+  type InsertCourseResource,
   type Quiz,
   type InsertQuiz,
   type QuizQuestion,
@@ -811,6 +814,37 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLesson(id: string): Promise<void> {
     await db.delete(lessons).where(eq(lessons.id, id));
+  }
+
+  // ============================================================================
+  // COURSE RESOURCES OPERATIONS
+  // ============================================================================
+
+  async createCourseResource(resource: InsertCourseResource): Promise<CourseResource> {
+    const [newResource] = await db
+      .insert(courseResources)
+      .values(resource)
+      .returning();
+    
+    return newResource;
+  }
+
+  async getLessonResources(lessonId: string): Promise<CourseResource[]> {
+    return await db
+      .select()
+      .from(courseResources)
+      .where(eq(courseResources.lessonId, lessonId));
+  }
+
+  async getCourseResources(courseId: string): Promise<CourseResource[]> {
+    return await db
+      .select()
+      .from(courseResources)
+      .where(eq(courseResources.courseId, courseId));
+  }
+
+  async deleteCourseResource(id: string): Promise<void> {
+    await db.delete(courseResources).where(eq(courseResources.id, id));
   }
 }
 

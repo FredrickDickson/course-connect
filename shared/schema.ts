@@ -568,6 +568,10 @@ export type InsertAssignmentSubmission = typeof assignmentSubmissions.$inferInse
 export type InstructorPayout = typeof instructorPayouts.$inferSelect;
 export type InsertInstructorPayout = typeof instructorPayouts.$inferInsert;
 
+// Course resource types
+export type CourseResource = typeof courseResources.$inferSelect;
+export type InsertCourseResource = typeof courseResources.$inferInsert;
+
 // Zod schemas for validation
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
