@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
+import { LectureContentEditor } from "@/components/LectureContentEditor";
 import {
   Plus,
   GripVertical,
@@ -61,9 +62,13 @@ export default function CourseCurriculum() {
   
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [isAddingModule, setIsAddingModule] = useState(false);
-  const [isAddingLesson, setIsAddingLesson] = useState<string | null>(null);
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newModuleDesc, setNewModuleDesc] = useState("");
+  
+  // Lecture editor state
+  const [lectureEditorOpen, setLectureEditorOpen] = useState(false);
+  const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
 
   // Fetch course curriculum
   const { data: modules = [], isLoading } = useQuery<Module[]>({
@@ -96,6 +101,17 @@ export default function CourseCurriculum() {
     },
   });
 
+  // Delete lesson mutation
+  const deleteLessonMutation = useMutation({
+    mutationFn: async (lessonId: string) => {
+      return await apiRequest('DELETE', `/api/instructor/lessons/${lessonId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'modules'] });
+      toast({ title: "Lecture deleted" });
+    },
+  });
+
   const toggleModule = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);
     if (newExpanded.has(moduleId)) {
@@ -115,6 +131,23 @@ export default function CourseCurriculum() {
       title: newModuleTitle,
       description: newModuleDesc,
     });
+  };
+
+  const handleAddLecture = (moduleId: string) => {
+    setCurrentModuleId(moduleId);
+    setEditingLesson(null);
+    setLectureEditorOpen(true);
+  };
+
+  const handleEditLecture = (lesson: Lesson) => {
+    setEditingLesson(lesson);
+    setLectureEditorOpen(true);
+  };
+
+  const handleLectureSaved = () => {
+    setLectureEditorOpen(false);
+    setEditingLesson(null);
+    setCurrentModuleId(null);
   };
 
   if (isLoading) {
@@ -244,10 +277,20 @@ export default function CourseCurriculum() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLecture(lesson)}
+                              data-testid={`button-edit-lesson-${lesson.id}`}
+                            >
                               <Edit className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteLessonMutation.mutate(lesson.id)}
+                              data-testid={`button-delete-lesson-${lesson.id}`}
+                            >
                               <Trash2 className="h-3 w-3 text-destructive" />
                             </Button>
                           </div>
@@ -264,7 +307,8 @@ export default function CourseCurriculum() {
                       variant="outline"
                       size="sm"
                       className="w-full mt-2"
-                      onClick={() => setIsAddingLesson(module.id)}
+                      onClick={() => handleAddLecture(module.id)}
+                      data-testid={`button-add-lecture-${module.id}`}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Lecture
@@ -323,6 +367,18 @@ export default function CourseCurriculum() {
           )}
         </div>
       </div>
+
+      {/* Lecture Content Editor Modal */}
+      {courseId && currentModuleId && (
+        <LectureContentEditor
+          open={lectureEditorOpen}
+          onOpenChange={setLectureEditorOpen}
+          courseId={courseId}
+          moduleId={currentModuleId}
+          lesson={editingLesson || undefined}
+          onSave={handleLectureSaved}
+        />
+      )}
     </div>
   );
 }
