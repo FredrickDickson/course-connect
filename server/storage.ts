@@ -315,7 +315,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInstructorCourses(instructorId: string): Promise<any[]> {
-    return await db.select().from(courses).where(eq(courses.instructorId, instructorId));
+    return await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        subtitle: courses.subtitle,
+        description: courses.description,
+        instructorId: courses.instructorId,
+        categoryId: courses.categoryId,
+        level: courses.level,
+        price: courses.price,
+        currency: courses.currency,
+        thumbnailUrl: courses.thumbnailUrl,
+        promoVideoUrl: courses.promoVideoUrl,
+        duration: courses.duration,
+        isPublished: courses.isPublished,
+        isFeatured: courses.isFeatured,
+        avgRating: courses.avgRating,
+        ratingCount: courses.ratingCount,
+        enrollmentCount: courses.enrollmentCount,
+        tags: courses.tags,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+        },
+      })
+      .from(courses)
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .where(eq(courses.instructorId, instructorId));
   }
 
   async getInstructorStats(instructorId: string): Promise<{ totalCourses: number; totalStudents: number; totalRevenue: number; averageRating: number }> {

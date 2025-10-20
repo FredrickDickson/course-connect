@@ -205,7 +205,7 @@ export default function InstructorDashboard() {
           </span>
           <span className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            {course.avgRating.toFixed(1)} ({course.ratingCount})
+            {Number(course.avgRating || 0).toFixed(1)} ({course.ratingCount})
           </span>
         </div>
       </CardHeader>
@@ -213,9 +213,11 @@ export default function InstructorDashboard() {
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {course.category.name}
-            </Badge>
+            {course.category && (
+              <Badge variant="outline" className="text-xs">
+                {course.category.name}
+              </Badge>
+            )}
             <span className="text-lg font-semibold">
               {formatCurrency(Number(course.price), course.currency)}
             </span>
@@ -227,7 +229,7 @@ export default function InstructorDashboard() {
               </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
-              <Link href={`/instructor/courses/${course.id}/edit`}>
+              <Link href={`/instructor/courses/${course.id}/curriculum`}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>
