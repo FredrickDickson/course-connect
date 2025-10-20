@@ -3,7 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerAuthRoutes } from "./auth-routes"; // NEW: Import auth routes
 import { setupVite, serveStatic, log } from "./vite";
-import { setupAuth } from "./supabaseAuth";
+import { setupAuth } from "./replitAuth";
 
 const app = express();
 app.use(express.json());
@@ -41,8 +41,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize Supabase authentication middleware
-  setupAuth(app);
+  // Initialize Replit authentication middleware
+  await setupAuth(app);
 
   // Register auth routes (NEW)
   registerAuthRoutes(app);
