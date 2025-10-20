@@ -30,6 +30,11 @@ import {
   getFileUrl,
 } from "./middleware/upload";
 import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
+import {
   insertCourseSchema,
   insertEnrollmentSchema,
   insertReviewSchema,
@@ -962,6 +967,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.deleteCourseResource(resourceId);
     res.json({ success: true });
   }));
+
+  // ============================================================================
+  // OBJECT STORAGE ROUTES (for video uploads to cloud storage)
+  // ============================================================================
+
+  // Get presigned URL for uploading video to object storage
+  app.post('/api/objects/upload', 
+    isAuthenticated, 
+    requireInstructor(),
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    })
+  );
+
+  // Update lesson with video URL after upload to object storage
+  app.put('/api/instructor/lessons/:lessonId/video-url',
+    isAuthenticated,
+    requireInstructor(),
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      const { lessonId } = req.params;
+      const { videoUrl, duration } = req.body;
+
+      if (!videoUrl) {
+        return res.status(400).json({ error: 'videoUrl is required' });
+      }
+
+      const userId = req.user.claims.sub;
+
+      try {
+        const objectStorageService = new ObjectStorageService();
+        // Normalize the object path and set ACL policy
+        const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          videoUrl,
+          {
+            owner: userId,
+            visibility: "public", // Videos are public so students can view them
+          }
+        );
+
+        // Update lesson with the normalized video path and duration
+        const lesson = await storage.updateLesson(lessonId, {
+          videoUrl: normalizedPath,
+          duration: duration || null,
+        });
+
+        res.json({
+          message: 'Video URL updated successfully',
+          objectPath: normalizedPath,
+          lesson,
+        });
+      } catch (error) {
+        console.error('Error updating lesson video URL:', error);
+        res.status(500).json({ error: 'Failed to update video URL' });
+      }
+    })
+  );
+
+  // Serve videos from object storage
+  app.get('/objects/:objectPath(*)', 
+    asyncHandler(async (req: Request, res: Response) => {
+      const objectStorageService = new ObjectStorageService();
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(
+          req.path
+        );
+        
+        // Videos are public, so we don't need authentication check
+        // The ACL policy is set to public when the video is uploaded
+        objectStorageService.downloadObject(objectFile, res);
+      } catch (error) {
+        console.error('Error accessing object:', error);
+        if (error instanceof ObjectNotFoundError) {
+          return res.sendStatus(404);
+        }
+        return res.sendStatus(500);
+      }
+    })
+  );
 
   // ============================================================================
   // QUIZ MANAGEMENT ROUTES
