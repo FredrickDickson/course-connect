@@ -12,6 +12,23 @@ import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { LectureContentEditor } from "@/components/LectureContentEditor";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Plus,
   GripVertical,
   Edit,
@@ -54,6 +71,54 @@ interface Resource {
   fileSize?: number;
 }
 
+// Sortable Module Component
+function SortableModule({ module, moduleIndex, children }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: module.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ attributes, listeners })}
+    </div>
+  );
+}
+
+// Sortable Lesson Component
+function SortableLesson({ lesson, lessonIndex, children }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ attributes, listeners })}
+    </div>
+  );
+}
+
 export default function CourseCurriculum() {
   const [, params] = useRoute("/instructor/courses/:courseId/curriculum");
   const courseId = params?.courseId;
@@ -75,6 +140,14 @@ export default function CourseCurriculum() {
     queryKey: ['/api/instructor/courses', courseId, 'modules'],
     enabled: !!courseId,
   });
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Add module mutation
   const addModuleMutation = useMutation({
@@ -111,6 +184,72 @@ export default function CourseCurriculum() {
       toast({ title: "Lecture deleted" });
     },
   });
+
+  // Reorder modules mutation
+  const reorderModulesMutation = useMutation({
+    mutationFn: async (moduleOrder: string[]) => {
+      return await apiRequest('PUT', `/api/instructor/courses/${courseId}/modules/reorder`, { moduleOrder });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'modules'] });
+      toast({ title: "Failed to reorder sections", variant: "destructive" });
+    },
+  });
+
+  // Reorder lessons mutation
+  const reorderLessonsMutation = useMutation({
+    mutationFn: async ({ moduleId, lessonOrder }: { moduleId: string; lessonOrder: string[] }) => {
+      return await apiRequest('PUT', `/api/instructor/modules/${moduleId}/lessons/reorder`, { lessonOrder });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'modules'] });
+      toast({ title: "Failed to reorder lectures", variant: "destructive" });
+    },
+  });
+
+  // Handle module drag end
+  const handleModuleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = modules.findIndex((m) => m.id === active.id);
+      const newIndex = modules.findIndex((m) => m.id === over.id);
+
+      const newModules = arrayMove(modules, oldIndex, newIndex);
+
+      // Optimistic update
+      queryClient.setQueryData(['/api/instructor/courses', courseId, 'modules'], newModules);
+
+      // Persist to server
+      const moduleOrder = newModules.map((m) => m.id);
+      reorderModulesMutation.mutate(moduleOrder);
+    }
+  };
+
+  // Handle lesson drag end
+  const handleLessonDragEnd = (moduleId: string) => (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const module = modules.find((m) => m.id === moduleId);
+      if (!module || !module.lessons) return;
+
+      const oldIndex = module.lessons.findIndex((l) => l.id === active.id);
+      const newIndex = module.lessons.findIndex((l) => l.id === over.id);
+
+      const newLessons = arrayMove(module.lessons, oldIndex, newIndex);
+
+      // Optimistic update
+      const newModules = modules.map((m) =>
+        m.id === moduleId ? { ...m, lessons: newLessons } : m
+      );
+      queryClient.setQueryData(['/api/instructor/courses', courseId, 'modules'], newModules);
+
+      // Persist to server
+      const lessonOrder = newLessons.map((l) => l.id);
+      reorderLessonsMutation.mutate({ moduleId, lessonOrder });
+    }
+  };
 
   const toggleModule = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);
@@ -200,102 +339,129 @@ export default function CourseCurriculum() {
         </Card>
 
         {/* Curriculum Content */}
-        <div className="space-y-4">
-          {modules.map((module, moduleIndex) => (
-            <Card key={module.id} className="border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleModule(module.id)}
-                      className="p-0 h-auto"
-                    >
-                      {expandedModules.has(module.id) ? (
-                        <ChevronDown className="h-5 w-5" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5" />
-                      )}
-                    </Button>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-sm text-muted-foreground">
-                          Section {moduleIndex + 1}:
-                        </span>
-                        <h3 className="font-bold">{module.title}</h3>
-                      </div>
-                      {module.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {module.lessons?.length || 0} lectures
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteModuleMutation.mutate(module.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleModuleDragEnd}
+        >
+          <SortableContext
+            items={modules.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {modules.map((module, moduleIndex) => (
+                <SortableModule key={module.id} module={module} moduleIndex={moduleIndex}>
+                  {({ attributes, listeners }: any) => (
+                    <Card className="border-l-4 border-l-primary">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1">
+                            <div {...attributes} {...listeners} className="cursor-move">
+                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleModule(module.id)}
+                              className="p-0 h-auto"
+                            >
+                              {expandedModules.has(module.id) ? (
+                                <ChevronDown className="h-5 w-5" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5" />
+                              )}
+                            </Button>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-sm text-muted-foreground">
+                                  Section {moduleIndex + 1}:
+                                </span>
+                                <h3 className="font-bold">{module.title}</h3>
+                              </div>
+                              {module.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {module.lessons?.length || 0} lectures
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteModuleMutation.mutate(module.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
 
               {/* Lectures List */}
               {expandedModules.has(module.id) && (
                 <CardContent className="pt-0">
                   <div className="ml-8 space-y-2">
                     {module.lessons && module.lessons.length > 0 ? (
-                      module.lessons.map((lesson, lessonIndex) => (
-                        <div
-                          key={lesson.id}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleLessonDragEnd(module.id)}
+                      >
+                        <SortableContext
+                          items={module.lessons.map((l) => l.id)}
+                          strategy={verticalListSortingStrategy}
                         >
-                          <div className="flex items-center space-x-3 flex-1">
-                            <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                            {lesson.contentType === 'video' && <Play className="h-4 w-4" />}
-                            {lesson.contentType === 'text' && <FileText className="h-4 w-4" />}
-                            {lesson.contentType === 'quiz' && <ClipboardList className="h-4 w-4" />}
-                            {lesson.contentType === 'assignment' && <FileText className="h-4 w-4" />}
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">
-                                Lecture {lessonIndex + 1}: {lesson.title}
-                              </p>
-                              {lesson.duration && (
-                                <p className="text-xs text-muted-foreground">
-                                  {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
-                                </p>
+                          {module.lessons.map((lesson, lessonIndex) => (
+                            <SortableLesson key={lesson.id} lesson={lesson} lessonIndex={lessonIndex}>
+                              {({ attributes, listeners }: any) => (
+                                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                                  <div className="flex items-center space-x-3 flex-1">
+                                    <div {...attributes} {...listeners} className="cursor-move">
+                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    {lesson.contentType === 'video' && <Play className="h-4 w-4" />}
+                                    {lesson.contentType === 'text' && <FileText className="h-4 w-4" />}
+                                    {lesson.contentType === 'quiz' && <ClipboardList className="h-4 w-4" />}
+                                    {lesson.contentType === 'assignment' && <FileText className="h-4 w-4" />}
+                                    <div className="flex-1">
+                                      <p className="font-medium text-sm">
+                                        Lecture {lessonIndex + 1}: {lesson.title}
+                                      </p>
+                                      {lesson.duration && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditLecture(lesson)}
+                                      data-testid={`button-edit-lesson-${lesson.id}`}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteLessonMutation.mutate(lesson.id)}
+                                      data-testid={`button-delete-lesson-${lesson.id}`}
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditLecture(lesson)}
-                              data-testid={`button-edit-lesson-${lesson.id}`}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteLessonMutation.mutate(lesson.id)}
-                              data-testid={`button-delete-lesson-${lesson.id}`}
-                            >
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
+                            </SortableLesson>
+                          ))}
+                        </SortableContext>
+                      </DndContext>
                     ) : (
                       <p className="text-sm text-muted-foreground italic py-4">
                         No lectures yet. Add your first lecture below.
@@ -316,56 +482,60 @@ export default function CourseCurriculum() {
                   </div>
                 </CardContent>
               )}
-            </Card>
-          ))}
+                    </Card>
+                  )}
+                </SortableModule>
+              ))}
 
-          {/* Add Module Section */}
-          {isAddingModule ? (
-            <Card className="border-dashed border-2">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="module-title">Section Title *</Label>
-                    <Input
-                      id="module-title"
-                      placeholder="e.g., Introduction to Mediation"
-                      value={newModuleTitle}
-                      onChange={(e) => setNewModuleTitle(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="module-desc">Section Description (optional)</Label>
-                    <Textarea
-                      id="module-desc"
-                      placeholder="What will students learn in this section?"
-                      rows={3}
-                      value={newModuleDesc}
-                      onChange={(e) => setNewModuleDesc(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button onClick={handleAddModule} disabled={addModuleMutation.isPending}>
-                      {addModuleMutation.isPending ? "Adding..." : "Add Section"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsAddingModule(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full border-dashed border-2"
-              onClick={() => setIsAddingModule(true)}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Section
-            </Button>
-          )}
-        </div>
+              {/* Add Module Section */}
+              {isAddingModule ? (
+                <Card className="border-dashed border-2">
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="module-title">Section Title *</Label>
+                        <Input
+                          id="module-title"
+                          placeholder="e.g., Introduction to Mediation"
+                          value={newModuleTitle}
+                          onChange={(e) => setNewModuleTitle(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="module-desc">Section Description (optional)</Label>
+                        <Textarea
+                          id="module-desc"
+                          placeholder="What will students learn in this section?"
+                          rows={3}
+                          value={newModuleDesc}
+                          onChange={(e) => setNewModuleDesc(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button onClick={handleAddModule} disabled={addModuleMutation.isPending}>
+                          {addModuleMutation.isPending ? "Adding..." : "Add Section"}
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsAddingModule(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-dashed border-2"
+                  onClick={() => setIsAddingModule(true)}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Section
+                </Button>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Lecture Content Editor Modal */}

@@ -825,6 +825,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   }));
 
+  // Reorder modules
+  app.put('/api/instructor/courses/:courseId/modules/reorder', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const { moduleOrder } = req.body;
+    await storage.reorderModules(courseId, moduleOrder);
+    res.json({ success: true });
+  }));
+
+  // Reorder lessons within a module
+  app.put('/api/instructor/modules/:moduleId/lessons/reorder', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { lessonOrder } = req.body;
+    await storage.reorderLessons(moduleId, lessonOrder);
+    res.json({ success: true });
+  }));
+
   // Create a new lesson
   app.post('/api/instructor/modules/:moduleId/lessons', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { moduleId } = req.params;

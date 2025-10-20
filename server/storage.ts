@@ -786,6 +786,24 @@ export class DatabaseStorage implements IStorage {
     await db.delete(modules).where(eq(modules.id, id));
   }
 
+  async reorderModules(courseId: string, moduleOrder: string[]): Promise<void> {
+    for (let i = 0; i < moduleOrder.length; i++) {
+      await db
+        .update(modules)
+        .set({ order: i })
+        .where(eq(modules.id, moduleOrder[i]));
+    }
+  }
+
+  async reorderLessons(moduleId: string, lessonOrder: string[]): Promise<void> {
+    for (let i = 0; i < lessonOrder.length; i++) {
+      await db
+        .update(lessons)
+        .set({ order: i })
+        .where(eq(lessons.id, lessonOrder[i]));
+    }
+  }
+
   async createLesson(lesson: InsertLesson): Promise<Lesson> {
     const maxOrderResult = await db
       .select({ maxOrder: sql<number>`COALESCE(MAX(${lessons.order}), -1)` })
