@@ -947,6 +947,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   }));
 
+  // ============================================================================
+  // QUIZ MANAGEMENT ROUTES
+  // ============================================================================
+
+  // Create or update quiz for a lesson
+  app.post('/api/instructor/lessons/:lessonId/quiz', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quizData = req.body;
+
+    const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
+    res.status(201).json(quiz);
+  }));
+
+  // Get quiz for a lesson
+  app.get('/api/lessons/:lessonId/quiz', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quiz = await storage.getQuizByLessonId(lessonId);
+    res.json(quiz);
+  }));
+
+  // Delete quiz
+  app.delete('/api/instructor/quizzes/:quizId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { quizId } = req.params;
+    await storage.deleteQuiz(quizId);
+    res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // ASSIGNMENT MANAGEMENT ROUTES
+  // ============================================================================
+
+  // Create or update assignment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/assignment', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignmentData = req.body;
+
+    const assignment = await storage.createOrUpdateAssignment(lessonId, assignmentData);
+    res.status(201).json(assignment);
+  }));
+
+  // Get assignment for a lesson
+  app.get('/api/lessons/:lessonId/assignment', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignment = await storage.getAssignmentByLessonId(lessonId);
+    res.json(assignment);
+  }));
+
+  // Delete assignment
+  app.delete('/api/instructor/assignments/:assignmentId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { assignmentId } = req.params;
+    await storage.deleteAssignment(assignmentId);
+    res.json({ success: true });
+  }));
+
   // Quiz routes
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;

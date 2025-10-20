@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { VideoUploader } from './VideoUploader';
 import { RichTextEditor } from './RichTextEditor';
+import { QuizBuilder } from './QuizBuilder';
+import { AssignmentBuilder } from './AssignmentBuilder';
 import { Video, FileText, ClipboardCheck, FileUp, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -191,29 +193,65 @@ export function LectureContentEditor({
               </TabsContent>
 
               <TabsContent value="quiz" className="mt-6">
-                <div className="border-2 border-dashed rounded-lg p-12 text-center bg-gray-50">
-                  <ClipboardCheck className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold mb-2">Quiz Builder Coming Soon</h3>
-                  <p className="text-gray-600 mb-4">
-                    Create interactive quizzes with multiple choice, true/false, and open-ended questions.
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    This feature will be available in the next update.
-                  </p>
-                </div>
+                {lesson?.id ? (
+                  <QuizBuilder
+                    lessonId={lesson.id}
+                    onSave={async (quizData) => {
+                      try {
+                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/quiz`, quizData);
+                        toast({
+                          title: 'Success',
+                          description: 'Quiz saved successfully',
+                        });
+                      } catch (error) {
+                        toast({
+                          title: 'Error',
+                          description: error instanceof Error ? error.message : 'Failed to save quiz',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-gray-50">
+                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-600 mb-2">Save the lecture first to create a quiz</p>
+                    <p className="text-sm text-gray-500">
+                      You'll be able to build the quiz after creating the lecture
+                    </p>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="assignment" className="mt-6">
-                <div className="border-2 border-dashed rounded-lg p-12 text-center bg-gray-50">
-                  <FileUp className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold mb-2">Assignment Creator Coming Soon</h3>
-                  <p className="text-gray-600 mb-4">
-                    Create assignments with instructions, file requirements, and grading rubrics.
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    This feature will be available in the next update.
-                  </p>
-                </div>
+                {lesson?.id ? (
+                  <AssignmentBuilder
+                    lessonId={lesson.id}
+                    onSave={async (assignmentData) => {
+                      try {
+                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/assignment`, assignmentData);
+                        toast({
+                          title: 'Success',
+                          description: 'Assignment saved successfully',
+                        });
+                      } catch (error) {
+                        toast({
+                          title: 'Error',
+                          description: error instanceof Error ? error.message : 'Failed to save assignment',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-gray-50">
+                    <FileUp className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-600 mb-2">Save the lecture first to create an assignment</p>
+                    <p className="text-sm text-gray-500">
+                      You'll be able to build the assignment after creating the lecture
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
