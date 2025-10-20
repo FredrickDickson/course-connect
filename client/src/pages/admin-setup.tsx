@@ -58,7 +58,7 @@ export default function AdminSetup() {
       });
       // Redirect to admin dashboard after successful setup
       setTimeout(() => {
-        window.location.href = "/admin-dashboard";
+        window.location.href = "/admin";
       }, 1500);
     },
     onError: (error: any) => {
