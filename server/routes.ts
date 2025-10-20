@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   app.post('/api/admin/setup', asyncHandler(async (req: Request, res: Response) => {
-    const { email, setupKey } = req.body;
+    const { email, password, firstName, lastName, setupKey } = req.body;
     
     const validSetupKey = process.env.SETUP_KEY || "CIMA_ADMIN_SETUP_2024";
     
@@ -82,19 +82,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Invalid setup key" });
     }
 
-    const user = await storage.getUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({ message: "User not found. Please register first." });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const updatedUser = await storage.updateUserRole(user.id, 'admin');
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      return res.status(400).json({ 
+        message: 'Password must contain uppercase, lowercase, number, and special character' 
+      });
+    }
+
+    // Import hashPassword from sessionAuth
+    const { hashPassword } = await import('./sessionAuth');
+    const passwordHash = await hashPassword(password);
+
+    // Check if user exists
+    let user = await storage.getUserByEmail(email);
+    
+    if (user) {
+      // Update existing user to admin with new password
+      await storage.updateUser(user.id, {
+        password: passwordHash,
+        role: 'admin',
+        firstName: firstName || user.firstName,
+        lastName: lastName || user.lastName,
+      });
+      user = await storage.getUser(user.id);
+    } else {
+      // Create new admin user
+      user = await storage.upsertUser({
+        email: email.toLowerCase().trim(),
+        password: passwordHash,
+        firstName: firstName || 'Admin',
+        lastName: lastName || 'User',
+        role: 'admin',
+      });
+    }
+
+    // Create session
+    req.session.userId = user!.id;
     
     res.json({ 
       message: "Admin setup successful", 
       user: { 
-        id: updatedUser.id, 
-        email: updatedUser.email, 
-        role: updatedUser.role 
+        id: user!.id, 
+        email: user!.email, 
+        role: user!.role 
       } 
     });
   }));
