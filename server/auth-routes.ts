@@ -107,6 +107,29 @@ export function registerAuthRoutes(app: Express) {
     });
   }));
 
+  // Get current user
+  app.get('/api/auth/user', asyncHandler(async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await storage.getUser(req.session.userId);
+    if (!user) {
+      req.session.userId = undefined;
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      bio: user.bio,
+      profileImageUrl: user.profileImageUrl,
+    });
+  }));
+
   // Logout
   app.post('/api/auth/logout', asyncHandler(async (req: Request, res: Response) => {
     req.session.destroy((err) => {
