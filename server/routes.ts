@@ -11,7 +11,7 @@ import { createServer, type Server } from "http";
 import express from "express";
 import crypto from "crypto";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./sessionAuth";
 import { requireRole, requireInstructor } from "./middleware/roleProtection";
 import { 
   securityMiddleware, 

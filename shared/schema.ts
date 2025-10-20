@@ -56,17 +56,18 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }), // Password hash (nullable for OAuth-only users)
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role", { enum: ['student', 'instructor', 'admin'] }).default('student'),
   bio: text("bio"),
-  country: varchar("country"),
-  timezone: varchar("timezone"),
+  country: varchar("country", { length: 100 }),
+  timezone: varchar("timezone", { length: 100 }),
   paystackCustomerCode: varchar("paystack_customer_code"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
