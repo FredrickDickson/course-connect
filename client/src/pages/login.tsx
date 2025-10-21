@@ -46,8 +46,14 @@ export default function Login() {
         description: "You've successfully logged in.",
       });
 
-      // Redirect to dashboard or home
-      setLocation("/dashboard");
+      // Redirect based on user role
+      if (data.user.role === 'admin') {
+        window.location.href = "/admin-dashboard";
+      } else if (data.user.role === 'instructor') {
+        window.location.href = "/instructor-dashboard";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during login");
     } finally {

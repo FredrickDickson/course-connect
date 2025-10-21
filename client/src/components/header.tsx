@@ -86,10 +86,16 @@ export default function Header() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <a href="/api/auth/logout" className="cursor-pointer">
+          <button 
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              window.location.href = '/';
+            }}
+            className="cursor-pointer w-full flex items-center"
+          >
             <LogOut className="mr-2 h-4 w-4" />
             {t('nav.logout')}
-          </a>
+          </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -243,12 +249,17 @@ export default function Header() {
                               {t('nav.profile')}
                             </Button>
                           </Link>
-                          <a href="/api/auth/logout">
-                            <Button variant="ghost" className="w-full justify-start">
-                              <LogOut className="mr-3 h-4 w-4" />
-                              {t('nav.logout')}
-                            </Button>
-                          </a>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start"
+                            onClick={async () => {
+                              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+                              window.location.href = '/';
+                            }}
+                          >
+                            <LogOut className="mr-3 h-4 w-4" />
+                            {t('nav.logout')}
+                          </Button>
                         </div>
                       </div>
                     ) : (

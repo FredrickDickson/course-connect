@@ -34,6 +34,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminSetup from "@/pages/admin-setup";
 import BecomeInstructor from "@/pages/become-instructor";
 import CreateCourse from "@/pages/create-course";
+import CourseCurriculum from "@/pages/course-curriculum";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
 import VideoPlayer from "@/pages/video-player";
@@ -95,6 +96,7 @@ function Router() {
           <Route path="/instructor" component={InstructorDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/instructor/courses/new" component={CreateCourse} />
+          <Route path="/instructor/courses/:courseId/curriculum" component={CourseCurriculum} />
           <Route path="/checkout/:courseId" component={Checkout} />
           <Route path="/programs" component={Programs} />
           <Route path="/learn/:courseId/:lessonId" component={VideoPlayer} />

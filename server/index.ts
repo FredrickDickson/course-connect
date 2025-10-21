@@ -3,7 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerAuthRoutes } from "./auth-routes"; // NEW: Import auth routes
 import { setupVite, serveStatic, log } from "./vite";
-import { setupAuth } from "./supabaseAuth";
+import { setupSessionAuth } from "./sessionAuth";
 
 const app = express();
 app.use(express.json());
@@ -41,8 +41,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize Supabase authentication middleware
-  setupAuth(app);
+  // Initialize session authentication
+  setupSessionAuth(app);
+
+  // Register auth routes (NEW)
+  registerAuthRoutes(app);
 
   // Register auth routes (NEW)
   registerAuthRoutes(app);

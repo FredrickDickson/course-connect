@@ -146,6 +146,76 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates (October 2025)
 
+### Complete Udemy-Style LMS Features (October 20, 2025)
+- **Hierarchical Curriculum Builder**: Courses → Modules (Sections) → Lectures structure
+  - Intuitive curriculum management page at `/instructor/courses/:courseId/curriculum`
+  - Expandable sections with lecture lists
+  - Backend API routes for managing modules and lessons with proper ordering
+  - Support for four lecture types: video, text, quiz, assignment
+  
+- **Advanced Content Creation Tools**:
+  - **Video Upload System**: Drag-and-drop uploader with progress tracking
+    - Supports MP4, AVI, MOV, WebM formats up to 500MB
+    - Automatic duration extraction and display
+  - **Rich Text Editor**: Full-featured TipTap editor for articles
+    - Text formatting, lists, alignment, blockquotes, code blocks
+    - Image and link insertion capabilities
+  - **Quiz Builder**: Interactive quiz creation with multiple question types
+    - Multiple choice, true/false, fill-in-the-blank questions
+    - Configurable settings: time limits, passing scores, max attempts
+    - Point allocation per question
+    - Full persistence to database with upsert pattern
+  - **Assignment Builder**: Comprehensive assignment creation
+    - Rich text instructions editor
+    - Flexible submission types: text, file upload, or both
+    - Grading rubrics with criteria and point allocation
+    - Due dates with late submission options
+    - Full persistence to database with upsert pattern
+  - **Resource Attachments**: Downloadable files for any lecture
+    - PDF, DOC, DOCX, TXT, RTF support
+    - File size tracking and organization
+
+- **Drag-and-Drop Reordering**: Intuitive content organization
+  - Two-tier DnD system using @dnd-kit library
+  - Reorder modules within course
+  - Reorder lectures within modules
+  - Optimistic updates via React Query for instant feedback
+  - Backend persistence of new order
+
+- **Duration Tracking**: Automatic course length calculation
+  - Extracts duration from all video lectures
+  - Displays total course duration in curriculum
+  - Real-time updates as videos are added/removed
+
+- **Lecture Preview Mode**: Student-view content preview
+  - Preview videos, articles, quizzes, and assignments
+  - See exactly what students will experience
+  - Test interactive elements before publishing
+  - Access from curriculum page with Eye icon button
+
+- **Course Publishing Workflow**: Quality control system
+  - Draft and published states for courses
+  - Comprehensive validation checklist before publishing:
+    - Course title and description
+    - Price and category assignment
+    - Thumbnail image
+    - At least one section (module)
+    - At least one lecture
+    - At least one video lecture
+  - Publish/unpublish with single button
+  - Real-time validation feedback
+  - Prevents publishing incomplete courses
+
+- **API Endpoints**: Complete backend implementation
+  - `/api/instructor/lessons/:lessonId/quiz` - Quiz persistence
+  - `/api/instructor/lessons/:lessonId/assignment` - Assignment persistence
+  - `/api/instructor/lessons/:lessonId/video` - Video uploads
+  - `/api/instructor/lessons/:lessonId/resources` - Resource attachments
+  - `/api/instructor/modules/:moduleId/lessons` - Lecture CRUD
+  - `/api/instructor/courses/:courseId/validation` - Course validation
+  - `/api/instructor/courses/:courseId/publish` - Publish course
+  - `/api/instructor/courses/:courseId/unpublish` - Unpublish course
+
 ### Database Migration to Supabase
 - Migrated from Neon to Supabase for PostgreSQL hosting
 - Updated database connection to use `postgres` package with Transaction pooler

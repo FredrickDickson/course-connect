@@ -100,7 +100,7 @@ export default function Register() {
       });
 
       // Redirect to dashboard or onboarding
-      setLocation("/dashboard");
+      if (data.user.role === "admin") { window.location.href = "/admin-dashboard"; } else if (data.user.role === "instructor") { window.location.href = "/instructor-dashboard"; } else { window.location.href = "/dashboard"; }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during registration");
     } finally {

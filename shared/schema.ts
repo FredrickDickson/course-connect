@@ -56,17 +56,18 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }), // Password hash (nullable for OAuth-only users)
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role", { enum: ['student', 'instructor', 'admin'] }).default('student'),
   bio: text("bio"),
-  country: varchar("country"),
-  timezone: varchar("timezone"),
+  country: varchar("country", { length: 100 }),
+  timezone: varchar("timezone", { length: 100 }),
   paystackCustomerCode: varchar("paystack_customer_code"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -257,6 +258,21 @@ export const quizResponses = pgTable("quiz_responses", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Course resources (downloadable files attached to lessons or courses)
+export const courseResources = pgTable("course_resources", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: 'cascade' }),
+  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  fileUrl: varchar("file_url").notNull(),
+  fileName: varchar("file_name").notNull(),
+  fileType: varchar("file_type", { length: 50 }),
+  fileSize: integer("file_size"),
+  downloadCount: integer("download_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Assignment tables
 export const assignments = pgTable("assignments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -368,6 +384,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   certifications: many(certifications),
   orders: many(orders),
   favorites: many(favorites),
+  resources: many(courseResources),
 }));
 
 export const modulesRelations = relations(modules, ({ one, many }) => ({
@@ -386,6 +403,18 @@ export const lessonsRelations = relations(lessons, ({ one, many }) => ({
   progress: many(progress),
   quizzes: many(quizzes),
   assignments: many(assignments),
+  resources: many(courseResources),
+}));
+
+export const courseResourcesRelations = relations(courseResources, ({ one }) => ({
+  lesson: one(lessons, {
+    fields: [courseResources.lessonId],
+    references: [lessons.id],
+  }),
+  course: one(courses, {
+    fields: [courseResources.courseId],
+    references: [courses.id],
+  }),
 }));
 
 // Quiz relations
@@ -539,8 +568,14 @@ export type InsertAssignmentSubmission = typeof assignmentSubmissions.$inferInse
 export type InstructorPayout = typeof instructorPayouts.$inferSelect;
 export type InsertInstructorPayout = typeof instructorPayouts.$inferInsert;
 
+// Course resource types
+export type CourseResource = typeof courseResources.$inferSelect;
+export type InsertCourseResource = typeof courseResources.$inferInsert;
+
 // Zod schemas for validation
-export const insertCourseSchema = createInsertSchema(courses).omit({
+export const insertCourseSchema = createInsertSchema(courses, {
+  price: z.union([z.string(), z.number()]).transform(val => String(val)),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -593,6 +628,12 @@ export const insertQuizAttemptSchema = createInsertSchema(quizAttempts).omit({
 });
 
 export const insertQuizResponseSchema = createInsertSchema(quizResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Course resource schema
+export const insertCourseResourceSchema = createInsertSchema(courseResources).omit({
   id: true,
   createdAt: true,
 });

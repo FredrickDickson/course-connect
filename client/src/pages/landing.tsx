@@ -87,7 +87,7 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
                   data-testid="button-explore-programs"
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => window.location.href = '/register'}
                   className="bg-amber-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-amber-600 transition-colors shadow-lg"
                 >
                   {t('landing.getStarted')}

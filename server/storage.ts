@@ -26,6 +26,7 @@ import {
   certifications,
   orders,
   categories,
+  courseResources,
   quizzes,
   quizQuestions,
   quizAnswers,
@@ -59,6 +60,8 @@ import {
   type InsertOrder,
   type Category,
   type InsertCategory,
+  type CourseResource,
+  type InsertCourseResource,
   type Quiz,
   type InsertQuiz,
   type QuizQuestion,
@@ -136,6 +139,16 @@ export interface IStorage {
 
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
+
+  // Curriculum management operations
+  getCourseModules(courseId: string): Promise<any[]>;
+  createModule(module: InsertModule): Promise<Module>;
+  updateModule(id: string, updates: Partial<InsertModule>): Promise<Module>;
+  deleteModule(id: string): Promise<void>;
+  
+  createLesson(lesson: InsertLesson): Promise<Lesson>;
+  updateLesson(id: string, updates: Partial<InsertLesson>): Promise<Lesson>;
+  deleteLesson(id: string): Promise<void>;
   updateOrderStatus(id: string, status: string, paymentIntentId?: string): Promise<Order>;
   updateOrderByReference(reference: string, status: string): Promise<Order>;
   getUserOrders(userId: string): Promise<any[]>;
@@ -302,7 +315,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInstructorCourses(instructorId: string): Promise<any[]> {
-    return await db.select().from(courses).where(eq(courses.instructorId, instructorId));
+    return await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        subtitle: courses.subtitle,
+        description: courses.description,
+        instructorId: courses.instructorId,
+        categoryId: courses.categoryId,
+        level: courses.level,
+        price: courses.price,
+        currency: courses.currency,
+        thumbnailUrl: courses.thumbnailUrl,
+        promoVideoUrl: courses.promoVideoUrl,
+        duration: courses.duration,
+        isPublished: courses.isPublished,
+        isFeatured: courses.isFeatured,
+        avgRating: courses.avgRating,
+        ratingCount: courses.ratingCount,
+        enrollmentCount: courses.enrollmentCount,
+        tags: courses.tags,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+        },
+      })
+      .from(courses)
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .where(eq(courses.instructorId, instructorId));
   }
 
   async getInstructorStats(instructorId: string): Promise<{ totalCourses: number; totalStudents: number; totalRevenue: number; averageRating: number }> {
@@ -712,6 +755,513 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query;
+  }
+
+  // ============================================================================
+  // CURRICULUM MANAGEMENT OPERATIONS
+  // ============================================================================
+
+  async getCourseModules(courseId: string): Promise<any[]> {
+    const modulesList = await db
+      .select()
+      .from(modules)
+      .where(sql`${modules.courseId} = ${courseId}`)
+      .orderBy(modules.order);
+    
+    const modulesWithLessons = await Promise.all(
+      modulesList.map(async (module) => {
+        const lessonsList = await db
+          .select()
+          .from(lessons)
+          .where(sql`${lessons.moduleId} = ${module.id}`)
+          .orderBy(lessons.order);
+        
+        return {
+          ...module,
+          lessons: lessonsList,
+        };
+      })
+    );
+    
+    return modulesWithLessons;
+  }
+
+  async createModule(module: InsertModule): Promise<Module> {
+    const maxOrderResult = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${modules.order}), -1)` })
+      .from(modules)
+      .where(sql`${modules.courseId} = ${module.courseId}`);
+    
+    const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+    
+    const [newModule] = await db
+      .insert(modules)
+      .values({ ...module, order: nextOrder })
+      .returning();
+    
+    return newModule;
+  }
+
+  async updateModule(id: string, updates: Partial<InsertModule>): Promise<Module> {
+    const [updated] = await db
+      .update(modules)
+      .set(updates)
+      .where(eq(modules.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteModule(id: string): Promise<void> {
+    await db.delete(modules).where(eq(modules.id, id));
+  }
+
+  async reorderModules(courseId: string, moduleOrder: string[]): Promise<void> {
+    for (let i = 0; i < moduleOrder.length; i++) {
+      await db
+        .update(modules)
+        .set({ order: i })
+        .where(eq(modules.id, moduleOrder[i]));
+    }
+  }
+
+  async reorderLessons(moduleId: string, lessonOrder: string[]): Promise<void> {
+    for (let i = 0; i < lessonOrder.length; i++) {
+      await db
+        .update(lessons)
+        .set({ order: i })
+        .where(eq(lessons.id, lessonOrder[i]));
+    }
+  }
+
+  async createLesson(lesson: InsertLesson): Promise<Lesson> {
+    const maxOrderResult = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${lessons.order}), -1)` })
+      .from(lessons)
+      .where(sql`${lessons.moduleId} = ${lesson.moduleId}`);
+    
+    const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+    
+    const [newLesson] = await db
+      .insert(lessons)
+      .values({ ...lesson, order: nextOrder })
+      .returning();
+    
+    return newLesson;
+  }
+
+  async updateLesson(id: string, updates: Partial<InsertLesson>): Promise<Lesson> {
+    const [updated] = await db
+      .update(lessons)
+      .set(updates)
+      .where(eq(lessons.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteLesson(id: string): Promise<void> {
+    await db.delete(lessons).where(eq(lessons.id, id));
+  }
+
+  // ============================================================================
+  // COURSE RESOURCES OPERATIONS
+  // ============================================================================
+
+  async createCourseResource(resource: InsertCourseResource): Promise<CourseResource> {
+    const [newResource] = await db
+      .insert(courseResources)
+      .values(resource)
+      .returning();
+    
+    return newResource;
+  }
+
+  async getLessonResources(lessonId: string): Promise<CourseResource[]> {
+    return await db
+      .select()
+      .from(courseResources)
+      .where(eq(courseResources.lessonId, lessonId));
+  }
+
+  async getCourseResources(courseId: string): Promise<CourseResource[]> {
+    return await db
+      .select()
+      .from(courseResources)
+      .where(eq(courseResources.courseId, courseId));
+  }
+
+  async deleteCourseResource(id: string): Promise<void> {
+    await db.delete(courseResources).where(eq(courseResources.id, id));
+  }
+
+  // ============================================================================
+  // QUIZ OPERATIONS
+  // ============================================================================
+
+  async createOrUpdateQuiz(lessonId: string, quizData: any): Promise<any> {
+    // Check if quiz already exists for this lesson
+    const existingQuiz = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lessonId))
+      .limit(1);
+
+    let quiz;
+    if (existingQuiz.length > 0) {
+      // Update existing quiz
+      [quiz] = await db
+        .update(quizzes)
+        .set({
+          title: quizData.title,
+          description: quizData.description,
+          timeLimit: quizData.timeLimit,
+          passingScore: quizData.passingScore,
+          maxAttempts: quizData.maxAttempts,
+        })
+        .where(eq(quizzes.id, existingQuiz[0].id))
+        .returning();
+
+      // Delete existing questions
+      await db.delete(quizQuestions).where(eq(quizQuestions.quizId, quiz.id));
+    } else {
+      // Create new quiz
+      [quiz] = await db
+        .insert(quizzes)
+        .values({
+          lessonId,
+          title: quizData.title,
+          description: quizData.description,
+          timeLimit: quizData.timeLimit,
+          passingScore: quizData.passingScore,
+          maxAttempts: quizData.maxAttempts,
+        })
+        .returning();
+    }
+
+    // Create questions and answers
+    for (const questionData of quizData.questions) {
+      const [question] = await db
+        .insert(quizQuestions)
+        .values({
+          quizId: quiz.id,
+          question: questionData.question,
+          questionType: questionData.questionType,
+          points: questionData.points,
+          order: questionData.order,
+        })
+        .returning();
+
+      // Create answers for this question
+      if (questionData.answers && questionData.answers.length > 0) {
+        for (let i = 0; i < questionData.answers.length; i++) {
+          const answerData = questionData.answers[i];
+          await db.insert(quizAnswers).values({
+            questionId: question.id,
+            answer: answerData.answer,
+            isCorrect: answerData.isCorrect,
+            order: i,
+          });
+        }
+      }
+    }
+
+    return quiz;
+  }
+
+  async getQuizByLessonId(lessonId: string): Promise<any | null> {
+    const quizResults = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lessonId))
+      .limit(1);
+
+    if (quizResults.length === 0) {
+      return null;
+    }
+
+    const quiz = quizResults[0];
+
+    // Get questions
+    const questions = await db
+      .select()
+      .from(quizQuestions)
+      .where(eq(quizQuestions.quizId, quiz.id))
+      .orderBy(quizQuestions.order);
+
+    // Get answers for each question
+    const questionsWithAnswers = await Promise.all(
+      questions.map(async (question) => {
+        const answers = await db
+          .select()
+          .from(quizAnswers)
+          .where(eq(quizAnswers.questionId, question.id))
+          .orderBy(quizAnswers.order);
+
+        return {
+          ...question,
+          answers,
+        };
+      })
+    );
+
+    return {
+      ...quiz,
+      questions: questionsWithAnswers,
+    };
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
+  }
+
+  // ============================================================================
+  // ASSIGNMENT OPERATIONS
+  // ============================================================================
+
+  async createOrUpdateAssignment(lessonId: string, assignmentData: any): Promise<any> {
+    // Check if assignment already exists for this lesson
+    const existingAssignment = await db
+      .select()
+      .from(assignments)
+      .where(eq(assignments.lessonId, lessonId))
+      .limit(1);
+
+    let assignment;
+    if (existingAssignment.length > 0) {
+      // Update existing assignment
+      [assignment] = await db
+        .update(assignments)
+        .set({
+          title: assignmentData.title,
+          description: assignmentData.description,
+          instructions: assignmentData.instructions,
+          maxPoints: assignmentData.maxPoints,
+          dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
+          allowLateSubmission: assignmentData.allowLateSubmission,
+          submissionType: assignmentData.submissionType,
+          rubric: assignmentData.rubric ? JSON.stringify(assignmentData.rubric) : null,
+        })
+        .where(eq(assignments.id, existingAssignment[0].id))
+        .returning();
+    } else {
+      // Create new assignment
+      [assignment] = await db
+        .insert(assignments)
+        .values({
+          lessonId,
+          title: assignmentData.title,
+          description: assignmentData.description,
+          instructions: assignmentData.instructions,
+          maxPoints: assignmentData.maxPoints,
+          dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
+          allowLateSubmission: assignmentData.allowLateSubmission,
+          submissionType: assignmentData.submissionType,
+          rubric: assignmentData.rubric ? JSON.stringify(assignmentData.rubric) : null,
+        })
+        .returning();
+    }
+
+    return assignment;
+  }
+
+  async getAssignmentByLessonId(lessonId: string): Promise<any | null> {
+    const results = await db
+      .select()
+      .from(assignments)
+      .where(eq(assignments.lessonId, lessonId))
+      .limit(1);
+
+    if (results.length === 0) {
+      return null;
+    }
+
+    const assignment = results[0];
+
+    return {
+      ...assignment,
+      rubric: assignment.rubric ? JSON.parse(assignment.rubric as string) : [],
+    };
+  }
+
+  async deleteAssignment(assignmentId: string): Promise<void> {
+    await db.delete(assignments).where(eq(assignments.id, assignmentId));
+  }
+
+  // ============================================================================
+  // QUIZ AND ASSIGNMENT OPERATIONS
+  // ============================================================================
+
+  async createOrUpdateQuiz(lessonId: string, quizData: any) {
+    // Check if quiz already exists for this lesson
+    const existing = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lessonId))
+      .limit(1);
+
+    const quizPayload = {
+      lessonId,
+      title: quizData.title,
+      description: quizData.description,
+      passingScore: quizData.passingScore,
+      timeLimit: quizData.timeLimit,
+      maxAttempts: quizData.maxAttempts,
+      randomizeQuestions: quizData.randomizeQuestions,
+      showResults: quizData.showResults,
+      questions: JSON.stringify(quizData.questions || []),
+    };
+
+    if (existing.length > 0) {
+      // Update existing quiz
+      const [updated] = await db
+        .update(quizzes)
+        .set(quizPayload)
+        .where(eq(quizzes.id, existing[0].id))
+        .returning();
+      
+      return {
+        ...updated,
+        questions: updated.questions ? JSON.parse(updated.questions as string) : [],
+      };
+    } else {
+      // Create new quiz
+      const [created] = await db
+        .insert(quizzes)
+        .values(quizPayload)
+        .returning();
+      
+      return {
+        ...created,
+        questions: created.questions ? JSON.parse(created.questions as string) : [],
+      };
+    }
+  }
+
+  async createOrUpdateAssignment(lessonId: string, assignmentData: any) {
+    // Check if assignment already exists for this lesson
+    const existing = await db
+      .select()
+      .from(assignments)
+      .where(eq(assignments.lessonId, lessonId))
+      .limit(1);
+
+    const assignmentPayload = {
+      lessonId,
+      title: assignmentData.title,
+      description: assignmentData.description,
+      instructions: assignmentData.instructions,
+      maxPoints: assignmentData.maxPoints,
+      dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
+      allowLateSubmission: assignmentData.allowLateSubmission,
+      submissionType: assignmentData.submissionType,
+      rubric: JSON.stringify(assignmentData.rubric || []),
+    };
+
+    if (existing.length > 0) {
+      // Update existing assignment
+      const [updated] = await db
+        .update(assignments)
+        .set(assignmentPayload)
+        .where(eq(assignments.id, existing[0].id))
+        .returning();
+      
+      return {
+        ...updated,
+        rubric: updated.rubric ? JSON.parse(updated.rubric as string) : [],
+      };
+    } else {
+      // Create new assignment
+      const [created] = await db
+        .insert(assignments)
+        .values(assignmentPayload)
+        .returning();
+      
+      return {
+        ...created,
+        rubric: created.rubric ? JSON.parse(created.rubric as string) : [],
+      };
+    }
+  }
+
+  // ============================================================================
+  // COURSE PUBLISHING OPERATIONS
+  // ============================================================================
+
+  async validateCourseForPublishing(courseId: string): Promise<{
+    isValid: boolean;
+    checks: {
+      hasTitle: boolean;
+      hasDescription: boolean;
+      hasPrice: boolean;
+      hasCategory: boolean;
+      hasThumbnail: boolean;
+      hasModules: boolean;
+      hasLectures: boolean;
+      hasVideoContent: boolean;
+    };
+    errors: string[];
+  }> {
+    const course = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
+    if (course.length === 0) {
+      throw new Error('Course not found');
+    }
+
+    const courseData = course[0];
+    const courseModules = await db
+      .select()
+      .from(modules)
+      .where(eq(modules.courseId, courseId));
+    
+    const totalLessons = await db
+      .select()
+      .from(lessons)
+      .where(
+        sql`${lessons.moduleId} IN (SELECT id FROM ${modules} WHERE ${modules.courseId} = ${courseId})`
+      );
+
+    const videoLessons = totalLessons.filter((lesson) => lesson.contentType === 'video');
+
+    const checks = {
+      hasTitle: !!courseData.title && courseData.title.trim().length > 0,
+      hasDescription: !!courseData.description && courseData.description.trim().length > 0,
+      hasPrice: courseData.price !== null && courseData.price !== undefined,
+      hasCategory: !!courseData.categoryId,
+      hasThumbnail: !!courseData.thumbnailUrl,
+      hasModules: courseModules.length > 0,
+      hasLectures: totalLessons.length > 0,
+      hasVideoContent: videoLessons.length > 0,
+    };
+
+    const errors: string[] = [];
+    if (!checks.hasTitle) errors.push('Course must have a title');
+    if (!checks.hasDescription) errors.push('Course must have a description');
+    if (!checks.hasPrice) errors.push('Course must have a price set');
+    if (!checks.hasCategory) errors.push('Course must be assigned to a category');
+    if (!checks.hasThumbnail) errors.push('Course must have a thumbnail image');
+    if (!checks.hasModules) errors.push('Course must have at least one section');
+    if (!checks.hasLectures) errors.push('Course must have at least one lecture');
+    if (!checks.hasVideoContent) errors.push('Course must have at least one video lecture');
+
+    return {
+      isValid: errors.length === 0,
+      checks,
+      errors,
+    };
+  }
+
+  async publishCourse(courseId: string): Promise<void> {
+    await db
+      .update(courses)
+      .set({ isPublished: true, updatedAt: new Date() })
+      .where(eq(courses.id, courseId));
+  }
+
+  async unpublishCourse(courseId: string): Promise<void> {
+    await db
+      .update(courses)
+      .set({ isPublished: false, updatedAt: new Date() })
+      .where(eq(courses.id, courseId));
   }
 }
 

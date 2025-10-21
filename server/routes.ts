@@ -11,7 +11,7 @@ import { createServer, type Server } from "http";
 import express from "express";
 import crypto from "crypto";
 import { storage } from "./storage";
-import { isAuthenticated } from "./supabaseAuth";
+import { isAuthenticated } from "./sessionAuth";
 import { requireRole, requireInstructor } from "./middleware/roleProtection";
 import { 
   securityMiddleware, 
@@ -29,6 +29,11 @@ import {
   handleUploadError,
   getFileUrl,
 } from "./middleware/upload";
+import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import {
   insertCourseSchema,
   insertEnrollmentSchema,
@@ -774,6 +779,380 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     await storage.deleteCourse(id);
     res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // CURRICULUM MANAGEMENT ROUTES (Modules & Lessons)
+  // ============================================================================
+
+  // Get course modules with lessons
+  app.get('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const instructorId = req.user.claims.sub;
+    const { courseId } = req.params;
+    
+    const course = await storage.getCourseById(courseId);
+    if (!course || course.instructorId !== instructorId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const modules = await storage.getCourseModules(courseId);
+    res.json(modules);
+  }));
+
+  // Create a new module
+  app.post('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const instructorId = req.user.claims.sub;
+    const { courseId } = req.params;
+    
+    const course = await storage.getCourseById(courseId);
+    if (!course || course.instructorId !== instructorId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { title, description } = req.body;
+    const module = await storage.createModule({ courseId, title, description, order: 0 });
+    res.status(201).json(module);
+  }));
+
+  // Update a module
+  app.put('/api/instructor/modules/:moduleId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { title, description, order } = req.body;
+    
+    const module = await storage.updateModule(moduleId, { title, description, order });
+    res.json(module);
+  }));
+
+  // Delete a module
+  app.delete('/api/instructor/modules/:moduleId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    await storage.deleteModule(moduleId);
+    res.json({ success: true });
+  }));
+
+  // Reorder modules
+  app.put('/api/instructor/courses/:courseId/modules/reorder', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const { moduleOrder } = req.body;
+    await storage.reorderModules(courseId, moduleOrder);
+    res.json({ success: true });
+  }));
+
+  // Reorder lessons within a module
+  app.put('/api/instructor/modules/:moduleId/lessons/reorder', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { lessonOrder } = req.body;
+    await storage.reorderLessons(moduleId, lessonOrder);
+    res.json({ success: true });
+  }));
+
+  // Create a new lesson
+  app.post('/api/instructor/modules/:moduleId/lessons', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { moduleId } = req.params;
+    const { title, description, contentType, videoUrl, duration, content } = req.body;
+    
+    const lesson = await storage.createLesson({ 
+      moduleId, 
+      title, 
+      description, 
+      contentType, 
+      videoUrl, 
+      duration,
+      content,
+      order: 0 
+    });
+    res.status(201).json(lesson);
+  }));
+
+  // Update a lesson
+  app.put('/api/instructor/lessons/:lessonId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const updates = req.body;
+    
+    const lesson = await storage.updateLesson(lessonId, updates);
+    res.json(lesson);
+  }));
+
+  // Delete a lesson
+  app.delete('/api/instructor/lessons/:lessonId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    await storage.deleteLesson(lessonId);
+    res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // VIDEO & RESOURCE UPLOAD ROUTES
+  // ============================================================================
+
+  // Upload video for a lesson
+  app.post('/api/instructor/lessons/:lessonId/video',
+    isAuthenticated,
+    requireInstructor(),
+    uploadLimiter,
+    videoUpload.single('video'),
+    handleUploadError,
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No video file provided' });
+      }
+
+      const { lessonId } = req.params;
+      const videoUrl = getFileUrl(req, req.file.filename, 'video');
+      
+      // Extract video duration from request body (sent from frontend after processing)
+      const duration = req.body.duration ? parseInt(req.body.duration) : null;
+
+      // Update lesson with video URL and duration
+      const lesson = await storage.updateLesson(lessonId, {
+        videoUrl,
+        duration,
+      });
+
+      res.json({
+        message: 'Video uploaded successfully',
+        videoUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        lesson,
+      });
+    })
+  );
+
+  // Upload resource/attachment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/resources',
+    isAuthenticated,
+    requireInstructor(),
+    uploadLimiter,
+    documentUpload.single('resource'),
+    handleUploadError,
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No resource file provided' });
+      }
+
+      const { lessonId } = req.params;
+      const { title, description } = req.body;
+      
+      const fileUrl = getFileUrl(req, req.file.filename, 'document');
+      const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase() || '';
+
+      // Create resource record in database
+      const resource = await storage.createCourseResource({
+        lessonId,
+        title: title || req.file.originalname,
+        description,
+        fileUrl,
+        fileName: req.file.originalname,
+        fileType: fileExtension,
+        fileSize: req.file.size,
+      });
+
+      res.status(201).json({
+        message: 'Resource uploaded successfully',
+        resource,
+      });
+    })
+  );
+
+  // Get resources for a lesson
+  app.get('/api/lessons/:lessonId/resources', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const resources = await storage.getLessonResources(lessonId);
+    res.json(resources);
+  }));
+
+  // Delete a resource
+  app.delete('/api/instructor/resources/:resourceId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { resourceId } = req.params;
+    await storage.deleteCourseResource(resourceId);
+    res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // OBJECT STORAGE ROUTES (for video uploads to cloud storage)
+  // ============================================================================
+
+  // Get presigned URL for uploading video to object storage
+  app.post('/api/objects/upload', 
+    isAuthenticated, 
+    requireInstructor(),
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    })
+  );
+
+  // Update lesson with video URL after upload to object storage
+  app.put('/api/instructor/lessons/:lessonId/video-url',
+    isAuthenticated,
+    requireInstructor(),
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+      const { lessonId } = req.params;
+      const { videoUrl, duration } = req.body;
+
+      if (!videoUrl) {
+        return res.status(400).json({ error: 'videoUrl is required' });
+      }
+
+      const userId = req.user.claims.sub;
+
+      try {
+        const objectStorageService = new ObjectStorageService();
+        // Normalize the object path and set ACL policy
+        const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          videoUrl,
+          {
+            owner: userId,
+            visibility: "public", // Videos are public so students can view them
+          }
+        );
+
+        // Update lesson with the normalized video path and duration
+        const lesson = await storage.updateLesson(lessonId, {
+          videoUrl: normalizedPath,
+          duration: duration || null,
+        });
+
+        res.json({
+          message: 'Video URL updated successfully',
+          objectPath: normalizedPath,
+          lesson,
+        });
+      } catch (error) {
+        console.error('Error updating lesson video URL:', error);
+        res.status(500).json({ error: 'Failed to update video URL' });
+      }
+    })
+  );
+
+  // Serve videos from object storage
+  app.get('/objects/:objectPath(*)', 
+    asyncHandler(async (req: Request, res: Response) => {
+      const objectStorageService = new ObjectStorageService();
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(
+          req.path
+        );
+        
+        // Videos are public, so we don't need authentication check
+        // The ACL policy is set to public when the video is uploaded
+        objectStorageService.downloadObject(objectFile, res);
+      } catch (error) {
+        console.error('Error accessing object:', error);
+        if (error instanceof ObjectNotFoundError) {
+          return res.sendStatus(404);
+        }
+        return res.sendStatus(500);
+      }
+    })
+  );
+
+  // ============================================================================
+  // QUIZ MANAGEMENT ROUTES
+  // ============================================================================
+
+  // Create or update quiz for a lesson
+  app.post('/api/instructor/lessons/:lessonId/quiz', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quizData = req.body;
+
+    const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
+    res.status(201).json(quiz);
+  }));
+
+  // Get quiz for a lesson
+  app.get('/api/lessons/:lessonId/quiz', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quiz = await storage.getQuizByLessonId(lessonId);
+    res.json(quiz);
+  }));
+
+  // Delete quiz
+  app.delete('/api/instructor/quizzes/:quizId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { quizId } = req.params;
+    await storage.deleteQuiz(quizId);
+    res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // ASSIGNMENT MANAGEMENT ROUTES
+  // ============================================================================
+
+  // Create or update assignment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/assignment', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignmentData = req.body;
+
+    const assignment = await storage.createOrUpdateAssignment(lessonId, assignmentData);
+    res.status(201).json(assignment);
+  }));
+
+  // Get assignment for a lesson
+  app.get('/api/lessons/:lessonId/assignment', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignment = await storage.getAssignmentByLessonId(lessonId);
+    res.json(assignment);
+  }));
+
+  // Delete assignment
+  app.delete('/api/instructor/assignments/:assignmentId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { assignmentId } = req.params;
+    await storage.deleteAssignment(assignmentId);
+    res.json({ success: true });
+  }));
+
+  // ============================================================================
+  // COURSE PUBLISHING ROUTES
+  // ============================================================================
+
+  // Validate course before publishing
+  app.get('/api/instructor/courses/:courseId/validation', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const validation = await storage.validateCourseForPublishing(courseId);
+    res.json(validation);
+  }));
+
+  // Publish course
+  app.post('/api/instructor/courses/:courseId/publish', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    const validation = await storage.validateCourseForPublishing(courseId);
+    
+    if (!validation.isValid) {
+      res.status(400).json({ 
+        error: 'Course validation failed', 
+        validation 
+      });
+      return;
+    }
+
+    await storage.publishCourse(courseId);
+    res.json({ success: true, message: 'Course published successfully' });
+  }));
+
+  // Unpublish course
+  app.post('/api/instructor/courses/:courseId/unpublish', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { courseId } = req.params;
+    await storage.unpublishCourse(courseId);
+    res.json({ success: true, message: 'Course unpublished successfully' });
+  }));
+
+  // Create or update quiz for a lesson
+  app.post('/api/instructor/lessons/:lessonId/quiz', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const quizData = req.body;
+    
+    const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
+    res.json(quiz);
+  }));
+
+  // Create or update assignment for a lesson
+  app.post('/api/instructor/lessons/:lessonId/assignment', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { lessonId } = req.params;
+    const assignmentData = req.body;
+    
+    const assignment = await storage.createOrUpdateAssignment(lessonId, assignmentData);
+    res.json(assignment);
   }));
 
   // Quiz routes
