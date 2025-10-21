@@ -37,6 +37,8 @@ export function PublishCourseDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'validation'] });
       toast({
         title: 'Course Published!',
         description: 'Your course is now live and visible to students.',
@@ -59,6 +61,8 @@ export function PublishCourseDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'validation'] });
       toast({
         title: 'Course Unpublished',
         description: 'Your course is now hidden from students.',

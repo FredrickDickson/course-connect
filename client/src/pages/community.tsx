@@ -261,7 +261,7 @@ export default function Community() {
                         <SelectValue placeholder="All Courses" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Courses</SelectItem>
+                        <SelectItem value="all">All Courses</SelectItem>
                         {enrollments.map((enrollment: any) => (
                           <SelectItem key={enrollment.course.id} value={enrollment.course.id}>
                             {enrollment.course.title}
