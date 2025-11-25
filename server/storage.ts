@@ -367,12 +367,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInstructorStats(instructorId: string): Promise<{ totalCourses: number; totalStudents: number; totalRevenue: number; averageRating: number }> {
-    const courseCount = await db.select({ count: count() }).from(courses).where(eq(courses.instructorId, instructorId));
+    const instructorCourses = await db.select({ id: courses.id, price: courses.price }).from(courses).where(eq(courses.instructorId, instructorId));
+    const courseIds = instructorCourses.map(c => c.id);
+
+    const totalCourses = instructorCourses.length;
+
+    let totalStudents = 0;
+    if (courseIds.length > 0) {
+      const [studentCount] = await db
+        .select({ count: count(sql`DISTINCT ${enrollments.userId}`) })
+        .from(enrollments)
+        .where(sql`${enrollments.courseId} IN ${courseIds}`);
+      totalStudents = studentCount.count;
+    }
+
+    let totalRevenue = 0;
+    if (courseIds.length > 0) {
+      const instructorOrders = await db
+        .select({ total: orders.total })
+        .from(orders)
+        .where(and(
+          sql`${orders.courseId} IN ${courseIds}`,
+          eq(orders.status, 'completed')
+        ));
+      totalRevenue = instructorOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    }
+    
+    let averageRating = 0;
+    if (courseIds.length > 0) {
+      const [avgRating] = await db
+        .select({ avg: avg(reviews.rating) })
+        .from(reviews)
+        .where(sql`${reviews.courseId} IN ${courseIds}`);
+      averageRating = Number(avgRating.avg) || 0;
+    }
+
     return {
-      totalCourses: courseCount[0]?.count || 0,
-      totalStudents: 0,
-      totalRevenue: 0,
-      averageRating: 0,
+      totalCourses,
+      totalStudents,
+      totalRevenue,
+      averageRating,
     };
   }
 
@@ -415,11 +449,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserProgress(userId: string, courseId: string): Promise<any[]> {
-    return [];
+    const userProgress = await db
+      .select()
+      .from(progress)
+      .leftJoin(lessons, eq(progress.lessonId, lessons.id))
+      .where(and(eq(progress.userId, userId), eq(lessons.courseId, courseId)));
+
+    return userProgress.map(p => ({
+      ...p.progress,
+      lesson: p.lesson,
+    }));
   }
 
   async getUserOverallProgress(userId: string): Promise<{ totalCourses: number; completedCourses: number; totalHours: number }> {
-    return { totalCourses: 0, completedCourses: 0, totalHours: 0 };
+    const userEnrollments = await db
+      .select({
+        progress: enrollments.progress,
+        duration: courses.duration,
+      })
+      .from(enrollments)
+      .leftJoin(courses, eq(enrollments.courseId, courses.id))
+      .where(eq(enrollments.userId, userId));
+
+    const totalCourses = userEnrollments.length;
+    const completedCourses = userEnrollments.filter(e => Number(e.progress) >= 100).length;
+    const totalHours = userEnrollments.reduce((sum, e) => sum + (e.duration || 0), 0);
+
+    return { totalCourses, completedCourses, totalHours };
   }
 
   // ============================================================================
@@ -432,11 +488,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCourseReviews(courseId: string): Promise<any[]> {
-    return [];
+    const courseReviews = await db
+      .select({
+        review: reviews,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        }
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(eq(reviews.courseId, courseId))
+      .orderBy(desc(reviews.createdAt));
+
+    return courseReviews.map(r => ({
+      ...r.review,
+      user: r.user,
+    }));
   }
 
   async updateCourseRating(courseId: string): Promise<void> {
-    // Stub
+    const [stats] = await db
+      .select({
+        avgRating: avg(reviews.rating),
+        ratingCount: count(reviews.id),
+      })
+      .from(reviews)
+      .where(eq(reviews.courseId, courseId));
+
+    await db
+      .update(courses)
+      .set({
+        avgRating: Number(stats.avgRating) || 0,
+        ratingCount: stats.ratingCount,
+      })
+      .where(eq(courses.id, courseId));
   }
 
   // ============================================================================
@@ -449,7 +537,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCourseDiscussions(courseId: string): Promise<any[]> {
-    return [];
+    const courseDiscussions = await db
+      .select({
+        discussion: discussions,
+        author: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+        replyCount: count(replies.id),
+      })
+      .from(discussions)
+      .leftJoin(users, eq(discussions.userId, users.id))
+      .leftJoin(replies, eq(discussions.id, replies.discussionId))
+      .where(eq(discussions.courseId, courseId))
+      .groupBy(discussions.id, users.id)
+      .orderBy(desc(discussions.createdAt));
+
+    return courseDiscussions.map(d => ({
+      ...d.discussion,
+      author: d.author,
+      replyCount: d.replyCount,
+    }));
   }
 
   async createReply(reply: InsertReply): Promise<Reply> {
@@ -458,7 +568,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDiscussionReplies(discussionId: string): Promise<any[]> {
-    return [];
+    const discussionReplies = await db
+      .select({
+        reply: replies,
+        author: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(replies)
+      .leftJoin(users, eq(replies.userId, users.id))
+      .where(eq(replies.discussionId, discussionId))
+      .orderBy(desc(replies.createdAt));
+
+    return discussionReplies.map(r => ({
+      ...r.reply,
+      author: r.author,
+    }));
   }
 
   // ============================================================================
@@ -471,7 +599,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserCertifications(userId: string): Promise<any[]> {
-    return [];
+    const userCertifications = await db
+      .select({
+        certification: certifications,
+        course: {
+          id: courses.id,
+          title: courses.title,
+          thumbnailUrl: courses.thumbnailUrl,
+        }
+      })
+      .from(certifications)
+      .leftJoin(courses, eq(certifications.courseId, courses.id))
+      .where(eq(certifications.userId, userId))
+      .orderBy(desc(certifications.issuedAt));
+
+    return userCertifications.map(c => ({
+      ...c.certification,
+      course: c.course,
+    }));
   }
 
   // ============================================================================
@@ -911,199 +1056,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCourseResource(id: string): Promise<void> {
     await db.delete(courseResources).where(eq(courseResources.id, id));
-  }
-
-  // ============================================================================
-  // QUIZ OPERATIONS
-  // ============================================================================
-
-  async createOrUpdateQuiz(lessonId: string, quizData: any): Promise<any> {
-    // Check if quiz already exists for this lesson
-    const existingQuiz = await db
-      .select()
-      .from(quizzes)
-      .where(eq(quizzes.lessonId, lessonId))
-      .limit(1);
-
-    let quiz;
-    if (existingQuiz.length > 0) {
-      // Update existing quiz
-      [quiz] = await db
-        .update(quizzes)
-        .set({
-          title: quizData.title,
-          description: quizData.description,
-          timeLimit: quizData.timeLimit,
-          passingScore: quizData.passingScore,
-          maxAttempts: quizData.maxAttempts,
-        })
-        .where(eq(quizzes.id, existingQuiz[0].id))
-        .returning();
-
-      // Delete existing questions
-      await db.delete(quizQuestions).where(eq(quizQuestions.quizId, quiz.id));
-    } else {
-      // Create new quiz
-      [quiz] = await db
-        .insert(quizzes)
-        .values({
-          lessonId,
-          title: quizData.title,
-          description: quizData.description,
-          timeLimit: quizData.timeLimit,
-          passingScore: quizData.passingScore,
-          maxAttempts: quizData.maxAttempts,
-        })
-        .returning();
-    }
-
-    // Create questions and answers
-    for (const questionData of quizData.questions) {
-      const [question] = await db
-        .insert(quizQuestions)
-        .values({
-          quizId: quiz.id,
-          question: questionData.question,
-          questionType: questionData.questionType,
-          points: questionData.points,
-          order: questionData.order,
-        })
-        .returning();
-
-      // Create answers for this question
-      if (questionData.answers && questionData.answers.length > 0) {
-        for (let i = 0; i < questionData.answers.length; i++) {
-          const answerData = questionData.answers[i];
-          await db.insert(quizAnswers).values({
-            questionId: question.id,
-            answer: answerData.answer,
-            isCorrect: answerData.isCorrect,
-            order: i,
-          });
-        }
-      }
-    }
-
-    return quiz;
-  }
-
-  async getQuizByLessonId(lessonId: string): Promise<any | null> {
-    const quizResults = await db
-      .select()
-      .from(quizzes)
-      .where(eq(quizzes.lessonId, lessonId))
-      .limit(1);
-
-    if (quizResults.length === 0) {
-      return null;
-    }
-
-    const quiz = quizResults[0];
-
-    // Get questions
-    const questions = await db
-      .select()
-      .from(quizQuestions)
-      .where(eq(quizQuestions.quizId, quiz.id))
-      .orderBy(quizQuestions.order);
-
-    // Get answers for each question
-    const questionsWithAnswers = await Promise.all(
-      questions.map(async (question) => {
-        const answers = await db
-          .select()
-          .from(quizAnswers)
-          .where(eq(quizAnswers.questionId, question.id))
-          .orderBy(quizAnswers.order);
-
-        return {
-          ...question,
-          answers,
-        };
-      })
-    );
-
-    return {
-      ...quiz,
-      questions: questionsWithAnswers,
-    };
-  }
-
-  async deleteQuiz(quizId: string): Promise<void> {
-    await db.delete(quizzes).where(eq(quizzes.id, quizId));
-  }
-
-  // ============================================================================
-  // ASSIGNMENT OPERATIONS
-  // ============================================================================
-
-  async createOrUpdateAssignment(lessonId: string, assignmentData: any): Promise<any> {
-    // Check if assignment already exists for this lesson
-    const existingAssignment = await db
-      .select()
-      .from(assignments)
-      .where(eq(assignments.lessonId, lessonId))
-      .limit(1);
-
-    let assignment;
-    if (existingAssignment.length > 0) {
-      // Update existing assignment
-      [assignment] = await db
-        .update(assignments)
-        .set({
-          title: assignmentData.title,
-          description: assignmentData.description,
-          instructions: assignmentData.instructions,
-          maxPoints: assignmentData.maxPoints,
-          dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
-          allowLateSubmission: assignmentData.allowLateSubmission,
-          submissionType: assignmentData.submissionType,
-          rubric: assignmentData.rubric ? JSON.stringify(assignmentData.rubric) : null,
-        })
-        .where(eq(assignments.id, existingAssignment[0].id))
-        .returning();
-    } else {
-      // Create new assignment
-      [assignment] = await db
-        .insert(assignments)
-        .values({
-          lessonId,
-          title: assignmentData.title,
-          description: assignmentData.description,
-          instructions: assignmentData.instructions,
-          maxPoints: assignmentData.maxPoints,
-          dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
-          allowLateSubmission: assignmentData.allowLateSubmission,
-          submissionType: assignmentData.submissionType,
-          rubric: assignmentData.rubric ? JSON.stringify(assignmentData.rubric) : null,
-        })
-        .returning();
-    }
-
-    return assignment;
-  }
-
-  async getAssignmentByLessonId(lessonId: string): Promise<any | null> {
-    const results = await db
-      .select()
-      .from(assignments)
-      .where(eq(assignments.lessonId, lessonId))
-      .limit(1);
-
-    if (results.length === 0) {
-      return null;
-    }
-
-    const assignment = results[0];
-
-    return {
-      ...assignment,
-      rubric: assignment.rubric ? JSON.parse(assignment.rubric as string) : [],
-    };
-  }
-
-  async deleteAssignment(assignmentId: string): Promise<void> {
-    await db.delete(assignments).where(eq(assignments.id, assignmentId));
   }
 
   // ============================================================================

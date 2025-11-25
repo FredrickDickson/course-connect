@@ -47,9 +47,6 @@ app.use((req, res, next) => {
   // Register auth routes (NEW)
   registerAuthRoutes(app);
 
-  // Register auth routes (NEW)
-  registerAuthRoutes(app);
-
   // Register API routes
   const server = await registerRoutes(app);
 
