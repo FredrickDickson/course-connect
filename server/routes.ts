@@ -1121,7 +1121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete quiz
   app.delete('/api/instructor/quizzes/:quizId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { quizId } = req.params;
-    await storage.deleteQuiz(quizId);
+    // Delete quiz by removing from DB directly
+    const { db } = await import('./db');
+    const { quizzes } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
     res.json({ success: true });
   }));
 
