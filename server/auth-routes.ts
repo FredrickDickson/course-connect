@@ -117,7 +117,6 @@ export function registerAuthRoutes(app: Express) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         role: 'student',
-        emailVerified: true,
       });
 
       res.status(201).json({
