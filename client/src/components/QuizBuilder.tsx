@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, GripVertical, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { QuizBulkImport } from '@/components/QuizBulkImport';
 
 interface QuizQuestion {
   id: string;
