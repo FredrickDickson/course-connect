@@ -63,35 +63,20 @@ export default function AdminSetup() {
   });
 
   const onSubmit = async (data: AdminSetupForm) => {
-    if (data.setupKey !== SETUP_KEY) {
-      toast({
-        title: "Invalid Setup Key",
-        description: "The setup key you entered is incorrect.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: { first_name: data.firstName, last_name: data.lastName },
+      const { data: result, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password,
+          setupKey: data.setupKey,
         },
       });
-      if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error("Failed to create user account");
 
-      const { error: insertError } = await supabase.from("users").upsert({
-        id: authData.user.id,
-        email: data.email,
-        first_name: data.firstName,
-        last_name: data.lastName,
-        role: "admin",
-      });
-      if (insertError) throw insertError;
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
 
       toast({
         title: "Admin Setup Complete",
