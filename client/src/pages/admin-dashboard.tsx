@@ -151,6 +151,40 @@ export default function AdminDashboard() {
     },
   });
 
+  const handleCreateAdmin = async () => {
+    if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || !newAdmin.password) {
+      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      return;
+    }
+    if (newAdmin.password.length < 8) {
+      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    setIsCreatingAdmin(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
+          firstName: newAdmin.firstName,
+          lastName: newAdmin.lastName,
+          email: newAdmin.email,
+          password: newAdmin.password,
+          createByAdmin: true,
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      toast({ title: "Admin Created", description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.` });
+      setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
+      setShowCreateAdmin(false);
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+    } catch (error: any) {
+      toast({ title: "Failed", description: error.message || "Could not create admin", variant: "destructive" });
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
