@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -44,9 +44,56 @@ export function LectureContentEditor({
     lesson?.contentType || 'video'
   );
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || '');
+  const [videoDuration, setVideoDuration] = useState(lesson?.duration || 0);
   const [articleContent, setArticleContent] = useState(lesson?.content || '');
   const [saving, setSaving] = useState(false);
+  const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
   const { toast } = useToast();
+
+  // Reset state when lesson prop changes
+  useEffect(() => {
+    setTitle(lesson?.title || '');
+    setDescription(lesson?.description || '');
+    setContentType(lesson?.contentType || 'video');
+    setVideoUrl(lesson?.videoUrl || '');
+    setVideoDuration(lesson?.duration || 0);
+    setArticleContent(lesson?.content || '');
+    setSavedLessonId(lesson?.id || null);
+  }, [lesson]);
+
+  // Auto-save to create the lesson so video/quiz/assignment can be attached immediately
+  const ensureLessonExists = async (): Promise<string> => {
+    if (savedLessonId) return savedLessonId;
+
+    if (!title.trim()) {
+      throw new Error('Please enter a lecture title first');
+    }
+
+    const { data: existing } = await supabase
+      .from('lessons')
+      .select('order')
+      .eq('module_id', moduleId)
+      .order('order', { ascending: false })
+      .limit(1);
+
+    const nextOrder = (existing?.[0]?.order || 0) + 1;
+
+    const { data, error } = await supabase
+      .from('lessons')
+      .insert({
+        title,
+        description: description || null,
+        content_type: contentType,
+        module_id: moduleId,
+        order: nextOrder,
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    setSavedLessonId(data.id);
+    return data.id;
+  };
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -63,17 +110,16 @@ export function LectureContentEditor({
         content_type: contentType,
         video_url: contentType === 'video' ? videoUrl || null : null,
         content: contentType === 'text' ? articleContent || null : null,
+        duration_seconds: contentType === 'video' ? videoDuration || null : null,
       };
 
-      if (lesson?.id) {
+      if (savedLessonId) {
         const { error } = await supabase
           .from('lessons')
           .update(lessonData)
-          .eq('id', lesson.id);
+          .eq('id', savedLessonId);
         if (error) throw error;
-        toast({ title: 'Success', description: 'Lecture updated successfully' });
       } else {
-        // Get max order for this module
         const { data: existing } = await supabase
           .from('lessons')
           .select('order')
@@ -83,13 +129,16 @@ export function LectureContentEditor({
 
         const nextOrder = (existing?.[0]?.order || 0) + 1;
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('lessons')
-          .insert({ ...lessonData, module_id: moduleId, order: nextOrder });
+          .insert({ ...lessonData, module_id: moduleId, order: nextOrder })
+          .select('id')
+          .single();
         if (error) throw error;
-        toast({ title: 'Success', description: 'Lecture created successfully' });
+        setSavedLessonId(data.id);
       }
 
+      toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
       onSave();
       onOpenChange(false);
     } catch (error) {
@@ -104,13 +153,40 @@ export function LectureContentEditor({
     }
   };
 
+  const handleVideoUpload = async (url: string, duration?: number) => {
+    setVideoUrl(url);
+    if (duration) setVideoDuration(duration);
+
+    // Auto-save video URL to lesson if it exists
+    if (savedLessonId && url) {
+      await supabase.from('lessons').update({
+        video_url: url,
+        duration_seconds: duration || null,
+      }).eq('id', savedLessonId);
+    }
+  };
+
+  const handleTabChange = async (value: string) => {
+    setContentType(value as any);
+    // For quiz/assignment tabs, auto-save the lesson first if it has a title
+    if ((value === 'quiz' || value === 'assignment' || value === 'video') && !savedLessonId && title.trim()) {
+      try {
+        await ensureLessonExists();
+      } catch (err) {
+        // Ignore - user hasn't entered title yet
+      }
+    }
+  };
+
+  const currentLessonId = savedLessonId;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-lecture-editor">
         <DialogHeader>
           <DialogTitle>{lesson ? 'Edit Lecture' : 'Add New Lecture'}</DialogTitle>
           <DialogDescription>
-            Create engaging content for your students with videos, articles, quizzes, or assignments.
+            Create engaging content for your students. Enter a title and start adding content immediately.
           </DialogDescription>
         </DialogHeader>
 
@@ -128,7 +204,7 @@ export function LectureContentEditor({
 
           <div>
             <Label className="mb-3 block">Lecture Type</Label>
-            <Tabs value={contentType} onValueChange={(value) => setContentType(value as any)}>
+            <Tabs value={contentType} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
                 <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
@@ -137,15 +213,11 @@ export function LectureContentEditor({
               </TabsList>
 
               <TabsContent value="video" className="mt-6">
-                {lesson?.id ? (
-                  <VideoUploader lessonId={lesson.id} currentVideoUrl={videoUrl} onUploadComplete={(url) => setVideoUrl(url)} />
-                ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
-                    <Video className="w-12 h-12 mx-auto mb-4 text-amber-600" />
-                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable video upload</p>
-                    <p className="text-sm text-amber-700">Please save this lecture, then click Edit to upload videos</p>
-                  </div>
-                )}
+                <VideoUploader
+                  lessonId={currentLessonId || undefined}
+                  currentVideoUrl={videoUrl}
+                  onUploadComplete={handleVideoUpload}
+                />
               </TabsContent>
 
               <TabsContent value="text" className="mt-6">
@@ -153,10 +225,10 @@ export function LectureContentEditor({
               </TabsContent>
 
               <TabsContent value="quiz" className="mt-6">
-                {lesson?.id ? (
-                  <QuizBuilder lessonId={lesson.id} onSave={async (quizData) => {
+                {currentLessonId ? (
+                  <QuizBuilder lessonId={currentLessonId} onSave={async (quizData) => {
                     try {
-                      const { error } = await supabase.from('quizzes').insert({ ...quizData, lesson_id: lesson.id });
+                      const { error } = await supabase.from('quizzes').insert({ ...quizData, lesson_id: currentLessonId });
                       if (error) throw error;
                       toast({ title: 'Success', description: 'Quiz saved successfully' });
                     } catch (error) {
@@ -164,18 +236,28 @@ export function LectureContentEditor({
                     }
                   }} />
                 ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
-                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-amber-600" />
-                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable quiz creation</p>
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="font-medium mb-2">Enter a lecture title first</p>
+                    <p className="text-sm text-muted-foreground">Type a title above, then the quiz builder will appear automatically</p>
+                    {title.trim() && (
+                      <Button className="mt-4" onClick={async () => {
+                        try { await ensureLessonExists(); } catch (err) {
+                          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                        }
+                      }}>
+                        Create Lecture & Add Quiz
+                      </Button>
+                    )}
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="assignment" className="mt-6">
-                {lesson?.id ? (
-                  <AssignmentBuilder lessonId={lesson.id} onSave={async (assignmentData) => {
+                {currentLessonId ? (
+                  <AssignmentBuilder lessonId={currentLessonId} onSave={async (assignmentData) => {
                     try {
-                      const { error } = await supabase.from('assignments').insert({ ...assignmentData, lesson_id: lesson.id });
+                      const { error } = await supabase.from('assignments').insert({ ...assignmentData, lesson_id: currentLessonId });
                       if (error) throw error;
                       toast({ title: 'Success', description: 'Assignment saved successfully' });
                     } catch (error) {
@@ -183,9 +265,19 @@ export function LectureContentEditor({
                     }
                   }} />
                 ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
-                    <FileUp className="w-12 h-12 mx-auto mb-4 text-amber-600" />
-                    <p className="text-amber-900 font-medium mb-2">Save lecture first to enable assignment creation</p>
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                    <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="font-medium mb-2">Enter a lecture title first</p>
+                    <p className="text-sm text-muted-foreground">Type a title above, then the assignment builder will appear automatically</p>
+                    {title.trim() && (
+                      <Button className="mt-4" onClick={async () => {
+                        try { await ensureLessonExists(); } catch (err) {
+                          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                        }
+                      }}>
+                        Create Lecture & Add Assignment
+                      </Button>
+                    )}
                   </div>
                 )}
               </TabsContent>
