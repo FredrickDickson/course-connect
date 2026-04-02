@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CIMA Learn - Professional ADR Education Platform
 
 A comprehensive Udemy-style Learning Management System (LMS) for the Center for International Mediators and Arbitrators (CIMA), providing world-class Alternative Dispute Resolution (ADR) training and certification programs with full instructor capabilities, course creation tools, student enrollment systems, and complete administrative oversight.
@@ -350,3 +351,8 @@ The Center for International Mediators and Arbitrators is a leading institution 
 
 *Last updated: January 26, 2025*# cima_study
 # cima_study
+=======
+# Welcome to your Lovable project
+
+TODO: Document your project here
+>>>>>>> 1a8480473c6676f6c957dca85f5187aec1355536
