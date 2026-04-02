@@ -320,7 +320,31 @@ export default function AdminDashboard() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
-            <h2 className="text-2xl font-bold">User Management</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">User Management</h2>
+              <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+                <DialogTrigger asChild>
+                  <Button><UserPlus className="w-4 h-4 mr-2" />Create Admin</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5" />Create Admin Account</DialogTitle>
+                    <DialogDescription>Create a new administrator account with full platform access.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>First Name</Label><Input value={newAdmin.firstName} onChange={e => setNewAdmin(p => ({...p, firstName: e.target.value}))} placeholder="First name" /></div>
+                      <div><Label>Last Name</Label><Input value={newAdmin.lastName} onChange={e => setNewAdmin(p => ({...p, lastName: e.target.value}))} placeholder="Last name" /></div>
+                    </div>
+                    <div><Label>Email</Label><Input type="email" value={newAdmin.email} onChange={e => setNewAdmin(p => ({...p, email: e.target.value}))} placeholder="admin@cimalearn.org" /></div>
+                    <div><Label>Password</Label><Input type="password" value={newAdmin.password} onChange={e => setNewAdmin(p => ({...p, password: e.target.value}))} placeholder="Min 8 characters" /></div>
+                    <Button className="w-full" onClick={handleCreateAdmin} disabled={isCreatingAdmin}>
+                      {isCreatingAdmin ? "Creating..." : "Create Admin Account"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             {usersLoading ? (
               <Card className="animate-pulse"><CardContent className="p-6"><div className="h-40 bg-muted rounded" /></CardContent></Card>
             ) : (
