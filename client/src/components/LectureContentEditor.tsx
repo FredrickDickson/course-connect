@@ -11,7 +11,7 @@ import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
 import { Video, FileText, ClipboardCheck, FileUp, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LectureContentEditorProps {
   open: boolean;
@@ -50,49 +50,45 @@ export function LectureContentEditor({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter a lecture title',
-        variant: 'destructive',
-      });
+      toast({ title: 'Validation Error', description: 'Please enter a lecture title', variant: 'destructive' });
       return;
     }
 
     setSaving(true);
 
     try {
+      const lessonData = {
+        title,
+        description: description || null,
+        content_type: contentType,
+        video_url: contentType === 'video' ? videoUrl || null : null,
+        content: contentType === 'text' ? articleContent || null : null,
+      };
+
       if (lesson?.id) {
-        // Update existing lesson
-        await apiRequest('PUT', `/api/instructor/lessons/${lesson.id}`, {
-          title,
-          description,
-          contentType,
-          videoUrl: contentType === 'video' ? videoUrl : undefined,
-          content: contentType === 'text' ? articleContent : undefined,
-        });
-
-        toast({
-          title: 'Success',
-          description: 'Lecture updated successfully',
-        });
+        const { error } = await supabase
+          .from('lessons')
+          .update(lessonData)
+          .eq('id', lesson.id);
+        if (error) throw error;
+        toast({ title: 'Success', description: 'Lecture updated successfully' });
       } else {
-        // Create new lesson
-        await apiRequest('POST', `/api/instructor/modules/${moduleId}/lessons`, {
-          title,
-          description,
-          contentType,
-          videoUrl: contentType === 'video' ? videoUrl : undefined,
-          content: contentType === 'text' ? articleContent : undefined,
-        });
+        // Get max order for this module
+        const { data: existing } = await supabase
+          .from('lessons')
+          .select('order')
+          .eq('module_id', moduleId)
+          .order('order', { ascending: false })
+          .limit(1);
 
-        toast({
-          title: 'Success',
-          description: 'Lecture created successfully',
-        });
+        const nextOrder = (existing?.[0]?.order || 0) + 1;
+
+        const { error } = await supabase
+          .from('lessons')
+          .insert({ ...lessonData, module_id: moduleId, order: nextOrder });
+        if (error) throw error;
+        toast({ title: 'Success', description: 'Lecture created successfully' });
       }
-
-      // Invalidate curriculum cache
-      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses', courseId, 'modules'] });
 
       onSave();
       onOpenChange(false);
@@ -122,25 +118,11 @@ export function LectureContentEditor({
           <div className="space-y-4">
             <div>
               <Label htmlFor="lecture-title">Lecture Title *</Label>
-              <Input
-                id="lecture-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Introduction to Mediation"
-                data-testid="input-title"
-              />
+              <Input id="lecture-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Introduction to Mediation" data-testid="input-title" />
             </div>
-
             <div>
               <Label htmlFor="lecture-description">Description (Optional)</Label>
-              <Textarea
-                id="lecture-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of what students will learn"
-                rows={2}
-                data-testid="input-description"
-              />
+              <Textarea id="lecture-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of what students will learn" rows={2} data-testid="input-description" />
             </div>
           </div>
 
@@ -148,108 +130,62 @@ export function LectureContentEditor({
             <Label className="mb-3 block">Lecture Type</Label>
             <Tabs value={contentType} onValueChange={(value) => setContentType(value as any)}>
               <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="video" data-testid="tab-video">
-                  <Video className="w-4 h-4 mr-2" />
-                  Video
-                </TabsTrigger>
-                <TabsTrigger value="text" data-testid="tab-text">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Article
-                </TabsTrigger>
-                <TabsTrigger value="quiz" data-testid="tab-quiz">
-                  <ClipboardCheck className="w-4 h-4 mr-2" />
-                  Quiz
-                </TabsTrigger>
-                <TabsTrigger value="assignment" data-testid="tab-assignment">
-                  <FileUp className="w-4 h-4 mr-2" />
-                  Assignment
-                </TabsTrigger>
+                <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
+                <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
+                <TabsTrigger value="quiz"><ClipboardCheck className="w-4 h-4 mr-2" />Quiz</TabsTrigger>
+                <TabsTrigger value="assignment"><FileUp className="w-4 h-4 mr-2" />Assignment</TabsTrigger>
               </TabsList>
 
               <TabsContent value="video" className="mt-6">
                 {lesson?.id ? (
-                  <VideoUploader
-                    lessonId={lesson.id}
-                    currentVideoUrl={videoUrl}
-                    onUploadComplete={(url) => setVideoUrl(url)}
-                  />
+                  <VideoUploader lessonId={lesson.id} currentVideoUrl={videoUrl} onUploadComplete={(url) => setVideoUrl(url)} />
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
                     <Video className="w-12 h-12 mx-auto mb-4 text-amber-600" />
                     <p className="text-amber-900 font-medium mb-2">Save lecture first to enable video upload</p>
-                    <p className="text-sm text-amber-700">
-                      Please save this lecture, then click Edit to upload videos
-                    </p>
+                    <p className="text-sm text-amber-700">Please save this lecture, then click Edit to upload videos</p>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="text" className="mt-6">
-                <RichTextEditor
-                  content={articleContent}
-                  onChange={setArticleContent}
-                  placeholder="Write your article content here. Use the toolbar for formatting."
-                />
+                <RichTextEditor content={articleContent} onChange={setArticleContent} placeholder="Write your article content here." />
               </TabsContent>
 
               <TabsContent value="quiz" className="mt-6">
                 {lesson?.id ? (
-                  <QuizBuilder
-                    lessonId={lesson.id}
-                    onSave={async (quizData) => {
-                      try {
-                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/quiz`, quizData);
-                        toast({
-                          title: 'Success',
-                          description: 'Quiz saved successfully',
-                        });
-                      } catch (error) {
-                        toast({
-                          title: 'Error',
-                          description: error instanceof Error ? error.message : 'Failed to save quiz',
-                          variant: 'destructive',
-                        });
-                      }
-                    }}
-                  />
+                  <QuizBuilder lessonId={lesson.id} onSave={async (quizData) => {
+                    try {
+                      const { error } = await supabase.from('quizzes').insert({ ...quizData, lesson_id: lesson.id });
+                      if (error) throw error;
+                      toast({ title: 'Success', description: 'Quiz saved successfully' });
+                    } catch (error) {
+                      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save quiz', variant: 'destructive' });
+                    }
+                  }} />
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
                     <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-amber-600" />
                     <p className="text-amber-900 font-medium mb-2">Save lecture first to enable quiz creation</p>
-                    <p className="text-sm text-amber-700">
-                      Please save this lecture, then click Edit to create quizzes
-                    </p>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="assignment" className="mt-6">
                 {lesson?.id ? (
-                  <AssignmentBuilder
-                    lessonId={lesson.id}
-                    onSave={async (assignmentData) => {
-                      try {
-                        await apiRequest('POST', `/api/instructor/lessons/${lesson.id}/assignment`, assignmentData);
-                        toast({
-                          title: 'Success',
-                          description: 'Assignment saved successfully',
-                        });
-                      } catch (error) {
-                        toast({
-                          title: 'Error',
-                          description: error instanceof Error ? error.message : 'Failed to save assignment',
-                          variant: 'destructive',
-                        });
-                      }
-                    }}
-                  />
+                  <AssignmentBuilder lessonId={lesson.id} onSave={async (assignmentData) => {
+                    try {
+                      const { error } = await supabase.from('assignments').insert({ ...assignmentData, lesson_id: lesson.id });
+                      if (error) throw error;
+                      toast({ title: 'Success', description: 'Assignment saved successfully' });
+                    } catch (error) {
+                      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save assignment', variant: 'destructive' });
+                    }
+                  }} />
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-amber-50 border-amber-200">
                     <FileUp className="w-12 h-12 mx-auto mb-4 text-amber-600" />
                     <p className="text-amber-900 font-medium mb-2">Save lecture first to enable assignment creation</p>
-                    <p className="text-sm text-amber-700">
-                      Please save this lecture, then click Edit to create assignments
-                    </p>
                   </div>
                 )}
               </TabsContent>
@@ -258,23 +194,9 @@ export function LectureContentEditor({
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-            data-testid="button-cancel"
-          >
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving} data-testid="button-cancel">Cancel</Button>
           <Button onClick={handleSave} disabled={saving} data-testid="button-save">
-            {saving ? (
-              <>Saving...</>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                {lesson ? 'Update Lecture' : 'Create Lecture'}
-              </>
-            )}
+            {saving ? <>Saving...</> : <><Save className="w-4 h-4 mr-2" />{lesson ? 'Update Lecture' : 'Create Lecture'}</>}
           </Button>
         </div>
       </DialogContent>
