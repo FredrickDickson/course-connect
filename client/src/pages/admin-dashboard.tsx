@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, BookOpen, UserCheck, UserX, Eye, Download, Calendar, Mail, Phone,
   GraduationCap, FileText, Video, CheckCircle, XCircle, Clock, AlertCircle,
-  TrendingUp, DollarSign
+  TrendingUp, DollarSign, UserPlus, Shield
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
