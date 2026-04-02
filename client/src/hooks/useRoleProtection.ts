@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
@@ -7,10 +7,16 @@ interface UseRoleProtectionOptions {
   requiredRole?: 'student' | 'instructor' | 'admin';
   requiresAuth?: boolean;
   redirectTo?: string;
+  showToast?: boolean;
 }
 
 export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
-  const { requiredRole, requiresAuth = true, redirectTo = "/login" } = options;
+  const {
+    requiredRole,
+    requiresAuth = true,
+    redirectTo = "/login",
+    showToast = true,
+  } = options;
   const { user, isLoading, isAuthenticated, hasRole } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -19,35 +25,32 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
 
   const hasAccess = (() => {
     if (isLoading) return false;
-    
+
     if (requiresAuth && !isAuthenticated) return false;
-    
+
     if (requiredRole && !hasRole(requiredRole)) {
-      // Admin has access to all roles
-      if (user?.role === 'admin') return true;
+      if (user?.role === "admin") return true;
       return false;
     }
-    
+
     return true;
   })();
 
   useEffect(() => {
     if (isLoading) return;
 
-    // Clear any pending redirect if user is now authenticated with correct role
     if (redirectTimer.current) {
       clearTimeout(redirectTimer.current);
       redirectTimer.current = null;
     }
 
-    // Reset toast flag when user changes
     if (hasAccess) {
       hasShownToast.current = false;
       return;
     }
 
     if (requiresAuth && !isAuthenticated) {
-      if (!hasShownToast.current) {
+      if (showToast && !hasShownToast.current) {
         hasShownToast.current = true;
         toast({
           title: "Authentication Required",
@@ -55,13 +58,13 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
           variant: "destructive",
         });
       }
-      
+
       redirectTimer.current = setTimeout(() => setLocation(redirectTo), 1000);
       return;
     }
 
-    if (requiredRole && !hasRole(requiredRole) && user?.role !== 'admin') {
-      if (!hasShownToast.current) {
+    if (requiredRole && !hasRole(requiredRole) && user?.role !== "admin") {
+      if (showToast && !hasShownToast.current) {
         hasShownToast.current = true;
         toast({
           title: "Access Denied",
@@ -69,12 +72,22 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
           variant: "destructive",
         });
       }
-      
+
       redirectTimer.current = setTimeout(() => setLocation("/"), 1000);
-      return;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isAuthenticated, hasAccess, requiredRole, user?.role]);
+  }, [
+    hasAccess,
+    isAuthenticated,
+    isLoading,
+    redirectTo,
+    requiredRole,
+    requiresAuth,
+    setLocation,
+    showToast,
+    toast,
+    user?.role,
+    hasRole,
+  ]);
 
   useEffect(() => {
     return () => {

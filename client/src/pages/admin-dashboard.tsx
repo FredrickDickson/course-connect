@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function AdminDashboard() {
-  const { isLoading: authLoading, hasAccess, user } = useRoleProtection({ requiredRole: 'admin' });
+  const { isLoading: authLoading, hasAccess, user } = useRoleProtection({ requiredRole: 'admin', showToast: false });
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
