@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, GripVertical, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { QuizBulkImport } from '@/components/QuizBulkImport';
 
 interface QuizQuestion {
   id: string;
@@ -316,6 +317,9 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
             Add Question
           </Button>
         </div>
+
+        {/* Bulk Import */}
+        <QuizBulkImport onImport={(imported) => setQuestions(prev => [...prev, ...imported])} />
 
         {questions.map((question, qIndex) => (
           <Card key={question.id} className="border-l-4 border-l-primary">
