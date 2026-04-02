@@ -1114,8 +1114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz for a lesson
   app.get('/api/lessons/:lessonId/quiz', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
-    const quiz = await storage.getQuizByLessonId(lessonId);
-    res.json(quiz);
+    const quizzes = await storage.getLessonQuizzes(lessonId);
+    res.json(quizzes?.[0] || null);
   }));
 
   // Delete quiz
