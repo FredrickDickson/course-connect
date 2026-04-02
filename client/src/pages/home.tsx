@@ -15,16 +15,61 @@ export default function Home() {
   const { user } = useAuth();
   
   const { data: featuredCourses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ['/api/courses/featured'],
+    queryKey: ['featured-courses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return (data || []).map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        subtitle: c.subtitle,
+        description: c.description,
+        price: String(c.price),
+        currency: c.currency || 'USD',
+        thumbnailUrl: c.thumbnail_url,
+        level: c.level || 'beginner',
+        avgRating: String(c.avg_rating || 0),
+        ratingCount: c.rating_count || 0,
+        enrollmentCount: c.enrollment_count || 0,
+        duration: c.duration_hours,
+        isFeatured: c.is_featured,
+        instructor: c.instructor ? { firstName: c.instructor.first_name, lastName: c.instructor.last_name } : undefined,
+        category: c.category ? { name: c.category.name } : undefined,
+      }));
+    },
   });
 
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery({
-    queryKey: ['/api/enrollments'],
+    queryKey: ['my-enrollments'],
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*, course:courses(*, instructor:users!courses_instructor_id_fkey(first_name, last_name))')
+        .eq('user_id', user.id)
+        .order('enrolled_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return (data || []).map((e: any) => ({
+        id: e.id,
+        progress: e.progress || 0,
+        course: {
+          id: e.course.id,
+          title: e.course.title,
+          thumbnailUrl: e.course.thumbnail_url,
+          instructor: e.course.instructor ? { firstName: e.course.instructor.first_name, lastName: e.course.instructor.last_name } : undefined,
+        },
+      }));
+    },
   });
 
-  const { data: progressOverview } = useQuery({
-    queryKey: ['/api/progress/overview'],
-  });
+  const progressOverview = null;
 
   return (
     <div className="min-h-screen bg-background">

@@ -169,41 +169,6 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Role Selection */}
-            <div className="space-y-2">
-              <Label>I want to join as</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: "student" as const }))}
-                  className={cn(
-                    "p-3 rounded-lg border-2 text-center transition-all",
-                    formData.role === "student"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-muted hover:border-muted-foreground/30"
-                  )}
-                >
-                  <GraduationCap className="h-6 w-6 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Student</div>
-                  <div className="text-xs text-muted-foreground">Learn & grow</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: "instructor" as const }))}
-                  className={cn(
-                    "p-3 rounded-lg border-2 text-center transition-all",
-                    formData.role === "instructor"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-muted hover:border-muted-foreground/30"
-                  )}
-                >
-                  <BookOpen className="h-6 w-6 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Instructor</div>
-                  <div className="text-xs text-muted-foreground">Teach & earn</div>
-                </button>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
