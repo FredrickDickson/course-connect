@@ -1145,8 +1145,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get assignment for a lesson
   app.get('/api/lessons/:lessonId/assignment', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
-    const assignment = await storage.getAssignmentByLessonId(lessonId);
-    res.json(assignment);
+    const { db } = await import('./db');
+    const { assignments } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    const [assignment] = await db.select().from(assignments).where(eq(assignments.lessonId, lessonId)).limit(1);
+    res.json(assignment || null);
   }));
 
   // Delete assignment
