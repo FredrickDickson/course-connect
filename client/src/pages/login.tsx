@@ -35,13 +35,23 @@ export default function Login() {
         throw authError;
       }
 
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
 
-      const role = data.user.user_metadata?.role;
-      const destination = role === "instructor" ? "/instructor" : "/dashboard";
+      const role = profile?.role || data.user.user_metadata?.role || "student";
+      const destination = role === "admin"
+        ? "/admin"
+        : role === "instructor"
+          ? "/instructor"
+          : "/dashboard";
 
       window.location.assign(destination);
     } catch (err: any) {
