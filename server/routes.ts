@@ -1114,14 +1114,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz for a lesson
   app.get('/api/lessons/:lessonId/quiz', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
-    const quiz = await storage.getQuizByLessonId(lessonId);
-    res.json(quiz);
+    const quizzes = await storage.getLessonQuizzes(lessonId);
+    res.json(quizzes?.[0] || null);
   }));
 
   // Delete quiz
   app.delete('/api/instructor/quizzes/:quizId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { quizId } = req.params;
-    await storage.deleteQuiz(quizId);
+    // Delete quiz by removing from DB directly
+    const { db } = await import('./db');
+    const { quizzes } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
     res.json({ success: true });
   }));
 
@@ -1141,14 +1145,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get assignment for a lesson
   app.get('/api/lessons/:lessonId/assignment', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
-    const assignment = await storage.getAssignmentByLessonId(lessonId);
-    res.json(assignment);
+    const { db } = await import('./db');
+    const { assignments } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    const [assignment] = await db.select().from(assignments).where(eq(assignments.lessonId, lessonId)).limit(1);
+    res.json(assignment || null);
   }));
 
   // Delete assignment
   app.delete('/api/instructor/assignments/:assignmentId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { assignmentId } = req.params;
-    await storage.deleteAssignment(assignmentId);
+    const { db } = await import('./db');
+    const { assignments } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    await db.delete(assignments).where(eq(assignments.id, assignmentId));
     res.json({ success: true });
   }));
 

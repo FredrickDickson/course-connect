@@ -117,7 +117,6 @@ export function registerAuthRoutes(app: Express) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         role: 'student',
-        emailVerified: true,
       });
 
       res.status(201).json({
@@ -252,7 +251,7 @@ export function registerAuthRoutes(app: Express) {
 
     try {
       if (refreshToken) {
-        await supabase.auth.admin.deleteSession(refreshToken);
+        await supabase.auth.signOut();
       }
 
       res.json({ 
@@ -375,8 +374,6 @@ export function registerAuthRoutes(app: Express) {
     try {
       const { error } = await supabase.auth.updateUser({
         password: password,
-      }, {
-        jwt: token,
       });
 
       if (error) {
@@ -485,7 +482,7 @@ export function registerAuthRoutes(app: Express) {
     try {
       const { error } = await supabase.auth.verifyOtp({
         token_hash: token,
-        type: type as 'email' | 'sms' | 'recovery',
+        type: type as 'email' | 'recovery',
       });
 
       if (error) {

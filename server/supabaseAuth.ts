@@ -17,22 +17,24 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Express, Request, Response, NextFunction } from "express";
 
-// Check for required environment variables
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in your .env file. Check the guide!');
+// Use VITE_ prefixed vars as fallback
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — auth middleware will be unavailable.');
 }
 
-// Initialize Supabase client using service key for secure operations
-const supabase: SupabaseClient = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+const supabase: SupabaseClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   }
-);
+) : null as any;
 
 /**
  * Middleware to verify Supabase JWT tokens.
