@@ -34,7 +34,7 @@ const supabase: SupabaseClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? cre
       persistSession: false,
     },
   }
-);
+) : null as any;
 
 /**
  * Middleware to verify Supabase JWT tokens.
