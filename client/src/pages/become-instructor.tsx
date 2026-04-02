@@ -443,6 +443,30 @@ export default function BecomeInstructor() {
     },
   });
 
+  const goToStep2 = async () => {
+    const isValid = await form.trigger(["firstName", "lastName", "email", "phone", "bio"]);
+    if (isValid) setStep(2);
+  };
+
+  const handleExpertiseChange = (area: string, checked: boolean) => {
+    const nextSelected = checked
+      ? [...selectedExpertise, area]
+      : selectedExpertise.filter((item) => item !== area);
+
+    setSelectedExpertise(nextSelected);
+    form.setValue("areasOfExpertise", nextSelected, { shouldDirty: true, shouldValidate: true });
+
+    if (nextSelected.length > 0) {
+      form.clearErrors("areasOfExpertise");
+    }
+  };
+
+  const goToStep3 = async () => {
+    form.setValue("areasOfExpertise", selectedExpertise, { shouldDirty: true, shouldValidate: true });
+    const isValid = await form.trigger(["experience", "qualifications", "previousTeaching", "areasOfExpertise"]);
+    if (isValid) setStep(3);
+  };
+
   const submitApplication = useMutation({
     mutationFn: async (data: InstructorApplicationForm) => {
       if (!user) throw new Error("You must be logged in to apply");
@@ -484,6 +508,20 @@ export default function BecomeInstructor() {
     submitApplication.mutate({
       ...data,
       areasOfExpertise: selectedExpertise,
+    });
+  };
+
+  const onInvalid = (errors: any) => {
+    if (errors.firstName || errors.lastName || errors.email || errors.phone || errors.bio) {
+      setStep(1);
+    } else if (errors.experience || errors.qualifications || errors.previousTeaching || errors.areasOfExpertise) {
+      setStep(2);
+    }
+
+    toast({
+      title: "Please complete the required fields",
+      description: "Review the highlighted inputs before submitting your application.",
+      variant: "destructive",
     });
   };
 
@@ -560,7 +598,7 @@ export default function BecomeInstructor() {
               </div>
             </div>
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
               {step === 1 && (
                 <Card>
                   <CardHeader>
@@ -602,7 +640,7 @@ export default function BecomeInstructor() {
                       {form.formState.errors.bio && <p className="text-sm text-destructive mt-1">{form.formState.errors.bio.message}</p>}
                     </div>
                     <div className="flex justify-end">
-                      <Button type="button" onClick={() => setStep(2)}>Next Step</Button>
+                      <Button type="button" onClick={goToStep2}>Next Step</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -642,20 +680,17 @@ export default function BecomeInstructor() {
                             <Checkbox
                               id={area}
                               checked={selectedExpertise.includes(area)}
-                              onCheckedChange={(checked) => {
-                                if (checked) setSelectedExpertise([...selectedExpertise, area]);
-                                else setSelectedExpertise(selectedExpertise.filter(e => e !== area));
-                              }}
+                              onCheckedChange={(checked) => handleExpertiseChange(area, checked === true)}
                             />
                             <Label htmlFor={area} className="text-sm font-normal">{area}</Label>
                           </div>
                         ))}
                       </div>
-                      {selectedExpertise.length === 0 && <p className="text-sm text-destructive mt-2">Please select at least one area of expertise.</p>}
+                      {form.formState.errors.areasOfExpertise && <p className="text-sm text-destructive mt-2">{form.formState.errors.areasOfExpertise.message}</p>}
                     </div>
                     <div className="flex justify-between">
                       <Button type="button" variant="outline" onClick={() => setStep(1)}>Previous</Button>
-                      <Button type="button" onClick={() => setStep(3)}>Next Step</Button>
+                      <Button type="button" onClick={goToStep3}>Next Step</Button>
                     </div>
                   </CardContent>
                 </Card>
