@@ -9,6 +9,7 @@ import CourseCard from "@/components/course-card";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { ArrowRight, BookOpen, Clock, Trophy, Users, Star, TrendingUp, Award } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Home() {
   const { user } = useAuth();
