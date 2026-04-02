@@ -33,14 +33,14 @@ export function LecturePreview({
   lessonType,
 }: LecturePreviewProps) {
   // Fetch lesson data from Supabase
-  const { data: lessonData } = useQuery({
+  const { data: lessonData, isLoading: lessonLoading } = useQuery({
     queryKey: ['lesson-preview', lessonId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lessons')
         .select('*')
         .eq('id', lessonId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -48,7 +48,7 @@ export function LecturePreview({
   });
 
   // Fetch quiz with questions and answers
-  const { data: quizData } = useQuery({
+  const { data: quizData, isLoading: quizLoading } = useQuery({
     queryKey: ['lesson-preview-quiz', lessonId],
     queryFn: async () => {
       const { data: quiz, error: qErr } = await supabase
@@ -80,11 +80,11 @@ export function LecturePreview({
 
       return { ...quiz, questions: questionsWithAnswers };
     },
-    enabled: open && lessonType === 'quiz',
+    enabled: open && !!lessonId && lessonType === 'quiz',
   });
 
   // Fetch assignment
-  const { data: assignmentData } = useQuery({
+  const { data: assignmentData, isLoading: assignmentLoading } = useQuery({
     queryKey: ['lesson-preview-assignment', lessonId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,7 +97,7 @@ export function LecturePreview({
       if (error) throw error;
       return data;
     },
-    enabled: open && lessonType === 'assignment',
+    enabled: open && !!lessonId && lessonType === 'assignment',
   });
 
   const renderVideoPreview = () => {
@@ -148,6 +148,14 @@ export function LecturePreview({
   };
 
   const renderQuizPreview = () => {
+    if (quizLoading) {
+      return (
+        <div className="text-center py-12">
+          <ClipboardCheck className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading quiz...</p>
+        </div>
+      );
+    }
     if (!quizData || !quizData.questions || quizData.questions.length === 0) {
       return (
         <div className="text-center py-12">
@@ -214,6 +222,14 @@ export function LecturePreview({
   };
 
   const renderAssignmentPreview = () => {
+    if (assignmentLoading) {
+      return (
+        <div className="text-center py-12">
+          <FileUp className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading assignment...</p>
+        </div>
+      );
+    }
     if (!assignmentData) {
       return (
         <div className="text-center py-12">
