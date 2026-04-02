@@ -15,59 +15,72 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (authUser: any) => {
-    try {
-      // Try to fetch role from users table
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role, first_name, last_name, profile_image_url")
-        .eq("id", authUser.id)
-        .single();
+    const { data: profile, error } = await supabase
+      .from("users")
+      .select("role, first_name, last_name, profile_image_url")
+      .eq("id", authUser.id)
+      .maybeSingle();
 
-      setUser({
-        id: authUser.id,
-        email: authUser.email || "",
-        firstName: profile?.first_name || authUser.user_metadata?.first_name || authUser.email?.split("@")[0] || "",
-        lastName: profile?.last_name || authUser.user_metadata?.last_name || "",
-        profileImageUrl: profile?.profile_image_url || authUser.user_metadata?.avatar_url || "",
-        role: profile?.role || "student",
-      });
-    } catch {
-      // Fallback if profile fetch fails
-      setUser({
-        id: authUser.id,
-        email: authUser.email || "",
-        firstName: authUser.user_metadata?.first_name || authUser.email?.split("@")[0] || "",
-        lastName: authUser.user_metadata?.last_name || "",
-        profileImageUrl: authUser.user_metadata?.avatar_url || "",
-        role: "student",
-      });
+    if (error) {
+      console.error("Profile fetch error:", error);
     }
+
+    setUser({
+      id: authUser.id,
+      email: authUser.email || "",
+      firstName: profile?.first_name || authUser.user_metadata?.first_name || authUser.email?.split("@")[0] || "",
+      lastName: profile?.last_name || authUser.user_metadata?.last_name || "",
+      profileImageUrl: profile?.profile_image_url || authUser.user_metadata?.avatar_url || "",
+      role: profile?.role || "student",
+    });
   }, []);
 
   useEffect(() => {
-    // Get initial session — set loading false AFTER profile is fetched
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user);
-      } else {
+    let isMounted = true;
+
+    const syncAuthUser = async (authUser: any | null) => {
+      if (!isMounted) return;
+
+      if (!authUser) {
         setUser(null);
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        await fetchUserProfile(authUser);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      if (event === "TOKEN_REFRESHED") {
+        return;
+      }
+
+      setIsLoading(true);
+      void syncAuthUser(session?.user ?? null);
     });
 
-    // Listen for subsequent auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          await fetchUserProfile(session.user);
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
-      }
-    );
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      void syncAuthUser(session?.user ?? null);
+    });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchUserProfile]);
 
   const signOut = useCallback(async () => {
