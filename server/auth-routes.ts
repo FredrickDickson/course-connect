@@ -251,7 +251,7 @@ export function registerAuthRoutes(app: Express) {
 
     try {
       if (refreshToken) {
-        await supabase.auth.admin.deleteSession(refreshToken);
+        await supabase.auth.signOut();
       }
 
       res.json({ 
