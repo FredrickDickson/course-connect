@@ -228,8 +228,42 @@ export function LectureContentEditor({
                 {currentLessonId ? (
                   <QuizBuilder lessonId={currentLessonId} onSave={async (quizData) => {
                     try {
-                      const { error } = await supabase.from('quizzes').insert({ ...quizData, lesson_id: currentLessonId });
-                      if (error) throw error;
+                      // Insert quiz with snake_case columns
+                      const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
+                        lesson_id: currentLessonId,
+                        title: quizData.title,
+                        description: quizData.description || null,
+                        time_limit_minutes: quizData.timeLimit || null,
+                        passing_score: quizData.passingScore ?? 80,
+                        max_attempts: quizData.maxAttempts ?? 3,
+                      }).select().single();
+                      if (quizError) throw quizError;
+
+                      // Insert questions and answers
+                      if (quizData.questions?.length > 0) {
+                        for (const q of quizData.questions) {
+                          const { data: question, error: qError } = await supabase.from('quiz_questions').insert({
+                            quiz_id: quiz.id,
+                            question: q.question,
+                            question_type: q.type || 'multiple_choice',
+                            points: q.points ?? 1,
+                            order: q.order ?? 0,
+                          }).select().single();
+                          if (qError) throw qError;
+
+                          if (q.answers?.length > 0) {
+                            const answersToInsert = q.answers.map((a: any, idx: number) => ({
+                              question_id: question.id,
+                              answer: a.text,
+                              is_correct: a.isCorrect ?? false,
+                              order: idx,
+                            }));
+                            const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
+                            if (aError) throw aError;
+                          }
+                        }
+                      }
+
                       toast({ title: 'Success', description: 'Quiz saved successfully' });
                     } catch (error) {
                       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save quiz', variant: 'destructive' });
@@ -257,7 +291,15 @@ export function LectureContentEditor({
                 {currentLessonId ? (
                   <AssignmentBuilder lessonId={currentLessonId} onSave={async (assignmentData) => {
                     try {
-                      const { error } = await supabase.from('assignments').insert({ ...assignmentData, lesson_id: currentLessonId });
+                      const { error } = await supabase.from('assignments').insert({
+                        lesson_id: currentLessonId,
+                        title: assignmentData.title,
+                        description: assignmentData.description || '',
+                        instructions: assignmentData.instructions || null,
+                        max_score: assignmentData.maxPoints ?? 100,
+                        due_date: assignmentData.dueDate || null,
+                        allow_late_submission: assignmentData.allowLateSubmission ?? true,
+                      });
                       if (error) throw error;
                       toast({ title: 'Success', description: 'Assignment saved successfully' });
                     } catch (error) {
