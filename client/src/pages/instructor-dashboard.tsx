@@ -14,25 +14,28 @@ import {
   BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, 
   TrendingUp, BarChart3, Target
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function InstructorDashboard() {
   const { user, isAuthenticated, isLoading: authLoading, isInstructor } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({ title: "Unauthorized", description: "Please sign in.", variant: "destructive" });
-      setTimeout(() => setLocation("/login"), 500);
+    if (authLoading || hasRedirected.current) return;
+
+    if (!isAuthenticated) {
+      hasRedirected.current = true;
+      setLocation("/login");
       return;
     }
-    if (!authLoading && isAuthenticated && !isInstructor()) {
-      toast({ title: "Access Denied", description: "Instructor role required.", variant: "destructive" });
-      setTimeout(() => setLocation("/dashboard"), 500);
+    if (!isInstructor()) {
+      hasRedirected.current = true;
+      setLocation("/dashboard");
     }
-  }, [authLoading, isAuthenticated, isInstructor, toast, setLocation]);
+  }, [authLoading, isAuthenticated, isInstructor, setLocation]);
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ['instructor-courses', user?.id],
