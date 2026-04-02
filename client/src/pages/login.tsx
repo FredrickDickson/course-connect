@@ -35,19 +35,19 @@ export default function Login() {
         throw authError;
       }
 
-      // Fetch user role to determine redirect
+      // Fetch user role to determine redirect, but don't block login if profile lookup is delayed
       const { data: profile } = await supabase
         .from("users")
         .select("role")
         .eq("id", data.user.id)
-        .single();
+        .maybeSingle();
 
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
 
-      const role = profile?.role || "student";
+      const role = profile?.role || data.user.user_metadata?.role || "student";
       if (role === "admin") {
         setLocation("/admin");
       } else if (role === "instructor") {
