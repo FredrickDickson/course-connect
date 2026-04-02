@@ -148,6 +148,14 @@ export function LecturePreview({
   };
 
   const renderQuizPreview = () => {
+    if (quizLoading) {
+      return (
+        <div className="text-center py-12">
+          <ClipboardCheck className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading quiz...</p>
+        </div>
+      );
+    }
     if (!quizData || !quizData.questions || quizData.questions.length === 0) {
       return (
         <div className="text-center py-12">
