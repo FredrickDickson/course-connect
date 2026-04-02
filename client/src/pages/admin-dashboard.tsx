@@ -552,6 +552,46 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
               <div><Label className="text-sm font-medium">Qualifications</Label><p className="text-sm text-muted-foreground mt-1">{application.qualifications}</p></div>
               <div><Label className="text-sm font-medium">Teaching Experience</Label><p className="text-sm text-muted-foreground mt-1">{application.previous_teaching}</p></div>
 
+              {/* CV and Video Documents */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label className="text-sm font-medium">Uploaded Documents</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">CV / Resume</span>
+                    </div>
+                    {application.cv_url ? (
+                      <a href={application.cv_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Download className="w-4 h-4 mr-2" />View CV
+                        </Button>
+                      </a>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Not uploaded</p>
+                    )}
+                  </div>
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Video className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Video Introduction</span>
+                    </div>
+                    {application.video_intro_url ? (
+                      <div className="space-y-2">
+                        <video controls className="w-full rounded max-h-40" src={application.video_intro_url} />
+                        <a href={application.video_intro_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Download className="w-4 h-4 mr-2" />Open Full Screen
+                          </Button>
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Not uploaded</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {application.status === 'pending' && (
                 <div className="space-y-4 pt-4 border-t">
                   <div>
