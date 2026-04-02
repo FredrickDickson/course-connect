@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CIMA Learn - Professional ADR Education Platform
 
 A comprehensive Udemy-style Learning Management System (LMS) for the Center for International Mediators and Arbitrators (CIMA), providing world-class Alternative Dispute Resolution (ADR) training and certification programs with full instructor capabilities, course creation tools, student enrollment systems, and complete administrative oversight.
@@ -6,6 +5,7 @@ A comprehensive Udemy-style Learning Management System (LMS) for the Center for 
 ## 🚀 Current Status
 
 **✅ Production-Ready Development Version**
+
 - **All Major Bugs Resolved**: 18 → 0 LSP diagnostics fixed
 - **Server Status**: Running stable on port 5000
 - **Authentication**: Working with Replit OAuth integration
@@ -21,6 +21,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 ### 🏛️ **Multi-Role System Architecture**
 
 #### **👨‍🎓 Students**
+
 - **Course Enrollment**: Browse, purchase, and enroll in professional ADR programs
 - **Progress Tracking**: Real-time progress monitoring with visual indicators and completion percentages
 - **Interactive Dashboard**: Personalized learning dashboard with enrollment overview and achievements
@@ -28,6 +29,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Certification Tracking**: Monitor learning milestones and digital certificate progress
 
 #### **👨‍🏫 Instructors**
+
 - **Application System**: Multi-step instructor onboarding with qualification verification
 - **Course Creation Tools**: Comprehensive course builder with sections, lectures, and assessments
 - **Content Management**: Upload videos, documents, quizzes, and assignments
@@ -35,6 +37,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Earnings Tracking**: Transparent revenue sharing and payout management
 
 #### **👨‍💼 Administrators**
+
 - **Platform Oversight**: Complete control over users, courses, and system operations
 - **Instructor Management**: Review applications, approve instructors, verify qualifications
 - **User Administration**: Manage student and instructor accounts with role assignments
@@ -43,6 +46,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Content Moderation**: Quality assurance and compliance monitoring
 
 ### 🎓 **Learning Management**
+
 - **Comprehensive Course Catalog**: Browse courses with advanced search, filtering, and sorting
 - **Structured Learning Paths**: Courses organized into modules and lessons with clear progression
 - **Interactive Content**: Video lectures, assessments, assignments, and downloadable resources
@@ -50,23 +54,27 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Global Community**: Connect with 5,000+ ADR professionals worldwide
 
 ### 👥 **User Experience**
+
 - **Modern UI/UX**: Professional design with smooth animations and responsive layouts
 - **Secure Authentication**: Replit OpenID Connect with automatic user provisioning
 - **Role-Based Access**: Dynamic navigation and features based on user permissions
 - **Mobile Responsive**: Optimized experience across all devices and screen sizes
 
 ### 💳 **Payment & Enrollment**
+
 - **Paystack Integration**: Secure payment processing for course purchases
 - **Flexible Pricing**: Support for both free and paid courses
 - **Automated Enrollment**: Seamless course access after successful payment
 - **Order Management**: Complete order tracking and history
 
 ### 🏆 **Certification & Achievement**
+
 - **Digital Certificates**: Internationally recognized ADR certifications
 - **Achievement Tracking**: Monitor learning milestones and accomplishments
 - **Progress Analytics**: Detailed insights into learning patterns and success rates
 
 ### 🎓 **Instructor Onboarding System**
+
 - **Multi-Step Application**: Comprehensive instructor application with qualification verification
 - **Document Uploads**: Secure upload system for resumes, certificates, portfolios, and identification
 - **Admin Review Workflow**: Multi-stage approval process with Education Director oversight
@@ -75,6 +83,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Automated Approvals**: Streamlined workflow from application to instructor activation
 
 ### 🛡️ **Administrative Management**
+
 - **Setup System**: Secure admin account creation with setup key validation
 - **User Management**: Complete CRUD operations on students, instructors, and administrators
 - **Role Management**: Dynamic role assignment and permission control
@@ -83,6 +92,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **System Monitoring**: Real-time platform health and performance tracking
 
 ### 💬 **Community Features**
+
 - **Discussion Forums**: Course-specific Q&A and community interactions
 - **Global Network**: Connect with 5,000+ ADR professionals worldwide
 - **Expert Interaction**: Direct access to instructors and industry experts
@@ -91,6 +101,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 ## 🛠 Technology Stack
 
 ### **Frontend**
+
 - **React 18** with TypeScript for type-safe, modern web development
 - **Wouter** for lightweight, declarative routing
 - **TanStack Query** for powerful server state management
@@ -99,6 +110,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **Vite** for fast development and optimized production builds
 
 ### **Backend**
+
 - **Express.js** with TypeScript for robust server-side development
 - **Drizzle ORM** for type-safe database operations and migrations
 - **PostgreSQL** via Neon serverless with memory session fallback
@@ -107,11 +119,13 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 - **RESTful API** design with comprehensive error handling and rate limiting
 
 ### **Payment Processing**
+
 - **Paystack** integration for secure payment processing
 - **Webhook handling** for automated enrollment and order management
 - **Multiple currency support** for global accessibility
 
 ### **Development Tools**
+
 - **TypeScript** for full-stack type safety
 - **ESLint & Prettier** for code quality and consistency
 - **Hot Module Replacement** for rapid development iteration
@@ -119,6 +133,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - PostgreSQL database (Neon recommended)
 - Paystack account for payment processing
@@ -126,18 +141,21 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone [repository-url]
    cd cima-learn
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Create a `.env` file with the following variables:
+
    ```env
    DATABASE_URL=your_postgresql_connection_string
    SESSION_SECRET=your_session_secret
@@ -146,6 +164,7 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
    ```
 
 4. **Database Setup**
+
    ```bash
    npm run db:push
    ```
@@ -164,11 +183,13 @@ The application will be available at `http://localhost:5000`
 For the first-time setup, you'll need to create an admin account to access the administrative dashboard:
 
 1. **Navigate to Admin Setup**
+
    ```
    http://localhost:5000/admin-setup
    ```
 
 2. **Use Setup Key**
+
    ```
    Setup Key: CIMA_ADMIN_SETUP_2024
    ```
@@ -178,7 +199,6 @@ For the first-time setup, you'll need to create an admin account to access the a
      - Enter your registered email address
      - Use the setup key above
      - Your account will be upgraded to admin role
-   
    - **Option B**: Create admin account manually (development only):
      - Use the debug endpoint: `POST /api/admin/create-user`
      - Provide email, firstName, lastName, and setupKey
@@ -190,6 +210,7 @@ For the first-time setup, you'll need to create an admin account to access the a
    ```
 
 ### **Admin Capabilities**
+
 - **User Management**: View, edit, and manage all platform users
 - **Instructor Applications**: Review and approve instructor applications
 - **Course Oversight**: Monitor and approve course publications
@@ -201,19 +222,23 @@ For the first-time setup, you'll need to create an admin account to access the a
 ### **Common Issues**
 
 #### **Database Connection Issues**
+
 If you encounter database connection problems:
+
 - The application automatically falls back to memory sessions
 - Check your `DATABASE_URL` environment variable
 - Ensure your Neon database endpoint is enabled
 - Memory fallback allows continued development during database issues
 
 #### **Authentication Problems**
+
 - Clear browser cookies and local storage
 - Verify Replit OAuth configuration
 - Check that you're accessing the correct domain/port
 - Ensure session store is functioning (memory or PostgreSQL)
 
 #### **Admin Access Issues**
+
 - Verify you're using the correct setup key: `CIMA_ADMIN_SETUP_2024`
 - Ensure your user account exists before admin setup
 - Check that you have the correct email address
@@ -241,17 +266,20 @@ cima-learn/
 ## 🎨 Design System
 
 ### **Color Palette**
+
 - **Primary**: Professional blue gradient for trust and reliability
 - **Accent**: Amber/orange for call-to-action buttons and highlights
 - **Text**: White and blue variations for optimal contrast
 - **Backgrounds**: Gradient blues with transparency effects
 
 ### **Typography**
+
 - Clean, professional fonts optimized for readability
 - Hierarchical heading structure for clear information architecture
 - Responsive text sizing across all devices
 
 ### **Components**
+
 - Consistent component library with shadcn/ui
 - Accessible design patterns following WCAG guidelines
 - Smooth animations and transitions for enhanced user experience
@@ -259,12 +287,14 @@ cima-learn/
 ## 🌐 Deployment
 
 ### **Production Environment**
+
 - Optimized builds with Vite for maximum performance
 - PostgreSQL database with connection pooling
 - CDN integration for static asset delivery
 - Environment-specific configurations
 
 ### **Monitoring & Analytics**
+
 - Error tracking and performance monitoring
 - User analytics and learning pattern insights
 - System health monitoring and alerts
@@ -272,6 +302,7 @@ cima-learn/
 ## 📊 Features Roadmap
 
 ### **Current Version (v2.0) - January 2025**
+
 - ✅ **Multi-Role System**: Complete student, instructor, and admin functionality
 - ✅ **Admin Dashboard**: Comprehensive administrative oversight and management
 - ✅ **Instructor Onboarding**: Multi-step application and approval workflow
@@ -284,6 +315,7 @@ cima-learn/
 - ✅ **Global Community**: Connect with 5,000+ ADR professionals worldwide
 
 ### **Recently Completed (January 2025)**
+
 - ✅ **Comprehensive Bug Fixes**: Resolved all 18 LSP diagnostics
 - ✅ **Database Fallback System**: Memory session store for development resilience
 - ✅ **Admin Setup System**: Secure setup key validation and account creation
@@ -291,6 +323,7 @@ cima-learn/
 - ✅ **Enhanced Error Handling**: Robust error management throughout the platform
 
 ### **Upcoming Features**
+
 - 🔄 **Advanced Video Streaming**: Enhanced video playback and streaming optimization
 - 🔄 **Mobile Application**: React Native app for iOS and Android
 - 🔄 **Offline Course Access**: Download content for offline learning
@@ -311,6 +344,7 @@ We welcome contributions to improve CIMA Learn! Please follow these guidelines:
 5. Open a Pull Request
 
 ### **Development Guidelines**
+
 - Follow TypeScript best practices
 - Write comprehensive tests for new features
 - Ensure responsive design compatibility
@@ -349,10 +383,6 @@ The Center for International Mediators and Arbitrators is a leading institution 
 
 ---
 
-*Last updated: January 26, 2025*# cima_study
-# cima_study
-=======
-# Welcome to your Lovable project
+_Last updated: January 26, 2025_# cima_study
 
-TODO: Document your project here
->>>>>>> 1a8480473c6676f6c957dca85f5187aec1355536
+=======
