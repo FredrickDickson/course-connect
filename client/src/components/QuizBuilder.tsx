@@ -318,6 +318,9 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
           </Button>
         </div>
 
+        {/* Bulk Import */}
+        <QuizBulkImport onImport={(imported) => setQuestions(prev => [...prev, ...imported])} />
+
         {questions.map((question, qIndex) => (
           <Card key={question.id} className="border-l-4 border-l-primary">
             <CardHeader className="pb-3">
