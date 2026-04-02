@@ -381,6 +381,51 @@ export default function BecomeInstructor() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvUploading, setCvUploading] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  const uploadFile = async (file: File, bucket: string, folder: string) => {
+    const ext = file.name.split('.').pop();
+    const filePath = `${folder}/${user!.id}-${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, { upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+    return urlData.publicUrl;
+  };
+
+  const handleCvUpload = async (file: File) => {
+    setCvFile(file);
+    setCvUploading(true);
+    try {
+      const url = await uploadFile(file, 'instructor-cv', 'cv');
+      setCvUrl(url);
+      toast({ title: "CV uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "CV upload failed", description: err.message, variant: "destructive" });
+      setCvFile(null);
+    } finally {
+      setCvUploading(false);
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setVideoFile(file);
+    setVideoUploading(true);
+    try {
+      const url = await uploadFile(file, 'instructor-videos', 'intro');
+      setVideoUrl(url);
+      toast({ title: "Video uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "Video upload failed", description: err.message, variant: "destructive" });
+      setVideoFile(null);
+    } finally {
+      setVideoUploading(false);
+    }
+  };
 
   const form = useForm<InstructorApplicationForm>({
     resolver: zodResolver(instructorApplicationSchema),
@@ -413,6 +458,8 @@ export default function BecomeInstructor() {
         qualifications: data.qualifications,
         previous_teaching: data.previousTeaching,
         areas_of_expertise: data.areasOfExpertise,
+        cv_url: cvUrl,
+        video_intro_url: videoUrl,
       });
 
       if (error) throw error;
@@ -626,19 +673,89 @@ export default function BecomeInstructor() {
                   <CardContent className="space-y-6">
                     <div>
                       <Label>CV/Resume (Optional)</Label>
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Upload your CV or resume (PDF, DOC, or DOCX)</p>
-                        <Button variant="outline" size="sm" className="mt-2" disabled>Choose File (Coming Soon)</Button>
-                      </div>
+                      {cvUrl ? (
+                        <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle2 className="w-6 h-6 text-green-600" />
+                              <div>
+                                <p className="font-medium text-green-900 dark:text-green-100">CV uploaded</p>
+                                <p className="text-sm text-green-700 dark:text-green-300">{cvFile?.name}</p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => { setCvUrl(null); setCvFile(null); }}>Change</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground mb-2">Upload your CV or resume (PDF, DOC, DOCX — max 10MB)</p>
+                          <label>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  if (f.size > 10 * 1024 * 1024) {
+                                    toast({ title: "File too large", description: "Maximum size is 10MB", variant: "destructive" });
+                                    return;
+                                  }
+                                  handleCvUpload(f);
+                                }
+                              }}
+                              disabled={cvUploading}
+                            />
+                            <Button variant="outline" size="sm" asChild disabled={cvUploading}>
+                              <span>{cvUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</> : "Choose File"}</span>
+                            </Button>
+                          </label>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <Label>Video Introduction (Optional)</Label>
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                        <Video className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Record a 2-3 minute introduction video</p>
-                        <Button variant="outline" size="sm" className="mt-2" disabled>Upload Video (Coming Soon)</Button>
-                      </div>
+                      {videoUrl ? (
+                        <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle2 className="w-6 h-6 text-green-600" />
+                              <div>
+                                <p className="font-medium text-green-900 dark:text-green-100">Video uploaded</p>
+                                <p className="text-sm text-green-700 dark:text-green-300">{videoFile?.name}</p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => { setVideoUrl(null); setVideoFile(null); }}>Change</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Video className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground mb-2">Record a 2-3 minute introduction video (MP4, MOV, WebM — max 500MB)</p>
+                          <label>
+                            <input
+                              type="file"
+                              accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  if (f.size > 500 * 1024 * 1024) {
+                                    toast({ title: "File too large", description: "Maximum size is 500MB", variant: "destructive" });
+                                    return;
+                                  }
+                                  handleVideoUpload(f);
+                                }
+                              }}
+                              disabled={videoUploading}
+                            />
+                            <Button variant="outline" size="sm" asChild disabled={videoUploading}>
+                              <span>{videoUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</> : "Upload Video"}</span>
+                            </Button>
+                          </label>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-start space-x-2">
                       <Checkbox
