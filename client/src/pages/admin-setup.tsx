@@ -38,12 +38,24 @@ export default function AdminSetup() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data } = await supabase
-        .from("users")
-        .select("id")
-        .eq("role", "admin")
-        .limit(1);
-      setAdminExists(data && data.length > 0);
+      try {
+        const { data: result, error } = await supabase.functions.invoke("admin-setup", {
+          body: { checkOnly: true },
+        });
+        if (error && error.message?.includes("409")) {
+          setAdminExists(true);
+        } else {
+          // Also check via direct query as fallback
+          const { data } = await supabase
+            .from("users")
+            .select("id")
+            .eq("role", "admin")
+            .limit(1);
+          setAdminExists(data && data.length > 0);
+        }
+      } catch {
+        setAdminExists(false);
+      }
     };
     checkAdmin();
   }, []);
