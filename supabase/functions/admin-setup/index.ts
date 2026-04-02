@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { firstName, lastName, email, password, setupKey, checkOnly } = body;
+    const { firstName, lastName, email, password, setupKey, checkOnly, createByAdmin } = body;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
 
     const adminAlreadyExists = existingAdmins && existingAdmins.length > 0;
 
+    // Check-only mode: return admin existence status
     if (checkOnly) {
       return new Response(JSON.stringify({ adminExists: adminAlreadyExists }), {
         status: 200,
@@ -37,19 +38,59 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (adminAlreadyExists) {
-      return new Response(JSON.stringify({ error: "An admin account already exists" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Creating additional admin by an existing admin
+    if (createByAdmin) {
+      // Verify the requesting user is an admin via Authorization header
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    // Validate setup key
-    if (setupKey !== SETUP_KEY) {
-      return new Response(JSON.stringify({ error: "Invalid setup key" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: claimsData, error: claimsError } = await anonClient.auth.getUser();
+      if (claimsError || !claimsData.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Check if requesting user is admin
+      const { data: requestingUser } = await supabaseAdmin
+        .from("users")
+        .select("role")
+        .eq("id", claimsData.user.id)
+        .single();
+
+      if (requestingUser?.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Only admins can create admin accounts" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      // First-time setup: require setup key and no existing admin
+      if (adminAlreadyExists) {
+        return new Response(JSON.stringify({ error: "An admin account already exists. Additional admins must be created from the admin dashboard." }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (setupKey !== SETUP_KEY) {
+        return new Response(JSON.stringify({ error: "Invalid setup key" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Validate required fields
@@ -71,7 +112,7 @@ Deno.serve(async (req) => {
     if (signUpError) throw signUpError;
     if (!authData.user) throw new Error("Failed to create user");
 
-    // Insert into users table with admin role using service role (bypasses RLS)
+    // Insert into users table with admin role
     const { error: insertError } = await supabaseAdmin.from("users").upsert({
       id: authData.user.id,
       email,
