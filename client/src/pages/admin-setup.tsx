@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, Users, Settings } from "lucide-react";
 
 const adminSetupSchema = z.object({
@@ -34,6 +33,20 @@ type AdminSetupForm = z.infer<typeof adminSetupSchema>;
 export default function AdminSetup() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [adminExists, setAdminExists] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data } = await supabase
+        .from("users")
+        .select("id")
+        .eq("role", "admin")
+        .limit(1);
+      setAdminExists(data && data.length > 0);
+    };
+    checkAdmin();
+  }, []);
 
   const form = useForm<AdminSetupForm>({
     resolver: zodResolver(adminSetupSchema),
@@ -47,32 +60,56 @@ export default function AdminSetup() {
     },
   });
 
-  const setupMutation = useMutation({
-    mutationFn: async (data: AdminSetupForm) => {
-      return await apiRequest("POST", "/api/admin/setup", data);
-    },
-    onSuccess: () => {
+  const onSubmit = async (data: AdminSetupForm) => {
+    setIsSubmitting(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password,
+          setupKey: data.setupKey,
+        },
+      });
+
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+
       toast({
         title: "Admin Setup Complete",
-        description: "Your admin account has been created successfully. Redirecting to dashboard...",
+        description: "Your admin account has been created. Redirecting to login...",
       });
-      // Redirect to admin dashboard after successful setup
-      setTimeout(() => {
-        window.location.href = "/admin";
-      }, 1500);
-    },
-    onError: (error: any) => {
+      setTimeout(() => window.location.assign("/login"), 1500);
+    } catch (error: any) {
       toast({
         title: "Setup Failed",
         description: error.message || "Failed to setup admin account",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (data: AdminSetupForm) => {
-    setupMutation.mutate(data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (adminExists === true) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle>Admin Already Exists</CardTitle>
+            <CardDescription>An admin account has already been set up. Please log in instead.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => setLocation("/login")}>Go to Login</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/50 flex items-center justify-center p-4">
@@ -211,10 +248,10 @@ export default function AdminSetup() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={setupMutation.isPending}
+                disabled={isSubmitting}
                 data-testid="button-setup-admin"
               >
-                {setupMutation.isPending ? (
+                {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     Setting up...
