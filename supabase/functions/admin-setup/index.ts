@@ -13,23 +13,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { firstName, lastName, email, password, setupKey } = await req.json();
-
-    // Validate setup key
-    if (setupKey !== SETUP_KEY) {
-      return new Response(JSON.stringify({ error: "Invalid setup key" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
-      return new Response(JSON.stringify({ error: "All fields are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json();
+    const { firstName, lastName, email, password, setupKey, checkOnly } = body;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -43,9 +28,34 @@ Deno.serve(async (req) => {
       .eq("role", "admin")
       .limit(1);
 
-    if (existingAdmins && existingAdmins.length > 0) {
+    const adminAlreadyExists = existingAdmins && existingAdmins.length > 0;
+
+    if (checkOnly) {
+      return new Response(JSON.stringify({ adminExists: adminAlreadyExists }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (adminAlreadyExists) {
       return new Response(JSON.stringify({ error: "An admin account already exists" }), {
         status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate setup key
+    if (setupKey !== SETUP_KEY) {
+      return new Response(JSON.stringify({ error: "Invalid setup key" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return new Response(JSON.stringify({ error: "All fields are required" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
