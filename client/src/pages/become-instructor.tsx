@@ -458,6 +458,8 @@ export default function BecomeInstructor() {
         qualifications: data.qualifications,
         previous_teaching: data.previousTeaching,
         areas_of_expertise: data.areasOfExpertise,
+        cv_url: cvUrl,
+        video_intro_url: videoUrl,
       });
 
       if (error) throw error;
