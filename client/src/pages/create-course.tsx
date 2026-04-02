@@ -51,9 +51,15 @@ export default function CreateCourse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('categories').select('id, name, slug');
+      if (error) throw error;
+      return data || [];
+    },
     enabled: hasAccess,
   });
 
