@@ -154,6 +154,24 @@ export default function AdminDashboard() {
     },
   });
 
+  const changeUserRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
+      const { error } = await supabase
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      toast({ title: "Role Updated", description: `User role changed to ${variables.newRole}.` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleCreateAdmin = async () => {
     if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || !newAdmin.password) {
       toast({ title: "Error", description: "All fields are required", variant: "destructive" });
