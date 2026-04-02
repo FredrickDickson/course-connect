@@ -94,7 +94,7 @@ function Router() {
       <Route path="/professional-standards" component={ProfessionalStandards} />
       
       {/* Protected routes - only for authenticated users */}
-      {isAuthenticated && (
+      {isAuthenticated ? (
         <>
           <Route path="/profile" component={Profile} />
           <Route path="/courses" component={Courses} />
@@ -109,9 +109,17 @@ function Router() {
           <Route path="/quiz/:quizId" component={QuizPage} />
           <Route path="/community" component={Community} />
         </>
-      )}
+      ) : isLoading ? (
+        <Route>
+          {() => (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          )}
+        </Route>
+      ) : null}
       
-      <Route component={NotFound} />
+      {!isLoading && <Route component={NotFound} />}
     </Switch>
   );
 }
