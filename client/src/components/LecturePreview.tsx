@@ -48,7 +48,7 @@ export function LecturePreview({
   });
 
   // Fetch quiz with questions and answers
-  const { data: quizData } = useQuery({
+  const { data: quizData, isLoading: quizLoading } = useQuery({
     queryKey: ['lesson-preview-quiz', lessonId],
     queryFn: async () => {
       const { data: quiz, error: qErr } = await supabase
@@ -80,7 +80,7 @@ export function LecturePreview({
 
       return { ...quiz, questions: questionsWithAnswers };
     },
-    enabled: open && lessonType === 'quiz',
+    enabled: open && !!lessonId && lessonType === 'quiz',
   });
 
   // Fetch assignment
