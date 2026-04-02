@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -127,11 +128,16 @@ export default function BecomeInstructor() {
               <GraduationCap className="w-16 h-16 text-primary mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-4">Login Required</h2>
               <p className="text-muted-foreground mb-6">
-                You need to be logged in to apply as an instructor.
+                You need to be logged in to apply as an instructor. If you don't have an account yet, sign up first.
               </p>
-              <Button onClick={() => window.location.href = "/api/login"}>
-                Log In to Continue
-              </Button>
+              <div className="flex gap-4 justify-center">
+                <Link href="/login">
+                  <Button>Log In to Continue</Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="outline">Create Account</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Mail, Lock, User, AlertCircle, CheckCircle2, X, Eye, EyeOff, GraduationCap, BookOpen } from "lucide-react";
+import { Loader2, Mail, Lock, User, AlertCircle, CheckCircle2, X, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +25,6 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student" as "student" | "instructor",
     agreeToTerms: false
   });
 
@@ -91,7 +90,7 @@ export default function Register() {
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          role: formData.role,
+          role: "student",
         });
 
         if (profileError) {
@@ -105,7 +104,7 @@ export default function Register() {
           title: "Account created successfully!",
           description: "Welcome to CIMA Learn. Let's get started.",
         });
-        setLocation(formData.role === "instructor" ? "/instructor" : "/dashboard");
+        setLocation("/dashboard");
       } else {
         toast({
           title: "Check your email",
@@ -167,41 +166,6 @@ export default function Register() {
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="lastName" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
                 </div>
-              </div>
-            </div>
-
-            {/* Role Selection */}
-            <div className="space-y-2">
-              <Label>I want to join as</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: "student" as const }))}
-                  className={cn(
-                    "p-3 rounded-lg border-2 text-center transition-all",
-                    formData.role === "student"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-muted hover:border-muted-foreground/30"
-                  )}
-                >
-                  <GraduationCap className="h-6 w-6 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Student</div>
-                  <div className="text-xs text-muted-foreground">Learn & grow</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: "instructor" as const }))}
-                  className={cn(
-                    "p-3 rounded-lg border-2 text-center transition-all",
-                    formData.role === "instructor"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-muted hover:border-muted-foreground/30"
-                  )}
-                >
-                  <BookOpen className="h-6 w-6 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Instructor</div>
-                  <div className="text-xs text-muted-foreground">Teach & earn</div>
-                </button>
               </div>
             </div>
 
