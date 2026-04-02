@@ -56,6 +56,7 @@ import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
 import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 
