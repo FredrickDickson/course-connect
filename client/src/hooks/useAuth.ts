@@ -104,7 +104,7 @@ export function useAuth() {
     setIsAuthReady(true);
   }, []);
 
-  const isLoading = !isAuthReady || (!!authUser && isProfileLoading);
+  const isLoading = !isAuthReady || (!!authUser && (isProfileLoading || !user));
 
   const hasRole = (role: string) => user?.role === role;
   const isInstructor = () => hasRole("instructor") || hasRole("admin");
