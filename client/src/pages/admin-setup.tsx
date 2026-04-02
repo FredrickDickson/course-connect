@@ -97,7 +97,6 @@ export default function AdminSetup() {
       });
       if (loginError) throw loginError;
       
-      window.location.assign("/admin");
       setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Setup Failed", description: error.message || "Failed to setup admin account", variant: "destructive" });
@@ -129,7 +128,6 @@ export default function AdminSetup() {
       }
 
       toast({ title: "Welcome back, Admin!", description: "Redirecting to dashboard..." });
-      window.location.assign("/admin");
       setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Login Failed", description: error.message || "Invalid credentials", variant: "destructive" });
