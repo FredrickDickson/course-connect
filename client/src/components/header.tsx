@@ -254,7 +254,8 @@ export default function Header() {
                             variant="ghost" 
                             className="w-full justify-start"
                             onClick={async () => {
-                              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+                              const { supabase } = await import("@/integrations/supabase/client");
+                              await supabase.auth.signOut();
                               window.location.href = '/';
                             }}
                           >
