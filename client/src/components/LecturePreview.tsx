@@ -222,6 +222,14 @@ export function LecturePreview({
   };
 
   const renderAssignmentPreview = () => {
+    if (assignmentLoading) {
+      return (
+        <div className="text-center py-12">
+          <FileUp className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading assignment...</p>
+        </div>
+      );
+    }
     if (!assignmentData) {
       return (
         <div className="text-center py-12">
