@@ -97,6 +97,8 @@ export default function AdminSetup() {
       });
       if (loginError) throw loginError;
       
+      // Wait for auth state to propagate before navigating
+      await new Promise(resolve => setTimeout(resolve, 500));
       setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Setup Failed", description: error.message || "Failed to setup admin account", variant: "destructive" });
@@ -128,6 +130,8 @@ export default function AdminSetup() {
       }
 
       toast({ title: "Welcome back, Admin!", description: "Redirecting to dashboard..." });
+      // Wait for auth state to propagate before navigating
+      await new Promise(resolve => setTimeout(resolve, 500));
       setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Login Failed", description: error.message || "Invalid credentials", variant: "destructive" });
