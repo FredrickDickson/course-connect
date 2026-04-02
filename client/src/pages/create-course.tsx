@@ -13,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
+import { useAuth } from "@/hooks/useAuth";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
