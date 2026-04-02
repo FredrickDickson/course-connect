@@ -105,7 +105,7 @@ export default function Register() {
           title: "Account created successfully!",
           description: "Welcome to CIMA Learn. Let's get started.",
         });
-        setLocation("/dashboard");
+        setLocation(formData.role === "instructor" ? "/instructor" : "/dashboard");
       } else {
         toast({
           title: "Check your email",
