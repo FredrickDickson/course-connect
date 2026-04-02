@@ -25,6 +25,7 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "student" as "student" | "instructor",
     agreeToTerms: false
   });
 
