@@ -39,9 +39,7 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
         variant: "destructive",
       });
       
-      setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 1000);
+      setTimeout(() => setLocation(redirectTo), 1000);
       return;
     }
 
