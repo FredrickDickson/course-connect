@@ -13,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
+import { useAuth } from "@/hooks/useAuth";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
@@ -50,9 +51,15 @@ export default function CreateCourse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('categories').select('id, name, slug');
+      if (error) throw error;
+      return data || [];
+    },
     enabled: hasAccess,
   });
 
@@ -74,12 +81,29 @@ export default function CreateCourse() {
 
   const createCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
-      const response = await apiRequest("POST", "/api/instructor/courses", data);
-      return response.json();
+      if (!user) throw new Error("Not authenticated");
+      const { data: course, error } = await supabase
+        .from('courses')
+        .insert({
+          title: data.title,
+          subtitle: data.subtitle,
+          description: data.description,
+          category_id: data.categoryId,
+          level: data.level,
+          price: data.price,
+          currency: data.currency,
+          thumbnail_url: data.thumbnailUrl || null,
+          is_published: data.isPublished,
+          is_featured: data.isFeatured,
+          instructor_id: user.id,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return course;
     },
     onSuccess: (course) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/instructor/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
       toast({
         title: "Success",
         description: "Course created successfully. Now add your curriculum!",
