@@ -31,6 +31,9 @@ export default function AdminDashboard() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [reviewComments, setReviewComments] = useState("");
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   // Fetch stats from Supabase
   const { data: stats } = useQuery({
