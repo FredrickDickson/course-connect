@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useLocation } from "wouter";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   GraduationCap, 
   FileText, 
@@ -27,8 +29,18 @@ import {
   Award,
   DollarSign,
   Star,
-  Clock
+  Clock,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  X
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const instructorApplicationSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -60,6 +72,309 @@ const expertiseAreas = [
   "Energy Disputes"
 ];
 
+// Instructor Signup/Login Component
+function InstructorAuth() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [signupData, setSignupData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [passwordStrength, setPasswordStrength] = useState({
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  });
+
+  const checkPasswordStrength = (password: string) => {
+    setPasswordStrength({
+      hasMinLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    });
+  };
+
+  const isPasswordValid = Object.values(passwordStrength).every(Boolean);
+  const passwordsMatch = signupData.password === signupData.confirmPassword && signupData.confirmPassword !== "";
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!isPasswordValid) {
+      setError("Password does not meet security requirements");
+      return;
+    }
+    if (!passwordsMatch) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            first_name: signupData.firstName,
+            last_name: signupData.lastName,
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      if (data.user) {
+        const { error: profileError } = await supabase.from("users").insert({
+          id: data.user.id,
+          email: signupData.email,
+          first_name: signupData.firstName,
+          last_name: signupData.lastName,
+          role: "instructor",
+        });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+        }
+      }
+
+      if (data.session) {
+        toast({
+          title: "Instructor account created!",
+          description: "Welcome to CIMA. Complete your application to start teaching.",
+        });
+        // Page will re-render with authenticated state and show the application form
+        window.location.reload();
+      } else {
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please verify your email to continue.",
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during registration");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+
+      if (authError) throw authError;
+
+      // Check role
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile?.role !== "instructor") {
+        toast({
+          title: "Not an instructor account",
+          description: "This account is registered as a student. Please create a new instructor account.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "Continue with your instructor application.",
+      });
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || "An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-8">
+        <GraduationCap className="w-12 h-12 text-primary mx-auto mb-3" />
+        <h2 className="text-2xl font-bold">Instructor Account</h2>
+        <p className="text-muted-foreground mt-1">
+          Create a dedicated instructor account or sign in to your existing one.
+        </p>
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs defaultValue="signup">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="signup">Create Account</TabsTrigger>
+          <TabsTrigger value="login">Sign In</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="signup">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Create Instructor Account</CardTitle>
+              <CardDescription>This is separate from any student account you may have.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signupFirstName">First Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input id="signupFirstName" placeholder="John" value={signupData.firstName} onChange={(e) => setSignupData(prev => ({ ...prev, firstName: e.target.value }))} required disabled={isLoading} className="pl-10" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signupLastName">Last Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input id="signupLastName" placeholder="Doe" value={signupData.lastName} onChange={(e) => setSignupData(prev => ({ ...prev, lastName: e.target.value }))} required disabled={isLoading} className="pl-10" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signupEmail">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="signupEmail" type="email" placeholder="instructor@example.com" value={signupData.email} onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))} required disabled={isLoading} className="pl-10" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Use a different email than your student account.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signupPassword">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="signupPassword" type={showPassword ? "text" : "password"} placeholder="••••••••" value={signupData.password} onChange={(e) => { setSignupData(prev => ({ ...prev, password: e.target.value })); checkPasswordStrength(e.target.value); }} required disabled={isLoading} className="pl-10 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {signupData.password && (
+                    <div className="mt-2 space-y-1 text-xs">
+                      <PasswordReq met={passwordStrength.hasMinLength} text="At least 8 characters" />
+                      <PasswordReq met={passwordStrength.hasUpperCase} text="One uppercase letter" />
+                      <PasswordReq met={passwordStrength.hasLowerCase} text="One lowercase letter" />
+                      <PasswordReq met={passwordStrength.hasNumber} text="One number" />
+                      <PasswordReq met={passwordStrength.hasSpecialChar} text="One special character" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signupConfirm">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="signupConfirm" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={signupData.confirmPassword} onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))} required disabled={isLoading} className="pl-10 pr-10" />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {signupData.confirmPassword && (
+                    <div className="flex items-center space-x-2 text-xs mt-1">
+                      {passwordsMatch ? (
+                        <><CheckCircle2 className="h-3 w-3 text-green-500" /><span className="text-green-600">Passwords match</span></>
+                      ) : (
+                        <><X className="h-3 w-3 text-destructive" /><span className="text-destructive">Passwords do not match</span></>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</>) : "Create Instructor Account"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="login">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Sign In as Instructor</CardTitle>
+              <CardDescription>Sign in with your existing instructor account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="loginEmail">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="loginEmail" type="email" placeholder="instructor@example.com" value={loginData.email} onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))} required disabled={isLoading} className="pl-10" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loginPassword">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="loginPassword" type="password" placeholder="••••••••" value={loginData.password} onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))} required disabled={isLoading} className="pl-10" />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</>) : "Sign In"}
+                </Button>
+
+                <div className="text-center">
+                  <Link href="/forgot-password">
+                    <span className="text-sm text-primary hover:underline cursor-pointer">Forgot password?</span>
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function PasswordReq({ met, text }: { met: boolean; text: string }) {
+  return (
+    <div className={cn("flex items-center space-x-2", met ? "text-green-600" : "text-muted-foreground")}>
+      {met ? <CheckCircle2 className="h-3 w-3" /> : <X className="h-3 w-3" />}
+      <span>{text}</span>
+    </div>
+  );
+}
+
 export default function BecomeInstructor() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -85,23 +400,31 @@ export default function BecomeInstructor() {
 
   const submitApplication = useMutation({
     mutationFn: async (data: InstructorApplicationForm) => {
-      if (!isAuthenticated) {
-        throw new Error("You must be logged in to apply");
-      }
+      if (!user) throw new Error("You must be logged in to apply");
       
-      await apiRequest("POST", "/api/instructor-applications", {
-        ...data,
-        areasOfExpertise: selectedExpertise,
+      const { error } = await supabase.from("instructor_applications").insert({
+        user_id: user.id,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        bio: data.bio,
+        experience: data.experience,
+        qualifications: data.qualifications,
+        previous_teaching: data.previousTeaching,
+        areas_of_expertise: data.areasOfExpertise,
       });
+
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({
         title: "Application Submitted!",
         description: "We'll review your application and get back to you within 3-5 business days.",
       });
-      setLocation("/dashboard");
+      setLocation("/instructor");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Submission Failed",
         description: error.message,
@@ -116,36 +439,6 @@ export default function BecomeInstructor() {
       areasOfExpertise: selectedExpertise,
     });
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <Card className="text-center">
-            <CardContent className="p-8">
-              <GraduationCap className="w-16 h-16 text-primary mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-4">Login Required</h2>
-              <p className="text-muted-foreground mb-6">
-                You need to be logged in to apply as an instructor. If you don't have an account yet, sign up first.
-              </p>
-              <div className="flex gap-4 justify-center">
-                <Link href="/login">
-                  <Button>Log In to Continue</Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="outline">Create Account</Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,382 +483,241 @@ export default function BecomeInstructor() {
         </div>
       </section>
 
-      {/* Application Form */}
-      <section className="py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-center mb-4">Instructor Application</h2>
-            <p className="text-muted-foreground text-center">
-              Please provide detailed information about your background and expertise.
-            </p>
-          </div>
+      {/* Auth or Application */}
+      {!isAuthenticated ? (
+        <InstructorAuth />
+      ) : (
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-center mb-4">Instructor Application</h2>
+              <p className="text-muted-foreground text-center">
+                Please provide detailed information about your background and expertise.
+              </p>
+            </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center space-x-4">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-              }`}>
-                1
-              </div>
-              <div className={`w-16 h-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-              }`}>
-                2
-              </div>
-              <div className={`w-16 h-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-              }`}>
-                3
+            {/* Progress Steps */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="flex items-center space-x-4">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                }`}>1</div>
+                <div className={`w-16 h-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                }`}>2</div>
+                <div className={`w-16 h-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                }`}>3</div>
               </div>
             </div>
+
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {step === 1 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Users className="w-5 h-5 mr-2" />
+                      Personal Information
+                    </CardTitle>
+                    <CardDescription>Tell us about yourself and your professional background.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" {...form.register("firstName")} placeholder="Your first name" />
+                        {form.formState.errors.firstName && <p className="text-sm text-destructive mt-1">{form.formState.errors.firstName.message}</p>}
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" {...form.register("lastName")} placeholder="Your last name" />
+                        {form.formState.errors.lastName && <p className="text-sm text-destructive mt-1">{form.formState.errors.lastName.message}</p>}
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input id="email" type="email" {...form.register("email")} placeholder="your.email@example.com" />
+                        {form.formState.errors.email && <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>}
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input id="phone" {...form.register("phone")} placeholder="+1 (555) 123-4567" />
+                        {form.formState.errors.phone && <p className="text-sm text-destructive mt-1">{form.formState.errors.phone.message}</p>}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="bio">Professional Bio</Label>
+                      <Textarea id="bio" {...form.register("bio")} placeholder="Tell us about your professional background..." rows={4} />
+                      <p className="text-xs text-muted-foreground mt-1">{form.watch("bio")?.length || 0}/500 characters (minimum 100)</p>
+                      {form.formState.errors.bio && <p className="text-sm text-destructive mt-1">{form.formState.errors.bio.message}</p>}
+                    </div>
+                    <div className="flex justify-end">
+                      <Button type="button" onClick={() => setStep(2)}>Next Step</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {step === 2 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <GraduationCap className="w-5 h-5 mr-2" />
+                      Professional Experience
+                    </CardTitle>
+                    <CardDescription>Share your expertise and qualifications in ADR.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <Label htmlFor="experience">Professional Experience</Label>
+                      <Textarea id="experience" {...form.register("experience")} placeholder="Describe your professional experience in ADR..." rows={4} />
+                      {form.formState.errors.experience && <p className="text-sm text-destructive mt-1">{form.formState.errors.experience.message}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="qualifications">Qualifications & Certifications</Label>
+                      <Textarea id="qualifications" {...form.register("qualifications")} placeholder="List your education, certifications..." rows={4} />
+                      {form.formState.errors.qualifications && <p className="text-sm text-destructive mt-1">{form.formState.errors.qualifications.message}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="previousTeaching">Teaching Experience</Label>
+                      <Textarea id="previousTeaching" {...form.register("previousTeaching")} placeholder="Describe any previous teaching experience..." rows={3} />
+                      {form.formState.errors.previousTeaching && <p className="text-sm text-destructive mt-1">{form.formState.errors.previousTeaching.message}</p>}
+                    </div>
+                    <div>
+                      <Label>Areas of Expertise</Label>
+                      <p className="text-sm text-muted-foreground mb-3">Select all areas where you have expertise to teach.</p>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {expertiseAreas.map((area) => (
+                          <div key={area} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={area}
+                              checked={selectedExpertise.includes(area)}
+                              onCheckedChange={(checked) => {
+                                if (checked) setSelectedExpertise([...selectedExpertise, area]);
+                                else setSelectedExpertise(selectedExpertise.filter(e => e !== area));
+                              }}
+                            />
+                            <Label htmlFor={area} className="text-sm font-normal">{area}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      {selectedExpertise.length === 0 && <p className="text-sm text-destructive mt-2">Please select at least one area of expertise.</p>}
+                    </div>
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => setStep(1)}>Previous</Button>
+                      <Button type="button" onClick={() => setStep(3)}>Next Step</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {step === 3 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Documents & Final Steps
+                    </CardTitle>
+                    <CardDescription>Upload supporting documents and review your application.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <Label>CV/Resume (Optional)</Label>
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Upload your CV or resume (PDF, DOC, or DOCX)</p>
+                        <Button variant="outline" size="sm" className="mt-2" disabled>Choose File (Coming Soon)</Button>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Video Introduction (Optional)</Label>
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                        <Video className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Record a 2-3 minute introduction video</p>
+                        <Button variant="outline" size="sm" className="mt-2" disabled>Upload Video (Coming Soon)</Button>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="agreedToTerms"
+                        checked={form.watch("agreedToTerms")}
+                        onCheckedChange={(checked) => form.setValue("agreedToTerms", checked as boolean)}
+                      />
+                      <Label htmlFor="agreedToTerms" className="text-sm leading-relaxed">
+                        I agree to CIMA's instructor terms and conditions, including content guidelines, revenue sharing agreement, and professional conduct standards.
+                      </Label>
+                    </div>
+                    {form.formState.errors.agreedToTerms && <p className="text-sm text-destructive">{form.formState.errors.agreedToTerms.message}</p>}
+
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <h4 className="font-semibold mb-2">What happens next?</h4>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li>• Our team will review your application within 3-5 business days</li>
+                        <li>• We may contact you for additional information or an interview</li>
+                        <li>• Once approved, you'll receive access to create and publish courses</li>
+                        <li>• You'll be notified via email about the status of your application</li>
+                      </ul>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => setStep(2)}>Previous</Button>
+                      <Button type="submit" disabled={submitApplication.isPending || !form.watch("agreedToTerms")}>
+                        {submitApplication.isPending ? (
+                          <><Clock className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
+                        ) : (
+                          <><CheckCircle className="w-4 h-4 mr-2" />Submit Application</>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </form>
+
+            {/* Why Teach Section */}
+            <Card className="mt-12">
+              <CardHeader>
+                <CardTitle>Why Teach with CIMA?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center">
+                      <Star className="w-4 h-4 mr-2 text-accent" />
+                      Professional Platform
+                    </h4>
+                    <p className="text-sm text-muted-foreground">Join a respected platform dedicated to Alternative Dispute Resolution education.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center">
+                      <Users className="w-4 h-4 mr-2 text-primary" />
+                      Global Community
+                    </h4>
+                    <p className="text-sm text-muted-foreground">Connect with ADR professionals and students from around the world.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center">
+                      <BookOpen className="w-4 h-4 mr-2 text-secondary" />
+                      Course Creation Tools
+                    </h4>
+                    <p className="text-sm text-muted-foreground">Access powerful tools to create engaging courses with video, quizzes, and resources.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center">
+                      <Award className="w-4 h-4 mr-2 text-accent" />
+                      Recognition & Impact
+                    </h4>
+                    <p className="text-sm text-muted-foreground">Build your reputation while making a meaningful impact on the ADR field.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {step === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    Personal Information
-                  </CardTitle>
-                  <CardDescription>
-                    Tell us about yourself and your professional background.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        {...form.register("firstName")}
-                        placeholder="Your first name"
-                      />
-                      {form.formState.errors.firstName && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.firstName.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        {...form.register("lastName")}
-                        placeholder="Your last name"
-                      />
-                      {form.formState.errors.lastName && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.lastName.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        {...form.register("email")}
-                        placeholder="your.email@example.com"
-                      />
-                      {form.formState.errors.email && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.email.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        {...form.register("phone")}
-                        placeholder="+1 (555) 123-4567"
-                      />
-                      {form.formState.errors.phone && (
-                        <p className="text-sm text-destructive mt-1">
-                          {form.formState.errors.phone.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="bio">Professional Bio</Label>
-                    <Textarea
-                      id="bio"
-                      {...form.register("bio")}
-                      placeholder="Tell us about your professional background, current role, and what motivates you to teach..."
-                      rows={4}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {form.watch("bio")?.length || 0}/500 characters (minimum 100)
-                    </p>
-                    {form.formState.errors.bio && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.bio.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={() => setStep(2)}>
-                      Next Step
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {step === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <GraduationCap className="w-5 h-5 mr-2" />
-                    Professional Experience
-                  </CardTitle>
-                  <CardDescription>
-                    Share your expertise and qualifications in ADR.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label htmlFor="experience">Professional Experience</Label>
-                    <Textarea
-                      id="experience"
-                      {...form.register("experience")}
-                      placeholder="Describe your professional experience in Alternative Dispute Resolution, including years of practice, notable cases, and current position..."
-                      rows={4}
-                    />
-                    {form.formState.errors.experience && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.experience.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="qualifications">Qualifications & Certifications</Label>
-                    <Textarea
-                      id="qualifications"
-                      {...form.register("qualifications")}
-                      placeholder="List your education, certifications, bar admissions, and relevant qualifications..."
-                      rows={4}
-                    />
-                    {form.formState.errors.qualifications && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.qualifications.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="previousTeaching">Teaching Experience</Label>
-                    <Textarea
-                      id="previousTeaching"
-                      {...form.register("previousTeaching")}
-                      placeholder="Describe any previous teaching, training, or mentoring experience..."
-                      rows={3}
-                    />
-                    {form.formState.errors.previousTeaching && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.previousTeaching.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label>Areas of Expertise</Label>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Select all areas where you have expertise to teach.
-                    </p>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {expertiseAreas.map((area) => (
-                        <div key={area} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={area}
-                            checked={selectedExpertise.includes(area)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedExpertise([...selectedExpertise, area]);
-                              } else {
-                                setSelectedExpertise(selectedExpertise.filter(e => e !== area));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={area} className="text-sm font-normal">
-                            {area}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    {selectedExpertise.length === 0 && (
-                      <p className="text-sm text-destructive mt-2">
-                        Please select at least one area of expertise.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between">
-                    <Button type="button" variant="outline" onClick={() => setStep(1)}>
-                      Previous
-                    </Button>
-                    <Button type="button" onClick={() => setStep(3)}>
-                      Next Step
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {step === 3 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FileText className="w-5 h-5 mr-2" />
-                    Documents & Final Steps
-                  </CardTitle>
-                  <CardDescription>
-                    Upload supporting documents and review your application.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* File Upload Placeholders */}
-                  <div>
-                    <Label>CV/Resume (Optional)</Label>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Upload your CV or resume (PDF, DOC, or DOCX)
-                      </p>
-                      <Button variant="outline" size="sm" className="mt-2" disabled>
-                        Choose File (Coming Soon)
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Video Introduction (Optional)</Label>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Video className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Record a 2-3 minute introduction video (MP4, MOV, or AVI)
-                      </p>
-                      <Button variant="outline" size="sm" className="mt-2" disabled>
-                        Upload Video (Coming Soon)
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Terms Agreement */}
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="agreedToTerms"
-                      checked={form.watch("agreedToTerms")}
-                      onCheckedChange={(checked) => form.setValue("agreedToTerms", checked as boolean)}
-                    />
-                    <Label htmlFor="agreedToTerms" className="text-sm leading-relaxed">
-                      I agree to CIMA's instructor terms and conditions, including content guidelines, 
-                      revenue sharing agreement, and professional conduct standards.
-                    </Label>
-                  </div>
-                  {form.formState.errors.agreedToTerms && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.agreedToTerms.message}
-                    </p>
-                  )}
-
-                  {/* Submit */}
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">What happens next?</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Our team will review your application within 3-5 business days</li>
-                      <li>• We may contact you for additional information or an interview</li>
-                      <li>• Once approved, you'll receive access to create and publish courses</li>
-                      <li>• You'll be notified via email about the status of your application</li>
-                    </ul>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <Button type="button" variant="outline" onClick={() => setStep(2)}>
-                      Previous
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={submitApplication.isPending || !form.watch("agreedToTerms")}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      {submitApplication.isPending ? (
-                        <>
-                          <Clock className="w-4 h-4 mr-2 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Submit Application
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </form>
-
-          {/* Why Teach Section */}
-          <Card className="mt-12">
-            <CardHeader>
-              <CardTitle>Why Teach with CIMA?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center">
-                    <Star className="w-4 h-4 mr-2 text-yellow-500" />
-                    Professional Platform
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Join a respected platform dedicated to Alternative Dispute Resolution education.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center">
-                    <Users className="w-4 h-4 mr-2 text-blue-500" />
-                    Global Community
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Connect with ADR professionals and students from around the world.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2 text-green-500" />
-                    Course Creation Tools
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Access powerful tools to create engaging courses with video, quizzes, and resources.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2 flex items-center">
-                    <Award className="w-4 h-4 mr-2 text-purple-500" />
-                    Recognition & Impact
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Build your reputation while making a meaningful impact on the ADR field.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+        </section>
+      )}
 
       <Footer />
     </div>
