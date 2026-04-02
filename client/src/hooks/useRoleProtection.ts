@@ -10,7 +10,7 @@ interface UseRoleProtectionOptions {
 }
 
 export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
-  const { requiredRole, requiresAuth = true, redirectTo = "/api/login" } = options;
+  const { requiredRole, requiresAuth = true, redirectTo = "/login" } = options;
   const { user, isLoading, isAuthenticated, hasRole } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
