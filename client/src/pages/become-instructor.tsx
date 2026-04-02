@@ -443,6 +443,30 @@ export default function BecomeInstructor() {
     },
   });
 
+  const goToStep2 = async () => {
+    const isValid = await form.trigger(["firstName", "lastName", "email", "phone", "bio"]);
+    if (isValid) setStep(2);
+  };
+
+  const handleExpertiseChange = (area: string, checked: boolean) => {
+    const nextSelected = checked
+      ? [...selectedExpertise, area]
+      : selectedExpertise.filter((item) => item !== area);
+
+    setSelectedExpertise(nextSelected);
+    form.setValue("areasOfExpertise", nextSelected, { shouldDirty: true, shouldValidate: true });
+
+    if (nextSelected.length > 0) {
+      form.clearErrors("areasOfExpertise");
+    }
+  };
+
+  const goToStep3 = async () => {
+    form.setValue("areasOfExpertise", selectedExpertise, { shouldDirty: true, shouldValidate: true });
+    const isValid = await form.trigger(["experience", "qualifications", "previousTeaching", "areasOfExpertise"]);
+    if (isValid) setStep(3);
+  };
+
   const submitApplication = useMutation({
     mutationFn: async (data: InstructorApplicationForm) => {
       if (!user) throw new Error("You must be logged in to apply");
