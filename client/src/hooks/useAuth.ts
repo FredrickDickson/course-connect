@@ -45,25 +45,27 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session — set loading false AFTER profile is fetched
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        fetchUserProfile(session.user);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchUserProfile(session.user);
+        await fetchUserProfile(session.user);
       } else {
         setUser(null);
       }
       setIsLoading(false);
     });
+
+    // Listen for subsequent auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          await fetchUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, [fetchUserProfile]);
