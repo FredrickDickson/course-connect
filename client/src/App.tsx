@@ -56,6 +56,7 @@ import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
 import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 
@@ -72,6 +73,7 @@ function Router() {
       {/* Public routes available to everyone */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
       <Route path="/admin-setup" component={AdminSetup} />
