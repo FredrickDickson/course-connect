@@ -1,14 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable. Please add it to Replit Secrets.');
-}
-
-if (!supabaseKey) {
-  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable. Please add it to Replit Secrets.');
-}
+const supabaseUrl = 'https://emvibxbcrvritkwkguya.supabase.co';
+const supabaseKey = 'sb_publishable_aCasNKB6_GbuTAK6yTGqBA_95zG6X-c';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

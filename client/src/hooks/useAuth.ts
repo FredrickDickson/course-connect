@@ -1,22 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
-import type { User } from "@shared/schema";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function useAuth() {
-  const { data: user, isLoading } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
-    retry: false,
-  });
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const hasRole = (role: 'student' | 'instructor' | 'admin') => {
-    return user?.role === role;
-  };
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
 
-  const isInstructor = () => hasRole('instructor') || hasRole('admin');
-  const isAdmin = () => hasRole('admin');
-  const isStudent = () => hasRole('student');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const hasRole = (_role: string) => false;
+  const isInstructor = () => false;
+  const isAdmin = () => false;
+  const isStudent = () => true;
 
   return {
-    user: user as User | undefined,
+    user,
     isLoading,
     isAuthenticated: !!user,
     hasRole,
