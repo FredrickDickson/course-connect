@@ -381,6 +381,51 @@ export default function BecomeInstructor() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvUploading, setCvUploading] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+
+  const uploadFile = async (file: File, bucket: string, folder: string) => {
+    const ext = file.name.split('.').pop();
+    const filePath = `${folder}/${user!.id}-${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, { upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+    return urlData.publicUrl;
+  };
+
+  const handleCvUpload = async (file: File) => {
+    setCvFile(file);
+    setCvUploading(true);
+    try {
+      const url = await uploadFile(file, 'instructor-cv', 'cv');
+      setCvUrl(url);
+      toast({ title: "CV uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "CV upload failed", description: err.message, variant: "destructive" });
+      setCvFile(null);
+    } finally {
+      setCvUploading(false);
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setVideoFile(file);
+    setVideoUploading(true);
+    try {
+      const url = await uploadFile(file, 'instructor-videos', 'intro');
+      setVideoUrl(url);
+      toast({ title: "Video uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "Video upload failed", description: err.message, variant: "destructive" });
+      setVideoFile(null);
+    } finally {
+      setVideoUploading(false);
+    }
+  };
 
   const form = useForm<InstructorApplicationForm>({
     resolver: zodResolver(instructorApplicationSchema),
