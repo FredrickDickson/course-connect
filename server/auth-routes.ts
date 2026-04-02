@@ -374,8 +374,6 @@ export function registerAuthRoutes(app: Express) {
     try {
       const { error } = await supabase.auth.updateUser({
         password: password,
-      }, {
-        jwt: token,
       });
 
       if (error) {
