@@ -81,12 +81,29 @@ export default function CreateCourse() {
 
   const createCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
-      const response = await apiRequest("POST", "/api/instructor/courses", data);
-      return response.json();
+      if (!user) throw new Error("Not authenticated");
+      const { data: course, error } = await supabase
+        .from('courses')
+        .insert({
+          title: data.title,
+          subtitle: data.subtitle,
+          description: data.description,
+          category_id: data.categoryId,
+          level: data.level,
+          price: data.price,
+          currency: data.currency,
+          thumbnail_url: data.thumbnailUrl || null,
+          is_published: data.isPublished,
+          is_featured: data.isFeatured,
+          instructor_id: user.id,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return course;
     },
     onSuccess: (course) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/instructor/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
       toast({
         title: "Success",
         description: "Course created successfully. Now add your curriculum!",
