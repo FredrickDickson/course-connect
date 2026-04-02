@@ -90,7 +90,7 @@ export default function Register() {
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          role: formData.role,
+          role: "student",
         });
 
         if (profileError) {
