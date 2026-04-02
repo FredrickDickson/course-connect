@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, Settings, LogIn, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -39,6 +40,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function AdminSetup() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setLocation] = useLocation();
   const [adminExists, setAdminExists] = useState<boolean | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -96,6 +98,7 @@ export default function AdminSetup() {
       if (loginError) throw loginError;
       
       window.location.assign("/admin");
+      setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Setup Failed", description: error.message || "Failed to setup admin account", variant: "destructive" });
     } finally {
@@ -127,6 +130,7 @@ export default function AdminSetup() {
 
       toast({ title: "Welcome back, Admin!", description: "Redirecting to dashboard..." });
       window.location.assign("/admin");
+      setLocation("/admin");
     } catch (error: any) {
       toast({ title: "Login Failed", description: error.message || "Invalid credentials", variant: "destructive" });
     } finally {
