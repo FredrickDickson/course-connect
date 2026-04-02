@@ -291,7 +291,15 @@ export function LectureContentEditor({
                 {currentLessonId ? (
                   <AssignmentBuilder lessonId={currentLessonId} onSave={async (assignmentData) => {
                     try {
-                      const { error } = await supabase.from('assignments').insert({ ...assignmentData, lesson_id: currentLessonId });
+                      const { error } = await supabase.from('assignments').insert({
+                        lesson_id: currentLessonId,
+                        title: assignmentData.title,
+                        description: assignmentData.description || '',
+                        instructions: assignmentData.instructions || null,
+                        max_score: assignmentData.maxPoints ?? 100,
+                        due_date: assignmentData.dueDate || null,
+                        allow_late_submission: assignmentData.allowLateSubmission ?? true,
+                      });
                       if (error) throw error;
                       toast({ title: 'Success', description: 'Assignment saved successfully' });
                     } catch (error) {
