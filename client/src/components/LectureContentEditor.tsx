@@ -228,6 +228,22 @@ export function LectureContentEditor({
                 {currentLessonId ? (
                   <QuizBuilder lessonId={currentLessonId} onSave={async (quizData) => {
                     try {
+                       const normalizedQuestions = (quizData.questions || []).map((question: any, questionIndex: number) => ({
+                         question: question.question,
+                         questionType: question.questionType || question.type || 'multiple_choice',
+                         points: question.points ?? 1,
+                         order: question.order ?? questionIndex,
+                         answers: question.questionType === 'fill_blank'
+                           ? (question.correctAnswer?.trim()
+                               ? [{ answer: question.correctAnswer.trim(), isCorrect: true }]
+                               : [])
+                           : (question.answers || []).map((answer: any, answerIndex: number) => ({
+                               answer: answer.answer || answer.text || '',
+                               isCorrect: !!answer.isCorrect,
+                               order: answerIndex,
+                             })),
+                       }));
+
                       // Insert quiz with snake_case columns
                       const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
                         lesson_id: currentLessonId,
@@ -240,12 +256,12 @@ export function LectureContentEditor({
                       if (quizError) throw quizError;
 
                       // Insert questions and answers
-                      if (quizData.questions?.length > 0) {
-                        for (const q of quizData.questions) {
+                       if (normalizedQuestions.length > 0) {
+                         for (const q of normalizedQuestions) {
                           const { data: question, error: qError } = await supabase.from('quiz_questions').insert({
                             quiz_id: quiz.id,
                             question: q.question,
-                            question_type: q.type || 'multiple_choice',
+                             question_type: q.questionType,
                             points: q.points ?? 1,
                             order: q.order ?? 0,
                           }).select().single();
@@ -254,9 +270,9 @@ export function LectureContentEditor({
                           if (q.answers?.length > 0) {
                             const answersToInsert = q.answers.map((a: any, idx: number) => ({
                               question_id: question.id,
-                              answer: a.text,
+                               answer: a.answer,
                               is_correct: a.isCorrect ?? false,
-                              order: idx,
+                               order: a.order ?? idx,
                             }));
                             const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
                             if (aError) throw aError;
@@ -266,7 +282,12 @@ export function LectureContentEditor({
 
                       toast({ title: 'Success', description: 'Quiz saved successfully' });
                     } catch (error) {
-                      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save quiz', variant: 'destructive' });
+                       const errorMessage = error instanceof Error
+                         ? error.message
+                         : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
+                           ? error.message
+                           : 'Failed to save quiz';
+                       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
                     }
                   }} />
                 ) : (
