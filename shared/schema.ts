@@ -573,9 +573,7 @@ export type CourseResource = typeof courseResources.$inferSelect;
 export type InsertCourseResource = typeof courseResources.$inferInsert;
 
 // Zod schemas for validation
-export const insertCourseSchema = createInsertSchema(courses, {
-  price: z.union([z.string(), z.number()]).transform(val => String(val)),
-}).omit({
+export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

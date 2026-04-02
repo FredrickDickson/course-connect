@@ -56,6 +56,7 @@ import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
 import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 
@@ -72,9 +73,11 @@ function Router() {
       {/* Public routes available to everyone */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
       <Route path="/admin-setup" component={AdminSetup} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/cookie-policy" component={CookiePolicy} />
@@ -92,13 +95,12 @@ function Router() {
       <Route path="/professional-standards" component={ProfessionalStandards} />
       
       {/* Protected routes - only for authenticated users */}
-      {isAuthenticated && (
+      {isAuthenticated ? (
         <>
           <Route path="/profile" component={Profile} />
           <Route path="/courses" component={Courses} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/instructor" component={InstructorDashboard} />
-          <Route path="/admin" component={AdminDashboard} />
           <Route path="/instructor/courses/new" component={CreateCourse} />
           <Route path="/instructor/courses/:courseId/curriculum" component={CourseCurriculum} />
           <Route path="/checkout/:courseId" component={Checkout} />
@@ -107,9 +109,17 @@ function Router() {
           <Route path="/quiz/:quizId" component={QuizPage} />
           <Route path="/community" component={Community} />
         </>
-      )}
+      ) : isLoading ? (
+        <Route>
+          {() => (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          )}
+        </Route>
+      ) : null}
       
-      <Route component={NotFound} />
+      {!isLoading && <Route component={NotFound} />}
     </Switch>
   );
 }
