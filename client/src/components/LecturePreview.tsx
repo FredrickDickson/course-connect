@@ -33,14 +33,14 @@ export function LecturePreview({
   lessonType,
 }: LecturePreviewProps) {
   // Fetch lesson data from Supabase
-  const { data: lessonData } = useQuery({
+  const { data: lessonData, isLoading: lessonLoading } = useQuery({
     queryKey: ['lesson-preview', lessonId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lessons')
         .select('*')
         .eq('id', lessonId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
