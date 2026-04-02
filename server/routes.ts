@@ -1155,7 +1155,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete assignment
   app.delete('/api/instructor/assignments/:assignmentId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { assignmentId } = req.params;
-    await storage.deleteAssignment(assignmentId);
+    const { db } = await import('./db');
+    const { assignments } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    await db.delete(assignments).where(eq(assignments.id, assignmentId));
     res.json({ success: true });
   }));
 

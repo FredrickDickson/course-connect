@@ -482,7 +482,7 @@ export function registerAuthRoutes(app: Express) {
     try {
       const { error } = await supabase.auth.verifyOtp({
         token_hash: token,
-        type: type as 'email' | 'sms' | 'recovery',
+        type: type as 'email' | 'recovery',
       });
 
       if (error) {
