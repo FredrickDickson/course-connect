@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # CIMA Learn - Professional ADR Education Platform
 
 A comprehensive Udemy-style Learning Management System (LMS) for the Center for International Mediators and Arbitrators (CIMA), providing world-class Alternative Dispute Resolution (ADR) training and certification programs with full instructor capabilities, course creation tools, student enrollment systems, and complete administrative oversight.
@@ -6,11 +5,11 @@ A comprehensive Udemy-style Learning Management System (LMS) for the Center for 
 ## 🚀 Current Status
 
 **✅ Production-Ready Development Version**
-- **All Major Bugs Resolved**: 18 → 0 LSP diagnostics fixed
-- **Server Status**: Running stable on port 5000
-- **Authentication**: Working with Replit OAuth integration
+- **Status**: Stable and feature-complete (as of April 2026)
+- **Authentication**: Secure Session-based Auth with multi-role support
 - **Admin Panel**: Fully operational with comprehensive management tools
 - **Multi-Role System**: Complete student, instructor, and admin functionality
+- **Payments**: Integrated with Paystack for secure transactions
 
 ## 🎯 Overview
 
@@ -91,44 +90,33 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 ## 🛠 Technology Stack
 
 ### **Frontend**
-- **React 18** with TypeScript for type-safe, modern web development
-- **Wouter** for lightweight, declarative routing
-- **TanStack Query** for powerful server state management
-- **shadcn/ui** component library built on Radix UI primitives
-- **Tailwind CSS** for utility-first styling and responsive design
-- **Vite** for fast development and optimized production builds
+- **React 18** with TypeScript
+- **Vite** for optimized builds
+- **TanStack Query** for server state management
+- **Wouter** for lightweight routing
+- **shadcn/ui** & **Radix UI** for accessible components
+- **Tailwind CSS** for professional design
 
 ### **Backend**
-- **Express.js** with TypeScript for robust server-side development
-- **Drizzle ORM** for type-safe database operations and migrations
-- **PostgreSQL** via Neon serverless with memory session fallback
-- **Passport.js** with Replit OpenID Connect for secure authentication
-- **Session Management**: PostgreSQL-backed sessions with memory store fallback
-- **RESTful API** design with comprehensive error handling and rate limiting
-
-### **Payment Processing**
-- **Paystack** integration for secure payment processing
-- **Webhook handling** for automated enrollment and order management
-- **Multiple currency support** for global accessibility
-
-### **Development Tools**
-- **TypeScript** for full-stack type safety
-- **ESLint & Prettier** for code quality and consistency
-- **Hot Module Replacement** for rapid development iteration
+- **Express.js** with TypeScript
+- **PostgreSQL** with **Drizzle ORM**
+- **Passport.js** for authentication
+- **Zod** for schema validation
+- **Multer** for secure file uploads
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
-- PostgreSQL database (Neon recommended)
-- Paystack account for payment processing
+- Node.js 18+
+- PostgreSQL database
+- Paystack API keys (for payments)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone [repository-url]
-   cd cima-learn
+   cd course-connect
    ```
 
 2. **Install dependencies**
@@ -137,12 +125,12 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
    ```
 
 3. **Environment Setup**
-   Create a `.env` file with the following variables:
+   Create a `.env` file based on the provided configuration:
    ```env
-   DATABASE_URL=your_postgresql_connection_string
-   SESSION_SECRET=your_session_secret
-   PAYSTACK_SECRET_KEY=your_paystack_secret_key
-   VITE_PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+   DATABASE_URL=your_postgresql_url
+   SESSION_SECRET=your_secret
+   PAYSTACK_SECRET_KEY=your_secret_key
+   VITE_PAYSTACK_PUBLIC_KEY=your_public_key
    ```
 
 4. **Database Setup**
@@ -157,73 +145,11 @@ CIMA Learn is a modern, full-stack Udemy-style web application designed to deliv
 
 The application will be available at `http://localhost:5000`
 
-## 🔧 Admin Setup
-
-### **Initial Admin Account Creation**
-
-For the first-time setup, you'll need to create an admin account to access the administrative dashboard:
-
-1. **Navigate to Admin Setup**
-   ```
-   http://localhost:5000/admin-setup
-   ```
-
-2. **Use Setup Key**
-   ```
-   Setup Key: CIMA_ADMIN_SETUP_2024
-   ```
-
-3. **Admin Account Process**
-   - **Option A**: If you already have a user account via OAuth:
-     - Enter your registered email address
-     - Use the setup key above
-     - Your account will be upgraded to admin role
-   
-   - **Option B**: Create admin account manually (development only):
-     - Use the debug endpoint: `POST /api/admin/create-user`
-     - Provide email, firstName, lastName, and setupKey
-     - Admin account will be created with full privileges
-
-4. **Access Admin Dashboard**
-   ```
-   http://localhost:5000/admin
-   ```
-
-### **Admin Capabilities**
-- **User Management**: View, edit, and manage all platform users
-- **Instructor Applications**: Review and approve instructor applications
-- **Course Oversight**: Monitor and approve course publications
-- **Platform Analytics**: Access comprehensive business metrics
-- **System Configuration**: Manage platform settings and features
-
-## 🔍 Troubleshooting
-
-### **Common Issues**
-
-#### **Database Connection Issues**
-If you encounter database connection problems:
-- The application automatically falls back to memory sessions
-- Check your `DATABASE_URL` environment variable
-- Ensure your Neon database endpoint is enabled
-- Memory fallback allows continued development during database issues
-
-#### **Authentication Problems**
-- Clear browser cookies and local storage
-- Verify Replit OAuth configuration
-- Check that you're accessing the correct domain/port
-- Ensure session store is functioning (memory or PostgreSQL)
-
-#### **Admin Access Issues**
-- Verify you're using the correct setup key: `CIMA_ADMIN_SETUP_2024`
-- Ensure your user account exists before admin setup
-- Check that you have the correct email address
-- Try the manual admin creation endpoint for development
-
-## 📁 Project Structure
+##  Project Structure
 
 ```
 cima-learn/
-├── client/                 # Frontend React application
+├── client/          # Frontend React application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
 │   │   ├── pages/         # Application pages/routes
@@ -349,10 +275,5 @@ The Center for International Mediators and Arbitrators is a leading institution 
 
 ---
 
-*Last updated: January 26, 2025*# cima_study
-# cima_study
-=======
-# Welcome to your Lovable project
+*Last updated: January 26, 2025*
 
-TODO: Document your project here
->>>>>>> 1a8480473c6676f6c957dca85f5187aec1355536
