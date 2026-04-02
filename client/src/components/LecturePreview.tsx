@@ -84,7 +84,7 @@ export function LecturePreview({
   });
 
   // Fetch assignment
-  const { data: assignmentData } = useQuery({
+  const { data: assignmentData, isLoading: assignmentLoading } = useQuery({
     queryKey: ['lesson-preview-assignment', lessonId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,7 +97,7 @@ export function LecturePreview({
       if (error) throw error;
       return data;
     },
-    enabled: open && lessonType === 'assignment',
+    enabled: open && !!lessonId && lessonType === 'assignment',
   });
 
   const renderVideoPreview = () => {
