@@ -374,27 +374,45 @@ export default function AdminDashboard() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="text-left p-4 font-medium">Name</th>
-                          <th className="text-left p-4 font-medium">Email</th>
-                          <th className="text-left p-4 font-medium">Role</th>
-                          <th className="text-left p-4 font-medium">Joined</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allUsers.map((u: any) => (
-                          <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
-                            <td className="p-4">{u.first_name} {u.last_name}</td>
-                            <td className="p-4 text-muted-foreground">{u.email}</td>
-                            <td className="p-4">
-                              <Badge variant={u.role === 'admin' ? 'default' : u.role === 'instructor' ? 'secondary' : 'outline'}>
-                                {u.role}
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+                         <tr className="border-b bg-muted/50">
+                           <th className="text-left p-4 font-medium">Name</th>
+                           <th className="text-left p-4 font-medium">Email</th>
+                           <th className="text-left p-4 font-medium">Role</th>
+                           <th className="text-left p-4 font-medium">Joined</th>
+                         </tr>
+                       </thead>
+                       <tbody>
+                         {allUsers.map((u: any) => {
+                           const isCurrentUser = u.id === user?.id;
+                           return (
+                             <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
+                               <td className="p-4">{u.first_name} {u.last_name}</td>
+                               <td className="p-4 text-muted-foreground">{u.email}</td>
+                               <td className="p-4">
+                                 {isCurrentUser || u.role === 'admin' ? (
+                                   <Badge variant={u.role === 'admin' ? 'default' : u.role === 'instructor' ? 'secondary' : 'outline'}>
+                                     {u.role}
+                                   </Badge>
+                                 ) : (
+                                   <Select
+                                     value={u.role || 'student'}
+                                     onValueChange={(newRole) => changeUserRole.mutate({ userId: u.id, newRole })}
+                                   >
+                                     <SelectTrigger className="w-[130px] h-8">
+                                       <SelectValue />
+                                     </SelectTrigger>
+                                     <SelectContent>
+                                       <SelectItem value="student">Student</SelectItem>
+                                       <SelectItem value="instructor">Instructor</SelectItem>
+                                     </SelectContent>
+                                   </Select>
+                                 )}
+                               </td>
+                               <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                             </tr>
+                           );
+                         })}
+                       </tbody>
                     </table>
                   </div>
                 </CardContent>
