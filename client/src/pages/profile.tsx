@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User, Mail, Globe, Clock, BookOpen, Award, Edit2, Save, X } from "lucide-react";
+import { User, Mail, Globe, Clock, BookOpen, Award, Edit2, Save, X, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { CourseWithDetails } from "@shared/schema";
 
