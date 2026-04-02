@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, BookOpen, UserCheck, UserX, Eye, Download, Calendar, Mail, Phone,
   GraduationCap, FileText, Video, CheckCircle, XCircle, Clock, AlertCircle,
-  TrendingUp, DollarSign
+  TrendingUp, DollarSign, UserPlus, Shield
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
@@ -31,6 +31,9 @@ export default function AdminDashboard() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [reviewComments, setReviewComments] = useState("");
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   // Fetch stats from Supabase
   const { data: stats } = useQuery({
@@ -147,6 +150,40 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const handleCreateAdmin = async () => {
+    if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || !newAdmin.password) {
+      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      return;
+    }
+    if (newAdmin.password.length < 8) {
+      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    setIsCreatingAdmin(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
+          firstName: newAdmin.firstName,
+          lastName: newAdmin.lastName,
+          email: newAdmin.email,
+          password: newAdmin.password,
+          createByAdmin: true,
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      toast({ title: "Admin Created", description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.` });
+      setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
+      setShowCreateAdmin(false);
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+    } catch (error: any) {
+      toast({ title: "Failed", description: error.message || "Could not create admin", variant: "destructive" });
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -283,7 +320,31 @@ export default function AdminDashboard() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
-            <h2 className="text-2xl font-bold">User Management</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">User Management</h2>
+              <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+                <DialogTrigger asChild>
+                  <Button><UserPlus className="w-4 h-4 mr-2" />Create Admin</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5" />Create Admin Account</DialogTitle>
+                    <DialogDescription>Create a new administrator account with full platform access.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>First Name</Label><Input value={newAdmin.firstName} onChange={e => setNewAdmin(p => ({...p, firstName: e.target.value}))} placeholder="First name" /></div>
+                      <div><Label>Last Name</Label><Input value={newAdmin.lastName} onChange={e => setNewAdmin(p => ({...p, lastName: e.target.value}))} placeholder="Last name" /></div>
+                    </div>
+                    <div><Label>Email</Label><Input type="email" value={newAdmin.email} onChange={e => setNewAdmin(p => ({...p, email: e.target.value}))} placeholder="admin@cimalearn.org" /></div>
+                    <div><Label>Password</Label><Input type="password" value={newAdmin.password} onChange={e => setNewAdmin(p => ({...p, password: e.target.value}))} placeholder="Min 8 characters" /></div>
+                    <Button className="w-full" onClick={handleCreateAdmin} disabled={isCreatingAdmin}>
+                      {isCreatingAdmin ? "Creating..." : "Create Admin Account"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             {usersLoading ? (
               <Card className="animate-pulse"><CardContent className="p-6"><div className="h-40 bg-muted rounded" /></CardContent></Card>
             ) : (
