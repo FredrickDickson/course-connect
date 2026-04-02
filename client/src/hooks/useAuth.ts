@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserProfile {
@@ -12,81 +13,97 @@ interface UserProfile {
 
 export function useAuth() {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
-  const fetchUserProfile = useCallback(async (authUser: any) => {
+  const fetchUserProfile = useCallback(async (currentAuthUser: User): Promise<UserProfile> => {
     const { data: profile, error } = await supabase
       .from("users")
       .select("role, first_name, last_name, profile_image_url")
-      .eq("id", authUser.id)
+      .eq("id", currentAuthUser.id)
       .maybeSingle();
 
     if (error) {
       console.error("Profile fetch error:", error);
     }
 
-    setUser({
-      id: authUser.id,
-      email: authUser.email || "",
-      firstName: profile?.first_name || authUser.user_metadata?.first_name || authUser.email?.split("@")[0] || "",
-      lastName: profile?.last_name || authUser.user_metadata?.last_name || "",
-      profileImageUrl: profile?.profile_image_url || authUser.user_metadata?.avatar_url || "",
-      role: profile?.role || "student",
-    });
+    return {
+      id: currentAuthUser.id,
+      email: currentAuthUser.email || "",
+      firstName: profile?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
+      profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
+      role: profile?.role || currentAuthUser.user_metadata?.role || "student",
+    };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    const syncAuthUser = async (authUser: any | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
 
-      if (!authUser) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await fetchUserProfile(authUser);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      if (event === "TOKEN_REFRESHED") {
-        return;
-      }
-
-      setIsLoading(true);
-      void syncAuthUser(session?.user ?? null);
+      setAuthUser(session?.user ?? null);
+      setIsAuthReady(true);
     });
 
     void supabase.auth.getSession().then(({ data: { session } }) => {
-      void syncAuthUser(session?.user ?? null);
+      if (!isMounted) return;
+
+      setAuthUser(session?.user ?? null);
+      setIsAuthReady(true);
     });
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!isAuthReady) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    if (!authUser) {
+      setUser(null);
+      setIsProfileLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsProfileLoading(true);
+
+    void fetchUserProfile(authUser)
+      .then((nextUser) => {
+        if (!isMounted) return;
+        setUser(nextUser);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsProfileLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authUser, fetchUserProfile, isAuthReady]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    setAuthUser(null);
     setUser(null);
+    setIsProfileLoading(false);
+    setIsAuthReady(true);
   }, []);
+
+  const isLoading = !isAuthReady || (!!authUser && isProfileLoading);
 
   const hasRole = (role: string) => user?.role === role;
   const isInstructor = () => hasRole("instructor") || hasRole("admin");
