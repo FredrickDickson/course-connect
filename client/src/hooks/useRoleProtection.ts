@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
@@ -14,6 +14,7 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
   const { user, isLoading, isAuthenticated, hasRole } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasAccess = (() => {
     if (isLoading) return false;
@@ -32,6 +33,12 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
   useEffect(() => {
     if (isLoading) return;
 
+    // Clear any pending redirect if user is now authenticated with correct role
+    if (redirectTimer.current) {
+      clearTimeout(redirectTimer.current);
+      redirectTimer.current = null;
+    }
+
     if (requiresAuth && !isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -39,9 +46,7 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
         variant: "destructive",
       });
       
-      setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 1000);
+      redirectTimer.current = setTimeout(() => setLocation(redirectTo), 1000);
       return;
     }
 
@@ -52,12 +57,16 @@ export function useRoleProtection(options: UseRoleProtectionOptions = {}) {
         variant: "destructive",
       });
       
-      setTimeout(() => {
-        setLocation("/");
-      }, 1000);
+      redirectTimer.current = setTimeout(() => setLocation("/"), 1000);
       return;
     }
   }, [isLoading, isAuthenticated, user, requiredRole, hasRole, toast, setLocation, redirectTo, requiresAuth]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   return {
     isLoading,

@@ -77,6 +77,7 @@ function Router() {
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
       <Route path="/admin-setup" component={AdminSetup} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/cookie-policy" component={CookiePolicy} />
@@ -100,7 +101,6 @@ function Router() {
           <Route path="/courses" component={Courses} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/instructor" component={InstructorDashboard} />
-          <Route path="/admin" component={AdminDashboard} />
           <Route path="/instructor/courses/new" component={CreateCourse} />
           <Route path="/instructor/courses/:courseId/curriculum" component={CourseCurriculum} />
           <Route path="/checkout/:courseId" component={Checkout} />
