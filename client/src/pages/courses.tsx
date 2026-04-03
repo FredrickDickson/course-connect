@@ -27,12 +27,12 @@ export default function Courses() {
   });
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['/api/courses', { 
-      search, 
-      category: category === 'all' ? '' : category, 
-      level: level === 'all' ? '' : level, 
-      sortBy, 
-      priceRange: priceRange === 'all' ? '' : priceRange 
+    queryKey: ['/api/courses', {
+      search,
+      category: category === 'all' ? '' : category,
+      level: level === 'all' ? '' : level,
+      sortBy,
+      priceRange: priceRange === 'all' ? '' : priceRange
     }],
     enabled: true,
   });
@@ -240,8 +240,8 @@ export default function Courses() {
             {courses.filter((course: any) => course.isFeatured).slice(0, 2).map((course: any) => (
               <Card key={course.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
                 <div className="relative">
-                  <img 
-                    src={course.thumbnailUrl} 
+                  <img
+                    src={course.thumbnailUrl}
                     alt={course.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -266,7 +266,7 @@ export default function Courses() {
                         {course.description}
                       </p>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <div className="text-2xl font-bold text-foreground">
@@ -303,7 +303,7 @@ export default function Courses() {
                   {courses.length > 0 && `${courses.length} course${courses.length !== 1 ? 's' : ''} available`}
                 </p>
               </div>
-              
+
               {courses.length > 0 && (
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-muted-foreground">
@@ -377,7 +377,7 @@ export default function Courses() {
           {/* Course Results */}
           {!isLoading && courses.length > 0 && (
             <div className={
-              viewMode === "grid" 
+              viewMode === "grid"
                 ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
                 : "space-y-6"
             }>
@@ -390,7 +390,7 @@ export default function Courses() {
                       <div className="flex space-x-4">
                         <div className="w-24 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
                           {course.thumbnailUrl ? (
-                            <img 
+                            <img
                               src={course.thumbnailUrl}
                               alt={course.title}
                               className="w-full h-full object-cover"
@@ -431,13 +431,13 @@ export default function Courses() {
                             </div>
                             <div className="flex flex-col items-end space-y-2 ml-4">
                               <div className="text-lg font-bold text-primary">
-                                {course.price && parseFloat(course.price.toString()) > 0 
+                                {course.price && parseFloat(course.price.toString()) > 0
                                   ? `$${parseFloat(course.price.toString()).toFixed(2)}`
                                   : 'Free'
                                 }
                               </div>
                               <Button size="sm" asChild>
-                                <a href={`/courses/${course.id}`}>View Course</a>
+                                <a href={`/course/${course.id}`}>View Course</a>
                               </Button>
                             </div>
                           </div>

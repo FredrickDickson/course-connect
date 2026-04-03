@@ -167,16 +167,16 @@ export default function InstructorDashboard() {
                     {courses.slice(0, 4).map((course: any) => (
                       <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-video relative">
-                          {course.thumbnail_url ? (
-                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                          {course.thumbnailUrl ? (
+                            <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                               <BookOpen className="h-12 w-12 text-primary/40" />
                             </div>
                           )}
                           <div className="absolute top-2 right-2">
-                            <Badge variant={course.is_published ? "default" : "secondary"}>
-                              {course.is_published ? "Published" : "Draft"}
+                            <Badge variant={course.isPublished ? "default" : "secondary"}>
+                              {course.isPublished ? "Published" : "Draft"}
                             </Badge>
                           </div>
                         </div>
@@ -185,11 +185,11 @@ export default function InstructorDashboard() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                             <span className="flex items-center gap-1">
                               <Users className="h-3 w-3" />
-                              {course.enrollment_count || 0}
+                              {course.enrollmentCount || 0}
                             </span>
                             <span className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              {Number(course.avg_rating || 0).toFixed(1)}
+                              {Number(course.avgRating || 0).toFixed(1)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 mt-3">

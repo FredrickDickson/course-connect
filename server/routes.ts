@@ -310,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(categories);
   }));
 
-  app.post('/api/categories', isAuthenticated, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/categories', isAuthenticated, requireInstructor(), asyncHandler(async (req: Request, res: Response) => {
     const { name, description, slug } = req.body;
     if (!name || name.length < 2 || name.length > 100) {
       return res.status(400).json({ message: "Name must be between 2 and 100 characters" });
@@ -327,7 +327,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   app.get('/api/courses', asyncHandler(async (req: Request, res: Response) => {
-    const courses = await storage.getCourses();
+    const { category, search, level, featured } = req.query;
+    const courses = await storage.getCourses({
+      category: category as string,
+      search: search as string,
+      level: level as string,
+      featured: featured === 'true' ? true : featured === 'false' ? false : undefined
+    });
     res.json(courses);
   }));
 
