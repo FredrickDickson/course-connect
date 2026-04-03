@@ -2,75 +2,88 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
-// import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Contact() {
-  // const [formData, setFormData] = useState({
-  //   name: '',
-  //   email: '',
-  //   subject: '',
-  //   message: ''
-  // });
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
 
-  // // State management for form submission
-  // const [isLoading, setIsLoading] = useState(false);
-  // const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  // const [errorMessage, setErrorMessage] = useState('');
+  // State management for form submission
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // /**
-  //  * Handle form submission
-  //  * Sends email via Resend API and provides user feedback
-  //  */
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsLoading(true);
-  //   setSubmitStatus('idle');
-  //   setErrorMessage('');
+  /**
+   * Handle form submission
+   * Sends contact form to backend API
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setSubmitStatus("idle");
+    setErrorMessage("");
 
-  //   try {
-  //     // Call backend API to send email via Resend
-  //     const response = await fetch('/api/send-email', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         name: formData.name,
-  //         email: formData.email,
-  //         subject: formData.subject,
-  //         message: formData.message,
-  //       }),
-  //     });
+    try {
+      // Call backend API to submit contact form
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
 
-  //     if (!response.ok) {
-  //       throw new Error('Failed to send email');
-  //     }
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send message");
+      }
 
-  //     const data = await response.json();
-      
-  //     // Success - clear form and show success message
-  //     setFormData({
-  //       name: '',
-  //       email: '',
-  //       subject: '',
-  //       message: ''
-  //     });
-  //     setSubmitStatus('success');
-  //     console.log('Email sent successfully:', data);
+      const data = await response.json();
 
-  //     // Clear success message after 5 seconds
-  //     setTimeout(() => setSubmitStatus('idle'), 5000);
-  //   } catch (error) {
-  //     // Error - show error message
-  //     setSubmitStatus('error');
-  //     setErrorMessage(error instanceof Error ? error.message : 'An error occurred while sending your message');
-  //     console.error('Error sending email:', error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+      // Success - clear form and show success message
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+      setSubmitStatus("success");
+      toast({
+        title: "Message Sent!",
+        description: data.message || "We'll get back to you soon.",
+      });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setSubmitStatus("idle"), 5000);
+    } catch (error) {
+      // Error - show error message
+      setSubmitStatus("error");
+      const msg = error instanceof Error ? error.message : "An error occurred";
+      setErrorMessage(msg);
+      toast({
+        title: "Error",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,36 +105,48 @@ export default function Contact() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-12">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground" data-testid="title">Contact Us</h1>
+            <h1
+              className="text-4xl font-bold text-foreground"
+              data-testid="title"
+            >
+              Contact Us
+            </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Get in touch with our team for support, inquiries, or more information about our programs.
+              Get in touch with our team for support, inquiries, or more
+              information about our programs.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* CONTACT FORM - COMMENTED OUT */}
-            {/* <Card>
+            {/* Contact Form */}
+            <Card>
               <CardHeader>
                 <CardTitle>Send us a Message</CardTitle>
               </CardHeader>
               <CardContent>
                 {/* Success Message */}
-                {/* {submitStatus === 'success' && (
+                {submitStatus === "success" && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3">
                     <i className="fas fa-check-circle text-green-600 text-xl"></i>
                     <div>
-                      <h4 className="font-medium text-green-900">Message Sent Successfully!</h4>
-                      <p className="text-sm text-green-700">We'll get back to you as soon as possible.</p>
+                      <h4 className="font-medium text-green-900">
+                        Message Sent Successfully!
+                      </h4>
+                      <p className="text-sm text-green-700">
+                        We'll get back to you as soon as possible.
+                      </p>
                     </div>
                   </div>
                 )}
 
                 {/* Error Message */}
-                {/* {submitStatus === 'error' && (
+                {submitStatus === "error" && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
                     <i className="fas fa-exclamation-circle text-red-600 text-xl"></i>
                     <div>
-                      <h4 className="font-medium text-red-900">Error Sending Message</h4>
+                      <h4 className="font-medium text-red-900">
+                        Error Sending Message
+                      </h4>
                       <p className="text-sm text-red-700">{errorMessage}</p>
                     </div>
                   </div>
@@ -129,7 +154,7 @@ export default function Contact() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Name and Email Fields */}
-                  {/* <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Name *
@@ -140,7 +165,9 @@ export default function Contact() {
                         data-testid="input-name"
                         placeholder="Your Name"
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
                         disabled={isLoading}
                       />
                     </div>
@@ -154,14 +181,16 @@ export default function Contact() {
                         data-testid="input-email"
                         placeholder="your@email.com"
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
                         disabled={isLoading}
                       />
                     </div>
                   </div>
-                  
+
                   {/* Subject Field */}
-                  {/* <div>
+                  <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Subject *
                     </label>
@@ -171,31 +200,36 @@ export default function Contact() {
                       data-testid="input-subject"
                       placeholder="What is this about?"
                       value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      onChange={(e) =>
+                        setFormData({ ...formData, subject: e.target.value })
+                      }
                       disabled={isLoading}
                     />
                   </div>
-                  
+
                   {/* Message Field */}
-                  {/* <div>
+                  <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Message *
                     </label>
                     <Textarea
                       rows={6}
                       required
+                      minLength={10}
                       data-testid="textarea-message"
-                      placeholder="Your message here..."
+                      placeholder="Your message here... (min 10 characters)"
                       value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      onChange={(e) =>
+                        setFormData({ ...formData, message: e.target.value })
+                      }
                       disabled={isLoading}
                     />
                   </div>
-                  
+
                   {/* Submit Button */}
-                  {/* <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     data-testid="button-send"
                     disabled={isLoading}
                   >
@@ -213,7 +247,7 @@ export default function Contact() {
                   </Button>
                 </form>
               </CardContent>
-            </Card> */}
+            </Card>
 
             {/* Contact Information */}
             <div className="space-y-8 lg:col-span-2">
@@ -227,8 +261,10 @@ export default function Contact() {
                     <div>
                       <h4 className="font-medium text-foreground">Address</h4>
                       <p className="text-muted-foreground">
-                        Oxford Science Park<br />
-                        John Eccles House<br />
+                        Oxford Science Park
+                        <br />
+                        John Eccles House
+                        <br />
                         Oxford, Oxfordshire, UK
                       </p>
                     </div>
@@ -253,9 +289,12 @@ export default function Contact() {
                   <div className="flex items-start space-x-4">
                     <i className="fas fa-clock text-primary text-xl mt-1"></i>
                     <div>
-                      <h4 className="font-medium text-foreground">Office Hours</h4>
+                      <h4 className="font-medium text-foreground">
+                        Office Hours
+                      </h4>
                       <p className="text-muted-foreground">
-                        Monday - Friday: 9:00 AM - 5:00 PM GMT<br />
+                        Monday - Friday: 9:00 AM - 5:00 PM GMT
+                        <br />
                         Weekend: Emergency support only
                       </p>
                     </div>
@@ -270,15 +309,21 @@ export default function Contact() {
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-foreground">Africa Region</h4>
+                      <h4 className="font-medium text-foreground">
+                        Africa Region
+                      </h4>
                       <p className="text-muted-foreground">Accra, Ghana</p>
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground">Asia Pacific</h4>
+                      <h4 className="font-medium text-foreground">
+                        Asia Pacific
+                      </h4>
                       <p className="text-muted-foreground">Singapore</p>
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground">Middle East</h4>
+                      <h4 className="font-medium text-foreground">
+                        Middle East
+                      </h4>
                       <p className="text-muted-foreground">Dubai, UAE</p>
                     </div>
                     <div>

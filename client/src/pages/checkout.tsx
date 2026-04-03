@@ -2,7 +2,13 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +17,14 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, CreditCard, Shield, Clock, Users, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  CreditCard,
+  Shield,
+  Clock,
+  Users,
+  Star,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { CourseWithDetails } from "@shared/schema";
 
@@ -30,31 +43,79 @@ export default function Checkout() {
   const [, setLocation] = useLocation();
   const scriptLoaded = useRef(false);
 
+  const [isPaystackReady, setIsPaystackReady] = useState(false);
+  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(
+    null,
+  );
+  const paystackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const { data: course, isLoading } = useQuery<CourseWithDetails>({
     queryKey: [`/api/courses/${id}`],
     enabled: !!id,
   });
 
-  // Load PayStack script
+  // Load PayStack script with timeout
   useEffect(() => {
     if (!scriptLoaded.current) {
-      const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
+      const script = document.createElement("script");
+      script.src = "https://js.paystack.co/v1/inline.js";
       script.async = true;
+
+      // Set timeout for script loading
+      paystackTimeoutRef.current = setTimeout(() => {
+        if (!window.PaystackPop) {
+          setPaystackLoadError(
+            "Payment system failed to load. Please check your connection and try again.",
+          );
+          toast({
+            title: "Payment System Error",
+            description:
+              "Failed to load payment system. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
+      }, 10000); // 10 second timeout
+
+      script.onload = () => {
+        if (paystackTimeoutRef.current) {
+          clearTimeout(paystackTimeoutRef.current);
+        }
+        setIsPaystackReady(true);
+      };
+
+      script.onerror = () => {
+        if (paystackTimeoutRef.current) {
+          clearTimeout(paystackTimeoutRef.current);
+        }
+        setPaystackLoadError("Failed to load payment system.");
+        toast({
+          title: "Payment System Error",
+          description:
+            "Failed to load payment system. Please check your connection.",
+          variant: "destructive",
+        });
+      };
+
       document.body.appendChild(script);
       scriptLoaded.current = true;
     }
-  }, []);
+
+    return () => {
+      if (paystackTimeoutRef.current) {
+        clearTimeout(paystackTimeoutRef.current);
+      }
+    };
+  }, [toast]);
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courseId: id }),
-        credentials: 'include',
+        credentials: "include",
       });
-      if (!response.ok) throw new Error('Failed to create order');
+      if (!response.ok) throw new Error("Failed to create order");
       return response.json();
     },
     onError: (error) => {
@@ -65,7 +126,7 @@ export default function Checkout() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -78,10 +139,21 @@ export default function Checkout() {
   });
 
   const handlePayment = async () => {
-    if (!user || !course || !window.PaystackPop) {
+    if (!user || !course) {
       toast({
         title: "Payment Error",
-        description: "Payment system not ready. Please refresh and try again.",
+        description: "Missing user or course information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.PaystackPop) {
+      toast({
+        title: "Payment System Not Ready",
+        description:
+          paystackLoadError ||
+          "Payment system is still loading. Please wait a moment and try again.",
         variant: "destructive",
       });
       return;
@@ -89,37 +161,41 @@ export default function Checkout() {
 
     try {
       const order = await createOrderMutation.mutateAsync();
-      
+
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: user?.email || '',
+        email: user?.email || "",
         amount: Math.round(parseFloat(course.price.toString()) * 100), // Convert to kobo
-        currency: course.currency || 'USD',
+        currency: course.currency || "USD",
         ref: order.paystackReference,
-        callback: async function(response: any) {
-          if (response.status === 'success') {
+        callback: async function (response: any) {
+          if (response.status === "success") {
             // Verify payment on server
             try {
-              const verifyResponse = await fetch('/api/verify-payment', {
-                method: 'POST',
+              const verifyResponse = await fetch("/api/verify-payment", {
+                method: "POST",
                 headers: {
-                  'Content-Type': 'application/json',
+                  "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ reference: response.reference }),
               });
-              
+
               const verifyResult = await verifyResponse.json();
-              
+
               if (verifyResult.success) {
                 toast({
                   title: "Payment Successful!",
                   description: "You have been enrolled in the course.",
                 });
-                
+
                 // Invalidate relevant queries
-                queryClient.invalidateQueries({ queryKey: [`/api/enrollments/check/${id}`] });
-                queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
-                
+                queryClient.invalidateQueries({
+                  queryKey: [`/api/enrollments/check/${id}`],
+                });
+                queryClient.invalidateQueries({
+                  queryKey: ["/api/enrollments"],
+                });
+
                 // Redirect to course
                 setLocation(`/learn/${id}/1`);
               } else {
@@ -130,27 +206,28 @@ export default function Checkout() {
                 });
               }
             } catch (error) {
-              console.error('Verification error:', error);
+              console.error("Verification error:", error);
               toast({
                 title: "Payment Verification Error",
-                description: "Please contact support to confirm your enrollment.",
+                description:
+                  "Please contact support to confirm your enrollment.",
                 variant: "destructive",
               });
             }
           }
         },
-        onClose: function() {
+        onClose: function () {
           toast({
             title: "Payment Cancelled",
             description: "You can retry the payment anytime.",
             variant: "destructive",
           });
-        }
+        },
       });
-      
+
       handler.openIframe();
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error("Payment error:", error);
       toast({
         title: "Payment Error",
         description: "Failed to process payment. Please try again.",
@@ -168,7 +245,7 @@ export default function Checkout() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/login";
       }, 500);
       return;
     }
@@ -203,8 +280,12 @@ export default function Checkout() {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Course Not Found</h1>
-          <p className="text-muted-foreground mb-8">The course you're trying to purchase doesn't exist.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Course Not Found
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            The course you're trying to purchase doesn't exist.
+          </p>
           <Link href="/courses">
             <Button>Browse Courses</Button>
           </Link>
@@ -215,7 +296,9 @@ export default function Checkout() {
   }
 
   const coursePrice = parseFloat(course.price.toString());
-  const avgRating = course.avgRating ? parseFloat(course.avgRating.toString()) : 0;
+  const avgRating = course.avgRating
+    ? parseFloat(course.avgRating.toString())
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -225,7 +308,9 @@ export default function Checkout() {
       <div className="border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Link href="/courses" className="hover:text-primary">Courses</Link>
+            <Link href="/courses" className="hover:text-primary">
+              Courses
+            </Link>
             <span>/</span>
             <Link href={`/courses/${id}`} className="hover:text-primary">
               {course.title}
@@ -245,7 +330,10 @@ export default function Checkout() {
               Back to Course
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground" data-testid="checkout-title">
+          <h1
+            className="text-3xl font-bold text-foreground"
+            data-testid="checkout-title"
+          >
             Complete Your Enrollment
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -269,7 +357,7 @@ export default function Checkout() {
                 <div className="flex space-x-4">
                   <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                     {course.thumbnailUrl ? (
-                      <img 
+                      <img
                         src={course.thumbnailUrl}
                         alt={course.title}
                         className="w-full h-full object-cover"
@@ -283,7 +371,10 @@ export default function Checkout() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1" data-testid="course-title">
+                    <h3
+                      className="font-semibold text-lg mb-1"
+                      data-testid="course-title"
+                    >
                       {course.title}
                     </h3>
                     {course.subtitle && (
@@ -293,7 +384,8 @@ export default function Checkout() {
                     )}
                     {course.instructor && (
                       <p className="text-sm text-muted-foreground">
-                        By {course.instructor.firstName} {course.instructor.lastName}
+                        By {course.instructor.firstName}{" "}
+                        {course.instructor.lastName}
                       </p>
                     )}
                   </div>
@@ -373,7 +465,7 @@ export default function Checkout() {
                   <div className="flex items-center justify-between">
                     <span>Course Price</span>
                     <span className="font-medium" data-testid="course-price">
-                      ${coursePrice.toFixed(2)} {course.currency || 'USD'}
+                      ${coursePrice.toFixed(2)} {course.currency || "USD"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -387,14 +479,30 @@ export default function Checkout() {
                 <div className="flex items-center justify-between text-lg font-semibold">
                   <span>Total</span>
                   <span data-testid="total-price">
-                    ${coursePrice.toFixed(2)} {course.currency || 'USD'}
+                    ${coursePrice.toFixed(2)} {course.currency || "USD"}
                   </span>
                 </div>
 
                 <div className="pt-4">
+                  {paystackLoadError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-600">
+                        {paystackLoadError}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 text-red-600"
+                        onClick={() => window.location.reload()}
+                      >
+                        <i className="fas fa-redo mr-2"></i>
+                        Retry Loading Payment
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     onClick={handlePayment}
-                    disabled={createOrderMutation.isPending}
+                    disabled={createOrderMutation.isPending || !isPaystackReady}
                     className="w-full"
                     size="lg"
                     data-testid="pay-now-button"
@@ -403,6 +511,11 @@ export default function Checkout() {
                       <div className="flex items-center space-x-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         <span>Processing...</span>
+                      </div>
+                    ) : !isPaystackReady ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Loading Payment...</span>
                       </div>
                     ) : (
                       <div className="flex items-center space-x-2">
@@ -419,8 +532,9 @@ export default function Checkout() {
                     <span>Secure 256-bit SSL encryption</span>
                   </div>
                   <p>
-                    By clicking "Pay Now", you agree to our Terms of Service and Privacy Policy.
-                    You'll be charged immediately upon successful payment.
+                    By clicking "Pay Now", you agree to our Terms of Service and
+                    Privacy Policy. You'll be charged immediately upon
+                    successful payment.
                   </p>
                 </div>
               </CardContent>
@@ -434,9 +548,12 @@ export default function Checkout() {
                     <Shield className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-green-800 mb-1">30-Day Money-Back Guarantee</h4>
+                    <h4 className="font-semibold text-green-800 mb-1">
+                      30-Day Money-Back Guarantee
+                    </h4>
                     <p className="text-sm text-green-700">
-                      If you're not satisfied with this course, we'll refund your payment within 30 days of purchase.
+                      If you're not satisfied with this course, we'll refund
+                      your payment within 30 days of purchase.
                     </p>
                   </div>
                 </div>

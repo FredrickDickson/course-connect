@@ -10,9 +10,11 @@ async function throwIfResNotOk(res: Response) {
 import { supabase } from "@/integrations/supabase/client";
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (session?.access_token) {
-    return { "Authorization": `Bearer ${session.access_token}` };
+    return { Authorization: `Bearer ${session.access_token}` };
   }
   return {};
 }
@@ -42,22 +44,22 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-    async ({ queryKey }) => {
-      const authHeader = await getAuthHeader();
-      const res = await fetch(queryKey.join("/") as string, {
-        headers: {
-          ...authHeader,
-        },
-        credentials: "include",
-      });
+  async ({ queryKey }) => {
+    const authHeader = await getAuthHeader();
+    const res = await fetch(queryKey.join("/") as string, {
+      headers: {
+        ...authHeader,
+      },
+      credentials: "include",
+    });
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
-      }
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
+    }
 
-      await throwIfResNotOk(res);
-      return await res.json();
-    };
+    await throwIfResNotOk(res);
+    return await res.json();
+  };
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,10 +68,36 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error) => {
+        // Retry on network errors and 5xx server errors
+        // Don't retry on 4xx client errors (except 408 Request Timeout)
+        if (error instanceof Error) {
+          const message = error.message;
+          // Retry on network errors
+          if (message.includes("fetch") || message.includes("network")) {
+            return failureCount < 3;
+          }
+          // Extract status code from error message (e.g., "500: Internal Server Error")
+          const statusMatch = message.match(/^(\d+):/);
+          if (statusMatch) {
+            const status = parseInt(statusMatch[1], 10);
+            // Retry on 5xx errors and 408 timeout
+            if (status >= 500 || status === 408) {
+              return failureCount < 3;
+            }
+            // Don't retry on 4xx client errors
+            if (status >= 400 && status < 500) {
+              return false;
+            }
+          }
+        }
+        // Default: retry up to 3 times
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff, max 30s
     },
     mutations: {
-      retry: false,
+      retry: false, // Don't retry mutations (they may have side effects)
     },
   },
 });
