@@ -23,6 +23,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
@@ -69,15 +70,13 @@ function Router() {
       <Route path="/">
         {isLoading || !isAuthenticated ? <Landing /> : <Home />}
       </Route>
-      
+
       {/* Public routes available to everyone */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
-      <Route path="/admin-setup" component={AdminSetup} />
-      <Route path="/admin" component={AdminDashboard} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/cookie-policy" component={CookiePolicy} />
@@ -93,32 +92,28 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/community-forum" component={CommunityForum} />
       <Route path="/professional-standards" component={ProfessionalStandards} />
-      
-      {/* Protected routes - only for authenticated users */}
-      {isAuthenticated ? (
-        <>
-          <Route path="/profile" component={Profile} />
-          <Route path="/courses" component={Courses} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/instructor" component={InstructorDashboard} />
-          <Route path="/instructor/courses/new" component={CreateCourse} />
-          <Route path="/instructor/courses/:courseId/curriculum" component={CourseCurriculum} />
-          <Route path="/checkout/:courseId" component={Checkout} />
-          <Route path="/programs" component={Programs} />
-          <Route path="/learn/:courseId/:lessonId" component={VideoPlayer} />
-          <Route path="/quiz/:quizId" component={QuizPage} />
-          <Route path="/community" component={Community} />
-        </>
-      ) : isLoading ? (
-        <Route>
-          {() => (
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          )}
-        </Route>
-      ) : null}
-      
+
+      {/* Admin bootstrap path (using anon key auth fallback is still supported in backend) */}
+      <Route path="/admin-setup" component={AdminSetup} />
+
+      {/* Protected routes - using ProtectedRoute for proper redirection and role checking */}
+      <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/courses" component={Courses} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/programs" component={Programs} />
+      <ProtectedRoute path="/learn/:courseId/:lessonId" component={VideoPlayer} />
+      <ProtectedRoute path="/quiz/:quizId" component={QuizPage} />
+      <ProtectedRoute path="/community" component={Community} />
+      <ProtectedRoute path="/checkout/:courseId" component={Checkout} />
+
+      {/* Instructor-only routes */}
+      <ProtectedRoute path="/instructor" component={InstructorDashboard} requiredRole="instructor" />
+      <ProtectedRoute path="/instructor/courses/new" component={CreateCourse} requiredRole="instructor" />
+      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" component={CourseCurriculum} requiredRole="instructor" />
+
+      {/* Admin routes */}
+      <ProtectedRoute path="/admin" component={AdminDashboard} requiredRole="admin" />
+
       {!isLoading && <Route component={NotFound} />}
     </Switch>
   );

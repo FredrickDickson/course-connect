@@ -7,14 +7,28 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+import { supabase } from "@/integrations/supabase/client";
+
+async function getAuthHeader(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    return { "Authorization": `Bearer ${session.access_token}` };
+  }
+  return {};
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const authHeader = await getAuthHeader();
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...authHeader,
+      ...(data ? { "Content-Type": "application/json" } : {}),
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -28,18 +42,22 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+    async ({ queryKey }) => {
+      const authHeader = await getAuthHeader();
+      const res = await fetch(queryKey.join("/") as string, {
+        headers: {
+          ...authHeader,
+        },
+        credentials: "include",
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
-    }
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return null;
+      }
 
-    await throwIfResNotOk(res);
-    return await res.json();
-  };
+      await throwIfResNotOk(res);
+      return await res.json();
+    };
 
 export const queryClient = new QueryClient({
   defaultOptions: {

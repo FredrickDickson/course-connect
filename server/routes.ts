@@ -13,8 +13,8 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { isAuthenticated } from "./sessionAuth";
 import { requireRole, requireInstructor } from "./middleware/roleProtection";
-import { 
-  securityMiddleware, 
+import {
+  securityMiddleware,
   authLimiter,
   uploadLimiter,
   errorHandler,
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'production') {
     app.use(securityMiddleware);
   }
-  
+
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 
@@ -75,9 +75,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/setup', asyncHandler(async (req: Request, res: Response) => {
     const { email, password, firstName, lastName, setupKey } = req.body;
-    
+
     const validSetupKey = process.env.SETUP_KEY || "CIMA_ADMIN_SETUP_2024";
-    
+
     if (setupKey !== validSetupKey) {
       return res.status(401).json({ message: "Invalid setup key" });
     }
@@ -97,8 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-      return res.status(400).json({ 
-        message: 'Password must contain uppercase, lowercase, number, and special character' 
+      return res.status(400).json({
+        message: 'Password must contain uppercase, lowercase, number, and special character'
       });
     }
 
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Check if user exists
     let user = await storage.getUserByEmail(email);
-    
+
     if (user) {
       // Update existing user to admin with new password
       await storage.updateUser(user.id, {
@@ -131,33 +131,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Create session
     req.session.userId = user!.id;
-    
-    res.json({ 
-      message: "Admin setup successful", 
-      user: { 
-        id: user!.id, 
-        email: user!.email, 
-        role: user!.role 
-      } 
+
+    res.json({
+      message: "Admin setup successful",
+      user: {
+        id: user!.id,
+        email: user!.email,
+        role: user!.role
+      }
     });
   }));
 
   app.post('/api/admin/check-user', asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.body;
-    
+
     try {
       const user = await storage.getUserByEmail(email);
-      
+
       if (user) {
-        res.json({ 
-          exists: true, 
-          user: { 
-            id: user.id, 
-            email: user.email, 
+        res.json({
+          exists: true,
+          user: {
+            id: user.id,
+            email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role 
-          } 
+            role: user.role
+          }
         });
       } else {
         res.json({ exists: false });
@@ -171,14 +171,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({ message: "Not available in production" });
     }
-    
+
     const { email, firstName, lastName, setupKey } = req.body;
-    
+
     const validSetupKey = process.env.SETUP_KEY || "CIMA_ADMIN_SETUP_2024";
     if (setupKey !== validSetupKey) {
       return res.status(401).json({ message: "Invalid setup key" });
     }
-    
+
     try {
       const newUser = await storage.upsertUser({
         id: `manual_${Date.now()}`,
@@ -187,21 +187,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: lastName || 'User',
         role: 'admin'
       });
-      
-      res.json({ 
-        message: "User created and admin access granted", 
-        user: { 
-          id: newUser.id, 
+
+      res.json({
+        message: "User created and admin access granted",
+        user: {
+          id: newUser.id,
           email: newUser.email,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          role: newUser.role 
-        } 
+          role: newUser.role
+        }
       });
     } catch (error) {
-      res.status(500).json({ 
-        message: "Failed to create user", 
-        error: error instanceof Error ? error.message : String(error) 
+      res.status(500).json({
+        message: "Failed to create user",
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }));
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({ message: "Not available in production" });
     }
-    
+
     try {
       const users = await storage.getUsers({ limit: 10 });
       res.json({
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/auth/profile', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const { firstName, lastName, bio, country, timezone } = req.body;
-    
+
     const updateData: any = {};
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/user/profile', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const { firstName, lastName, bio, country, timezone } = req.body;
-    
+
     const updateData: any = {};
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
@@ -270,8 +270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedUser);
   }));
 
-  app.post('/api/auth/profile/image', 
-    isAuthenticated, 
+  app.post('/api/auth/profile/image',
+    isAuthenticated,
     uploadLimiter,
     profileImageUpload.single('image'),
     handleUploadError,
@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.user.claims.sub;
       const imageUrl = getFileUrl(req, req.file.filename, 'image');
-      
+
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -292,11 +292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...user,
         profileImageUrl: imageUrl,
       });
-      
-      res.json({ 
+
+      res.json({
         message: 'Profile image updated successfully',
         profileImageUrl: imageUrl,
-        user: updatedUser 
+        user: updatedUser
       });
     })
   );
@@ -337,12 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get('/api/courses/stats', asyncHandler(async (req: Request, res: Response) => {
-    const stats = {
-      totalCourses: 6,
-      totalStudents: 5000,
-      averageRating: 4.8,
-      totalHours: 120
-    };
+    const stats = await storage.getRealPlatformStats();
     res.json(stats);
   }));
 
@@ -359,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FILE UPLOAD ROUTES
   // ============================================================================
 
-  app.post('/api/upload/video', 
+  app.post('/api/upload/video',
     isAuthenticated,
     requireInstructor(),
     uploadLimiter,
@@ -369,9 +364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: 'No video file provided' });
       }
-      
+
       const videoUrl = getFileUrl(req, req.file.filename, 'video');
-      res.json({ 
+      res.json({
         message: 'Video uploaded successfully',
         videoUrl,
         filename: req.file.filename,
@@ -381,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  app.post('/api/upload/image', 
+  app.post('/api/upload/image',
     isAuthenticated,
     uploadLimiter,
     imageUpload.single('image'),
@@ -390,9 +385,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: 'No image file provided' });
       }
-      
+
       const imageUrl = getFileUrl(req, req.file.filename, 'image');
-      res.json({ 
+      res.json({
         message: 'Image uploaded successfully',
         imageUrl,
         filename: req.file.filename,
@@ -401,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  app.post('/api/upload/document', 
+  app.post('/api/upload/document',
     isAuthenticated,
     uploadLimiter,
     documentUpload.single('document'),
@@ -410,9 +405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: 'No document file provided' });
       }
-      
+
       const documentUrl = getFileUrl(req, req.file.filename, 'document');
-      res.json({ 
+      res.json({
         message: 'Document uploaded successfully',
         documentUrl,
         filename: req.file.filename,
@@ -421,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  app.post('/api/upload/course-content', 
+  app.post('/api/upload/course-content',
     isAuthenticated,
     requireInstructor(),
     uploadLimiter,
@@ -432,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!files || files.length === 0) {
         return res.status(400).json({ error: 'No files provided' });
       }
-      
+
       const uploadedFiles = files.map((file) => ({
         filename: file.filename,
         originalName: file.originalname,
@@ -440,8 +435,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         size: file.size,
         type: file.mimetype
       }));
-      
-      res.json({ 
+
+      res.json({
         message: 'Files uploaded successfully',
         files: uploadedFiles
       });
@@ -455,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/enrollments', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const enrollmentData = insertEnrollmentSchema.parse({ ...req.body, userId });
-    
+
     const isEnrolled = await storage.isUserEnrolled(userId, enrollmentData.courseId || '');
     if (isEnrolled) {
       return res.status(400).json({ message: "Already enrolled in this course" });
@@ -499,52 +494,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(overview);
   }));
 
-  // Enhanced student dashboard endpoints
+  // Student dashboard endpoints — real DB data
   app.get('/api/assignments', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
-    const assignments = [
-      {
-        id: '1',
-        title: 'Case Study Analysis: Cross-Border Dispute',
-        course: { title: 'Cross-Border M&A Dispute Resolution' },
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        submissionStatus: 'pending'
-      }
-    ];
+    const userId = req.user.claims.sub;
+    const assignments = await storage.getStudentPendingAssignments(userId);
     res.json(assignments);
   }));
 
   app.get('/api/quizzes/pending', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
-    const quizzes = [
-      {
-        id: '1',
-        title: 'Module 2 Knowledge Check',
-        course: { title: 'International Arbitration Fundamentals' },
-        questionCount: 15,
-        timeLimit: 30
-      }
-    ];
+    const userId = req.user.claims.sub;
+    const quizzes = await storage.getStudentPendingQuizzes(userId);
     res.json(quizzes);
   }));
 
   app.get('/api/recommendations', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
-    const recommendations = [
-      {
-        id: '5',
-        title: 'Advanced Arbitration Techniques',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1521791136064-7986c2920216',
-        avgRating: 4.8,
-        matchScore: 92
-      }
-    ];
+    const userId = req.user.claims.sub;
+    const recommendations = await storage.getCourseRecommendations(userId);
     res.json(recommendations);
   }));
 
   app.get('/api/resources/downloadable', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
-    const resources = [
-      { id: '1', title: 'ADR Case Study Templates', type: 'pdf' },
-      { id: '2', title: 'Arbitration Clause Library', type: 'docx' }
-    ];
+    const userId = req.user.claims.sub;
+    const resources = await storage.getStudentDownloadableResources(userId);
     res.json(resources);
+  }));
+
+  // ============================================================================
+  // QUIZ ROUTES
+  // ============================================================================
+
+  // Get quiz with questions (answers shuffled, isCorrect hidden)
+  app.get('/api/quiz/:quizId', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { quizId } = req.params;
+    const quiz = await storage.getQuizWithQuestions(quizId, true); // hideCorrect=true for students
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    res.json(quiz);
+  }));
+
+  // Get quiz attempts for current user
+  app.get('/api/quiz/:quizId/attempts', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.claims.sub;
+    const { quizId } = req.params;
+    const attempts = await storage.getQuizAttempts(userId, quizId);
+    res.json(attempts);
+  }));
+
+  // Submit quiz answers → grades and returns score
+  app.post('/api/quiz/:quizId/submit', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.claims.sub;
+    const { quizId } = req.params;
+    const { responses, timeSpent } = req.body;
+
+    if (!Array.isArray(responses) || responses.length === 0) {
+      return res.status(400).json({ message: 'responses array is required' });
+    }
+
+    // Check attempt limits
+    const quiz = await storage.getQuizById(quizId);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    const existingAttempts = await storage.getQuizAttempts(userId, quizId);
+    if (quiz.maxAttempts && existingAttempts.length >= quiz.maxAttempts) {
+      return res.status(400).json({ message: `Maximum attempts (${quiz.maxAttempts}) reached` });
+    }
+
+    // Create attempt record first
+    const attempt = await storage.submitQuizAttempt({
+      userId,
+      quizId,
+    });
+
+    // Grade it
+    const gradedAttempt = await storage.gradeQuizAttempt(
+      attempt.id,
+      userId,
+      quizId,
+      responses,
+      timeSpent
+    );
+
+    res.json({
+      attemptId: gradedAttempt.id,
+      score: gradedAttempt.score,
+      passed: gradedAttempt.passed,
+      totalPoints: gradedAttempt.totalPoints,
+      completedAt: gradedAttempt.completedAt,
+    });
   }));
 
   // Reviews
@@ -665,14 +702,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       paystackReference: reference,
     });
 
-    res.json({ 
+    res.json({
       authorizationUrl: result.data.authorization_url,
       accessCode: result.data.access_code,
       reference: result.data.reference
     });
   }));
 
-  app.post('/api/paystack-webhook', express.raw({type: 'application/json'}), asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/paystack-webhook', express.raw({ type: 'application/json' }), asyncHandler(async (req: Request, res: Response) => {
     if (!PAYSTACK_SECRET_KEY) {
       return res.status(503).json({ message: "Payment system is not configured" });
     }
@@ -694,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.enrollUser({ userId, courseId });
     }
 
-    res.json({received: true});
+    res.json({ received: true });
   }));
 
   app.post('/api/verify-payment', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -749,51 +786,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(stats);
   }));
 
+  // Instructor routes — real DB data
   app.get('/api/instructor/revenue', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
-    const revenueData = [
-      { month: 'Jan', amount: 1890 },
-      { month: 'Feb', amount: 2100 },
-      { month: 'Mar', amount: 2450 }
-    ];
+    const instructorId = req.user.claims.sub;
+    const revenueData = await storage.getInstructorMonthlyRevenue(instructorId);
     res.json(revenueData);
   }));
 
   app.get('/api/instructor/submissions/pending', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
-    const submissions = [
-      {
-        id: '1',
-        assignment: { title: 'Case Study Analysis' },
-        student: { firstName: 'Sarah', lastName: 'Johnson' },
-        submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+    const instructorId = req.user.claims.sub;
+    const submissions = await storage.getInstructorPendingSubmissions(instructorId);
     res.json(submissions);
   }));
 
   app.get('/api/instructor/questions', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
-    const questions = [
-      {
-        id: '1',
-        content: 'Can you clarify the difference between arbitration and mediation?',
-        student: { firstName: 'Emma', lastName: 'Davis' },
-        course: { title: 'Cross-Border M&A Dispute Resolution' },
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-      }
-    ];
+    const instructorId = req.user.claims.sub;
+    const questions = await storage.getInstructorStudentQuestions(instructorId);
     res.json(questions);
   }));
 
   app.get('/api/instructor/analytics', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
-    const analytics = [
-      {
-        id: '1',
-        title: 'Cross-Border M&A Dispute Resolution',
-        enrollmentCount: 45,
-        avgRating: 4.8,
-        revenue: 890,
-        completionRate: 82
-      }
-    ];
+    const instructorId = req.user.claims.sub;
+    const analytics = await storage.getInstructorAnalytics(instructorId);
     res.json(analytics);
   }));
 
@@ -807,7 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/instructor/courses/:id', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const instructorId = req.user.claims.sub;
     const { id } = req.params;
-    
+
     const course = await storage.getCourseById(id);
     if (!course || course.instructorId !== instructorId) {
       return res.status(403).json({ message: "Access denied" });
@@ -821,7 +835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/instructor/courses/:id', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const instructorId = req.user.claims.sub;
     const { id } = req.params;
-    
+
     const course = await storage.getCourseById(id);
     if (!course || course.instructorId !== instructorId) {
       return res.status(403).json({ message: "Access denied" });
@@ -839,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const instructorId = req.user.claims.sub;
     const { courseId } = req.params;
-    
+
     const course = await storage.getCourseById(courseId);
     if (!course || course.instructorId !== instructorId) {
       return res.status(403).json({ message: "Access denied" });
@@ -853,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor/courses/:courseId/modules', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const instructorId = req.user.claims.sub;
     const { courseId } = req.params;
-    
+
     const course = await storage.getCourseById(courseId);
     if (!course || course.instructorId !== instructorId) {
       return res.status(403).json({ message: "Access denied" });
@@ -868,7 +882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/instructor/modules/:moduleId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { moduleId } = req.params;
     const { title, description, order } = req.body;
-    
+
     const module = await storage.updateModule(moduleId, { title, description, order });
     res.json(module);
   }));
@@ -900,16 +914,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor/modules/:moduleId/lessons', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { moduleId } = req.params;
     const { title, description, contentType, videoUrl, duration, content } = req.body;
-    
-    const lesson = await storage.createLesson({ 
-      moduleId, 
-      title, 
-      description, 
-      contentType, 
-      videoUrl, 
+
+    const lesson = await storage.createLesson({
+      moduleId,
+      title,
+      description,
+      contentType,
+      videoUrl,
       duration,
       content,
-      order: 0 
+      order: 0
     });
     res.status(201).json(lesson);
   }));
@@ -918,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/instructor/lessons/:lessonId', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
     const updates = req.body;
-    
+
     const lesson = await storage.updateLesson(lessonId, updates);
     res.json(lesson);
   }));
@@ -948,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { lessonId } = req.params;
       const videoUrl = getFileUrl(req, req.file.filename, 'video');
-      
+
       // Extract video duration from request body (sent from frontend after processing)
       const duration = req.body.duration ? parseInt(req.body.duration) : null;
 
@@ -982,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { lessonId } = req.params;
       const { title, description } = req.body;
-      
+
       const fileUrl = getFileUrl(req, req.file.filename, 'document');
       const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase() || '';
 
@@ -1023,8 +1037,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   // Get presigned URL for uploading video to object storage
-  app.post('/api/objects/upload', 
-    isAuthenticated, 
+  app.post('/api/objects/upload',
+    isAuthenticated,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const objectStorageService = new ObjectStorageService();
@@ -1077,14 +1091,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Serve videos from object storage
-  app.get('/objects/:objectPath(*)', 
+  app.get('/objects/:objectPath(*)',
     asyncHandler(async (req: Request, res: Response) => {
       const objectStorageService = new ObjectStorageService();
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(
           req.path
         );
-        
+
         // Videos are public, so we don't need authentication check
         // The ACL policy is set to public when the video is uploaded
         objectStorageService.downloadObject(objectFile, res);
@@ -1177,11 +1191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor/courses/:courseId/publish', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;
     const validation = await storage.validateCourseForPublishing(courseId);
-    
+
     if (!validation.isValid) {
-      res.status(400).json({ 
-        error: 'Course validation failed', 
-        validation 
+      res.status(400).json({
+        error: 'Course validation failed',
+        validation
       });
       return;
     }
@@ -1201,7 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor/lessons/:lessonId/quiz', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
     const quizData = req.body;
-    
+
     const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
     res.json(quiz);
   }));
@@ -1210,7 +1224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor/lessons/:lessonId/assignment', isAuthenticated, requireInstructor(), asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
     const assignmentData = req.body;
-    
+
     const assignment = await storage.createOrUpdateAssignment(lessonId, assignmentData);
     res.json(assignment);
   }));
@@ -1219,37 +1233,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/courses/:courseId/quizzes', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;
     const userId = req.user.claims.sub;
-    
+
     const enrollment = await storage.getEnrollment(userId, courseId);
     if (!enrollment) {
       return res.status(403).json({ error: 'Access denied to this course' });
     }
-    
+
     const quizzes = await storage.getCourseQuizzes(courseId);
     res.json(quizzes);
-  }));
-
-  app.post('/api/quizzes/:quizId/submit', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { quizId } = req.params;
-    const { answers, timeSpent } = req.body;
-    const userId = req.user.claims.sub;
-    
-    const result = await storage.submitQuizAttempt({
-      quizId,
-      userId,
-      timeSpent,
-      score: '0',
-      totalPoints: 0,
-      passed: false
-    });
-    
-    res.json(result);
   }));
 
   app.get('/api/quizzes/:quizId/attempts', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { quizId } = req.params;
     const userId = req.user.claims.sub;
-    
+
     const attempts = await storage.getQuizAttempts(userId, quizId);
     res.json(attempts);
   }));
@@ -1258,11 +1255,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/instructor-applications', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const applicationData = insertInstructorApplicationSchema.parse({ ...req.body, userId });
-    
+
     const existingApplication = await storage.getInstructorApplicationByUserId(userId);
     if (existingApplication && (existingApplication.status === 'pending' || existingApplication.status === 'approved')) {
-      return res.status(400).json({ 
-        message: `You already have a ${existingApplication.status} instructor application.` 
+      return res.status(400).json({
+        message: `You already have a ${existingApplication.status} instructor application.`
       });
     }
 
@@ -1273,11 +1270,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/instructor-applications/my-application', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const application = await storage.getInstructorApplicationByUserId(userId);
-    
+
     if (!application) {
       return res.status(404).json({ message: "No application found" });
     }
-    
+
     res.json(application);
   }));
 
@@ -1345,7 +1342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/users/:id/role', isAuthenticated, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { role } = req.body;
-    
+
     if (!['student', 'instructor', 'admin'].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }

@@ -147,7 +147,7 @@ export interface IStorage {
   createModule(module: InsertModule): Promise<Module>;
   updateModule(id: string, updates: Partial<InsertModule>): Promise<Module>;
   deleteModule(id: string): Promise<void>;
-  
+
   createLesson(lesson: InsertLesson): Promise<Lesson>;
   updateLesson(id: string, updates: Partial<InsertLesson>): Promise<Lesson>;
   deleteLesson(id: string): Promise<void>;
@@ -187,13 +187,13 @@ export interface IStorage {
   updateInstructorApplication(id: string, updates: Partial<InstructorApplication>): Promise<InstructorApplication>;
 
   // Admin operations
-  getAdminStats(): Promise<{ 
-    totalUsers: number; 
-    totalInstructors: number; 
-    pendingApplications: number; 
-    totalCourses: number; 
-    monthlyRevenue: number; 
-    activeStudents: number; 
+  getAdminStats(): Promise<{
+    totalUsers: number;
+    totalInstructors: number;
+    pendingApplications: number;
+    totalCourses: number;
+    monthlyRevenue: number;
+    activeStudents: number;
   }>;
   getUsers(filters?: { page?: number; limit?: number; search?: string; role?: string }): Promise<User[]>;
   getCoursesForAdmin(filters?: { page?: number; limit?: number; status?: string; instructor?: string }): Promise<Course[]>;
@@ -203,7 +203,7 @@ export class DatabaseStorage implements IStorage {
   // ============================================================================
   // USER OPERATIONS
   // ============================================================================
-  
+
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -245,11 +245,11 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, id))
       .returning();
-    
+
     if (!user) {
       throw new Error(`User with id ${id} not found`);
     }
-    
+
     return user;
   }
 
@@ -385,15 +385,15 @@ export class DatabaseStorage implements IStorage {
     let totalRevenue = 0;
     if (courseIds.length > 0) {
       const instructorOrders = await db
-        .select({ total: orders.total })
+        .select({ amount: orders.amount })
         .from(orders)
         .where(and(
           sql`${orders.courseId} IN ${courseIds}`,
           eq(orders.status, 'completed')
         ));
-      totalRevenue = instructorOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      totalRevenue = instructorOrders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
     }
-    
+
     let averageRating = 0;
     if (courseIds.length > 0) {
       const [avgRating] = await db
@@ -454,11 +454,12 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(progress)
       .leftJoin(lessons, eq(progress.lessonId, lessons.id))
-      .where(and(eq(progress.userId, userId), eq(lessons.courseId, courseId)));
+      .leftJoin(modules, eq(lessons.moduleId, modules.id))
+      .where(and(eq(progress.userId, userId), eq(modules.courseId, courseId)));
 
     return userProgress.map(p => ({
       ...p.progress,
-      lesson: p.lesson,
+      lesson: p.lessons,
     }));
   }
 
@@ -522,7 +523,7 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(courses)
       .set({
-        avgRating: Number(stats.avgRating) || 0,
+        avgRating: String(Number(stats.avgRating) || 0),
         ratingCount: stats.ratingCount,
       })
       .where(eq(courses.id, courseId));
@@ -714,6 +715,22 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
+  async getQuizByLessonId(lessonId: string): Promise<any> {
+    const [quiz] = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lessonId))
+      .limit(1);
+    if (!quiz) return null;
+    return this.getQuizWithQuestions(quiz.id, false);
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    // quiz_questions cascade-deletes quiz_answers via FK
+    await db.delete(quizQuestions).where(eq(quizQuestions.quizId, quizId));
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
+  }
+
   // ============================================================================
   // ASSIGNMENT OPERATIONS
   // ============================================================================
@@ -756,6 +773,20 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(assignmentSubmissions)
       .where(and(eq(assignmentSubmissions.userId, userId), eq(assignmentSubmissions.assignmentId, assignmentId)));
+  }
+
+  async getAssignmentByLessonId(lessonId: string): Promise<Assignment | undefined> {
+    const [assignment] = await db
+      .select()
+      .from(assignments)
+      .where(eq(assignments.lessonId, lessonId))
+      .limit(1);
+    return assignment;
+  }
+
+  async deleteAssignment(assignmentId: string): Promise<void> {
+    await db.delete(assignmentSubmissions).where(eq(assignmentSubmissions.assignmentId, assignmentId));
+    await db.delete(assignments).where(eq(assignments.id, assignmentId));
   }
 
   // ============================================================================
@@ -806,18 +837,18 @@ export class DatabaseStorage implements IStorage {
 
   async getInstructorApplications(filters?: { status?: string; page?: number; limit?: number }): Promise<InstructorApplication[]> {
     let query = db.select().from(instructorApplications) as any;
-    
+
     if (filters?.status) {
       query = query.where(eq(instructorApplications.status, filters.status as any));
     }
-    
+
     query = query.orderBy(desc(instructorApplications.submittedAt));
-    
+
     if (filters?.page && filters?.limit) {
       const offset = (filters.page - 1) * filters.limit;
       query = query.limit(filters.limit).offset(offset);
     }
-    
+
     return await query;
   }
 
@@ -837,13 +868,13 @@ export class DatabaseStorage implements IStorage {
   // ADMIN OPERATIONS
   // ============================================================================
 
-  async getAdminStats(): Promise<{ 
-    totalUsers: number; 
-    totalInstructors: number; 
-    pendingApplications: number; 
-    totalCourses: number; 
-    monthlyRevenue: number; 
-    activeStudents: number; 
+  async getAdminStats(): Promise<{
+    totalUsers: number;
+    totalInstructors: number;
+    pendingApplications: number;
+    totalCourses: number;
+    monthlyRevenue: number;
+    activeStudents: number;
   }> {
     // Get total users
     const [{ totalUsers }] = await db
@@ -867,9 +898,25 @@ export class DatabaseStorage implements IStorage {
       .select({ totalCourses: count() })
       .from(courses);
 
-    // Mock data for now - would calculate from orders
-    const monthlyRevenue = 25000;
-    const activeStudents = 450;
+    // Real monthly revenue: sum of completed orders this calendar month
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [revenueRow] = await db
+      .select({ total: sql<number>`COALESCE(SUM(CAST(${orders.amount} AS NUMERIC)), 0)` })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.status, 'completed'),
+          sql`${orders.createdAt} >= ${monthStart}`
+        )
+      );
+    const monthlyRevenue = Number(revenueRow?.total ?? 0);
+
+    // Active students: distinct enrolled users
+    const [activeRow] = await db
+      .select({ count: count(sql`DISTINCT ${enrollments.userId}`) })
+      .from(enrollments);
+    const activeStudents = Number(activeRow?.count ?? 0);
 
     return {
       totalUsers: Number(totalUsers),
@@ -883,41 +930,41 @@ export class DatabaseStorage implements IStorage {
 
   async getUsers(filters?: { page?: number; limit?: number; search?: string; role?: string }): Promise<User[]> {
     let query = db.select().from(users) as any;
-    
+
     if (filters?.role) {
       query = query.where(eq(users.role, filters.role as any));
     }
-    
+
     if (filters?.search) {
       query = query.where(
         sql`${users.firstName} ILIKE ${`%${filters.search}%`} OR ${users.lastName} ILIKE ${`%${filters.search}%`} OR ${users.email} ILIKE ${`%${filters.search}%`}`
       );
     }
-    
+
     query = query.orderBy(desc(users.createdAt));
-    
+
     if (filters?.page && filters?.limit) {
       const offset = (filters.page - 1) * filters.limit;
       query = query.limit(filters.limit).offset(offset);
     }
-    
+
     return await query;
   }
 
   async getCoursesForAdmin(filters?: { page?: number; limit?: number; status?: string; instructor?: string }): Promise<Course[]> {
     let query = db.select().from(courses) as any;
-    
+
     if (filters?.instructor) {
       query = query.where(eq(courses.instructorId, filters.instructor));
     }
-    
+
     query = query.orderBy(desc(courses.createdAt));
-    
+
     if (filters?.page && filters?.limit) {
       const offset = (filters.page - 1) * filters.limit;
       query = query.limit(filters.limit).offset(offset);
     }
-    
+
     return await query;
   }
 
@@ -931,7 +978,7 @@ export class DatabaseStorage implements IStorage {
       .from(modules)
       .where(sql`${modules.courseId} = ${courseId}`)
       .orderBy(modules.order);
-    
+
     const modulesWithLessons = await Promise.all(
       modulesList.map(async (module) => {
         const lessonsList = await db
@@ -939,14 +986,14 @@ export class DatabaseStorage implements IStorage {
           .from(lessons)
           .where(sql`${lessons.moduleId} = ${module.id}`)
           .orderBy(lessons.order);
-        
+
         return {
           ...module,
           lessons: lessonsList,
         };
       })
     );
-    
+
     return modulesWithLessons;
   }
 
@@ -955,14 +1002,14 @@ export class DatabaseStorage implements IStorage {
       .select({ maxOrder: sql<number>`COALESCE(MAX(${modules.order}), -1)` })
       .from(modules)
       .where(sql`${modules.courseId} = ${module.courseId}`);
-    
+
     const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
-    
+
     const [newModule] = await db
       .insert(modules)
       .values({ ...module, order: nextOrder })
       .returning();
-    
+
     return newModule;
   }
 
@@ -972,7 +1019,7 @@ export class DatabaseStorage implements IStorage {
       .set(updates)
       .where(eq(modules.id, id))
       .returning();
-    
+
     return updated;
   }
 
@@ -1003,14 +1050,14 @@ export class DatabaseStorage implements IStorage {
       .select({ maxOrder: sql<number>`COALESCE(MAX(${lessons.order}), -1)` })
       .from(lessons)
       .where(sql`${lessons.moduleId} = ${lesson.moduleId}`);
-    
+
     const nextOrder = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
-    
+
     const [newLesson] = await db
       .insert(lessons)
       .values({ ...lesson, order: nextOrder })
       .returning();
-    
+
     return newLesson;
   }
 
@@ -1020,7 +1067,7 @@ export class DatabaseStorage implements IStorage {
       .set(updates)
       .where(eq(lessons.id, id))
       .returning();
-    
+
     return updated;
   }
 
@@ -1037,7 +1084,7 @@ export class DatabaseStorage implements IStorage {
       .insert(courseResources)
       .values(resource)
       .returning();
-    
+
     return newResource;
   }
 
@@ -1071,6 +1118,8 @@ export class DatabaseStorage implements IStorage {
       .where(eq(quizzes.lessonId, lessonId))
       .limit(1);
 
+    // NOTE: questions are stored in the quiz_questions & quiz_answers tables,
+    // not as a JSON column on quizzes. Only store quiz-level metadata here.
     const quizPayload = {
       lessonId,
       title: quizData.title,
@@ -1078,80 +1127,497 @@ export class DatabaseStorage implements IStorage {
       passingScore: quizData.passingScore,
       timeLimit: quizData.timeLimit,
       maxAttempts: quizData.maxAttempts,
-      randomizeQuestions: quizData.randomizeQuestions,
-      showResults: quizData.showResults,
-      questions: JSON.stringify(quizData.questions || []),
+      isRequired: quizData.isRequired ?? false,
     };
 
+    let quiz: Quiz;
     if (existing.length > 0) {
-      // Update existing quiz
       const [updated] = await db
         .update(quizzes)
         .set(quizPayload)
         .where(eq(quizzes.id, existing[0].id))
         .returning();
-      
-      return {
-        ...updated,
-        questions: updated.questions ? JSON.parse(updated.questions as string) : [],
-      };
+      quiz = updated;
     } else {
-      // Create new quiz
       const [created] = await db
         .insert(quizzes)
         .values(quizPayload)
         .returning();
-      
-      return {
-        ...created,
-        questions: created.questions ? JSON.parse(created.questions as string) : [],
-      };
+      quiz = created;
     }
+
+    // Upsert questions and answers if provided
+    if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
+      // Delete existing questions (cascade removes answers)
+      await db.delete(quizQuestions).where(eq(quizQuestions.quizId, quiz.id));
+
+      for (let i = 0; i < quizData.questions.length; i++) {
+        const q = quizData.questions[i];
+        const [question] = await db
+          .insert(quizQuestions)
+          .values({
+            quizId: quiz.id,
+            question: q.question,
+            questionType: q.questionType || 'multiple_choice',
+            points: q.points ?? 1,
+            order: i,
+          })
+          .returning();
+
+        if (Array.isArray(q.answers)) {
+          for (let j = 0; j < q.answers.length; j++) {
+            await db.insert(quizAnswers).values({
+              questionId: question.id,
+              answer: q.answers[j].answer,
+              isCorrect: q.answers[j].isCorrect ?? false,
+              order: j,
+            });
+          }
+        }
+      }
+    }
+
+    return await this.getQuizWithQuestions(quiz.id);
+  }
+
+  // Fetch quiz with all questions and answers (answers shuffled, isCorrect hidden for students)
+  async getQuizWithQuestions(quizId: string, hideCorrect = false) {
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, quizId));
+    if (!quiz) return null;
+
+    const questions = await db
+      .select()
+      .from(quizQuestions)
+      .where(eq(quizQuestions.quizId, quizId))
+      .orderBy(quizQuestions.order);
+
+    const questionsWithAnswers = await Promise.all(
+      questions.map(async (q) => {
+        const answers = await db
+          .select()
+          .from(quizAnswers)
+          .where(eq(quizAnswers.questionId, q.id))
+          .orderBy(quizAnswers.order);
+
+        return {
+          ...q,
+          answers: hideCorrect
+            ? answers.map(({ isCorrect: _hidden, ...rest }) => rest)
+            : answers,
+        };
+      })
+    );
+
+    return { ...quiz, questions: questionsWithAnswers };
+  }
+
+  // Grade a quiz attempt: compare submitted answers, compute score, persist result
+  async gradeQuizAttempt(
+    attemptId: string,
+    userId: string,
+    quizId: string,
+    responses: { questionId: string; answerId?: string; responseText?: string }[],
+    timeSpent?: number
+  ): Promise<QuizAttempt> {
+    const quiz = await this.getQuizWithQuestions(quizId, false);
+    if (!quiz) throw new Error('Quiz not found');
+
+    let totalPoints = 0;
+    let earnedPoints = 0;
+
+    for (const resp of responses) {
+      const question = quiz.questions.find((q: any) => q.id === resp.questionId);
+      if (!question) continue;
+
+      totalPoints += question.points ?? 1;
+
+      // Check correctness
+      let isCorrect = false;
+      if (resp.answerId) {
+        const answer = (question.answers as any[]).find((a: any) => a.id === resp.answerId);
+        isCorrect = (answer?.isCorrect as boolean | null) ?? false;
+      }
+
+      if (isCorrect) earnedPoints += question.points ?? 1;
+
+      await db.insert(quizResponses).values({
+        attemptId,
+        questionId: resp.questionId,
+        answerId: resp.answerId || null,
+        responseText: resp.responseText || null,
+        isCorrect,
+        pointsEarned: isCorrect ? (question.points ?? 1) : 0,
+      });
+    }
+
+    const score = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+    const passed = score >= (quiz.passingScore ?? 80);
+
+    const [attempt] = await db
+      .update(quizAttempts)
+      .set({
+        score: score.toFixed(2),
+        totalPoints,
+        passed,
+        timeSpent: timeSpent ?? null,
+        completedAt: new Date(),
+      })
+      .where(eq(quizAttempts.id, attemptId))
+      .returning();
+
+    return attempt;
+  }
+
+  // ── Real data methods for previously-mocked routes ───────────────────────
+
+  async getRealPlatformStats(): Promise<{ totalCourses: number; totalStudents: number; averageRating: number; totalHours: number }> {
+    const [{ totalCourses }] = await db
+      .select({ totalCourses: count() })
+      .from(courses)
+      .where(eq(courses.isPublished, true));
+
+    const [{ totalStudents }] = await db
+      .select({ totalStudents: count(sql`DISTINCT ${enrollments.userId}`) })
+      .from(enrollments);
+
+    const [{ avgRating }] = await db
+      .select({ avgRating: avg(reviews.rating) })
+      .from(reviews);
+
+    const [{ totalHours }] = await db
+      .select({ totalHours: sql<number>`COALESCE(SUM(${courses.duration}), 0)` })
+      .from(courses)
+      .where(eq(courses.isPublished, true));
+
+    return {
+      totalCourses: Number(totalCourses),
+      totalStudents: Number(totalStudents),
+      averageRating: Math.round((Number(avgRating) || 0) * 10) / 10,
+      totalHours: Number(totalHours),
+    };
+  }
+
+  async getInstructorMonthlyRevenue(instructorId: string): Promise<{ month: string; amount: number }[]> {
+    const instructorCourseIds = await db
+      .select({ id: courses.id })
+      .from(courses)
+      .where(eq(courses.instructorId, instructorId));
+    const ids = instructorCourseIds.map((c) => c.id);
+    if (ids.length === 0) return [];
+
+    const rows = await db
+      .select({
+        month: sql<string>`TO_CHAR(${orders.createdAt}, 'Mon')`,
+        monthNum: sql<number>`EXTRACT(MONTH FROM ${orders.createdAt})`,
+        year: sql<number>`EXTRACT(YEAR FROM ${orders.createdAt})`,
+        amount: sql<number>`SUM(CAST(${orders.amount} AS NUMERIC))`,
+      })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.status, 'completed'),
+          sql`${orders.courseId} = ANY(ARRAY[${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)}])`
+        )
+      )
+      .groupBy(sql`TO_CHAR(${orders.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${orders.createdAt})`, sql`EXTRACT(YEAR FROM ${orders.createdAt})`)
+      .orderBy(sql`EXTRACT(YEAR FROM ${orders.createdAt})`, sql`EXTRACT(MONTH FROM ${orders.createdAt})`);
+
+    return rows.map((r) => ({ month: r.month, amount: Number(r.amount) }));
+  }
+
+  async getInstructorAnalytics(instructorId: string): Promise<any[]> {
+    const instructorCourses = await db
+      .select({ id: courses.id, title: courses.title, avgRating: courses.avgRating })
+      .from(courses)
+      .where(eq(courses.instructorId, instructorId));
+
+    return await Promise.all(
+      instructorCourses.map(async (course) => {
+        const [{ enrollmentCount }] = await db
+          .select({ enrollmentCount: count() })
+          .from(enrollments)
+          .where(eq(enrollments.courseId, course.id));
+
+        const [{ revenue }] = await db
+          .select({ revenue: sql<number>`COALESCE(SUM(CAST(${orders.amount} AS NUMERIC)), 0)` })
+          .from(orders)
+          .where(and(eq(orders.courseId, course.id), eq(orders.status, 'completed')));
+
+        const [{ completionRate }] = await db
+          .select({
+            completionRate: sql<number>`COALESCE(
+              ROUND(100.0 * COUNT(CASE WHEN CAST(${enrollments.progress} AS NUMERIC) >= 100 THEN 1 END) / NULLIF(COUNT(*), 0), 0),
+              0
+            )`,
+          })
+          .from(enrollments)
+          .where(eq(enrollments.courseId, course.id));
+
+        return {
+          id: course.id,
+          title: course.title,
+          enrollmentCount: Number(enrollmentCount),
+          avgRating: Number(course.avgRating) || 0,
+          revenue: Number(revenue),
+          completionRate: Number(completionRate),
+        };
+      })
+    );
+  }
+
+  async getInstructorPendingSubmissions(instructorId: string): Promise<any[]> {
+    const instructorCourseIds = await db
+      .select({ id: courses.id })
+      .from(courses)
+      .where(eq(courses.instructorId, instructorId));
+    const courseIds = instructorCourseIds.map((c) => c.id);
+    if (courseIds.length === 0) return [];
+
+    // Find lessons in instructor courses, then assignments, then ungraded submissions
+    const results = await db
+      .select({
+        id: assignmentSubmissions.id,
+        content: assignmentSubmissions.content,
+        submittedAt: assignmentSubmissions.submittedAt,
+        assignmentTitle: assignments.title,
+        studentFirst: users.firstName,
+        studentLast: users.lastName,
+      })
+      .from(assignmentSubmissions)
+      .leftJoin(assignments, eq(assignmentSubmissions.assignmentId, assignments.id))
+      .leftJoin(lessons, eq(assignments.lessonId, lessons.id))
+      .leftJoin(modules, eq(lessons.moduleId, modules.id))
+      .leftJoin(users, eq(assignmentSubmissions.userId, users.id))
+      .where(
+        and(
+          sql`${modules.courseId} = ANY(ARRAY[${sql.join(courseIds.map((id) => sql`${id}::uuid`), sql`, `)}])`,
+          sql`${assignmentSubmissions.gradedAt} IS NULL`
+        )
+      )
+      .orderBy(desc(assignmentSubmissions.submittedAt))
+      .limit(20);
+
+    return results.map((r) => ({
+      id: r.id,
+      assignment: { title: r.assignmentTitle },
+      student: { firstName: r.studentFirst, lastName: r.studentLast },
+      submittedAt: r.submittedAt,
+    }));
+  }
+
+  async getInstructorStudentQuestions(instructorId: string): Promise<any[]> {
+    const instructorCourseIds = await db
+      .select({ id: courses.id, title: courses.title })
+      .from(courses)
+      .where(eq(courses.instructorId, instructorId));
+    const courseIds = instructorCourseIds.map((c) => c.id);
+    if (courseIds.length === 0) return [];
+
+    const courseMap = Object.fromEntries(instructorCourseIds.map((c) => [c.id, c.title]));
+
+    const results = await db
+      .select({
+        id: discussions.id,
+        content: discussions.content,
+        courseId: discussions.courseId,
+        createdAt: discussions.createdAt,
+        studentFirst: users.firstName,
+        studentLast: users.lastName,
+      })
+      .from(discussions)
+      .leftJoin(users, eq(discussions.userId, users.id))
+      .where(
+        sql`${discussions.courseId} = ANY(ARRAY[${sql.join(courseIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+      )
+      .orderBy(desc(discussions.createdAt))
+      .limit(20);
+
+    return results.map((r) => ({
+      id: r.id,
+      content: r.content,
+      student: { firstName: r.studentFirst, lastName: r.studentLast },
+      course: { title: courseMap[r.courseId!] || 'Unknown Course' },
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async getStudentPendingAssignments(userId: string): Promise<any[]> {
+    const userEnrollments = await db
+      .select({ courseId: enrollments.courseId })
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
+    const courseIds = userEnrollments.map((e) => e.courseId!);
+    if (courseIds.length === 0) return [];
+
+    const results = await db
+      .select({
+        id: assignments.id,
+        title: assignments.title,
+        dueDate: assignments.dueDate,
+        courseTitle: courses.title,
+      })
+      .from(assignments)
+      .leftJoin(lessons, eq(assignments.lessonId, lessons.id))
+      .leftJoin(modules, eq(lessons.moduleId, modules.id))
+      .leftJoin(courses, eq(modules.courseId, courses.id))
+      .where(
+        and(
+          sql`${modules.courseId} = ANY(ARRAY[${sql.join(courseIds.map((id) => sql`${id}::uuid`), sql`, `)}])`,
+          // Not yet submitted by this user
+          sql`${assignments.id} NOT IN (
+            SELECT assignment_id FROM assignment_submissions WHERE user_id = ${userId}
+          )`
+        )
+      )
+      .orderBy(assignments.dueDate)
+      .limit(10);
+
+    return results.map((r) => ({
+      id: r.id,
+      title: r.title,
+      course: { title: r.courseTitle },
+      dueDate: r.dueDate,
+      submissionStatus: 'pending',
+    }));
+  }
+
+  async getStudentPendingQuizzes(userId: string): Promise<any[]> {
+    const userEnrollments = await db
+      .select({ courseId: enrollments.courseId })
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
+    const courseIds = userEnrollments.map((e) => e.courseId!);
+    if (courseIds.length === 0) return [];
+
+    const results = await db
+      .select({
+        id: quizzes.id,
+        title: quizzes.title,
+        timeLimit: quizzes.timeLimit,
+        courseTitle: courses.title,
+      })
+      .from(quizzes)
+      .leftJoin(lessons, eq(quizzes.lessonId, lessons.id))
+      .leftJoin(modules, eq(lessons.moduleId, modules.id))
+      .leftJoin(courses, eq(modules.courseId, courses.id))
+      .where(
+        and(
+          sql`${modules.courseId} = ANY(ARRAY[${sql.join(courseIds.map((id) => sql`${id}::uuid`), sql`, `)}])`,
+          // No completed attempt by this user
+          sql`${quizzes.id} NOT IN (
+            SELECT quiz_id FROM quiz_attempts WHERE user_id = ${userId} AND completed_at IS NOT NULL
+          )`
+        )
+      )
+      .limit(10);
+
+    const questionsCountPromises = results.map(async (quiz) => {
+      const [{ qCount }] = await db
+        .select({ qCount: count() })
+        .from(quizQuestions)
+        .where(eq(quizQuestions.quizId, quiz.id));
+      return {
+        id: quiz.id,
+        title: quiz.title,
+        course: { title: quiz.courseTitle },
+        questionCount: Number(qCount),
+        timeLimit: quiz.timeLimit,
+      };
+    });
+
+    return await Promise.all(questionsCountPromises);
+  }
+
+  async getCourseRecommendations(userId: string): Promise<any[]> {
+    // Get categories of enrolled courses
+    const enrolled = await db
+      .select({ courseId: enrollments.courseId })
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
+    const enrolledIds = enrolled.map((e) => e.courseId!);
+
+    const enrolledCategoriesQuery = enrolledIds.length > 0
+      ? await db
+        .select({ categoryId: courses.categoryId })
+        .from(courses)
+        .where(sql`${courses.id} = ANY(ARRAY[${sql.join(enrolledIds.map((id) => sql`${id}::uuid`), sql`, `)}])`)
+      : [];
+    const categoryIds = Array.from(new Set(enrolledCategoriesQuery.map((c) => c.categoryId).filter((id): id is string => Boolean(id))));
+
+    // Recommend published courses not already enrolled
+    let whereClause = and(
+      eq(courses.isPublished, true),
+      enrolledIds.length > 0
+        ? sql`${courses.id} != ALL(ARRAY[${sql.join(enrolledIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+        : sql`1=1`
+    );
+
+    const recommended = await db
+      .select()
+      .from(courses)
+      .where(whereClause)
+      .orderBy(desc(courses.avgRating), desc(courses.enrollmentCount))
+      .limit(6);
+
+    return recommended.map((c) => ({
+      id: c.id,
+      title: c.title,
+      thumbnailUrl: c.thumbnailUrl,
+      avgRating: c.avgRating,
+      enrollmentCount: c.enrollmentCount,
+    }));
+  }
+
+  async getStudentDownloadableResources(userId: string): Promise<any[]> {
+    const enrolled = await db
+      .select({ courseId: enrollments.courseId })
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
+    const courseIds = enrolled.map((e) => e.courseId!);
+    if (courseIds.length === 0) return [];
+
+    return await db
+      .select()
+      .from(courseResources)
+      .where(
+        sql`${courseResources.courseId} = ANY(ARRAY[${sql.join(courseIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+      )
+      .orderBy(desc(courseResources.createdAt))
+      .limit(20);
   }
 
   async createOrUpdateAssignment(lessonId: string, assignmentData: any) {
-    // Check if assignment already exists for this lesson
     const existing = await db
       .select()
       .from(assignments)
       .where(eq(assignments.lessonId, lessonId))
       .limit(1);
 
+    // Only use columns that exist in the assignments schema
     const assignmentPayload = {
       lessonId,
       title: assignmentData.title,
       description: assignmentData.description,
-      instructions: assignmentData.instructions,
-      maxPoints: assignmentData.maxPoints,
+      instructions: assignmentData.instructions ?? null,
+      maxScore: assignmentData.maxScore ?? assignmentData.maxPoints ?? 100,
       dueDate: assignmentData.dueDate ? new Date(assignmentData.dueDate) : null,
-      allowLateSubmission: assignmentData.allowLateSubmission,
-      submissionType: assignmentData.submissionType,
-      rubric: JSON.stringify(assignmentData.rubric || []),
+      allowLateSubmission: assignmentData.allowLateSubmission ?? true,
+      isRequired: assignmentData.isRequired ?? false,
     };
 
     if (existing.length > 0) {
-      // Update existing assignment
       const [updated] = await db
         .update(assignments)
         .set(assignmentPayload)
         .where(eq(assignments.id, existing[0].id))
         .returning();
-      
-      return {
-        ...updated,
-        rubric: updated.rubric ? JSON.parse(updated.rubric as string) : [],
-      };
+      return updated;
     } else {
-      // Create new assignment
       const [created] = await db
         .insert(assignments)
         .values(assignmentPayload)
         .returning();
-      
-      return {
-        ...created,
-        rubric: created.rubric ? JSON.parse(created.rubric as string) : [],
-      };
+      return created;
     }
   }
 
@@ -1183,7 +1649,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(modules)
       .where(eq(modules.courseId, courseId));
-    
+
     const totalLessons = await db
       .select()
       .from(lessons)
