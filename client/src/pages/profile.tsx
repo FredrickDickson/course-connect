@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,18 @@ export default function Profile() {
     timezone: user?.timezone || "",
   });
 
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        bio: user.bio || "",
+        country: user.country || "",
+        timezone: user.timezone || "",
+      });
+    }
+  }, [user]);
+
   // Fetch user enrollments
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<EnrollmentWithCourse[]>({
     queryKey: ['/api/enrollments'],
@@ -53,8 +65,8 @@ export default function Profile() {
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       setIsEditing(false);
+      window.location.reload();
     },
     onError: (error: Error) => {
       toast({
@@ -252,7 +264,7 @@ export default function Profile() {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p><strong>Email:</strong> {user.email}</p>
                     <p><strong>Role:</strong> {user.role}</p>
-                    <p><strong>Member Since:</strong> {new Date(user.createdAt || '').toLocaleDateString()}</p>
+                    <p><strong>Member Since:</strong> {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>

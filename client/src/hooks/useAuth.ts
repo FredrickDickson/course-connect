@@ -10,6 +10,10 @@ interface UserProfile {
   lastName: string;
   profileImageUrl: string;
   role: string;
+  bio?: string;
+  country?: string;
+  timezone?: string;
+  createdAt?: string;
 }
 
 export function useAuth() {
@@ -21,7 +25,7 @@ export function useAuth() {
   const fetchUserProfile = useCallback(async (currentAuthUser: User): Promise<UserProfile> => {
     const { data: profile, error } = await supabase
       .from("users")
-      .select("role, first_name, last_name, profile_image_url")
+      .select("role, first_name, last_name, profile_image_url, bio, country, timezone, created_at")
       .eq("id", currentAuthUser.id)
       .maybeSingle();
 
@@ -36,6 +40,10 @@ export function useAuth() {
       lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
       role: profile?.role || "student", // Strictly use DB role or default to student
+      bio: profile?.bio || "",
+      country: profile?.country || "",
+      timezone: profile?.timezone || "",
+      createdAt: profile?.created_at || "",
     };
   }, []);
 
