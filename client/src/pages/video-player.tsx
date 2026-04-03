@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +14,36 @@ import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AlertCircle } from "lucide-react";
+
+// Type definitions
+interface Lesson {
+  id: string;
+  title: string;
+  contentType: string;
+  duration?: number;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  description?: string;
+  content?: string;
+}
+
+interface Module {
+  id: string;
+  title: string;
+  lessons?: Lesson[];
+}
+
+interface Course {
+  id: string;
+  title: string;
+  modules?: Module[];
+}
+
+interface ProgressItem {
+  completed: boolean;
+  watchTime: number;
+  lesson: Lesson;
+}
 
 export default function VideoPlayer() {
   const { courseId, lessonId } = useParams();
@@ -44,7 +73,7 @@ export default function VideoPlayer() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: course, isLoading: courseLoading } = useQuery({
+  const { data: course, isLoading: courseLoading } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
     enabled: !!courseId && isAuthenticated,
   });
@@ -93,23 +122,28 @@ export default function VideoPlayer() {
   });
 
   // Find current lesson and module
-  const currentLesson = course?.modules?.reduce((found: any, module: any) => {
-    if (found) return found;
-    return module.lessons?.find((lesson: any) => lesson.id === lessonId);
-  }, null);
+  const currentLesson = course?.modules?.reduce(
+    (found: Lesson | null, module: Module) => {
+      if (found) return found;
+      return (
+        module.lessons?.find((lesson: Lesson) => lesson.id === lessonId) || null
+      );
+    },
+    null as Lesson | null,
+  );
 
-  const currentModule = course?.modules?.find((module: any) =>
-    module.lessons?.some((lesson: any) => lesson.id === lessonId),
+  const currentModule = course?.modules?.find((module: Module) =>
+    module.lessons?.some((lesson: Lesson) => lesson.id === lessonId),
   );
 
   // Get all lessons in order
   const allLessons =
-    course?.modules?.reduce((acc: any[], module: any) => {
+    course?.modules?.reduce((acc: Lesson[], module: Module) => {
       return [...acc, ...(module.lessons || [])];
-    }, []) || [];
+    }, [] as Lesson[]) || [];
 
   const currentLessonIndex = allLessons.findIndex(
-    (lesson: any) => lesson.id === lessonId,
+    (lesson: Lesson) => lesson.id === lessonId,
   );
   const nextLesson = allLessons[currentLessonIndex + 1];
   const prevLesson = allLessons[currentLessonIndex - 1];
@@ -140,7 +174,7 @@ export default function VideoPlayer() {
 
       // Resume from last watched position
       const lessonProgress = progress.find(
-        (p: any) => p.lesson.id === lessonId,
+        (p: ProgressItem) => p.lesson.id === lessonId,
       );
       if (lessonProgress && lessonProgress.watchTime > 0) {
         video.currentTime = lessonProgress.watchTime;
@@ -583,13 +617,14 @@ export default function VideoPlayer() {
                       Overall Progress
                     </span>
                     <span className="font-medium">
-                      {progress.filter((p: any) => p.completed).length} /{" "}
-                      {allLessons.length}
+                      {progress.filter((p: ProgressItem) => p.completed).length}{" "}
+                      / {allLessons.length}
                     </span>
                   </div>
                   <Progress
                     value={
-                      (progress.filter((p: any) => p.completed).length /
+                      (progress.filter((p: ProgressItem) => p.completed)
+                        .length /
                         allLessons.length) *
                       100
                     }
@@ -606,77 +641,79 @@ export default function VideoPlayer() {
                   Course Content
                 </h3>
                 <div className="space-y-4">
-                  {course.modules?.map((module: any, moduleIndex: number) => (
-                    <div key={module.id} className="space-y-2">
-                      <h4 className="font-medium text-foreground text-sm">
-                        Module {moduleIndex + 1}: {module.title}
-                      </h4>
-                      <div className="space-y-1">
-                        {module.lessons?.map(
-                          (lesson: any, lessonIndex: number) => {
-                            const lessonProgress = progress.find(
-                              (p: any) => p.lesson.id === lesson.id,
-                            );
-                            const isCurrentLesson = lesson.id === lessonId;
-                            const isCompleted =
-                              lessonProgress?.completed || false;
+                  {(course as Course).modules?.map(
+                    (module: Module, moduleIndex: number) => (
+                      <div key={module.id} className="space-y-2">
+                        <h4 className="font-medium text-foreground text-sm">
+                          Module {moduleIndex + 1}: {module.title}
+                        </h4>
+                        <div className="space-y-1">
+                          {module.lessons?.map(
+                            (lesson: Lesson, lessonIndex: number) => {
+                              const lessonProgress = progress.find(
+                                (p: ProgressItem) => p.lesson.id === lesson.id,
+                              );
+                              const isCurrentLesson = lesson.id === lessonId;
+                              const isCompleted =
+                                lessonProgress?.completed || false;
 
-                            return (
-                              <Link
-                                key={lesson.id}
-                                href={`/learn/${courseId}/${lesson.id}`}
-                              >
-                                <div
-                                  className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                                    isCurrentLesson
-                                      ? "bg-primary text-primary-foreground"
-                                      : "hover:bg-muted/50"
-                                  }`}
-                                  data-testid={`lesson-nav-${lesson.id}`}
+                              return (
+                                <Link
+                                  key={lesson.id}
+                                  href={`/learn/${courseId}/${lesson.id}`}
                                 >
-                                  <div className="flex-shrink-0">
-                                    {isCompleted ? (
-                                      <i className="fas fa-check-circle text-green-600"></i>
-                                    ) : (
-                                      <i
-                                        className={`fas ${lesson.contentType === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                  <div
+                                    className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
+                                      isCurrentLesson
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted/50"
+                                    }`}
+                                    data-testid={`lesson-nav-${lesson.id}`}
+                                  >
+                                    <div className="flex-shrink-0">
+                                      {isCompleted ? (
+                                        <i className="fas fa-check-circle text-green-600"></i>
+                                      ) : (
+                                        <i
+                                          className={`fas ${lesson.contentType === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                            isCurrentLesson
+                                              ? "text-primary-foreground"
+                                              : "text-muted-foreground"
+                                          }`}
+                                        ></i>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div
+                                        className={`font-medium truncate ${
                                           isCurrentLesson
                                             ? "text-primary-foreground"
-                                            : "text-muted-foreground"
-                                        }`}
-                                      ></i>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div
-                                      className={`font-medium truncate ${
-                                        isCurrentLesson
-                                          ? "text-primary-foreground"
-                                          : "text-foreground"
-                                      }`}
-                                    >
-                                      {lesson.title}
-                                    </div>
-                                    {lesson.duration && (
-                                      <div
-                                        className={`text-xs ${
-                                          isCurrentLesson
-                                            ? "text-primary-foreground/80"
-                                            : "text-muted-foreground"
+                                            : "text-foreground"
                                         }`}
                                       >
-                                        {formatTime(lesson.duration)}
+                                        {lesson.title}
                                       </div>
-                                    )}
+                                      {lesson.duration && (
+                                        <div
+                                          className={`text-xs ${
+                                            isCurrentLesson
+                                              ? "text-primary-foreground/80"
+                                              : "text-muted-foreground"
+                                          }`}
+                                        >
+                                          {formatTime(lesson.duration)}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              </Link>
-                            );
-                          },
-                        )}
+                                </Link>
+                              );
+                            },
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </CardContent>
             </Card>

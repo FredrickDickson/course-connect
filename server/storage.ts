@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Storage Layer
  *
@@ -107,17 +106,21 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
 
   // Course operations - simplified for now
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCourses(filters?: {
     category?: string;
     search?: string;
     level?: string;
     featured?: boolean;
   }): Promise<any[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCourseById(id: string): Promise<any>;
   createCourse(course: InsertCourse): Promise<Course>;
   updateCourse(id: string, updates: Partial<InsertCourse>): Promise<Course>;
   deleteCourse(id: string): Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getFeaturedCourses(): Promise<any[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getInstructorCourses(instructorId: string): Promise<any[]>;
   getInstructorStats(instructorId: string): Promise<{
     totalCourses: number;
@@ -128,6 +131,7 @@ export interface IStorage {
 
   // Enrollment operations - simplified
   enrollUser(enrollment: InsertEnrollment): Promise<Enrollment>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getUserEnrollments(userId: string): Promise<any[]>;
   isUserEnrolled(userId: string, courseId: string): Promise<boolean>;
   updateEnrollmentProgress(
@@ -138,6 +142,7 @@ export interface IStorage {
 
   // Progress operations
   updateProgress(progress: InsertProgress): Promise<Progress>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getUserProgress(userId: string, courseId: string): Promise<any[]>;
   getUserOverallProgress(userId: string): Promise<{
     totalCourses: number;
@@ -147,25 +152,30 @@ export interface IStorage {
 
   // Review operations
   createReview(review: InsertReview): Promise<Review>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCourseReviews(courseId: string): Promise<any[]>;
   updateCourseRating(courseId: string): Promise<void>;
 
   // Discussion operations
   createDiscussion(discussion: InsertDiscussion): Promise<Discussion>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCourseDiscussions(courseId: string): Promise<any[]>;
   createReply(reply: InsertReply): Promise<Reply>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getDiscussionReplies(discussionId: string): Promise<any[]>;
 
   // Certification operations
   createCertification(
     certification: InsertCertification,
   ): Promise<Certification>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getUserCertifications(userId: string): Promise<any[]>;
 
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
 
   // Curriculum management operations
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCourseModules(courseId: string): Promise<any[]>;
   createModule(module: InsertModule): Promise<Module>;
   updateModule(id: string, updates: Partial<InsertModule>): Promise<Module>;
@@ -180,6 +190,7 @@ export interface IStorage {
     paymentIntentId?: string,
   ): Promise<Order>;
   updateOrderByReference(reference: string, status: string): Promise<Order>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getUserOrders(userId: string): Promise<any[]>;
 
   // Quiz operations
@@ -192,6 +203,7 @@ export interface IStorage {
   submitQuizAttempt(attempt: {
     quizId: string;
     userId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     answers: any[];
     timeSpent?: number;
   }): Promise<QuizAttempt>;
@@ -840,7 +852,8 @@ export class DatabaseStorage implements IStorage {
     status: string,
     paymentIntentId?: string,
   ): Promise<Order> {
-    const updateData: any = { status: status as any };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = { status: status as any };
     if (paymentIntentId) {
       updateData.paystackReference = paymentIntentId;
     }
@@ -956,7 +969,7 @@ export class DatabaseStorage implements IStorage {
     return enrollment;
   }
 
-  async getQuizByLessonId(lessonId: string): Promise<any> {
+  async getQuizByLessonId(lessonId: string): Promise<unknown> {
     const [quiz] = await db
       .select()
       .from(quizzes)

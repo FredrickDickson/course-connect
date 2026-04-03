@@ -52,6 +52,20 @@ interface AuthRequest extends Request {
   files?: Express.Multer.File[];
 }
 
+// Progress entry type for certificate checking
+interface ProgressEntry {
+  completed: boolean;
+  lessonId: string;
+}
+
+interface LessonEntry {
+  id: string;
+}
+
+interface CertEntry {
+  courseId: string;
+}
+
 // Paystack payment gateway configuration
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
@@ -271,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { firstName, lastName, bio, country, timezone } = req.body;
 
-      const updateData: any = {};
+      const updateData: Record<string, string | undefined> = {};
       if (firstName !== undefined) updateData.firstName = firstName;
       if (lastName !== undefined) updateData.lastName = lastName;
       if (bio !== undefined) updateData.bio = bio;
@@ -290,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { firstName, lastName, bio, country, timezone } = req.body;
 
-      const updateData: any = {};
+      const updateData: Record<string, string | undefined> = {};
       if (firstName !== undefined) updateData.firstName = firstName;
       if (lastName !== undefined) updateData.lastName = lastName;
       if (bio !== undefined) updateData.bio = bio;
@@ -582,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const lesson = await storage.getLessonById(progressData.lessonId);
           if (lesson) {
-            const courseId = lesson.module?.courseId || lesson.courseId;
+            const courseId = lesson.module?.courseId || lesson.courseId || "";
             if (courseId) {
               // Check if all lessons are completed
               const allLessons = await storage.getCourseLessons(courseId);
@@ -593,12 +607,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const completedLessonIds = new Set(
                 userProgress
-                  .filter((p: any) => p.completed)
-                  .map((p: any) => p.lessonId),
+                  .filter((p: ProgressEntry) => p.completed)
+                  .map((p: ProgressEntry) => p.lessonId),
               );
 
               const allCompleted = allLessons.every(
-                (l: any) =>
+                (l: LessonEntry) =>
                   completedLessonIds.has(l.id) ||
                   l.id === progressData.lessonId,
               );
@@ -608,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const existingCerts =
                   await storage.getUserCertifications(userId);
                 const hasCert = existingCerts.some(
-                  (c: any) => c.courseId === courseId,
+                  (c: CertEntry) => c.courseId === courseId,
                 );
 
                 if (!hasCert) {

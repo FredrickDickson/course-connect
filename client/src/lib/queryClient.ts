@@ -47,7 +47,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }: { queryKey: readonly unknown[] }) => {
     const url = new URL(queryKey[0] as string, window.location.origin);
     if (queryKey.length > 1 && typeof queryKey[1] === "object") {
-      const params = queryKey[1] as Record<string, any>;
+      const params = queryKey[1] as Record<string, unknown>;
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           url.searchParams.append(key, String(value));
