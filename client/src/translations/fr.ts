@@ -213,240 +213,190 @@ export const fr = {
       },
     },
 
-    // Common
-    common: {
-      loading: "Chargement...",
-      error: "Erreur",
-      success: "Succès",
-      cancel: "Annuler",
-      save: "Sauvegarder",
-      delete: "Supprimer",
-      edit: "Modifier",
-      view: "Voir",
-      back: "Retour",
-      next: "Suivant",
-      previous: "Précédent",
-      close: "Fermer",
-      search: "Rechercher",
-      filter: "Filtrer",
-      sort: "Trier",
-      clear: "Effacer",
-      apply: "Appliquer",
-      reset: "Réinitialiser",
-      submit: "Soumettre",
-    },
-  },
   // Common
   common: {
-    loading: "Chargement...";
-    error: "Erreur";
-    success: "Succès";
-    cancel: "Annuler";
-    save: "Sauvegarder";
-    delete: "Supprimer";
-    edit: "Modifier";
-    view: "Voir";
-    back: "Retour";
-    next: "Suivant";
-    previous: "Précédent";
-    close: "Fermer";
-    search: "Rechercher";
-    filter: "Filtrer";
-    sort: "Trier";
-    clear: "Effacer";
-    apply: "Appliquer";
-    reset: "Réinitialiser";
-    submit: "Soumettre";
-    confirm: "Confirmer";
-    yes: "Oui";
-    no: "Non";
+    loading: "Chargement...",
+    error: "Erreur",
+    success: "Succès",
+    cancel: "Annuler",
+    save: "Sauvegarder",
+    delete: "Supprimer",
+    edit: "Modifier",
+    view: "Voir",
+    back: "Retour",
+    next: "Suivant",
+    previous: "Précédent",
+    close: "Fermer",
+    search: "Rechercher",
+    filter: "Filtrer",
+    sort: "Trier",
+    clear: "Effacer",
+    apply: "Appliquer",
+    reset: "Réinitialiser",
+    submit: "Soumettre",
+    confirm: "Confirmer",
+    yes: "Oui",
+    no: "Non",
   },
+
   // Messages
   messages: {
-    unauthorized: "Vous devez vous connecter pour accéder à cette page.";
-    loginRedirect: "Redirection vers la connexion...";
-    courseAddedToFavorites: "Cours ajouté aux favoris";
-    courseRemovedFromFavorites: "Cours retiré des favoris";
-    enrollmentSuccessful: "Inscription au cours réussie";
-    paymentSuccessful: "Paiement effectué avec succès";
-    paymentFailed: "Échec du paiement. Veuillez réessayer.";
-    networkError: "Erreur réseau. Veuillez vérifier votre connexion.";
+    unauthorized: "Vous devez vous connecter pour accéder à cette page.",
+    loginRedirect: "Redirection vers la connexion...",
+    courseAddedToFavorites: "Cours ajouté aux favoris",
+    courseRemovedFromFavorites: "Cours retiré des favoris",
+    enrollmentSuccessful: "Inscription au cours réussie",
+    paymentSuccessful: "Paiement effectué avec succès",
+    paymentFailed: "Échec du paiement. Veuillez réessayer.",
+    networkError: "Erreur réseau. Veuillez vérifier votre connexion.",
   },
+
   // Legal Pages
   legal: {
-    privacyPolicy: "Politique de Confidentialité";
-    termsOfService: "Conditions de Service";
-    cookiePolicy: "Politique de Cookies";
-    lastUpdated: "Dernière mise à jour";
-    backToHome: "Retour à l'accueil";
-    infoWeCollect: "Informations que Nous Collectons";
-    personalInfo: "Informations Personnelles";
-    howWeUseInfo: "Comment Nous Utilisons Vos Informations";
-    dataProtection: "Protection des Données";
-    yourRights: "Vos Droits";
-    contactUs: "Contactez-nous";
-    privacyOfficer: "Responsable de la Protection des Données";
-    acceptanceOfTerms: "Acceptation des Conditions";
-    educationalServices: "Services Éducatifs";
-    userResponsibilities: "Responsabilités de l'Utilisateur";
-    paymentAndRefunds: "Paiement et Remboursements";
-    intellectualProperty: "Propriété Intellectuelle";
-    certificationAndCredentials: "Certification et Titres";
-    limitationOfLiability: "Limitation de Responsabilité";
-    contactInformation: "Informations de Contact";
-    legalDepartment: "Service Juridique";
-    whatAreCookies: "Qu'est-ce que les Cookies";
-    howWeUseCookies: "Comment Nous Utilisons les Cookies";
-    essentialCookies: "Cookies Essentiels";
-    performanceCookies: "Cookies de Performance";
-    functionalityCookies: "Cookies de Fonctionnalité";
-    thirdPartyCookies: "Cookies Tiers";
-    managingCookies: "Gestion des Cookies";
-    updatesToPolicy: "Mises à Jour de cette Politique";
-    dataProtectionOfficer: "Délégué à la Protection des Données";
+    privacyPolicy: "Politique de Confidentialité",
+    termsOfService: "Conditions de Service",
+    cookiePolicy: "Politique de Cookies",
+    lastUpdated: "Dernière mise à jour",
+    backToHome: "Retour à l'accueil",
+    infoWeCollect: "Informations que Nous Collectons",
+    personalInfo: "Informations Personnelles",
+    howWeUseInfo: "Comment Nous Utilisons Vos Informations",
+    dataProtection: "Protection des Données",
+    yourRights: "Vos Droits",
+    contactUs: "Contactez-nous",
+    privacyOfficer: "Responsable de la Protection des Données",
+    acceptanceOfTerms: "Acceptation des Conditions",
+    educationalServices: "Services Éducatifs",
+    userResponsibilities: "Responsabilités de l'Utilisateur",
+    paymentAndRefunds: "Paiement et Remboursements",
+    intellectualProperty: "Propriété Intellectuelle",
+    certificationAndCredentials: "Certification et Titres",
+    limitationOfLiability: "Limitation de Responsabilité",
+    contactInformation: "Informations de Contact",
+    legalDepartment: "Service Juridique",
+    whatAreCookies: "Qu'est-ce que les Cookies",
+    howWeUseCookies: "Comment Nous Utilisons les Cookies",
+    essentialCookies: "Cookies Essentiels",
+    performanceCookies: "Cookies de Performance",
+    functionalityCookies: "Cookies de Fonctionnalité",
+    thirdPartyCookies: "Cookies Tiers",
+    managingCookies: "Gestion des Cookies",
+    updatesToPolicy: "Mises à Jour de cette Politique",
+    dataProtectionOfficer: "Délégué à la Protection des Données",
   },
+
   // Help Center
   helpCenter: {
-    title: "Centre d'Aide";
-    subtitle: "Trouvez des réponses aux questions fréquentes et obtenez de l'aide pour votre expérience CIMA Learn.";
-    gettingStarted: "Démarrage";
-    billingPayments: "Facturation et Paiements";
-    certifications: "Certifications";
-    faq: "Questions Fréquentes";
-    howToEnroll: "Comment m'inscrire à un cours ?";
-    howToEnrollAnswer: 'Parcourez notre catalogue de cours, sélectionnez le cours qui vous intéresse et cliquez sur "S\'inscrire maintenant". Vous devrez créer un compte et effectuer le paiement pour accéder aux supports de cours.';
-    whatIsFellowship: "Qu'est-ce que la Bourse FCIMArb ?";
-    whatIsFellowshipAnswer: "La Bourse FCIMArb est notre programme de qualification professionnelle de premier plan pour les arbitres et médiateurs internationaux. Elle offre une formation complète et des titres reconnus mondialement.";
-    accessDuration: "Combien de temps ai-je accès aux supports de cours ?";
-    accessDurationAnswer: "La plupart des cours offrent un accès à vie aux supports. Les programmes de certification professionnelle peuvent avoir des limites de temps spécifiques décrites dans les détails du cours.";
-    refundPolicy: "Puis-je obtenir un remboursement si je ne suis pas satisfait ?";
-    refundPolicyAnswer: "Nous offrons une garantie de remboursement de 14 jours pour la plupart des cours. Les programmes de certification professionnelle ont des politiques de remboursement différentes en raison de leur nature intensive.";
-    stillNeedHelp: "Besoin d'Aide Supplémentaire ?";
-    supportTeam: "Notre équipe de support est là pour vous aider avec toutes vos questions ou problèmes techniques.";
-    contactSupport: "Contacter le Support";
-    technicalSupport: "Support Technique";
+    title: "Centre d'Aide",
+    subtitle: "Trouvez des réponses aux questions fréquentes et obtenez de l'aide pour votre expérience CIMA Learn.",
+    gettingStarted: "Démarrage",
+    billingPayments: "Facturation et Paiements",
+    certifications: "Certifications",
+    faq: "Questions Fréquentes",
+    howToEnroll: "Comment m'inscrire à un cours ?",
+    howToEnrollAnswer: "Parcourez notre catalogue de cours, sélectionnez le cours qui vous intéresse et cliquez sur \"S'inscrire maintenant\". Vous devrez créer un compte et effectuer le paiement pour accéder aux supports de cours.",
+    whatIsFellowship: "Qu'est-ce que la Bourse FCIMArb ?",
+    whatIsFellowshipAnswer: "La Bourse FCIMArb est notre programme de qualification professionnelle de premier plan pour les arbitres et médiateurs internationaux. Elle offre une formation complète et des titres reconnus mondialement.",
+    accessDuration: "Combien de temps ai-je accès aux supports de cours ?",
+    accessDurationAnswer: "La plupart des cours offrent un accès à vie aux supports. Les programmes de certification professionnelle peuvent avoir des limites de temps spécifiques décrites dans les détails du cours.",
+    refundPolicy: "Puis-je obtenir un remboursement si je ne suis pas satisfait ?",
+    refundPolicyAnswer: "Nous offrons une garantie de remboursement de 14 jours pour la plupart des cours. Les programmes de certification professionnelle ont des politiques de remboursement différentes en raison de leur nature intensive.",
+    stillNeedHelp: "Besoin d'Aide Supplémentaire ?",
+    supportTeam: "Notre équipe de support est là pour vous aider avec toutes vos questions ou problèmes techniques.",
+    contactSupport: "Contacter le Support",
+    technicalSupport: "Support Technique",
   },
+
   // Programs
   programs: {
-    title: "Programmes Professionnels de Règlement Alternatif";
-    subtitle: "Faites progresser votre carrière avec des qualifications reconnues internationalement conçues pour les professionnels du règlement alternatif débutants et expérimentés. Rejoignez notre communauté mondiale de médiateurs et d'arbitres.";
-    comparePrograms: "Comparer les Programmes";
-    speakToAdvisor: "Parler à un Conseiller";
-    flagshipPrograms: "Programmes Phares";
-    specializedCourses: "Cours Spécialisés";
-    certificationPaths: "Parcours de Certification";
-    mostPopular: "Le Plus Populaire";
-    weeksIntensive: "semaines intensives";
-    internationalFaculty: "Faculté internationale";
-    liveCaseStudies: "Études de cas en direct";
-    professionalCertification: "Certification professionnelle";
-    globalMAProgram: "Programme Global M&A";
-    maProgramCategory: "Arbitrage International et Médiation";
-    maProgramDescription: "Un itinéraire accéléré pour le développement professionnel dans le règlement des différends M&A internationaux. Maîtrisez les transactions transfrontalières complexes, les cadres réglementaires et les mécanismes de règlement des différends utilisés dans les fusions et acquisitions mondiales.";
-    fcimarbFellowship: "Bourse FCIMArb";
-    fellowshipCategory: "Qualification Professionnelle";
-    fellowshipDescription: "Qualification reconnue et respectée internationalement à l'issue du programme. Rejoignez une communauté d'élite d'arbitres et de médiateurs certifiés.";
-    learnMore: "En Savoir Plus";
-    viewCurriculum: "Voir le Programme";
-    downloadSyllabus: "Télécharger le Syllabus";
-    enrollNow: "S'inscrire Maintenant";
-    programDuration: "Durée du Programme";
-    investment: "Investissement";
-    weeks: "Semaines";
-    specializedProgram: "Programme Spécialisé";
-    premierQualification: "Qualification de Premier Plan";
-    internationalRecognition: "Reconnaissance Internationale";
+    title: "Programmes Professionnels de Règlement Alternatif",
+    subtitle: "Faites progresser votre carrière avec des qualifications reconnues internationalement.",
+    comparePrograms: "Comparer les Programmes",
+    speakToAdvisor: "Parler à un Conseiller",
+    flagshipPrograms: "Programmes Phares",
+    specializedCourses: "Cours Spécialisés",
+    certificationPaths: "Parcours de Certification",
+    mostPopular: "Le Plus Populaire",
+    weeksIntensive: "semaines intensives",
+    internationalFaculty: "Faculté internationale",
+    liveCaseStudies: "Études de cas en direct",
+    professionalCertification: "Certification professionnelle",
+    globalMAProgram: "Programme Global M&A",
+    maProgramCategory: "Arbitrage International et Médiation",
+    maProgramDescription: "Un itinéraire accéléré pour le développement professionnel dans le règlement des différends M&A internationaux.",
+    fcimarbFellowship: "Bourse FCIMArb",
+    fellowshipCategory: "Qualification Professionnelle",
+    fellowshipDescription: "Qualification reconnue et respectée internationalement à l'issue du programme.",
+    learnMore: "En Savoir Plus",
+    viewCurriculum: "Voir le Programme",
+    downloadSyllabus: "Télécharger le Syllabus",
+    enrollNow: "S'inscrire Maintenant",
+    programDuration: "Durée du Programme",
+    investment: "Investissement",
+    weeks: "Semaines",
+    specializedProgram: "Programme Spécialisé",
+    premierQualification: "Qualification de Premier Plan",
+    internationalRecognition: "Reconnaissance Internationale",
   },
+
   // Certification
   certification: {
-    title: "Certification Professionnelle";
-    subtitle: "Obtenez des titres reconnus internationalement dans le règlement alternatif des conflits grâce à nos programmes de certification complets.";
-    certificationPathways: "Parcours de Certification";
-    foundationCertificate: "Certificat de Fondation";
-    professionalCertificate: "Certificat Professionnel";
-    fcimarbFellowship: "Bourse FCIMArb";
-    entryLevel: "Niveau d'Entrée";
-    intermediate: "Intermédiaire";
-    advanced: "Avancé";
-    duration: "Durée";
-    price: "Prix";
-    description: "Description";
-    requirements: "Prérequis";
-    careers: "Opportunités de Carrière";
-    certificationProcess: "Processus de Certification";
-    courseEnrollment: "Inscription au Cours";
-    courseEnrollmentDesc: "Sélectionnez et inscrivez-vous au programme de certification CIMA approprié";
-    skillsTraining: "Formation aux Compétences";
-    skillsTrainingDesc: "Complétez des cours de formation basés sur les compétences";
-    assessment: "Évaluation";
-    assessmentDesc: "Démontrez vos compétences grâce à des exercices pratiques";
-    ethicsCertification: "Certification d'Éthique";
-    ethicsCertificationDesc: "Complétez la formation obligatoire sur la Conduite Professionnelle et Éthique";
-    certificateIssuance: "Délivrance du Certificat";
-    certificateIssuanceDesc: "Recevez la certification officielle dans les 14 jours suivant l'achèvement";
-    fellowDesignation: "Désignation de Fellow";
-    fellowDesignationDesc: "Lettres post-nominales FCIMArb reconnues internationalement";
-    globalNetworkAccess: "Accès au Réseau Global";
-    globalNetworkAccessDesc: "Connectez-vous avec des praticiens d'élite dans les principales villes internationales";
-    tribunalAppointments: "Nominations aux Tribunaux";
-    tribunalAppointmentsDesc: "Considération prioritaire pour les panels d'arbitrage international";
-    lifetimeMembership: "Adhésion à Vie";
-    lifetimeMembershipDesc: "Statut de fellow permanent avec des avantages continus";
-    referralNetwork: "Réseau de Parrainage";
-    referralNetworkDesc: "Accès exclusif aux références d'affaires de haute valeur";
-    continuingEducation: "Formation Continue";
-    continuingEducationDesc: "Opportunités avancées de développement professionnel";
-    applyNow: "Postuler Maintenant";
-    downloadBrochure: "Télécharger la Brochure";
-    foundationTraining: "Formation de Fondation";
-    foundationTrainingDesc: "Complétez le cours de médiation internationale ou d'arbitrage certifié CIMA";
-    skillsAssessment: "Évaluation des Compétences";
-    skillsAssessmentDesc: "Démontrez vos compétences grâce à des exercices pratiques et des études de cas";
-    fellowshipPortfolio: "Portfolio de Bourse";
-    fellowshipPortfolioDesc: "Soumettez un portfolio complet démontrant une préparation professionnelle";
+    title: "Certification Professionnelle",
+    subtitle: "Obtenez des titres reconnus internationalement dans le règlement alternatif des conflits.",
+    certificationPathways: "Parcours de Certification",
+    foundationCertificate: "Certificat de Fondation",
+    professionalCertificate: "Certificat Professionnel",
+    fcimarbFellowship: "Bourse FCIMArb",
+    entryLevel: "Niveau d'Entrée",
+    intermediate: "Intermédiaire",
+    advanced: "Avancé",
+    duration: "Durée",
+    price: "Prix",
+    description: "Description",
+    requirements: "Prérequis",
+    careers: "Opportunités de Carrière",
+    certificationProcess: "Processus de Certification",
+    courseEnrollment: "Inscription au Cours",
+    courseEnrollmentDesc: "Sélectionnez et inscrivez-vous au programme de certification CIMA approprié",
+    skillsTraining: "Formation aux Compétences",
+    skillsTrainingDesc: "Complétez des cours de formation basés sur les compétences",
+    assessment: "Évaluation",
+    assessmentDesc: "Démontrez vos compétences grâce à des exercices pratiques",
+    ethicsCertification: "Certification d'Éthique",
+    ethicsCertificationDesc: "Complétez la formation obligatoire sur la Conduite Professionnelle et Éthique",
+    certificateIssuance: "Délivrance du Certificat",
+    certificateIssuanceDesc: "Recevez la certification officielle dans les 14 jours suivant l'achèvement",
+    fellowDesignation: "Désignation de Fellow",
+    fellowDesignationDesc: "Lettres post-nominales FCIMArb reconnues internationalement",
+    globalNetworkAccess: "Accès au Réseau Global",
+    globalNetworkAccessDesc: "Connectez-vous avec des praticiens d'élite dans les principales villes internationales",
+    tribunalAppointments: "Nominations aux Tribunaux",
+    tribunalAppointmentsDesc: "Considération prioritaire pour les panels d'arbitrage international",
+    lifetimeMembership: "Adhésion à Vie",
+    lifetimeMembershipDesc: "Statut de fellow permanent avec des avantages continus",
+    referralNetwork: "Réseau de Parrainage",
+    referralNetworkDesc: "Accès exclusif aux références d'affaires de haute valeur",
+    continuingEducation: "Formation Continue",
+    continuingEducationDesc: "Opportunités avancées de développement professionnel",
+    applyNow: "Postuler Maintenant",
+    downloadBrochure: "Télécharger la Brochure",
+    foundationTraining: "Formation de Fondation",
+    foundationTrainingDesc: "Complétez le cours de médiation internationale ou d'arbitrage certifié CIMA",
+    skillsAssessment: "Évaluation des Compétences",
+    skillsAssessmentDesc: "Démontrez vos compétences grâce à des exercices pratiques et des études de cas",
+    fellowshipPortfolio: "Portfolio de Bourse",
+    fellowshipPortfolioDesc: "Soumettez un portfolio complet démontrant une préparation professionnelle",
   },
+
   // 404 Not Found
   notFound: {
-    title: "Page Non Trouvée";
-    description: "La page que vous recherchez n'existe pas ou a été déplacée vers un emplacement différent.";
-    goHome: "Retour à l'Accueil";
-    browseCourses: "Parcourir les Cours";
-    stillNeedHelp: "Besoin d'aide supplémentaire ?";
-    helpCenter: "Centre d'Aide";
-    contactSupport: "Contacter le Support";
-    communityForum: "Forum Communautaire";
+    title: "Page Non Trouvée",
+    description: "La page que vous recherchez n'existe pas ou a été déplacée vers un emplacement différent.",
+    goHome: "Retour à l'Accueil",
+    browseCourses: "Parcourir les Cours",
+    stillNeedHelp: "Besoin d'aide supplémentaire ?",
+    helpCenter: "Centre d'Aide",
+    contactSupport: "Contacter le Support",
+    communityForum: "Forum Communautaire",
   },
-  // Auth
-  auth: {
-    welcomeBack: "Bon Retour";
-    signInAccount: "Connectez-vous à votre compte CIMA Learn";
-    email: "Email";
-    emailPlaceholder: "votre.email@exemple.com";
-    password: "Mot de passe";
-    passwordPlaceholder: "••••••••";
-    forgotPassword: "Mot de passe oublié ?";
-    signIn: "Se Connecter";
-    signingIn: "Connexion en cours...";
-    orContinueWith: "Ou continuer avec";
-    continueWithGoogle: "Continuer avec Google";
-    noAccount: "Vous n'avez pas de compte ?";
-    getStarted: "Commencer";
-    agreeToTerms: "En vous connectant, vous acceptez nos";
-    termsOfService: "Conditions de Service";
-    and: "et";
-    privacyPolicy: "Politique de Confidentialité";
-    createAccount: "Créer un Compte";
-    joinCommunity: "Rejoignez notre communauté mondiale de professionnels du règlement alternatif";
-    firstName: "Prénom";
-    lastName: "Nom";
-    confirmPassword: "Confirmer le Mot de Passe";
-    agreeToTermsCreate: "J'accepte les";
-    createAccountButton: "Créer un Compte";
-    creatingAccount: "Création du compte...";
-    alreadyHaveAccount: "Vous avez déjà un compte ?";
-    signInInstead: "Se Connecter";
-    resetPassword: "Réinitialiser le Mot de Passe";
-    resetPasswordDesc: "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.";
-    sendResetLink: "Envoyer le Lien de Réinitialisation";
-    backToLogin: "Retour à la Connexion";
-  };
+};
