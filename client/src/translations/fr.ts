@@ -237,7 +237,7 @@ export const fr = {
     },
   },
 
-  // Common
+  // Common (top-level)
   common: {
     loading: "Chargement...",
     error: "Erreur",
