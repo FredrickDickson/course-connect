@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AlertCircle } from "lucide-react";
 
 export default function VideoPlayer() {
   const { courseId, lessonId } = useParams();
@@ -24,6 +26,8 @@ export default function VideoPlayer() {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [note, setNote] = useState("");
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -34,7 +38,7 @@ export default function VideoPlayer() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/login";
       }, 500);
       return;
     }
@@ -57,11 +61,19 @@ export default function VideoPlayer() {
 
   // Update progress mutation
   const updateProgressMutation = useMutation({
-    mutationFn: async ({ lessonId, watchTime, completed }: { lessonId: string; watchTime: number; completed: boolean }) => {
+    mutationFn: async ({
+      lessonId,
+      watchTime,
+      completed,
+    }: {
+      lessonId: string;
+      watchTime: number;
+      completed: boolean;
+    }) => {
       const response = await apiRequest("POST", "/api/progress", {
         lessonId,
         watchTime,
-        completed
+        completed,
       });
       return response.json();
     },
@@ -73,7 +85,7 @@ export default function VideoPlayer() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -86,16 +98,19 @@ export default function VideoPlayer() {
     return module.lessons?.find((lesson: any) => lesson.id === lessonId);
   }, null);
 
-  const currentModule = course?.modules?.find((module: any) => 
-    module.lessons?.some((lesson: any) => lesson.id === lessonId)
+  const currentModule = course?.modules?.find((module: any) =>
+    module.lessons?.some((lesson: any) => lesson.id === lessonId),
   );
 
   // Get all lessons in order
-  const allLessons = course?.modules?.reduce((acc: any[], module: any) => {
-    return [...acc, ...(module.lessons || [])];
-  }, []) || [];
+  const allLessons =
+    course?.modules?.reduce((acc: any[], module: any) => {
+      return [...acc, ...(module.lessons || [])];
+    }, []) || [];
 
-  const currentLessonIndex = allLessons.findIndex((lesson: any) => lesson.id === lessonId);
+  const currentLessonIndex = allLessons.findIndex(
+    (lesson: any) => lesson.id === lessonId,
+  );
   const nextLesson = allLessons[currentLessonIndex + 1];
   const prevLesson = allLessons[currentLessonIndex - 1];
 
@@ -106,25 +121,27 @@ export default function VideoPlayer() {
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
-      
+
       // Update progress every 10 seconds
       if (Math.floor(video.currentTime) % 10 === 0 && currentLesson) {
         const watchTimeSeconds = Math.floor(video.currentTime);
         const completed = video.currentTime >= video.duration * 0.9; // 90% completion
-        
+
         updateProgressMutation.mutate({
           lessonId: currentLesson.id,
           watchTime: watchTimeSeconds,
-          completed
+          completed,
         });
       }
     };
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
-      
+
       // Resume from last watched position
-      const lessonProgress = progress.find((p: any) => p.lesson.id === lessonId);
+      const lessonProgress = progress.find(
+        (p: any) => p.lesson.id === lessonId,
+      );
       if (lessonProgress && lessonProgress.watchTime > 0) {
         video.currentTime = lessonProgress.watchTime;
       }
@@ -132,17 +149,38 @@ export default function VideoPlayer() {
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleError = () => {
+      setVideoError(
+        "Failed to load video. Please check your connection or try again.",
+      );
+      setIsVideoLoading(false);
+    };
 
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
+    const handleLoadStart = () => {
+      setIsVideoLoading(true);
+      setVideoError(null);
+    };
+
+    const handleCanPlay = () => {
+      setIsVideoLoading(false);
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("error", handleError);
+    video.addEventListener("loadstart", handleLoadStart);
+    video.addEventListener("canplay", handleCanPlay);
 
     return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("error", handleError);
+      video.removeEventListener("loadstart", handleLoadStart);
+      video.removeEventListener("canplay", handleCanPlay);
     };
   }, [currentLesson, progress, lessonId]);
 
@@ -170,11 +208,11 @@ export default function VideoPlayer() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   if (isLoading || !isAuthenticated) {
@@ -205,9 +243,16 @@ export default function VideoPlayer() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center" data-testid="not-enrolled">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-8">You need to be enrolled in this course to access the content.</p>
+        <div
+          className="max-w-4xl mx-auto px-4 py-16 text-center"
+          data-testid="not-enrolled"
+        >
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Access Denied
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            You need to be enrolled in this course to access the content.
+          </p>
           <Link href={`/course/${courseId}`}>
             <Button data-testid="enroll-button">Enroll in Course</Button>
           </Link>
@@ -220,9 +265,16 @@ export default function VideoPlayer() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center" data-testid="lesson-not-found">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Lesson Not Found</h1>
-          <p className="text-muted-foreground mb-8">The lesson you're looking for doesn't exist.</p>
+        <div
+          className="max-w-4xl mx-auto px-4 py-16 text-center"
+          data-testid="lesson-not-found"
+        >
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Lesson Not Found
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            The lesson you're looking for doesn't exist.
+          </p>
           <Link href={`/course/${courseId}`}>
             <Button data-testid="back-to-course">Back to Course</Button>
           </Link>
@@ -240,31 +292,59 @@ export default function VideoPlayer() {
           {/* Main Video Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Video Player */}
-            <Card className="overflow-hidden" data-testid="video-player">
-              <div className="relative bg-black aspect-video">
-                {currentLesson.videoUrl ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full"
-                    poster={currentLesson.thumbnailUrl}
-                    controls
-                    data-testid="video-element"
-                  >
-                    <source src={currentLesson.videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white">
-                    <div className="text-center">
-                      <i className="fas fa-play-circle text-6xl mb-4 opacity-50"></i>
-                      <p>Video content coming soon</p>
+            <ErrorBoundary>
+              <Card className="overflow-hidden" data-testid="video-player">
+                <div className="relative bg-black aspect-video">
+                  {isVideoLoading && currentLesson.videoUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Lesson Info */}
+                  )}
+                  {videoError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+                      <div className="text-center text-white p-4">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-red-400 mb-4">{videoError}</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setVideoError(null);
+                            setIsVideoLoading(true);
+                            // Force video reload
+                            const video = videoRef.current;
+                            if (video) {
+                              video.load();
+                            }
+                          }}
+                        >
+                          <i className="fas fa-redo mr-2"></i>
+                          Retry
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {currentLesson.videoUrl ? (
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full"
+                      poster={currentLesson.thumbnailUrl}
+                      controls
+                      data-testid="video-element"
+                    >
+                      <source src={currentLesson.videoUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <div className="text-center">
+                        <i className="fas fa-play-circle text-6xl mb-4 opacity-50"></i>
+                        <p>Video content coming soon</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </ErrorBoundary>
             <div className="space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -272,25 +352,38 @@ export default function VideoPlayer() {
                     <Badge variant="outline" data-testid="module-badge">
                       {currentModule?.title}
                     </Badge>
-                    <Badge 
+                    <Badge
                       data-testid="lesson-type"
-                      className={currentLesson.contentType === 'video' ? 'bg-primary' : 'bg-secondary'}
+                      className={
+                        currentLesson.contentType === "video"
+                          ? "bg-primary"
+                          : "bg-secondary"
+                      }
                     >
                       {currentLesson.contentType}
                     </Badge>
                   </div>
-                  <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="lesson-title">
+                  <h1
+                    className="text-2xl font-bold text-foreground mb-2"
+                    data-testid="lesson-title"
+                  >
                     {currentLesson.title}
                   </h1>
                   {currentLesson.description && (
-                    <p className="text-muted-foreground" data-testid="lesson-description">
+                    <p
+                      className="text-muted-foreground"
+                      data-testid="lesson-description"
+                    >
                       {currentLesson.description}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   {currentLesson.duration && (
-                    <div className="text-sm text-muted-foreground" data-testid="lesson-duration">
+                    <div
+                      className="text-sm text-muted-foreground"
+                      data-testid="lesson-duration"
+                    >
                       {formatTime(currentLesson.duration)}
                     </div>
                   )}
@@ -306,8 +399,8 @@ export default function VideoPlayer() {
                       {formatTime(currentTime)} / {formatTime(duration)}
                     </span>
                   </div>
-                  <Progress 
-                    value={(currentTime / duration) * 100} 
+                  <Progress
+                    value={(currentTime / duration) * 100}
                     className="h-2"
                     data-testid="progress-bar"
                   />
@@ -352,7 +445,10 @@ export default function VideoPlayer() {
 
             {/* Lesson Content Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3" data-testid="lesson-tabs">
+              <TabsList
+                className="grid w-full grid-cols-3"
+                data-testid="lesson-tabs"
+              >
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -361,14 +457,22 @@ export default function VideoPlayer() {
               <TabsContent value="overview" data-testid="tab-overview">
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Lesson Overview</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                      Lesson Overview
+                    </h3>
                     <div className="prose prose-slate max-w-none">
                       {currentLesson.content ? (
-                        <div dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: currentLesson.content,
+                          }}
+                        />
                       ) : (
                         <p className="text-muted-foreground">
-                          This lesson covers essential concepts in {currentModule?.title?.toLowerCase()}. 
-                          Follow along with the video content and take notes for future reference.
+                          This lesson covers essential concepts in{" "}
+                          {currentModule?.title?.toLowerCase()}. Follow along
+                          with the video content and take notes for future
+                          reference.
                         </p>
                       )}
                     </div>
@@ -379,7 +483,9 @@ export default function VideoPlayer() {
               <TabsContent value="notes" data-testid="tab-notes">
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Personal Notes</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                      Personal Notes
+                    </h3>
                     <Textarea
                       placeholder="Take notes while watching the lesson..."
                       value={note}
@@ -398,35 +504,61 @@ export default function VideoPlayer() {
               <TabsContent value="resources" data-testid="tab-resources">
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Additional Resources</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                      Additional Resources
+                    </h3>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <i className="fas fa-file-pdf text-red-600"></i>
                         <div className="flex-1">
-                          <div className="font-medium text-foreground">Lesson Transcript</div>
-                          <div className="text-sm text-muted-foreground">PDF • 2 pages</div>
+                          <div className="font-medium text-foreground">
+                            Lesson Transcript
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            PDF • 2 pages
+                          </div>
                         </div>
-                        <Button size="sm" variant="outline" data-testid="download-transcript">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="download-transcript"
+                        >
                           <i className="fas fa-download"></i>
                         </Button>
                       </div>
                       <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <i className="fas fa-file-powerpoint text-orange-600"></i>
                         <div className="flex-1">
-                          <div className="font-medium text-foreground">Presentation Slides</div>
-                          <div className="text-sm text-muted-foreground">PPTX • 15 slides</div>
+                          <div className="font-medium text-foreground">
+                            Presentation Slides
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            PPTX • 15 slides
+                          </div>
                         </div>
-                        <Button size="sm" variant="outline" data-testid="download-slides">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="download-slides"
+                        >
                           <i className="fas fa-download"></i>
                         </Button>
                       </div>
                       <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <i className="fas fa-external-link-alt text-blue-600"></i>
                         <div className="flex-1">
-                          <div className="font-medium text-foreground">External Reading</div>
-                          <div className="text-sm text-muted-foreground">Related articles and resources</div>
+                          <div className="font-medium text-foreground">
+                            External Reading
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Related articles and resources
+                          </div>
                         </div>
-                        <Button size="sm" variant="outline" data-testid="external-resources">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid="external-resources"
+                        >
                           <i className="fas fa-external-link-alt"></i>
                         </Button>
                       </div>
@@ -442,16 +574,25 @@ export default function VideoPlayer() {
             {/* Course Progress */}
             <Card data-testid="course-progress">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">Course Progress</h3>
+                <h3 className="font-semibold text-foreground mb-4">
+                  Course Progress
+                </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Overall Progress</span>
+                    <span className="text-muted-foreground">
+                      Overall Progress
+                    </span>
                     <span className="font-medium">
-                      {progress.filter((p: any) => p.completed).length} / {allLessons.length}
+                      {progress.filter((p: any) => p.completed).length} /{" "}
+                      {allLessons.length}
                     </span>
                   </div>
-                  <Progress 
-                    value={(progress.filter((p: any) => p.completed).length / allLessons.length) * 100} 
+                  <Progress
+                    value={
+                      (progress.filter((p: any) => p.completed).length /
+                        allLessons.length) *
+                      100
+                    }
                     className="h-2"
                   />
                 </div>
@@ -461,7 +602,9 @@ export default function VideoPlayer() {
             {/* Course Modules */}
             <Card data-testid="course-modules">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">Course Content</h3>
+                <h3 className="font-semibold text-foreground mb-4">
+                  Course Content
+                </h3>
                 <div className="space-y-4">
                   {course.modules?.map((module: any, moduleIndex: number) => (
                     <div key={module.id} className="space-y-2">
@@ -469,51 +612,68 @@ export default function VideoPlayer() {
                         Module {moduleIndex + 1}: {module.title}
                       </h4>
                       <div className="space-y-1">
-                        {module.lessons?.map((lesson: any, lessonIndex: number) => {
-                          const lessonProgress = progress.find((p: any) => p.lesson.id === lesson.id);
-                          const isCurrentLesson = lesson.id === lessonId;
-                          const isCompleted = lessonProgress?.completed || false;
-                          
-                          return (
-                            <Link 
-                              key={lesson.id} 
-                              href={`/learn/${courseId}/${lesson.id}`}
-                            >
-                              <div 
-                                className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                                  isCurrentLesson 
-                                    ? 'bg-primary text-primary-foreground' 
-                                    : 'hover:bg-muted/50'
-                                }`}
-                                data-testid={`lesson-nav-${lesson.id}`}
+                        {module.lessons?.map(
+                          (lesson: any, lessonIndex: number) => {
+                            const lessonProgress = progress.find(
+                              (p: any) => p.lesson.id === lesson.id,
+                            );
+                            const isCurrentLesson = lesson.id === lessonId;
+                            const isCompleted =
+                              lessonProgress?.completed || false;
+
+                            return (
+                              <Link
+                                key={lesson.id}
+                                href={`/learn/${courseId}/${lesson.id}`}
                               >
-                                <div className="flex-shrink-0">
-                                  {isCompleted ? (
-                                    <i className="fas fa-check-circle text-green-600"></i>
-                                  ) : (
-                                    <i className={`fas ${lesson.contentType === 'video' ? 'fa-play-circle' : 'fa-file-text'} ${
-                                      isCurrentLesson ? 'text-primary-foreground' : 'text-muted-foreground'
-                                    }`}></i>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className={`font-medium truncate ${
-                                    isCurrentLesson ? 'text-primary-foreground' : 'text-foreground'
-                                  }`}>
-                                    {lesson.title}
+                                <div
+                                  className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
+                                    isCurrentLesson
+                                      ? "bg-primary text-primary-foreground"
+                                      : "hover:bg-muted/50"
+                                  }`}
+                                  data-testid={`lesson-nav-${lesson.id}`}
+                                >
+                                  <div className="flex-shrink-0">
+                                    {isCompleted ? (
+                                      <i className="fas fa-check-circle text-green-600"></i>
+                                    ) : (
+                                      <i
+                                        className={`fas ${lesson.contentType === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                          isCurrentLesson
+                                            ? "text-primary-foreground"
+                                            : "text-muted-foreground"
+                                        }`}
+                                      ></i>
+                                    )}
                                   </div>
-                                  {lesson.duration && (
-                                    <div className={`text-xs ${
-                                      isCurrentLesson ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                                    }`}>
-                                      {formatTime(lesson.duration)}
+                                  <div className="flex-1 min-w-0">
+                                    <div
+                                      className={`font-medium truncate ${
+                                        isCurrentLesson
+                                          ? "text-primary-foreground"
+                                          : "text-foreground"
+                                      }`}
+                                    >
+                                      {lesson.title}
                                     </div>
-                                  )}
+                                    {lesson.duration && (
+                                      <div
+                                        className={`text-xs ${
+                                          isCurrentLesson
+                                            ? "text-primary-foreground/80"
+                                            : "text-muted-foreground"
+                                        }`}
+                                      >
+                                        {formatTime(lesson.duration)}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            </Link>
-                          );
-                        })}
+                              </Link>
+                            );
+                          },
+                        )}
                       </div>
                     </div>
                   ))}

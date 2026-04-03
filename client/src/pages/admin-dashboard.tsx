@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -11,121 +17,140 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/header";
-import { supabase } from "@/integrations/supabase/client";
 import {
-  Users, BookOpen, UserCheck, UserX, Eye, Download, Calendar, Mail, Phone,
-  GraduationCap, FileText, Video, CheckCircle, XCircle, Clock, AlertCircle,
-  TrendingUp, DollarSign, UserPlus, Shield
+  Users,
+  BookOpen,
+  UserCheck,
+  UserX,
+  Eye,
+  Download,
+  Calendar,
+  Mail,
+  Phone,
+  GraduationCap,
+  FileText,
+  Video,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  DollarSign,
+  UserPlus,
+  Shield,
 } from "lucide-react";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export default function AdminDashboard() {
-  const { isLoading: authLoading, hasAccess, user } = useRoleProtection({ requiredRole: 'admin', showToast: false });
+  const {
+    isLoading: authLoading,
+    hasAccess,
+    user,
+  } = useRoleProtection({ requiredRole: "admin", showToast: false });
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [reviewComments, setReviewComments] = useState("");
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [newAdmin, setNewAdmin] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   // Fetch stats from Express backend
   const { data: stats } = useQuery({
-    queryKey: ['/api/admin/stats'],
+    queryKey: ["/api/admin/stats"],
     enabled: hasAccess,
   });
 
-  // Fetch instructor applications
+  // Fetch instructor applications from backend
   const { data: applications = [], isLoading: applicationsLoading } = useQuery({
-    queryKey: ['admin-applications'],
+    queryKey: ["/api/admin/instructor-applications"],
     enabled: hasAccess,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('instructor_applications')
-        .select('*')
-        .order('submitted_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
   });
 
-  // Fetch all users
-  const { data: allUsers = [], isLoading: usersLoading } = useQuery({
-    queryKey: ['admin-users'],
-    enabled: hasAccess && activeTab === 'users',
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+  // Fetch all users from backend
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/admin/users"],
+    enabled: hasAccess && activeTab === "users",
   });
+  const allUsers = usersData?.users || [];
 
-  // Fetch all courses
-  const { data: allCourses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ['admin-courses'],
-    enabled: hasAccess && activeTab === 'courses',
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*, instructor:users!courses_instructor_id_fkey(first_name, last_name, email)')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+  // Fetch all courses from backend
+  const { data: coursesData, isLoading: coursesLoading } = useQuery({
+    queryKey: ["/api/admin/courses"],
+    enabled: hasAccess && activeTab === "courses",
   });
+  const allCourses = coursesData?.courses || [];
 
-  // Approve/Reject application mutation
+  // Approve/Reject application mutation via backend
   const reviewApplication = useMutation({
-    mutationFn: async ({ applicationId, userId, status, comments }: {
+    mutationFn: async ({
+      applicationId,
+      status,
+      comments,
+    }: {
       applicationId: string;
-      userId: string;
-      status: 'approved' | 'rejected';
+      status: "approved" | "rejected";
       comments: string;
     }) => {
-      // Update application status
-      const { error: appError } = await supabase
-        .from('instructor_applications')
-        .update({
-          status,
-          review_comments: comments,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id,
-        })
-        .eq('id', applicationId);
-
-      if (appError) throw appError;
-
-      // If approved, update user role to instructor
-      if (status === 'approved' && userId) {
-        const { error: roleError } = await supabase
-          .from('users')
-          .update({ role: 'instructor' })
-          .eq('id', userId);
-
-        if (roleError) throw roleError;
+      const response = await fetch(
+        `/api/admin/instructor-applications/${applicationId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, comments }),
+        },
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update application");
       }
+      return response.json();
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['admin-applications'] });
-      qc.invalidateQueries({ queryKey: ['admin-stats'] });
-      qc.invalidateQueries({ queryKey: ['admin-users'] });
+      qc.invalidateQueries({
+        queryKey: ["/api/admin/instructor-applications"],
+      });
+      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: variables.status === 'approved' ? "Instructor Approved!" : "Application Rejected",
-        description: variables.status === 'approved'
-          ? "The instructor can now access the instructor dashboard and create courses."
-          : "The applicant has been notified.",
+        title:
+          variables.status === "approved"
+            ? "Instructor Approved!"
+            : "Application Rejected",
+        description:
+          variables.status === "approved"
+            ? "The instructor can now access the instructor dashboard and create courses."
+            : "The applicant has been notified.",
       });
       setReviewComments("");
     },
@@ -139,52 +164,94 @@ export default function AdminDashboard() {
   });
 
   const changeUserRole = useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
-      if (error) throw error;
+    mutationFn: async ({
+      userId,
+      newRole,
+    }: {
+      userId: string;
+      newRole: string;
+    }) => {
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update role");
+      }
+      return response.json();
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['admin-users'] });
-      qc.invalidateQueries({ queryKey: ['admin-stats'] });
-      toast({ title: "Role Updated", description: `User role changed to ${variables.newRole}.` });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "Role Updated",
+        description: `User role changed to ${variables.newRole}.`,
+      });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const handleCreateAdmin = async () => {
-    if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || !newAdmin.password) {
-      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+    if (
+      !newAdmin.firstName ||
+      !newAdmin.lastName ||
+      !newAdmin.email ||
+      !newAdmin.password
+    ) {
+      toast({
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
+      });
       return;
     }
     if (newAdmin.password.length < 8) {
-      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters",
+        variant: "destructive",
+      });
       return;
     }
     setIsCreatingAdmin(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke("admin-setup", {
-        body: {
+      const response = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           firstName: newAdmin.firstName,
           lastName: newAdmin.lastName,
           email: newAdmin.email,
           password: newAdmin.password,
-          createByAdmin: true,
-        },
+          role: "admin",
+        }),
       });
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-      toast({ title: "Admin Created", description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.` });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create admin");
+      }
+      toast({
+        title: "Admin Created",
+        description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.`,
+      });
       setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
       setShowCreateAdmin(false);
-      qc.invalidateQueries({ queryKey: ['admin-users'] });
-      qc.invalidateQueries({ queryKey: ['admin-stats'] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
     } catch (error: any) {
-      toast({ title: "Failed", description: error.message || "Could not create admin", variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: error.message || "Could not create admin",
+        variant: "destructive",
+      });
     } finally {
       setIsCreatingAdmin(false);
     }
@@ -200,8 +267,8 @@ export default function AdminDashboard() {
 
   if (!hasAccess) return null;
 
-  const pendingApps = applications.filter((a: any) => a.status === 'pending');
-  const reviewedApps = applications.filter((a: any) => a.status !== 'pending');
+  const pendingApps = applications.filter((a: any) => a.status === "pending");
+  const reviewedApps = applications.filter((a: any) => a.status !== "pending");
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,8 +277,12 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Manage instructors, courses, and platform operations</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage instructors, courses, and platform operations
+            </p>
           </div>
           <Badge variant="outline" className="mt-4 sm:mt-0">
             <AlertCircle className="w-3 h-3 mr-1" />
@@ -219,13 +290,20 @@ export default function AdminDashboard() {
           </Badge>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">
               Applications
               {(stats?.pendingApplications || 0) > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                <Badge
+                  variant="destructive"
+                  className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                >
                   {stats?.pendingApplications}
                 </Badge>
               )}
@@ -238,15 +316,42 @@ export default function AdminDashboard() {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { icon: Users, title: "Total Users", value: stats?.totalUsers || 0, subtitle: "Registered users" },
-                { icon: GraduationCap, title: "Active Instructors", value: stats?.totalInstructors || 0, subtitle: "Approved instructors" },
-                { icon: Clock, title: "Pending Applications", value: stats?.pendingApplications || 0, subtitle: "Awaiting review" },
-                { icon: BookOpen, title: "Total Courses", value: stats?.totalCourses || 0, subtitle: "Published courses" },
-                { icon: TrendingUp, title: "Enrollments", value: stats?.activeStudents || 0, subtitle: "Total enrollments" },
+                {
+                  icon: Users,
+                  title: "Total Users",
+                  value: stats?.totalUsers || 0,
+                  subtitle: "Registered users",
+                },
+                {
+                  icon: GraduationCap,
+                  title: "Active Instructors",
+                  value: stats?.totalInstructors || 0,
+                  subtitle: "Approved instructors",
+                },
+                {
+                  icon: Clock,
+                  title: "Pending Applications",
+                  value: stats?.pendingApplications || 0,
+                  subtitle: "Awaiting review",
+                },
+                {
+                  icon: BookOpen,
+                  title: "Total Courses",
+                  value: stats?.totalCourses || 0,
+                  subtitle: "Published courses",
+                },
+                {
+                  icon: TrendingUp,
+                  title: "Enrollments",
+                  value: stats?.activeStudents || 0,
+                  subtitle: "Total enrollments",
+                },
               ].map(({ icon: Icon, title, value, subtitle }) => (
                 <Card key={title}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      {title}
+                    </CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
@@ -267,9 +372,11 @@ export default function AdminDashboard() {
 
             {applicationsLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => (
+                {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse">
-                    <CardContent className="p-6"><div className="h-20 bg-muted rounded" /></CardContent>
+                    <CardContent className="p-6">
+                      <div className="h-20 bg-muted rounded" />
+                    </CardContent>
                   </Card>
                 ))}
               </div>
@@ -277,8 +384,12 @@ export default function AdminDashboard() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No applications yet</h3>
-                  <p className="text-muted-foreground">Instructor applications will appear here for review.</p>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No applications yet
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Instructor applications will appear here for review.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -286,19 +397,22 @@ export default function AdminDashboard() {
                 {/* Pending first */}
                 {pendingApps.length > 0 && (
                   <>
-                    <h3 className="text-lg font-semibold text-foreground">Pending Review</h3>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Pending Review
+                    </h3>
                     {pendingApps.map((app: any) => (
                       <ApplicationCard
                         key={app.id}
                         application={app}
                         reviewComments={reviewComments}
                         setReviewComments={setReviewComments}
-                        onReview={(status) => reviewApplication.mutate({
-                          applicationId: app.id,
-                          userId: app.user_id,
-                          status,
-                          comments: reviewComments,
-                        })}
+                        onReview={(status) =>
+                          reviewApplication.mutate({
+                            applicationId: app.id,
+                            status,
+                            comments: reviewComments,
+                          })
+                        }
                         isPending={reviewApplication.isPending}
                       />
                     ))}
@@ -306,14 +420,16 @@ export default function AdminDashboard() {
                 )}
                 {reviewedApps.length > 0 && (
                   <>
-                    <h3 className="text-lg font-semibold text-foreground mt-8">Reviewed</h3>
+                    <h3 className="text-lg font-semibold text-foreground mt-8">
+                      Reviewed
+                    </h3>
                     {reviewedApps.map((app: any) => (
                       <ApplicationCard
                         key={app.id}
                         application={app}
                         reviewComments={reviewComments}
                         setReviewComments={setReviewComments}
-                        onReview={() => { }}
+                        onReview={() => {}}
                         isPending={false}
                       />
                     ))}
@@ -329,21 +445,81 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold">User Management</h2>
               <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
                 <DialogTrigger asChild>
-                  <Button><UserPlus className="w-4 h-4 mr-2" />Create Admin</Button>
+                  <Button>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Admin
+                  </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5" />Create Admin Account</DialogTitle>
-                    <DialogDescription>Create a new administrator account with full platform access.</DialogDescription>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      Create Admin Account
+                    </DialogTitle>
+                    <DialogDescription>
+                      Create a new administrator account with full platform
+                      access.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
                     <div className="grid grid-cols-2 gap-4">
-                      <div><Label>First Name</Label><Input value={newAdmin.firstName} onChange={e => setNewAdmin(p => ({ ...p, firstName: e.target.value }))} placeholder="First name" /></div>
-                      <div><Label>Last Name</Label><Input value={newAdmin.lastName} onChange={e => setNewAdmin(p => ({ ...p, lastName: e.target.value }))} placeholder="Last name" /></div>
+                      <div>
+                        <Label>First Name</Label>
+                        <Input
+                          value={newAdmin.firstName}
+                          onChange={(e) =>
+                            setNewAdmin((p) => ({
+                              ...p,
+                              firstName: e.target.value,
+                            }))
+                          }
+                          placeholder="First name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Last Name</Label>
+                        <Input
+                          value={newAdmin.lastName}
+                          onChange={(e) =>
+                            setNewAdmin((p) => ({
+                              ...p,
+                              lastName: e.target.value,
+                            }))
+                          }
+                          placeholder="Last name"
+                        />
+                      </div>
                     </div>
-                    <div><Label>Email</Label><Input type="email" value={newAdmin.email} onChange={e => setNewAdmin(p => ({ ...p, email: e.target.value }))} placeholder="admin@cimalearn.org" /></div>
-                    <div><Label>Password</Label><Input type="password" value={newAdmin.password} onChange={e => setNewAdmin(p => ({ ...p, password: e.target.value }))} placeholder="Min 8 characters" /></div>
-                    <Button className="w-full" onClick={handleCreateAdmin} disabled={isCreatingAdmin}>
+                    <div>
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        value={newAdmin.email}
+                        onChange={(e) =>
+                          setNewAdmin((p) => ({ ...p, email: e.target.value }))
+                        }
+                        placeholder="admin@cimalearn.org"
+                      />
+                    </div>
+                    <div>
+                      <Label>Password</Label>
+                      <Input
+                        type="password"
+                        value={newAdmin.password}
+                        onChange={(e) =>
+                          setNewAdmin((p) => ({
+                            ...p,
+                            password: e.target.value,
+                          }))
+                        }
+                        placeholder="Min 8 characters"
+                      />
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={handleCreateAdmin}
+                      disabled={isCreatingAdmin}
+                    >
                       {isCreatingAdmin ? "Creating..." : "Create Admin Account"}
                     </Button>
                   </div>
@@ -351,7 +527,11 @@ export default function AdminDashboard() {
               </Dialog>
             </div>
             {usersLoading ? (
-              <Card className="animate-pulse"><CardContent className="p-6"><div className="h-40 bg-muted rounded" /></CardContent></Card>
+              <Card className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-40 bg-muted rounded" />
+                </CardContent>
+              </Card>
             ) : (
               <Card>
                 <CardContent className="p-0">
@@ -369,30 +549,56 @@ export default function AdminDashboard() {
                         {allUsers.map((u: any) => {
                           const isCurrentUser = u.id === user?.id;
                           return (
-                            <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
-                              <td className="p-4">{u.first_name} {u.last_name}</td>
-                              <td className="p-4 text-muted-foreground">{u.email}</td>
+                            <tr
+                              key={u.id}
+                              className="border-b last:border-0 hover:bg-muted/30"
+                            >
                               <td className="p-4">
-                                {isCurrentUser || u.role === 'admin' ? (
-                                  <Badge variant={u.role === 'admin' ? 'default' : u.role === 'instructor' ? 'secondary' : 'outline'}>
+                                {u.first_name} {u.last_name}
+                              </td>
+                              <td className="p-4 text-muted-foreground">
+                                {u.email}
+                              </td>
+                              <td className="p-4">
+                                {isCurrentUser || u.role === "admin" ? (
+                                  <Badge
+                                    variant={
+                                      u.role === "admin"
+                                        ? "default"
+                                        : u.role === "instructor"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
+                                  >
                                     {u.role}
                                   </Badge>
                                 ) : (
                                   <Select
-                                    value={u.role || 'student'}
-                                    onValueChange={(newRole) => changeUserRole.mutate({ userId: u.id, newRole })}
+                                    value={u.role || "student"}
+                                    onValueChange={(newRole) =>
+                                      changeUserRole.mutate({
+                                        userId: u.id,
+                                        newRole,
+                                      })
+                                    }
                                   >
                                     <SelectTrigger className="w-[130px] h-8">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="student">Student</SelectItem>
-                                      <SelectItem value="instructor">Instructor</SelectItem>
+                                      <SelectItem value="student">
+                                        Student
+                                      </SelectItem>
+                                      <SelectItem value="instructor">
+                                        Instructor
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 )}
                               </td>
-                              <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                              <td className="p-4 text-muted-foreground">
+                                {new Date(u.created_at).toLocaleDateString()}
+                              </td>
                             </tr>
                           );
                         })}
@@ -408,13 +614,19 @@ export default function AdminDashboard() {
           <TabsContent value="courses" className="space-y-6">
             <h2 className="text-2xl font-bold">Course Management</h2>
             {coursesLoading ? (
-              <Card className="animate-pulse"><CardContent className="p-6"><div className="h-40 bg-muted rounded" /></CardContent></Card>
+              <Card className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-40 bg-muted rounded" />
+                </CardContent>
+              </Card>
             ) : allCourses.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
-                  <p className="text-muted-foreground">Courses will appear here once instructors create them.</p>
+                  <p className="text-muted-foreground">
+                    Courses will appear here once instructors create them.
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -425,23 +637,33 @@ export default function AdminDashboard() {
                       <thead>
                         <tr className="border-b bg-muted/50">
                           <th className="text-left p-4 font-medium">Title</th>
-                          <th className="text-left p-4 font-medium">Instructor</th>
+                          <th className="text-left p-4 font-medium">
+                            Instructor
+                          </th>
                           <th className="text-left p-4 font-medium">Price</th>
                           <th className="text-left p-4 font-medium">Status</th>
-                          <th className="text-left p-4 font-medium">Enrollments</th>
+                          <th className="text-left p-4 font-medium">
+                            Enrollments
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {allCourses.map((c: any) => (
-                          <tr key={c.id} className="border-b last:border-0 hover:bg-muted/30">
+                          <tr
+                            key={c.id}
+                            className="border-b last:border-0 hover:bg-muted/30"
+                          >
                             <td className="p-4 font-medium">{c.title}</td>
                             <td className="p-4 text-muted-foreground">
-                              {c.instructor?.first_name} {c.instructor?.last_name}
+                              {c.instructor?.first_name}{" "}
+                              {c.instructor?.last_name}
                             </td>
                             <td className="p-4">${c.price}</td>
                             <td className="p-4">
-                              <Badge variant={c.is_published ? 'default' : 'outline'}>
-                                {c.is_published ? 'Published' : 'Draft'}
+                              <Badge
+                                variant={c.is_published ? "default" : "outline"}
+                              >
+                                {c.is_published ? "Published" : "Draft"}
                               </Badge>
                             </td>
                             <td className="p-4">{c.enrollment_count || 0}</td>
@@ -460,19 +682,29 @@ export default function AdminDashboard() {
   );
 }
 
-function ApplicationCard({ application, reviewComments, setReviewComments, onReview, isPending }: {
+function ApplicationCard({
+  application,
+  reviewComments,
+  setReviewComments,
+  onReview,
+  isPending,
+}: {
   application: any;
   reviewComments: string;
   setReviewComments: (v: string) => void;
-  onReview: (status: 'approved' | 'rejected') => void;
+  onReview: (status: "approved" | "rejected") => void;
   isPending: boolean;
 }) {
   const statusColors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800",
     approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800"
+    rejected: "bg-red-100 text-red-800",
   };
-  const statusIcons: Record<string, any> = { pending: Clock, approved: CheckCircle, rejected: XCircle };
+  const statusIcons: Record<string, any> = {
+    pending: Clock,
+    approved: CheckCircle,
+    rejected: XCircle,
+  };
   const StatusIcon = statusIcons[application.status] || Clock;
 
   return (
@@ -484,13 +716,18 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
               <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">{application.first_name} {application.last_name}</h3>
-              <p className="text-sm text-muted-foreground">{application.email}</p>
+              <h3 className="font-semibold text-lg">
+                {application.first_name} {application.last_name}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {application.email}
+              </p>
             </div>
           </div>
           <Badge className={statusColors[application.status] || ""}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {application.status?.charAt(0).toUpperCase() + application.status?.slice(1)}
+            {application.status?.charAt(0).toUpperCase() +
+              application.status?.slice(1)}
           </Badge>
         </div>
 
@@ -505,40 +742,98 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{application.bio}</p>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {application.bio}
+        </p>
 
         {application.review_comments && (
           <div className="bg-muted/50 rounded-lg p-3 mb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Admin Review:</p>
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Admin Review:
+            </p>
             <p className="text-sm">{application.review_comments}</p>
           </div>
         )}
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="sm"><Eye className="w-3 h-3 mr-1" />Review</Button>
+            <Button size="sm">
+              <Eye className="w-3 h-3 mr-1" />
+              Review
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Instructor Application - {application.first_name} {application.last_name}</DialogTitle>
-              <DialogDescription>Review the application details and approve or reject.</DialogDescription>
+              <DialogTitle>
+                Instructor Application - {application.first_name}{" "}
+                {application.last_name}
+              </DialogTitle>
+              <DialogDescription>
+                Review the application details and approve or reject.
+              </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-sm font-medium">Name</Label><p className="text-sm text-muted-foreground">{application.first_name} {application.last_name}</p></div>
-                <div><Label className="text-sm font-medium">Email</Label><p className="text-sm text-muted-foreground">{application.email}</p></div>
-                <div><Label className="text-sm font-medium">Phone</Label><p className="text-sm text-muted-foreground">{application.phone}</p></div>
-                <div><Label className="text-sm font-medium">Expertise</Label><p className="text-sm text-muted-foreground">{application.areas_of_expertise?.join(", ")}</p></div>
+                <div>
+                  <Label className="text-sm font-medium">Name</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {application.first_name} {application.last_name}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Email</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {application.email}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Phone</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {application.phone}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Expertise</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {application.areas_of_expertise?.join(", ")}
+                  </p>
+                </div>
               </div>
-              <div><Label className="text-sm font-medium">Bio</Label><p className="text-sm text-muted-foreground mt-1">{application.bio}</p></div>
-              <div><Label className="text-sm font-medium">Professional Experience</Label><p className="text-sm text-muted-foreground mt-1">{application.experience}</p></div>
-              <div><Label className="text-sm font-medium">Qualifications</Label><p className="text-sm text-muted-foreground mt-1">{application.qualifications}</p></div>
-              <div><Label className="text-sm font-medium">Teaching Experience</Label><p className="text-sm text-muted-foreground mt-1">{application.previous_teaching}</p></div>
+              <div>
+                <Label className="text-sm font-medium">Bio</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {application.bio}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">
+                  Professional Experience
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {application.experience}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Qualifications</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {application.qualifications}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">
+                  Teaching Experience
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {application.previous_teaching}
+                </p>
+              </div>
 
               {/* CV and Video Documents */}
               <div className="space-y-3 pt-2 border-t">
-                <Label className="text-sm font-medium">Uploaded Documents</Label>
+                <Label className="text-sm font-medium">
+                  Uploaded Documents
+                </Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="border rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
@@ -546,37 +841,61 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
                       <span className="text-sm font-medium">CV / Resume</span>
                     </div>
                     {application.cv_url ? (
-                      <a href={application.cv_url} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={application.cv_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <Button variant="outline" size="sm" className="w-full">
-                          <Download className="w-4 h-4 mr-2" />View CV
+                          <Download className="w-4 h-4 mr-2" />
+                          View CV
                         </Button>
                       </a>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Not uploaded</p>
+                      <p className="text-xs text-muted-foreground italic">
+                        Not uploaded
+                      </p>
                     )}
                   </div>
                   <div className="border rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Video className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">Video Introduction</span>
+                      <span className="text-sm font-medium">
+                        Video Introduction
+                      </span>
                     </div>
                     {application.video_intro_url ? (
                       <div className="space-y-2">
-                        <video controls className="w-full rounded max-h-40" src={application.video_intro_url} />
-                        <a href={application.video_intro_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Download className="w-4 h-4 mr-2" />Open Full Screen
+                        <video
+                          controls
+                          className="w-full rounded max-h-40"
+                          src={application.video_intro_url}
+                        />
+                        <a
+                          href={application.video_intro_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Open Full Screen
                           </Button>
                         </a>
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Not uploaded</p>
+                      <p className="text-xs text-muted-foreground italic">
+                        Not uploaded
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
 
-              {application.status === 'pending' && (
+              {application.status === "pending" && (
                 <div className="space-y-4 pt-4 border-t">
                   <div>
                     <Label>Review Comments</Label>
@@ -590,20 +909,33 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
                   <div className="flex items-center space-x-4">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button className="bg-green-600 hover:bg-green-700" disabled={isPending}>
-                          <UserCheck className="w-4 h-4 mr-2" />Approve
+                        <Button
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={isPending}
+                        >
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Approve
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Approve Instructor Application</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Approve Instructor Application
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will grant {application.first_name} instructor access to create and manage courses. They will be redirected to the instructor dashboard on their next login.
+                            This will grant {application.first_name} instructor
+                            access to create and manage courses. They will be
+                            redirected to the instructor dashboard on their next
+                            login.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onReview('approved')}>Approve</AlertDialogAction>
+                          <AlertDialogAction
+                            onClick={() => onReview("approved")}
+                          >
+                            Approve
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -611,17 +943,26 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" disabled={isPending}>
-                          <UserX className="w-4 h-4 mr-2" />Reject
+                          <UserX className="w-4 h-4 mr-2" />
+                          Reject
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Reject Application</AlertDialogTitle>
-                          <AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription>
+                          <AlertDialogTitle>
+                            Reject Application
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure? This cannot be undone.
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onReview('rejected')}>Reject</AlertDialogAction>
+                          <AlertDialogAction
+                            onClick={() => onReview("rejected")}
+                          >
+                            Reject
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
