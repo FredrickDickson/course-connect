@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
@@ -80,45 +81,38 @@ export default function CreateCourse() {
 
       let categoryId = data.categoryId;
 
-      // If custom category, create it first
+      // If custom category, create it first via backend
       if (categoryId === CUSTOM_CATEGORY_VALUE && customCategory.trim()) {
         const slug = customCategory.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const { data: newCat, error: catErr } = await supabase
-          .from('categories')
-          .insert({ name: customCategory.trim(), slug, description: null })
-          .select('id')
-          .single();
-        // If conflict (slug exists), find existing
-        if (catErr) {
-          const { data: existing } = await supabase
-            .from('categories')
-            .select('id')
-            .eq('slug', slug)
-            .single();
-          if (existing) categoryId = existing.id;
-          else throw catErr;
-        } else {
-          categoryId = newCat.id;
-        }
+        const catRes = await apiRequest('POST', '/api/categories', {
+          name: customCategory.trim(),
+          slug,
+          description: null
+        });
+        const newCat = await catRes.json();
+        categoryId = newCat.id;
       }
 
-      const { data: course, error } = await supabase
-        .from('courses')
-        .insert({
-          title: data.title, subtitle: data.subtitle, description: data.description,
-          category_id: categoryId, level: data.level, price: data.price,
-          currency: data.currency, thumbnail_url: data.thumbnailUrl || null,
-          is_published: data.isPublished, is_featured: data.isFeatured,
-          instructor_id: user.id,
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-      return course;
+      // Create course via hardened backend API
+      const courseRes = await apiRequest('POST', '/api/instructor/courses', {
+        title: data.title,
+        subtitle: data.subtitle,
+        description: data.description,
+        categoryId: categoryId,
+        level: data.level,
+        price: data.price,
+        currency: data.currency,
+        thumbnailUrl: data.thumbnailUrl || null,
+        isPublished: data.isPublished,
+        isFeatured: data.isFeatured,
+      });
+
+      return await courseRes.json();
     },
     onSuccess: (course) => {
-      queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      // Fix: Use correct query key to match instructor dashboard
+      queryClient.invalidateQueries({ queryKey: ['/api/instructor/courses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       toast({ title: "Success", description: "Course created successfully. Now add your curriculum!" });
       setLocation(`/instructor/courses/${course.id}/curriculum`);
     },

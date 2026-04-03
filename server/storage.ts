@@ -119,9 +119,7 @@ export interface IStorage {
   deleteCourse(id: string): Promise<void>;
   getFeaturedCourses(): Promise<any[]>;
   getInstructorCourses(instructorId: string): Promise<any[]>;
-  getInstructorStats(
-    instructorId: string,
-  ): Promise<{
+  getInstructorStats(instructorId: string): Promise<{
     totalCourses: number;
     totalStudents: number;
     totalRevenue: number;
@@ -141,9 +139,7 @@ export interface IStorage {
   // Progress operations
   updateProgress(progress: InsertProgress): Promise<Progress>;
   getUserProgress(userId: string, courseId: string): Promise<any[]>;
-  getUserOverallProgress(
-    userId: string,
-  ): Promise<{
+  getUserOverallProgress(userId: string): Promise<{
     totalCourses: number;
     completedCourses: number;
     totalHours: number;
@@ -386,8 +382,83 @@ export class DatabaseStorage implements IStorage {
   // COURSE OPERATIONS
   // ============================================================================
 
-  async getCourses(): Promise<any[]> {
-    return await db.select().from(courses).where(eq(courses.isPublished, true));
+  async getCourses(filters?: {
+    category?: string;
+    search?: string;
+    level?: string;
+    featured?: boolean;
+  }): Promise<any[]> {
+    const conditions = [eq(courses.isPublished, true)];
+
+    if (filters?.category && filters.category !== "all") {
+      // Find category by slug or ID
+      const [cat] = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.slug, filters.category))
+        .limit(1);
+      if (cat) {
+        conditions.push(eq(courses.categoryId, cat.id));
+      } else {
+        // Try filter by ID if slug not found
+        try {
+          conditions.push(eq(courses.categoryId, filters.category));
+        } catch (e) {
+          // Invalid UUID, ignore
+        }
+      }
+    }
+
+    if (filters?.level && filters.level !== "all") {
+      conditions.push(eq(courses.level, filters.level));
+    }
+
+    if (filters?.search) {
+      conditions.push(
+        sql`${courses.title} ILIKE ${"%" + filters.search + "%"}`,
+      );
+    }
+
+    if (filters?.featured !== undefined) {
+      conditions.push(eq(courses.isFeatured, filters.featured));
+    }
+
+    return await db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        subtitle: courses.subtitle,
+        description: courses.description,
+        instructorId: courses.instructorId,
+        categoryId: courses.categoryId,
+        level: courses.level,
+        price: courses.price,
+        currency: courses.currency,
+        thumbnailUrl: courses.thumbnailUrl,
+        duration: courses.duration,
+        isPublished: courses.isPublished,
+        isFeatured: courses.isFeatured,
+        avgRating: courses.avgRating,
+        ratingCount: courses.ratingCount,
+        enrollmentCount: courses.enrollmentCount,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+        },
+        instructor: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(courses)
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .leftJoin(users, eq(courses.instructorId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(courses.createdAt));
   }
 
   async getCourseById(id: string): Promise<any> {
@@ -417,10 +488,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedCourses(): Promise<any[]> {
-    return await db
-      .select()
-      .from(courses)
-      .where(and(eq(courses.isPublished, true), eq(courses.isFeatured, true)));
+    return await this.getCourses({ featured: true });
   }
 
   async getInstructorCourses(instructorId: string): Promise<any[]> {
@@ -457,9 +525,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(courses.instructorId, instructorId));
   }
 
-  async getInstructorStats(
-    instructorId: string,
-  ): Promise<{
+  async getInstructorStats(instructorId: string): Promise<{
     totalCourses: number;
     totalStudents: number;
     totalRevenue: number;
@@ -585,9 +651,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getUserOverallProgress(
-    userId: string,
-  ): Promise<{
+  async getUserOverallProgress(userId: string): Promise<{
     totalCourses: number;
     completedCourses: number;
     totalHours: number;

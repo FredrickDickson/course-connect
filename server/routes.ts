@@ -376,7 +376,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/courses",
     asyncHandler(async (req: Request, res: Response) => {
-      const courses = await storage.getCourses();
+      const { category, search, level, featured } = req.query;
+      const courses = await storage.getCourses({
+        category: category as string,
+        search: search as string,
+        level: level as string,
+        featured:
+          featured === "true" ? true : featured === "false" ? false : undefined,
+      });
       res.json(courses);
     }),
   );

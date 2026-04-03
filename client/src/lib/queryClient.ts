@@ -45,8 +45,18 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const url = new URL(queryKey[0] as string, window.location.origin);
+    if (queryKey.length > 1 && typeof queryKey[1] === "object") {
+      const params = queryKey[1] as Record<string, any>;
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+
     const authHeader = await getAuthHeader();
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await fetch(url.toString(), {
       headers: {
         ...authHeader,
       },
