@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
-import { 
-  BookOpen, Clock, Trophy, Heart, Play, Star, Award, Brain, 
+import {
+  BookOpen, Clock, Trophy, Heart, Play, Star, Award, Brain,
   GraduationCap, Download, FileText, ClipboardCheck, FileDown
 } from "lucide-react";
 
@@ -31,16 +31,19 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, toast, setLocation]);
 
-  const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery({
-    queryKey: ['enrollments', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("enrollments")
-        .select("*, course:courses(id, title, thumbnail_url, subtitle, instructor_id)")
-        .eq("user_id", user!.id);
-      if (error) throw error;
-      return data || [];
-    },
+  // Fetch enrollments from Express backend
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
+    queryKey: ['/api/enrollments'],
+    enabled: !!user,
+  });
+
+  // Fetch progress overview from Express backend
+  const { data: progressOverview } = useQuery<{
+    totalCourses: number;
+    completedCourses: number;
+    totalHours: number;
+  }>({
+    queryKey: ['/api/progress/overview'],
     enabled: !!user,
   });
 
@@ -82,7 +85,7 @@ export default function Dashboard() {
     );
   }
 
-  const completedCount = enrollments.filter((e: any) => Number(e.progress) === 100).length;
+  const completedCount = progressOverview?.completedCourses || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -188,7 +191,7 @@ export default function Dashboard() {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-4">
-                              <img 
+                              <img
                                 src={enrollment.course?.thumbnail_url || "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=250&fit=crop"}
                                 alt={enrollment.course?.title}
                                 className="w-16 h-16 object-cover rounded-lg"

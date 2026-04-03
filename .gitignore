@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 node_modules
 dist
 .DS_Store
@@ -6,7 +5,7 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env
-=======
+
 # Logs
 logs
 *.log
@@ -16,8 +15,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
 dist-ssr
 *.local
 
@@ -25,10 +22,8 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
->>>>>>> 1a8480473c6676f6c957dca85f5187aec1355536

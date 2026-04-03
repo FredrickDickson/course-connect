@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
-import { 
-  BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, 
+import {
+  BookOpen, Users, DollarSign, Star, Plus, Edit, Eye,
   TrendingUp, BarChart3, Target
 } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -37,34 +37,23 @@ export default function InstructorDashboard() {
     }
   }, [authLoading, isAuthenticated, isInstructor, setLocation]);
 
-  const { data: courses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ['instructor-courses', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*, category:categories(id, name)")
-        .eq("instructor_id", user!.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+  // Fetch instructor's courses from Express backend
+  const { data: courses = [], isLoading: coursesLoading } = useQuery<any[]>({
+    queryKey: ['/api/instructor/courses'],
     enabled: !!user && isInstructor(),
   });
 
-  const { data: enrollmentStats = [] } = useQuery({
-    queryKey: ['instructor-enrollments', user?.id],
-    queryFn: async () => {
-      const courseIds = courses.map((c: any) => c.id);
-      if (courseIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("enrollments")
-        .select("course_id")
-        .in("course_id", courseIds);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user && courses.length > 0,
+  // Fetch instructor stats from Express backend
+  const { data: instructorStats } = useQuery<{
+    totalCourses: number;
+    totalStudents: number;
+    totalRevenue: number;
+    averageRating: number;
+  }>({
+    queryKey: ['/api/instructor/stats'],
+    enabled: !!user && isInstructor(),
   });
+
 
   if (authLoading) {
     return (
@@ -76,18 +65,16 @@ export default function InstructorDashboard() {
 
   if (!isAuthenticated || !isInstructor()) return null;
 
-  const totalStudents = enrollmentStats.length;
-  const totalRevenue = courses.reduce((sum: number, c: any) => sum + (Number(c.enrollment_count || 0) * Number(c.price || 0)), 0);
-  const avgRating = courses.length > 0 
-    ? courses.reduce((sum: number, c: any) => sum + Number(c.avg_rating || 0), 0) / courses.length 
-    : 0;
+  const totalStudents = instructorStats?.totalStudents || 0;
+  const totalRevenue = instructorStats?.totalRevenue || 0;
+  const avgRating = instructorStats?.averageRating || 0;
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>

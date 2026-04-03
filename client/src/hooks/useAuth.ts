@@ -35,7 +35,7 @@ export function useAuth() {
       firstName: profile?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
       lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profile?.role || currentAuthUser.user_metadata?.role || "student",
+      role: profile?.role || "student", // Strictly use DB role or default to student
     };
   }, []);
 

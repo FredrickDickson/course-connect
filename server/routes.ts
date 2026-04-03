@@ -524,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   // Get quiz with questions (answers shuffled, isCorrect hidden)
-  app.get('/api/quiz/:quizId', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+  app.get('/api/quizzes/:quizId', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { quizId } = req.params;
     const quiz = await storage.getQuizWithQuestions(quizId, true); // hideCorrect=true for students
     if (!quiz) {
@@ -533,8 +533,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(quiz);
   }));
 
+  // Backward compatibility alias for singular
+  app.get('/api/quiz/:quizId', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+    res.redirect(`/api/quizzes/${req.params.quizId}`);
+  }));
+
   // Get quiz attempts for current user
-  app.get('/api/quiz/:quizId/attempts', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+  app.get('/api/quizzes/:quizId/attempts', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const { quizId } = req.params;
     const attempts = await storage.getQuizAttempts(userId, quizId);
@@ -542,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Submit quiz answers → grades and returns score
-  app.post('/api/quiz/:quizId/submit', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+  app.post('/api/quizzes/:quizId/submit', isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const { quizId } = req.params;
     const { responses, timeSpent } = req.body;
@@ -639,7 +644,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PAYMENT ROUTES
   // ============================================================================
 
-  app.post("/api/initialize-payment", isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
+  // Create an order and initialize payment
+  app.post("/api/orders", isAuthenticated, asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!PAYSTACK_SECRET_KEY) {
       return res.status(503).json({ message: "Payment system is not configured. Please contact the administrator." });
     }
@@ -693,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw new Error(result.message || 'Payment initialization failed');
     }
 
-    await storage.createOrder({
+    const order = await storage.createOrder({
       userId,
       courseId,
       amount: course.price,
@@ -703,11 +709,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     res.json({
+      ...order,
       authorizationUrl: result.data.authorization_url,
       accessCode: result.data.access_code,
-      reference: result.data.reference
+      reference: result.data.reference,
+      paystackReference: reference // Ensure frontend field matches
     });
   }));
+
+  // Backward compatibility alias
+  app.post("/api/initialize-payment", isAuthenticated, (req, res) => {
+    res.redirect(307, "/api/orders");
+  });
 
   app.post('/api/paystack-webhook', express.raw({ type: 'application/json' }), asyncHandler(async (req: Request, res: Response) => {
     if (!PAYSTACK_SECRET_KEY) {

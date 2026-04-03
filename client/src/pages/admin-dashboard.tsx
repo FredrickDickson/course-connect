@@ -12,7 +12,7 @@ import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/header";
 import { supabase } from "@/integrations/supabase/client";
-import { 
+import {
   Users, BookOpen, UserCheck, UserX, Eye, Download, Calendar, Mail, Phone,
   GraduationCap, FileText, Video, CheckCircle, XCircle, Clock, AlertCircle,
   TrendingUp, DollarSign, UserPlus, Shield
@@ -38,26 +38,10 @@ export default function AdminDashboard() {
   const [newAdmin, setNewAdmin] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
-  // Fetch stats from Supabase
+  // Fetch stats from Express backend
   const { data: stats } = useQuery({
-    queryKey: ['admin-stats'],
+    queryKey: ['/api/admin/stats'],
     enabled: hasAccess,
-    queryFn: async () => {
-      const [usersRes, instructorsRes, pendingRes, coursesRes, studentsRes] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'instructor'),
-        supabase.from('instructor_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('courses').select('id', { count: 'exact', head: true }).eq('is_published', true),
-        supabase.from('enrollments').select('id', { count: 'exact', head: true }),
-      ]);
-      return {
-        totalUsers: usersRes.count || 0,
-        totalInstructors: instructorsRes.count || 0,
-        pendingApplications: pendingRes.count || 0,
-        totalCourses: coursesRes.count || 0,
-        activeStudents: studentsRes.count || 0,
-      };
-    },
   });
 
   // Fetch instructor applications
@@ -222,7 +206,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -283,7 +267,7 @@ export default function AdminDashboard() {
 
             {applicationsLoading ? (
               <div className="space-y-4">
-                {[1,2,3].map(i => (
+                {[1, 2, 3].map(i => (
                   <Card key={i} className="animate-pulse">
                     <CardContent className="p-6"><div className="h-20 bg-muted rounded" /></CardContent>
                   </Card>
@@ -329,7 +313,7 @@ export default function AdminDashboard() {
                         application={app}
                         reviewComments={reviewComments}
                         setReviewComments={setReviewComments}
-                        onReview={() => {}}
+                        onReview={() => { }}
                         isPending={false}
                       />
                     ))}
@@ -354,11 +338,11 @@ export default function AdminDashboard() {
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
                     <div className="grid grid-cols-2 gap-4">
-                      <div><Label>First Name</Label><Input value={newAdmin.firstName} onChange={e => setNewAdmin(p => ({...p, firstName: e.target.value}))} placeholder="First name" /></div>
-                      <div><Label>Last Name</Label><Input value={newAdmin.lastName} onChange={e => setNewAdmin(p => ({...p, lastName: e.target.value}))} placeholder="Last name" /></div>
+                      <div><Label>First Name</Label><Input value={newAdmin.firstName} onChange={e => setNewAdmin(p => ({ ...p, firstName: e.target.value }))} placeholder="First name" /></div>
+                      <div><Label>Last Name</Label><Input value={newAdmin.lastName} onChange={e => setNewAdmin(p => ({ ...p, lastName: e.target.value }))} placeholder="Last name" /></div>
                     </div>
-                    <div><Label>Email</Label><Input type="email" value={newAdmin.email} onChange={e => setNewAdmin(p => ({...p, email: e.target.value}))} placeholder="admin@cimalearn.org" /></div>
-                    <div><Label>Password</Label><Input type="password" value={newAdmin.password} onChange={e => setNewAdmin(p => ({...p, password: e.target.value}))} placeholder="Min 8 characters" /></div>
+                    <div><Label>Email</Label><Input type="email" value={newAdmin.email} onChange={e => setNewAdmin(p => ({ ...p, email: e.target.value }))} placeholder="admin@cimalearn.org" /></div>
+                    <div><Label>Password</Label><Input type="password" value={newAdmin.password} onChange={e => setNewAdmin(p => ({ ...p, password: e.target.value }))} placeholder="Min 8 characters" /></div>
                     <Button className="w-full" onClick={handleCreateAdmin} disabled={isCreatingAdmin}>
                       {isCreatingAdmin ? "Creating..." : "Create Admin Account"}
                     </Button>
@@ -374,45 +358,45 @@ export default function AdminDashboard() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                         <tr className="border-b bg-muted/50">
-                           <th className="text-left p-4 font-medium">Name</th>
-                           <th className="text-left p-4 font-medium">Email</th>
-                           <th className="text-left p-4 font-medium">Role</th>
-                           <th className="text-left p-4 font-medium">Joined</th>
-                         </tr>
-                       </thead>
-                       <tbody>
-                         {allUsers.map((u: any) => {
-                           const isCurrentUser = u.id === user?.id;
-                           return (
-                             <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
-                               <td className="p-4">{u.first_name} {u.last_name}</td>
-                               <td className="p-4 text-muted-foreground">{u.email}</td>
-                               <td className="p-4">
-                                 {isCurrentUser || u.role === 'admin' ? (
-                                   <Badge variant={u.role === 'admin' ? 'default' : u.role === 'instructor' ? 'secondary' : 'outline'}>
-                                     {u.role}
-                                   </Badge>
-                                 ) : (
-                                   <Select
-                                     value={u.role || 'student'}
-                                     onValueChange={(newRole) => changeUserRole.mutate({ userId: u.id, newRole })}
-                                   >
-                                     <SelectTrigger className="w-[130px] h-8">
-                                       <SelectValue />
-                                     </SelectTrigger>
-                                     <SelectContent>
-                                       <SelectItem value="student">Student</SelectItem>
-                                       <SelectItem value="instructor">Instructor</SelectItem>
-                                     </SelectContent>
-                                   </Select>
-                                 )}
-                               </td>
-                               <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                             </tr>
-                           );
-                         })}
-                       </tbody>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left p-4 font-medium">Name</th>
+                          <th className="text-left p-4 font-medium">Email</th>
+                          <th className="text-left p-4 font-medium">Role</th>
+                          <th className="text-left p-4 font-medium">Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allUsers.map((u: any) => {
+                          const isCurrentUser = u.id === user?.id;
+                          return (
+                            <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
+                              <td className="p-4">{u.first_name} {u.last_name}</td>
+                              <td className="p-4 text-muted-foreground">{u.email}</td>
+                              <td className="p-4">
+                                {isCurrentUser || u.role === 'admin' ? (
+                                  <Badge variant={u.role === 'admin' ? 'default' : u.role === 'instructor' ? 'secondary' : 'outline'}>
+                                    {u.role}
+                                  </Badge>
+                                ) : (
+                                  <Select
+                                    value={u.role || 'student'}
+                                    onValueChange={(newRole) => changeUserRole.mutate({ userId: u.id, newRole })}
+                                  >
+                                    <SelectTrigger className="w-[130px] h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="student">Student</SelectItem>
+                                      <SelectItem value="instructor">Instructor</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </td>
+                              <td className="p-4 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
                     </table>
                   </div>
                 </CardContent>
@@ -539,7 +523,7 @@ function ApplicationCard({ application, reviewComments, setReviewComments, onRev
               <DialogTitle>Instructor Application - {application.first_name} {application.last_name}</DialogTitle>
               <DialogDescription>Review the application details and approve or reject.</DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-sm font-medium">Name</Label><p className="text-sm text-muted-foreground">{application.first_name} {application.last_name}</p></div>

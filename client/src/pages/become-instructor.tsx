@@ -18,12 +18,12 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useLocation } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  GraduationCap, 
-  FileText, 
-  Video, 
-  Upload, 
-  CheckCircle, 
+import {
+  GraduationCap,
+  FileText,
+  Video,
+  Upload,
+  CheckCircle,
   Users,
   BookOpen,
   Award,
@@ -59,7 +59,7 @@ type InstructorApplicationForm = z.infer<typeof instructorApplicationSchema>;
 
 const expertiseAreas = [
   "International Arbitration",
-  "Commercial Mediation", 
+  "Commercial Mediation",
   "Cross-Border Disputes",
   "Investment Arbitration",
   "Construction Arbitration",
@@ -144,17 +144,9 @@ function InstructorAuth() {
       if (authError) throw authError;
 
       if (data.user) {
-        const { error: profileError } = await supabase.from("users").insert({
-          id: data.user.id,
-          email: signupData.email,
-          first_name: signupData.firstName,
-          last_name: signupData.lastName,
-          role: "instructor",
-        });
-
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-        }
+        // We let the backend auto-provision the user with the default 'student' role
+        // on the first API call. This ensures no client-side role escalation.
+        console.log("Instructor account created in Supabase Auth");
       }
 
       if (data.session) {
@@ -470,7 +462,7 @@ export default function BecomeInstructor() {
   const submitApplication = useMutation({
     mutationFn: async (data: InstructorApplicationForm) => {
       if (!user) throw new Error("You must be logged in to apply");
-      
+
       const { error } = await supabase.from("instructor_applications").insert({
         user_id: user.id,
         first_name: data.firstName,
@@ -528,7 +520,7 @@ export default function BecomeInstructor() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -539,7 +531,7 @@ export default function BecomeInstructor() {
             <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
               Share your expertise in Alternative Dispute Resolution and help professionals worldwide advance their careers.
             </p>
-            
+
             {/* Benefits */}
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
@@ -584,17 +576,14 @@ export default function BecomeInstructor() {
             {/* Progress Steps */}
             <div className="flex items-center justify-center mb-8">
               <div className="flex items-center space-x-4">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                }`}>1</div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>1</div>
                 <div className={`w-16 h-1 ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                }`}>2</div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>2</div>
                 <div className={`w-16 h-1 ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                }`}>3</div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>3</div>
               </div>
             </div>
 
