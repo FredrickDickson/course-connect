@@ -48,6 +48,8 @@ interface AuthRequest extends Request {
       sub: string;
     };
   };
+  file?: Express.Multer.File;
+  files?: Express.Multer.File[];
 }
 
 // Paystack payment gateway configuration

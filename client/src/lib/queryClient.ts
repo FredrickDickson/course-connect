@@ -44,7 +44,7 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
+  async ({ queryKey }: { queryKey: readonly unknown[] }) => {
     const url = new URL(queryKey[0] as string, window.location.origin);
     if (queryKey.length > 1 && typeof queryKey[1] === "object") {
       const params = queryKey[1] as Record<string, any>;
@@ -78,7 +78,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: (failureCount, error) => {
+      retry: (failureCount: number, error: Error) => {
         // Retry on network errors and 5xx server errors
         // Don't retry on 4xx client errors (except 408 Request Timeout)
         if (error instanceof Error) {
@@ -104,7 +104,8 @@ export const queryClient = new QueryClient({
         // Default: retry up to 3 times
         return failureCount < 3;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff, max 30s
+      retryDelay: (attemptIndex: number) =>
+        Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff, max 30s
     },
     mutations: {
       retry: false, // Don't retry mutations (they may have side effects)
