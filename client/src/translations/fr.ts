@@ -213,31 +213,7 @@ export const fr = {
       },
     },
 
-    // Common
-    common: {
-      loading: "Chargement...",
-      error: "Erreur",
-      success: "Succès",
-      cancel: "Annuler",
-      save: "Sauvegarder",
-      delete: "Supprimer",
-      edit: "Modifier",
-      view: "Voir",
-      back: "Retour",
-      next: "Suivant",
-      previous: "Précédent",
-      close: "Fermer",
-      search: "Rechercher",
-      filter: "Filtrer",
-      sort: "Trier",
-      clear: "Effacer",
-      apply: "Appliquer",
-      reset: "Réinitialiser",
-      submit: "Soumettre",
-    },
-  },
-
-  // Common (top-level)
+  // Common
   common: {
     loading: "Chargement...",
     error: "Erreur",
