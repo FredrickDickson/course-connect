@@ -1,9 +1,14 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +16,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCard from "@/components/course-card";
-import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users } from "lucide-react";
+import {
+  Search,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Grid,
+  List,
+  Heart,
+  BookOpen,
+  Clock,
+  Star,
+  Users,
+} from "lucide-react";
 
 export default function Courses() {
   const { t } = useLanguage();
@@ -23,61 +40,77 @@ export default function Courses() {
   const [priceRange, setPriceRange] = useState("");
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from('categories').select('*');
+      const { data, error } = await supabase.from("categories").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['courses_filtered', {
-      search,
-      category: category === 'all' ? '' : category,
-      level: level === 'all' ? '' : level,
-      sortBy,
-      priceRange: priceRange === 'all' ? '' : priceRange
-    }],
+    queryKey: [
+      "courses_filtered",
+      {
+        search,
+        category: category === "all" ? "" : category,
+        level: level === "all" ? "" : level,
+        sortBy,
+        priceRange: priceRange === "all" ? "" : priceRange,
+      },
+    ],
     queryFn: async () => {
       let query = supabase
-        .from('courses')
-        .select('*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)')
-        .eq('is_published', true);
-      
+        .from("courses")
+        .select(
+          "*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)",
+        )
+        .eq("is_published", true);
+
       if (search) {
-        query = query.ilike('title', `%${search}%`);
+        query = query.ilike("title", `%${search}%`);
       }
-      
-      if (category && category !== 'all') {
+
+      if (category && category !== "all") {
         // If it's a slug, we might need a join or a second query.
         // Assuming we have slugs in categories table.
-        const { data: catData } = await supabase.from('categories').select('id').eq('slug', category).maybeSingle();
-        if (catData) query = query.eq('category_id', catData.id);
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("slug", category)
+          .maybeSingle();
+        if (catData) query = query.eq("category_id", catData.id);
       }
-      
-      if (level && level !== 'all') {
-        query = query.eq('level', level);
+
+      if (level && level !== "all") {
+        query = query.eq("level", level);
       }
-      
+
       // Sort logic
-      if (sortBy === 'newest') query = query.order('created_at', { ascending: false });
-      else if (sortBy === 'price-low') query = query.order('price', { ascending: true });
-      else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
-      else if (sortBy === 'rating') query = query.order('avg_rating', { ascending: false });
-      
+      if (sortBy === "newest")
+        query = query.order("created_at", { ascending: false });
+      else if (sortBy === "price-low")
+        query = query.order("price", { ascending: true });
+      else if (sortBy === "price-high")
+        query = query.order("price", { ascending: false });
+      else if (sortBy === "rating")
+        query = query.order("avg_rating", { ascending: false });
+
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['courses_stats'],
+    queryKey: ["courses_stats"],
     queryFn: async () => {
-      const { count } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true);
+      const { count } = await supabase
+        .from("courses")
+        .select("*", { count: "exact", head: true })
+        .eq("is_published", true);
       return { totalCourses: count || 0 };
-    }
+    },
   });
 
   return (
@@ -91,13 +124,13 @@ export default function Courses() {
             <div className="space-y-4">
               <Badge className="bg-white/20 text-white border-white/30 backdrop-blur">
                 <BookOpen className="w-4 h-4 mr-2" />
-                {stats?.totalCourses || '50+'} Professional Courses
+                {stats?.totalCourses || "50+"} Professional Courses
               </Badge>
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                {t('courses.title')}
+                {t("courses.title")}
               </h1>
               <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
-                {t('courses.subtitle')}
+                {t("courses.subtitle")}
               </p>
             </div>
 
@@ -221,29 +254,53 @@ export default function Courses() {
           {/* Active Filters */}
           {(search || category || level || priceRange) && (
             <div className="flex flex-wrap items-center gap-2 mb-6">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
+              <span className="text-sm text-muted-foreground">
+                Active filters:
+              </span>
               {search && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Search: "{search}"
-                  <button onClick={() => setSearch("")} className="ml-1 hover:text-destructive">×</button>
+                  <button
+                    onClick={() => setSearch("")}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
                 </Badge>
               )}
               {category && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Category: {categories.find((c: any) => c.slug === category)?.name || category}
-                  <button onClick={() => setCategory("")} className="ml-1 hover:text-destructive">×</button>
+                  Category:{" "}
+                  {categories.find((c: any) => c.slug === category)?.name ||
+                    category}
+                  <button
+                    onClick={() => setCategory("")}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
                 </Badge>
               )}
               {level && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Level: {level}
-                  <button onClick={() => setLevel("")} className="ml-1 hover:text-destructive">×</button>
+                  <button
+                    onClick={() => setLevel("")}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
                 </Badge>
               )}
               {priceRange && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Price: {priceRange === "free" ? "Free" : `$${priceRange}`}
-                  <button onClick={() => setPriceRange("")} className="ml-1 hover:text-destructive">×</button>
+                  <button
+                    onClick={() => setPriceRange("")}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    ×
+                  </button>
                 </Badge>
               )}
               <Button
@@ -268,61 +325,72 @@ export default function Courses() {
       <section className="py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Featured Professional Courses</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Featured Professional Courses
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Internationally recognized courses designed by leading ADR experts and practitioners
+              Internationally recognized courses designed by leading ADR experts
+              and practitioners
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {/* Highlight top courses */}
-            {courses.filter((course: any) => course.is_featured).slice(0, 2).map((course: any) => (
-              <Card key={course.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
-                <div className="relative">
-                  <img
-                    src={course.thumbnail_url}
-                    alt={course.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-primary text-primary-foreground">
-                      Featured
-                    </Badge>
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="secondary" className="bg-black/20 text-white border-0">
-                      {course.level}
-                    </Badge>
-                  </div>
-                </div>
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2">
-                        {course.title}
-                      </h3>
-                      <p className="text-muted-foreground text-sm line-clamp-3">
-                        {course.description}
-                      </p>
+            {courses
+              .filter((course: any) => course.is_featured)
+              .slice(0, 2)
+              .map((course: any) => (
+                <Card
+                  key={course.id}
+                  className="overflow-hidden group hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="relative">
+                    <img
+                      src={course.thumbnail_url}
+                      alt={course.title}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-primary text-primary-foreground">
+                        Featured
+                      </Badge>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="text-2xl font-bold text-foreground">
-                          ${course.price.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {course.duration_hours} hours • {course.enrollment_count} enrolled
-                        </div>
+                    <div className="absolute top-4 right-4">
+                      <Badge
+                        variant="secondary"
+                        className="bg-black/20 text-white border-0"
+                      >
+                        {course.level}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2">
+                          {course.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm line-clamp-3">
+                          {course.description}
+                        </p>
                       </div>
-                      <Button>
-                        Learn More
-                      </Button>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="text-2xl font-bold text-foreground">
+                            ${course.price.toLocaleString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {course.duration_hours} hours •{" "}
+                            {course.enrollment_count} enrolled
+                          </div>
+                        </div>
+                        <Button>Learn More</Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </div>
       </section>
@@ -330,23 +398,29 @@ export default function Courses() {
       {/* Results Section */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
           {/* Results Header */}
           {!isLoading && (
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  {courses.length === 0 ? 'No courses found' : 'Available Courses'}
+                  {courses.length === 0
+                    ? "No courses found"
+                    : "Available Courses"}
                 </h2>
-                <p className="text-muted-foreground mt-1" data-testid="results-count">
-                  {courses.length > 0 && `${courses.length} course${courses.length !== 1 ? 's' : ''} available`}
+                <p
+                  className="text-muted-foreground mt-1"
+                  data-testid="results-count"
+                >
+                  {courses.length > 0 &&
+                    `${courses.length} course${courses.length !== 1 ? "s" : ""} available`}
                 </p>
               </div>
 
               {courses.length > 0 && (
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-muted-foreground">
-                    Showing {Math.min(courses.length, 12)} of {courses.length} results
+                    Showing {Math.min(courses.length, 12)} of {courses.length}{" "}
+                    results
                   </span>
                 </div>
               )}
@@ -355,9 +429,19 @@ export default function Courses() {
 
           {/* Loading State */}
           {isLoading && (
-            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-6"}>
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  : "space-y-6"
+              }
+            >
               {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse" data-testid={`skeleton-course-${i}`}>
+                <Card
+                  key={i}
+                  className="animate-pulse"
+                  data-testid={`skeleton-course-${i}`}
+                >
                   {viewMode === "grid" ? (
                     <>
                       <div className="w-full h-48 bg-muted"></div>
@@ -390,9 +474,12 @@ export default function Courses() {
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No courses found</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                No courses found
+              </h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                We couldn't find any courses matching your criteria. Try adjusting your filters or search terms.
+                We couldn't find any courses matching your criteria. Try
+                adjusting your filters or search terms.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
@@ -415,16 +502,21 @@ export default function Courses() {
 
           {/* Course Results */}
           {!isLoading && courses.length > 0 && (
-            <div className={
-              viewMode === "grid"
-                ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-                : "space-y-6"
-            }>
-              {courses.map((course: any) => (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  : "space-y-6"
+              }
+            >
+              {courses.map((course: any) =>
                 viewMode === "grid" ? (
                   <CourseCard key={course.id} course={course} />
                 ) : (
-                  <Card key={course.id} className="hover:shadow-lg transition-all duration-300 group">
+                  <Card
+                    key={course.id}
+                    className="hover:shadow-lg transition-all duration-300 group"
+                  >
                     <CardContent className="p-6">
                       <div className="flex space-x-4">
                         <div className="w-24 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
@@ -454,7 +546,9 @@ export default function Courses() {
                               <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                                 <div className="flex items-center space-x-1">
                                   <Star className="w-4 h-4 fill-current text-yellow-500" />
-                                  <span>{course.avg_rating?.toFixed(1) || '0.0'}</span>
+                                  <span>
+                                    {course.avg_rating?.toFixed(1) || "0.0"}
+                                  </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <Users className="w-4 h-4" />
@@ -470,10 +564,10 @@ export default function Courses() {
                             </div>
                             <div className="flex flex-col items-end space-y-2 ml-4">
                               <div className="text-lg font-bold text-primary">
-                                {course.price && parseFloat(course.price.toString()) > 0
+                                {course.price &&
+                                parseFloat(course.price.toString()) > 0
                                   ? `$${parseFloat(course.price.toString()).toFixed(2)}`
-                                  : 'Free'
-                                }
+                                  : "Free"}
                               </div>
                               <Button size="sm" asChild>
                                 <a href={`/course/${course.id}`}>View Course</a>
@@ -484,8 +578,8 @@ export default function Courses() {
                       </div>
                     </CardContent>
                   </Card>
-                )
-              ))}
+                ),
+              )}
             </div>
           )}
         </div>

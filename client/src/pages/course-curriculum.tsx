@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,15 +20,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Plus,
   GripVertical,
@@ -59,7 +58,7 @@ interface Lesson {
   id: string;
   title: string;
   description: string;
-  contentType: 'video' | 'text' | 'quiz' | 'assignment';
+  contentType: "video" | "text" | "quiz" | "assignment";
   videoUrl?: string;
   duration?: number;
   order: number;
@@ -123,26 +122,28 @@ function SortableLesson({ lesson, lessonIndex, children }: any) {
   );
 }
 
-const QUERY_KEY = 'curriculum-modules';
+const QUERY_KEY = "curriculum-modules";
 
 export default function CourseCurriculum() {
   const [, params] = useRoute("/instructor/courses/:courseId/curriculum");
   const courseId = params?.courseId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    new Set(),
+  );
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newModuleDesc, setNewModuleDesc] = useState("");
-  
+
   const [lectureEditorOpen, setLectureEditorOpen] = useState(false);
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-  
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
-  
+
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   // Fetch course curriculum directly from Supabase
@@ -150,31 +151,36 @@ export default function CourseCurriculum() {
     queryKey: [QUERY_KEY, courseId],
     queryFn: async () => {
       const { data: modulesData, error: modErr } = await supabase
-        .from('modules')
+        .from("modules")
         .select('id, title, description, "order"')
-        .eq('course_id', courseId!)
-        .order('order');
+        .eq("course_id", courseId!)
+        .order("order");
       if (modErr) throw modErr;
 
       const { data: lessonsData, error: lesErr } = await supabase
-        .from('lessons')
-        .select('id, title, description, content_type, video_url, duration_seconds, "order", module_id')
-        .in('module_id', (modulesData || []).map(m => m.id))
-        .order('order');
+        .from("lessons")
+        .select(
+          'id, title, description, content_type, video_url, duration_seconds, "order", module_id',
+        )
+        .in(
+          "module_id",
+          (modulesData || []).map((m) => m.id),
+        )
+        .order("order");
       if (lesErr) throw lesErr;
 
-      return (modulesData || []).map(m => ({
+      return (modulesData || []).map((m) => ({
         id: m.id,
         title: m.title,
-        description: m.description || '',
+        description: m.description || "",
         order: m.order,
         lessons: (lessonsData || [])
-          .filter(l => l.module_id === m.id)
-          .map(l => ({
+          .filter((l) => l.module_id === m.id)
+          .map((l) => ({
             id: l.id,
             title: l.title,
-            description: l.description || '',
-            contentType: (l.content_type || 'video') as any,
+            description: l.description || "",
+            contentType: (l.content_type || "video") as any,
             videoUrl: l.video_url || undefined,
             duration: l.duration_seconds || undefined,
             order: l.order,
@@ -186,13 +192,16 @@ export default function CourseCurriculum() {
   });
 
   // Fetch course details
-  const { data: courseDetails } = useQuery<{ isPublished: boolean; title: string }>({
-    queryKey: ['course-details', courseId],
+  const { data: courseDetails } = useQuery<{
+    isPublished: boolean;
+    title: string;
+  }>({
+    queryKey: ["course-details", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('courses')
-        .select('is_published, title')
-        .eq('id', courseId!)
+        .from("courses")
+        .select("is_published, title")
+        .eq("id", courseId!)
         .single();
       if (error) throw error;
       return { isPublished: data.is_published || false, title: data.title };
@@ -201,7 +210,11 @@ export default function CourseCurriculum() {
   });
 
   const totalDuration = modules.reduce((total, module) => {
-    const moduleDuration = module.lessons?.reduce((sum, lesson) => sum + (lesson.duration || 0), 0) || 0;
+    const moduleDuration =
+      module.lessons?.reduce(
+        (sum, lesson) => sum + (lesson.duration || 0),
+        0,
+      ) || 0;
     return total + moduleDuration;
   }, 0);
 
@@ -213,14 +226,16 @@ export default function CourseCurriculum() {
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   // Add module
   const addModuleMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
       const nextOrder = modules.length + 1;
-      const { error } = await supabase.from('modules').insert({
+      const { error } = await supabase.from("modules").insert({
         course_id: courseId!,
         title: data.title,
         description: data.description || null,
@@ -241,9 +256,15 @@ export default function CourseCurriculum() {
   const deleteModuleMutation = useMutation({
     mutationFn: async (moduleId: string) => {
       // Delete lessons first, then module
-      const { error: lesErr } = await supabase.from('lessons').delete().eq('module_id', moduleId);
+      const { error: lesErr } = await supabase
+        .from("lessons")
+        .delete()
+        .eq("module_id", moduleId);
       if (lesErr) throw lesErr;
-      const { error } = await supabase.from('modules').delete().eq('id', moduleId);
+      const { error } = await supabase
+        .from("modules")
+        .delete()
+        .eq("id", moduleId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -255,7 +276,10 @@ export default function CourseCurriculum() {
   // Delete lesson
   const deleteLessonMutation = useMutation({
     mutationFn: async (lessonId: string) => {
-      const { error } = await supabase.from('lessons').delete().eq('id', lessonId);
+      const { error } = await supabase
+        .from("lessons")
+        .delete()
+        .eq("id", lessonId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -268,7 +292,10 @@ export default function CourseCurriculum() {
   const reorderModulesMutation = useMutation({
     mutationFn: async (moduleOrder: string[]) => {
       const updates = moduleOrder.map((id, index) =>
-        supabase.from('modules').update({ order: index + 1 }).eq('id', id)
+        supabase
+          .from("modules")
+          .update({ order: index + 1 })
+          .eq("id", id),
       );
       await Promise.all(updates);
     },
@@ -280,9 +307,18 @@ export default function CourseCurriculum() {
 
   // Reorder lessons
   const reorderLessonsMutation = useMutation({
-    mutationFn: async ({ moduleId, lessonOrder }: { moduleId: string; lessonOrder: string[] }) => {
+    mutationFn: async ({
+      moduleId,
+      lessonOrder,
+    }: {
+      moduleId: string;
+      lessonOrder: string[];
+    }) => {
       const updates = lessonOrder.map((id, index) =>
-        supabase.from('lessons').update({ order: index + 1 }).eq('id', id)
+        supabase
+          .from("lessons")
+          .update({ order: index + 1 })
+          .eq("id", id),
       );
       await Promise.all(updates);
     },
@@ -312,10 +348,13 @@ export default function CourseCurriculum() {
       const newIndex = module.lessons.findIndex((l) => l.id === over.id);
       const newLessons = arrayMove(module.lessons, oldIndex, newIndex);
       const newModules = modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: newLessons } : m
+        m.id === moduleId ? { ...m, lessons: newLessons } : m,
       );
       queryClient.setQueryData([QUERY_KEY, courseId], newModules);
-      reorderLessonsMutation.mutate({ moduleId, lessonOrder: newLessons.map((l) => l.id) });
+      reorderLessonsMutation.mutate({
+        moduleId,
+        lessonOrder: newLessons.map((l) => l.id),
+      });
     }
   };
 
@@ -334,7 +373,10 @@ export default function CourseCurriculum() {
       toast({ title: "Section title is required", variant: "destructive" });
       return;
     }
-    addModuleMutation.mutate({ title: newModuleTitle, description: newModuleDesc });
+    addModuleMutation.mutate({
+      title: newModuleTitle,
+      description: newModuleDesc,
+    });
   };
 
   const handleAddLecture = (moduleId: string) => {
@@ -375,7 +417,7 @@ export default function CourseCurriculum() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
@@ -387,11 +429,21 @@ export default function CourseCurriculum() {
               </p>
               <div className="flex items-center gap-4 mt-2">
                 <span className="text-sm font-medium">
-                  {modules.length} Section{modules.length !== 1 ? 's' : ''}
+                  {modules.length} Section{modules.length !== 1 ? "s" : ""}
                 </span>
                 <span className="text-muted-foreground">•</span>
                 <span className="text-sm font-medium">
-                  {modules.reduce((total, m) => total + (m.lessons?.length || 0), 0)} Lecture{modules.reduce((total, m) => total + (m.lessons?.length || 0), 0) !== 1 ? 's' : ''}
+                  {modules.reduce(
+                    (total, m) => total + (m.lessons?.length || 0),
+                    0,
+                  )}{" "}
+                  Lecture
+                  {modules.reduce(
+                    (total, m) => total + (m.lessons?.length || 0),
+                    0,
+                  ) !== 1
+                    ? "s"
+                    : ""}
                 </span>
                 {totalDuration > 0 && (
                   <>
@@ -410,7 +462,9 @@ export default function CourseCurriculum() {
                 data-testid="button-publish-course"
               >
                 <Rocket className="w-4 h-4 mr-2" />
-                {courseDetails?.isPublished ? 'Unpublish Course' : 'Publish Course'}
+                {courseDetails?.isPublished
+                  ? "Unpublish Course"
+                  : "Publish Course"}
               </Button>
               <Link href="/instructor">
                 <Button variant="outline">← Back to Dashboard</Button>
@@ -427,10 +481,13 @@ export default function CourseCurriculum() {
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">How to structure your course</h3>
+                <h3 className="font-semibold mb-1">
+                  How to structure your course
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Organize your course into <strong>sections</strong> (modules) and <strong>lectures</strong>. 
-                  Each lecture can be a video, article, quiz, or assignment.
+                  Organize your course into <strong>sections</strong> (modules)
+                  and <strong>lectures</strong>. Each lecture can be a video,
+                  article, quiz, or assignment.
                 </p>
               </div>
             </div>
@@ -438,33 +495,71 @@ export default function CourseCurriculum() {
         </Card>
 
         {/* Curriculum Content */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
-          <SortableContext items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleModuleDragEnd}
+        >
+          <SortableContext
+            items={modules.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <div className="space-y-4">
               {modules.map((module, moduleIndex) => (
-                <SortableModule key={module.id} module={module} moduleIndex={moduleIndex}>
+                <SortableModule
+                  key={module.id}
+                  module={module}
+                  moduleIndex={moduleIndex}
+                >
                   {({ attributes, listeners }: any) => (
                     <Card className="border-l-4 border-l-primary">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1">
-                            <div {...attributes} {...listeners} className="cursor-move">
+                            <div
+                              {...attributes}
+                              {...listeners}
+                              className="cursor-move"
+                            >
                               <GripVertical className="h-5 w-5 text-muted-foreground" />
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => toggleModule(module.id)} className="p-0 h-auto">
-                              {expandedModules.has(module.id) ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleModule(module.id)}
+                              className="p-0 h-auto"
+                            >
+                              {expandedModules.has(module.id) ? (
+                                <ChevronDown className="h-5 w-5" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5" />
+                              )}
                             </Button>
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
-                                <span className="font-semibold text-sm text-muted-foreground">Section {moduleIndex + 1}:</span>
+                                <span className="font-semibold text-sm text-muted-foreground">
+                                  Section {moduleIndex + 1}:
+                                </span>
                                 <h3 className="font-bold">{module.title}</h3>
                               </div>
-                              {module.description && <p className="text-sm text-muted-foreground mt-1">{module.description}</p>}
-                              <p className="text-xs text-muted-foreground mt-1">{module.lessons?.length || 0} lectures</p>
+                              {module.description && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {module.description}
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {module.lessons?.length || 0} lectures
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => deleteModuleMutation.mutate(module.id)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                deleteModuleMutation.mutate(module.id)
+                              }
+                            >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -475,37 +570,93 @@ export default function CourseCurriculum() {
                         <CardContent className="pt-0">
                           <div className="ml-8 space-y-2">
                             {module.lessons && module.lessons.length > 0 ? (
-                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd(module.id)}>
-                                <SortableContext items={module.lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleLessonDragEnd(module.id)}
+                              >
+                                <SortableContext
+                                  items={module.lessons.map((l) => l.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
                                   {module.lessons.map((lesson, lessonIndex) => (
-                                    <SortableLesson key={lesson.id} lesson={lesson} lessonIndex={lessonIndex}>
+                                    <SortableLesson
+                                      key={lesson.id}
+                                      lesson={lesson}
+                                      lessonIndex={lessonIndex}
+                                    >
                                       {({ attributes, listeners }: any) => (
                                         <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                                           <div className="flex items-center space-x-3 flex-1">
-                                            <div {...attributes} {...listeners} className="cursor-move">
+                                            <div
+                                              {...attributes}
+                                              {...listeners}
+                                              className="cursor-move"
+                                            >
                                               <GripVertical className="h-4 w-4 text-muted-foreground" />
                                             </div>
-                                            {lesson.contentType === 'video' && <Play className="h-4 w-4" />}
-                                            {lesson.contentType === 'text' && <FileText className="h-4 w-4" />}
-                                            {lesson.contentType === 'quiz' && <ClipboardList className="h-4 w-4" />}
-                                            {lesson.contentType === 'assignment' && <FileText className="h-4 w-4" />}
+                                            {lesson.contentType === "video" && (
+                                              <Play className="h-4 w-4" />
+                                            )}
+                                            {lesson.contentType === "text" && (
+                                              <FileText className="h-4 w-4" />
+                                            )}
+                                            {lesson.contentType === "quiz" && (
+                                              <ClipboardList className="h-4 w-4" />
+                                            )}
+                                            {lesson.contentType ===
+                                              "assignment" && (
+                                              <FileText className="h-4 w-4" />
+                                            )}
                                             <div className="flex-1">
-                                              <p className="font-medium text-sm">Lecture {lessonIndex + 1}: {lesson.title}</p>
+                                              <p className="font-medium text-sm">
+                                                Lecture {lessonIndex + 1}:{" "}
+                                                {lesson.title}
+                                              </p>
                                               {lesson.duration && (
                                                 <p className="text-xs text-muted-foreground">
-                                                  {Math.floor(lesson.duration / 60)}:{String(lesson.duration % 60).padStart(2, '0')}
+                                                  {Math.floor(
+                                                    lesson.duration / 60,
+                                                  )}
+                                                  :
+                                                  {String(
+                                                    lesson.duration % 60,
+                                                  ).padStart(2, "0")}
                                                 </p>
                                               )}
                                             </div>
                                           </div>
                                           <div className="flex items-center space-x-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handlePreviewLecture(lesson)}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                handlePreviewLecture(lesson)
+                                              }
+                                            >
                                               <Eye className="h-3 w-3" />
                                             </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleEditLecture(lesson, module.id)}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                handleEditLecture(
+                                                  lesson,
+                                                  module.id,
+                                                )
+                                              }
+                                            >
                                               <Edit className="h-3 w-3" />
                                             </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => deleteLessonMutation.mutate(lesson.id)}>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                deleteLessonMutation.mutate(
+                                                  lesson.id,
+                                                )
+                                              }
+                                            >
                                               <Trash2 className="h-3 w-3 text-destructive" />
                                             </Button>
                                           </div>
@@ -516,10 +667,17 @@ export default function CourseCurriculum() {
                                 </SortableContext>
                               </DndContext>
                             ) : (
-                              <p className="text-sm text-muted-foreground italic py-4">No lectures yet. Add your first lecture below.</p>
+                              <p className="text-sm text-muted-foreground italic py-4">
+                                No lectures yet. Add your first lecture below.
+                              </p>
                             )}
 
-                            <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => handleAddLecture(module.id)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-2"
+                              onClick={() => handleAddLecture(module.id)}
+                            >
                               <Plus className="h-4 w-4 mr-2" />
                               Add Lecture
                             </Button>
@@ -537,23 +695,51 @@ export default function CourseCurriculum() {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="module-title">Section Title *</Label>
-                        <Input id="module-title" placeholder="e.g., Introduction to Mediation" value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} />
+                        <Input
+                          id="module-title"
+                          placeholder="e.g., Introduction to Mediation"
+                          value={newModuleTitle}
+                          onChange={(e) => setNewModuleTitle(e.target.value)}
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="module-desc">Section Description (optional)</Label>
-                        <Textarea id="module-desc" placeholder="What will students learn in this section?" rows={3} value={newModuleDesc} onChange={(e) => setNewModuleDesc(e.target.value)} />
+                        <Label htmlFor="module-desc">
+                          Section Description (optional)
+                        </Label>
+                        <Textarea
+                          id="module-desc"
+                          placeholder="What will students learn in this section?"
+                          rows={3}
+                          value={newModuleDesc}
+                          onChange={(e) => setNewModuleDesc(e.target.value)}
+                        />
                       </div>
                       <div className="flex space-x-2">
-                        <Button onClick={handleAddModule} disabled={addModuleMutation.isPending}>
-                          {addModuleMutation.isPending ? "Adding..." : "Add Section"}
+                        <Button
+                          onClick={handleAddModule}
+                          disabled={addModuleMutation.isPending}
+                        >
+                          {addModuleMutation.isPending
+                            ? "Adding..."
+                            : "Add Section"}
                         </Button>
-                        <Button variant="outline" onClick={() => setIsAddingModule(false)}>Cancel</Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddingModule(false)}
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ) : (
-                <Button variant="outline" size="lg" className="w-full border-dashed border-2" onClick={() => setIsAddingModule(true)}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-dashed border-2"
+                  onClick={() => setIsAddingModule(true)}
+                >
                   <Plus className="h-5 w-5 mr-2" />
                   Add Section
                 </Button>

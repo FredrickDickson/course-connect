@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -42,17 +41,19 @@ export default function Checkout() {
   const scriptLoaded = useRef(false);
   const [useStateFixed] = useState(0); // Dummy for trigger
   const [isPaystackReady, setIsPaystackReady] = useState(false);
-  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(null);
+  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(
+    null,
+  );
 
   const paystackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: course, isLoading } = useQuery<any>({
-    queryKey: ['course', id],
+    queryKey: ["course", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('courses')
-        .select('*, instructor:users!courses_instructor_id_fkey(*)')
-        .eq('id', id)
+        .from("courses")
+        .select("*, instructor:users!courses_instructor_id_fkey(*)")
+        .eq("id", id)
         .single();
       if (error) throw error;
       return data;
@@ -115,12 +116,14 @@ export default function Checkout() {
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const response = await fetch("/api/orders", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ courseId: id }),
       });
@@ -181,12 +184,14 @@ export default function Checkout() {
           if (response.status === "success") {
             // Verify payment on server
             try {
-              const { data: { session } } = await supabase.auth.getSession();
+              const {
+                data: { session },
+              } = await supabase.auth.getSession();
               const verifyResponse = await fetch("/api/verify-payment", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
-                  "Authorization": `Bearer ${session?.access_token}`
+                  Authorization: `Bearer ${session?.access_token}`,
                 },
                 body: JSON.stringify({ reference: response.reference }),
               });
@@ -201,10 +206,10 @@ export default function Checkout() {
 
                 // Invalidate relevant queries
                 queryClient.invalidateQueries({
-                  queryKey: ['enrollment-check', id, user?.id],
+                  queryKey: ["enrollment-check", id, user?.id],
                 });
                 queryClient.invalidateQueries({
-                  queryKey: ['enrollments', user?.id],
+                  queryKey: ["enrollments", user?.id],
                 });
 
                 // Redirect to course

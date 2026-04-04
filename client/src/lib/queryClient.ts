@@ -77,7 +77,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 5 * 60 * 1000, // 5 minutes default
+      gcTime: 10 * 60 * 1000, // 10 minutes
       retry: (failureCount: number, error: Error) => {
         // Retry on network errors and 5xx server errors
         // Don't retry on 4xx client errors (except 408 Request Timeout)

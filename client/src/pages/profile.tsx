@@ -1,8 +1,13 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +18,18 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { queryClient } from "@/lib/queryClient";
-import { User, Mail, Globe, Clock, BookOpen, Award, Edit2, Save, X, ArrowLeft } from "lucide-react";
+import {
+  User,
+  Mail,
+  Globe,
+  Clock,
+  BookOpen,
+  Award,
+  Edit2,
+  Save,
+  X,
+  ArrowLeft,
+} from "lucide-react";
 import { Link } from "wouter";
 import type { CourseWithDetails } from "@shared/schema";
 
@@ -24,7 +40,7 @@ interface EnrollmentWithCourse {
   enrolled_at: string;
   completed_at: string | null;
   progress: string;
-  course: any; 
+  course: any;
 }
 
 export default function Profile() {
@@ -52,13 +68,15 @@ export default function Profile() {
   }, [user]);
 
   // Fetch user enrollments
-  const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<EnrollmentWithCourse[]>({
-    queryKey: ['enrollments', user?.id],
+  const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<
+    EnrollmentWithCourse[]
+  >({
+    queryKey: ["enrollments", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('enrollments')
-        .select('*, course:courses(*)')
-        .eq('user_id', user?.id);
+        .from("enrollments")
+        .select("*, course:courses(*)")
+        .eq("user_id", user?.id);
       if (error) throw error;
       return data || [];
     },
@@ -69,17 +87,17 @@ export default function Profile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const { error } = await supabase
-        .from('users')
+        .from("users")
         .update({
           first_name: data.firstName,
           last_name: data.lastName,
           bio: data.bio,
           country: data.country,
           timezone: data.timezone,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
-      
+        .eq("id", user.id);
+
       if (error) throw error;
       return { success: true };
     },
@@ -115,8 +133,8 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const completedCourses = enrollments.filter(e => e.completed_at);
-  const inProgressCourses = enrollments.filter(e => !e.completed_at);
+  const completedCourses = enrollments.filter((e) => e.completed_at);
+  const inProgressCourses = enrollments.filter((e) => !e.completed_at);
 
   if (!user) {
     return (
@@ -141,19 +159,33 @@ export default function Profile() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.profileImageUrl || undefined} alt={`${user.firstName} ${user.lastName}`} />
+                  <AvatarImage
+                    src={user.profileImageUrl || undefined}
+                    alt={`${user.firstName} ${user.lastName}`}
+                  />
                   <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    {user.firstName?.[0]}{user.lastName?.[0]}
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-3xl mb-2">{user.firstName} {user.lastName}</CardTitle>
+                  <CardTitle className="text-3xl mb-2">
+                    {user.firstName} {user.lastName}
+                  </CardTitle>
                   <CardDescription className="text-base flex items-center gap-2">
                     <Mail className="h-4 w-4" />
                     {user.email}
                   </CardDescription>
                   <div className="mt-2">
-                    <Badge variant={user.role === 'admin' ? 'default' : user.role === 'instructor' ? 'secondary' : 'outline'}>
+                    <Badge
+                      variant={
+                        user.role === "admin"
+                          ? "default"
+                          : user.role === "instructor"
+                            ? "secondary"
+                            : "outline"
+                      }
+                    >
                       {user.role}
                     </Badge>
                   </div>
@@ -161,22 +193,26 @@ export default function Profile() {
               </div>
               <div>
                 {!isEditing ? (
-                  <Button onClick={() => setIsEditing(true)} variant="outline" data-testid="button-edit-profile">
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    variant="outline"
+                    data-testid="button-edit-profile"
+                  >
                     <Edit2 className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button 
-                      onClick={handleSave} 
+                    <Button
+                      onClick={handleSave}
                       disabled={updateProfileMutation.isPending}
                       data-testid="button-save-profile"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       Save
                     </Button>
-                    <Button 
-                      onClick={handleCancel} 
+                    <Button
+                      onClick={handleCancel}
                       variant="outline"
                       disabled={updateProfileMutation.isPending}
                       data-testid="button-cancel-edit"
@@ -212,7 +248,9 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Manage your personal details and preferences</CardDescription>
+                <CardDescription>
+                  Manage your personal details and preferences
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -221,7 +259,9 @@ export default function Profile() {
                     <Input
                       id="firstName"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
                       disabled={!isEditing}
                       data-testid="input-first-name"
                     />
@@ -231,7 +271,9 @@ export default function Profile() {
                     <Input
                       id="lastName"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
                       disabled={!isEditing}
                       data-testid="input-last-name"
                     />
@@ -243,7 +285,9 @@ export default function Profile() {
                   <Textarea
                     id="bio"
                     value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
                     disabled={!isEditing}
                     placeholder="Tell us about yourself..."
                     rows={4}
@@ -259,7 +303,9 @@ export default function Profile() {
                       <Input
                         id="country"
                         value={formData.country}
-                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, country: e.target.value })
+                        }
                         disabled={!isEditing}
                         placeholder="e.g., Ghana"
                         data-testid="input-country"
@@ -273,7 +319,9 @@ export default function Profile() {
                       <Input
                         id="timezone"
                         value={formData.timezone}
-                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, timezone: e.target.value })
+                        }
                         disabled={!isEditing}
                         placeholder="e.g., GMT"
                         data-testid="input-timezone"
@@ -285,9 +333,18 @@ export default function Profile() {
                 <div className="pt-4 border-t">
                   <h4 className="text-sm font-medium mb-2">Account Details</h4>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><strong>Email:</strong> {user.email}</p>
-                    <p><strong>Role:</strong> {user.role}</p>
-                    <p><strong>Member Since:</strong> {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
+                    <p>
+                      <strong>Email:</strong> {user.email}
+                    </p>
+                    <p>
+                      <strong>Role:</strong> {user.role}
+                    </p>
+                    <p>
+                      <strong>Member Since:</strong>{" "}
+                      {user.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -301,37 +358,57 @@ export default function Profile() {
               {inProgressCourses.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>In Progress ({inProgressCourses.length})</CardTitle>
-                    <CardDescription>Courses you're currently taking</CardDescription>
+                    <CardTitle>
+                      In Progress ({inProgressCourses.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Courses you're currently taking
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {inProgressCourses.map((enrollment) => (
-                        <Link key={enrollment.id} href={`/learn/${enrollment.course_id}/${enrollment.course.id}`}>
-                          <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer" data-testid={`enrollment-${enrollment.id}`}>
+                        <Link
+                          key={enrollment.id}
+                          href={`/learn/${enrollment.course_id}/${enrollment.course.id}`}
+                        >
+                          <div
+                            className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                            data-testid={`enrollment-${enrollment.id}`}
+                          >
                             {enrollment.course.thumbnail_url && (
-                              <img 
-                                src={enrollment.course.thumbnail_url} 
+                              <img
+                                src={enrollment.course.thumbnail_url}
                                 alt={enrollment.course.title}
                                 className="w-24 h-16 object-cover rounded"
                               />
                             )}
                             <div className="flex-1">
-                              <h4 className="font-semibold">{enrollment.course.title}</h4>
-                              <p className="text-sm text-muted-foreground">{enrollment.course.subtitle}</p>
+                              <h4 className="font-semibold">
+                                {enrollment.course.title}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {enrollment.course.subtitle}
+                              </p>
                               <div className="mt-2">
                                 <div className="flex items-center gap-2 text-sm">
                                   <div className="flex-1 bg-secondary rounded-full h-2">
-                                    <div 
-                                      className="bg-primary h-2 rounded-full transition-all" 
-                                      style={{ width: `${enrollment.progress}%` }}
+                                    <div
+                                      className="bg-primary h-2 rounded-full transition-all"
+                                      style={{
+                                        width: `${enrollment.progress}%`,
+                                      }}
                                     />
                                   </div>
-                                  <span className="text-xs text-muted-foreground">{enrollment.progress}%</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {enrollment.progress}%
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                            <Button variant="outline" size="sm">Continue Learning</Button>
+                            <Button variant="outline" size="sm">
+                              Continue Learning
+                            </Button>
                           </div>
                         </Link>
                       ))}
@@ -350,17 +427,28 @@ export default function Profile() {
                   <CardContent>
                     <div className="grid md:grid-cols-2 gap-4">
                       {completedCourses.map((enrollment) => (
-                        <div key={enrollment.id} className="border rounded-lg p-4" data-testid={`completed-${enrollment.id}`}>
+                        <div
+                          key={enrollment.id}
+                          className="border rounded-lg p-4"
+                          data-testid={`completed-${enrollment.id}`}
+                        >
                           {enrollment.course.thumbnail_url && (
-                            <img 
-                              src={enrollment.course.thumbnail_url} 
+                            <img
+                              src={enrollment.course.thumbnail_url}
                               alt={enrollment.course.title}
                               className="w-full h-32 object-cover rounded mb-3"
                             />
                           )}
-                          <h4 className="font-semibold mb-2">{enrollment.course.title}</h4>
+                          <h4 className="font-semibold mb-2">
+                            {enrollment.course.title}
+                          </h4>
                           <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>Completed: {new Date(enrollment.completed_at!).toLocaleDateString()}</span>
+                            <span>
+                              Completed:{" "}
+                              {new Date(
+                                enrollment.completed_at!,
+                              ).toLocaleDateString()}
+                            </span>
                             <Badge variant="secondary">
                               <Award className="h-3 w-3 mr-1" />
                               Certified
@@ -378,8 +466,12 @@ export default function Profile() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Courses Yet</h3>
-                    <p className="text-muted-foreground mb-4">Start your learning journey by enrolling in a course</p>
+                    <h3 className="text-xl font-semibold mb-2">
+                      No Courses Yet
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Start your learning journey by enrolling in a course
+                    </p>
                     <Link href="/course-catalog">
                       <Button>Browse Courses</Button>
                     </Link>
@@ -391,7 +483,9 @@ export default function Profile() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                    <p className="text-muted-foreground">Loading your courses...</p>
+                    <p className="text-muted-foreground">
+                      Loading your courses...
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -403,14 +497,16 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Certificates</CardTitle>
-                <CardDescription>View and download your course completion certificates</CardDescription>
+                <CardDescription>
+                  View and download your course completion certificates
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {completedCourses.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {completedCourses.map((enrollment) => (
-                      <div 
-                        key={enrollment.id} 
+                      <div
+                        key={enrollment.id}
                         className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
                         data-testid={`certificate-${enrollment.id}`}
                       >
@@ -419,9 +515,13 @@ export default function Profile() {
                             <Award className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{enrollment.course.title}</h4>
+                            <h4 className="font-semibold text-sm">
+                              {enrollment.course.title}
+                            </h4>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(enrollment.completed_at!).toLocaleDateString()}
+                              {new Date(
+                                enrollment.completed_at!,
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -434,8 +534,12 @@ export default function Profile() {
                 ) : (
                   <div className="text-center py-12">
                     <Award className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Certificates Yet</h3>
-                    <p className="text-muted-foreground">Complete courses to earn certificates</p>
+                    <h3 className="text-xl font-semibold mb-2">
+                      No Certificates Yet
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Complete courses to earn certificates
+                    </p>
                   </div>
                 )}
               </CardContent>

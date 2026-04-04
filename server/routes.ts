@@ -89,8 +89,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ADMIN ROUTES
   // ============================================================================
 
+  // SECURITY: bootstrap endpoint — disable in production after first admin is created
   app.post(
     "/api/admin/check-user",
+    requireSupabaseAuth,
+    requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { email } = req.body;
 
@@ -158,44 +161,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       res.json(user);
-    }),
-  );
-
-  app.put(
-    "/api/auth/profile",
-    requireSupabaseAuth,
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-      const userId = req.user.claims.sub;
-      const { firstName, lastName, bio, country, timezone } = req.body;
-
-      const updateData: Record<string, string | undefined> = {};
-      if (firstName !== undefined) updateData.firstName = firstName;
-      if (lastName !== undefined) updateData.lastName = lastName;
-      if (bio !== undefined) updateData.bio = bio;
-      if (country !== undefined) updateData.country = country;
-      if (timezone !== undefined) updateData.timezone = timezone;
-
-      const updatedUser = await storage.updateUser(userId, updateData);
-      res.json(updatedUser);
-    }),
-  );
-
-  app.patch(
-    "/api/user/profile",
-    requireSupabaseAuth,
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-      const userId = req.user.claims.sub;
-      const { firstName, lastName, bio, country, timezone } = req.body;
-
-      const updateData: Record<string, string | undefined> = {};
-      if (firstName !== undefined) updateData.firstName = firstName;
-      if (lastName !== undefined) updateData.lastName = lastName;
-      if (bio !== undefined) updateData.bio = bio;
-      if (country !== undefined) updateData.country = country;
-      if (timezone !== undefined) updateData.timezone = timezone;
-
-      const updatedUser = await storage.updateUser(userId, updateData);
-      res.json(updatedUser);
     }),
   );
 
@@ -514,7 +479,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     userId,
                     courseId,
                     certificateUrl: `/api/certificates/${courseId}/${userId}`,
-                    issuedAt: new Date(),
                   });
 
                   // Update enrollment to mark as completed
@@ -662,6 +626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const attempt = await storage.submitQuizAttempt({
         userId,
         quizId,
+        answers: responses,
+        timeSpent,
       });
 
       // Grade it
@@ -864,7 +830,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: Request, res: Response) => {
       if (!PAYSTACK_SECRET_KEY) {
         console.error("Paystack webhook received but SECRET_KEY is missing");
-        return res.status(503).json({ message: "Payment system is not configured" });
+        return res
+          .status(503)
+          .json({ message: "Payment system is not configured" });
       }
 
       try {
@@ -882,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const event = JSON.parse(req.body.toString());
         console.log(`Paystack Webhook Event: ${event.event}`, {
           reference: event.data?.reference,
-          status: event.data?.status
+          status: event.data?.status,
         });
 
         if (event.event === "charge.success") {
@@ -890,20 +858,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { courseId, userId } = metadata;
 
           if (!courseId || !userId) {
-            console.error("Missing metadata in Paystack success event", { metadata });
+            console.error("Missing metadata in Paystack success event", {
+              metadata,
+            });
             return res.status(400).json({ message: "Missing metadata" });
           }
 
-          console.log(`Processing successful payment for user ${userId}, course ${courseId}`);
+          console.log(
+            `Processing successful payment for user ${userId}, course ${courseId}`,
+          );
           await storage.updateOrderByReference(reference, "completed");
-          await storage.enrollUser({ userId, courseId });
+          await storage.enrollUser({ userId, courseId, progress: "0" });
         }
 
         res.json({ received: true });
       } catch (error) {
         console.error("Error processing Paystack webhook:", error);
         // Still return 200 to Paystack to avoid retries if the signature was valid but processing failed
-        res.status(200).json({ received: true, error: "Internal processing error" });
+        res
+          .status(200)
+          .json({ received: true, error: "Internal processing error" });
       }
     }),
   );
@@ -938,7 +912,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { courseId } = metadata;
 
         await storage.updateOrderByReference(reference, "completed");
-        await storage.enrollUser({ userId, courseId });
+        await storage.enrollUser({ userId, courseId, progress: "0" });
 
         res.json({ success: true, data: result.data });
       } else {
@@ -1207,6 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration,
         content,
         order: 0,
+        isFree: false,
       });
       res.status(201).json(lesson);
     }),
@@ -1306,6 +1281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName: req.file.originalname,
         fileType: fileExtension,
         fileSize: req.file.size,
+        downloadCount: 0,
       });
 
       res.status(201).json({

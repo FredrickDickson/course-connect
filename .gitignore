@@ -18,6 +18,13 @@ lerna-debug.log*
 dist-ssr
 *.local
 
+# Credential files
+*.txt
+!requirements.txt
+!LICENSE.txt
+CIMA ADMIN PASSWORD.txt
+supabase connection.txt
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

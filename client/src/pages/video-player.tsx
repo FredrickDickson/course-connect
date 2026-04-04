@@ -18,9 +18,13 @@ import { AlertCircle } from "lucide-react";
 // Type definitions
 import { Database } from "@/integrations/supabase/types";
 
-type Lesson = Database['public']['Tables']['lessons']['Row'];
-type Module = Database['public']['Tables']['modules']['Row'] & { lessons?: Lesson[] };
-type Course = Database['public']['Tables']['courses']['Row'] & { modules?: Module[] };
+type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
+type Module = Database["public"]["Tables"]["modules"]["Row"] & {
+  lessons?: Lesson[];
+};
+type Course = Database["public"]["Tables"]["courses"]["Row"] & {
+  modules?: Module[];
+};
 
 interface ProgressItem {
   completed: boolean;
@@ -57,18 +61,17 @@ export default function VideoPlayer() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('courses')
-        .select(`
+        .from("courses")
+        .select(
+          `
           *,
-          modules:modules(
-            *,
-            lessons:lessons(*)
-          )
-        `)
-        .eq('id', courseId as string)
+          modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))
+        `,
+        )
+        .eq("id", courseId as string)
         .single();
       if (error) throw error;
       return data;
@@ -77,14 +80,14 @@ export default function VideoPlayer() {
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: ['enrollment-check', courseId],
+    queryKey: ["enrollment-check", courseId],
     queryFn: async () => {
       if (!user?.id) throw new Error("Not authenticated");
       const { data, error } = await supabase
-        .from('enrollments')
-        .select('*')
-        .eq('course_id', courseId as string)
-        .eq('user_id', user.id)
+        .from("enrollments")
+        .select("*")
+        .eq("course_id", courseId as string)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data ? { isEnrolled: true, ...data } : { isEnrolled: false };
@@ -93,19 +96,24 @@ export default function VideoPlayer() {
   });
 
   const { data: progressList = [] } = useQuery({
-    queryKey: ['progress', courseId],
+    queryKey: ["progress", courseId],
     queryFn: async () => {
       // Get all modules and lessons for this course first to filter progress correctly
       const { data, error } = await supabase
-        .from('progress')
-        .select('*, lesson:lessons!inner(*)')
-        .eq('user_id', user?.id || '');
-      
+        .from("progress")
+        .select("*, lesson:lessons!inner(*)")
+        .eq("user_id", user?.id || "");
+
       if (error) throw error;
-      
+
       // Filter the progress records that belong to this course's lessons
-      const courseLessons = course?.modules?.flatMap((m: any) => m.lessons.map((l: any) => l.id)) || [];
-      return (data || []).filter((p: any) => courseLessons.includes(p.lesson_id));
+      const courseLessons =
+        course?.modules?.flatMap(
+          (m: Module) => m.lessons?.map((l: Lesson) => l.id) || [],
+        ) || [];
+      return (data || []).filter((p: { lesson_id: string }) =>
+        courseLessons.includes(p.lesson_id),
+      );
     },
     enabled: !!courseId && !!user && !!course && isAuthenticated,
   });
@@ -122,19 +130,22 @@ export default function VideoPlayer() {
       completed: boolean;
     }) => {
       const { data, error } = await supabase
-        .from('progress')
-        .upsert({
-          user_id: user?.id || '',
-          lesson_id: lessonId,
-          watch_time_seconds: watch_time_seconds,
-          completed: completed,
-          last_watched_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,lesson_id'
-        })
+        .from("progress")
+        .upsert(
+          {
+            user_id: user?.id || "",
+            lesson_id: lessonId,
+            watch_time_seconds: watch_time_seconds,
+            completed: completed,
+            last_watched_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,lesson_id",
+          },
+        )
         .select()
         .single();
-        
+
       if (error) throw error;
       return data;
     },
@@ -206,7 +217,8 @@ export default function VideoPlayer() {
 
       // Resume from last watched position
       const lessonProgress = progressList.find(
-        (p: any) => p.lesson_id === lessonId, // Use lesson_id snake_case
+        (p: { lesson_id: string | null; watch_time_seconds: number | null }) =>
+          p.lesson_id === lessonId,
       );
       if (lessonProgress && (lessonProgress.watch_time_seconds || 0) > 0) {
         video.currentTime = lessonProgress.watch_time_seconds || 0;
@@ -648,13 +660,19 @@ export default function VideoPlayer() {
                       Overall Progress
                     </span>
                     <span className="font-medium">
-                      {progressList.filter((p: any) => p.completed).length} /{" "}
-                      {allLessons.length}
+                      {
+                        progressList.filter(
+                          (p: { completed: boolean | null }) => p.completed,
+                        ).length
+                      }{" "}
+                      / {allLessons.length}
                     </span>
                   </div>
                   <Progress
                     value={
-                      (progressList.filter((p: any) => p.completed).length /
+                      (progressList.filter(
+                        (p: { completed: boolean | null }) => p.completed,
+                      ).length /
                         allLessons.length) *
                       100
                     }
@@ -671,20 +689,22 @@ export default function VideoPlayer() {
                   Course Content
                 </h3>
                 <div className="space-y-4">
-                  {course.modules?.map((module: any, moduleIndex: number) => (
-                    <div key={module.id} className="space-y-2">
-                      <h4 className="font-medium text-foreground text-sm">
-                        Module {moduleIndex + 1}: {module.title}
-                      </h4>
-                      <div className="space-y-1">
-                        {module.lessons?.map(
-                          (lesson: any, lessonIndex: number) => {
-                            const lessonProgress = progressList.find(
-                              (p: any) => p.lesson_id === lesson.id,
-                            );
-                            const isCurrentLesson = lesson.id === lessonId;
-                            const isCompleted =
-                              lessonProgress?.completed || false;
+                  {course.modules?.map(
+                    (module: Module, moduleIndex: number) => (
+                      <div key={module.id} className="space-y-2">
+                        <h4 className="font-medium text-foreground text-sm">
+                          Module {moduleIndex + 1}: {module.title}
+                        </h4>
+                        <div className="space-y-1">
+                          {module.lessons?.map(
+                            (lesson: Lesson, lessonIndex: number) => {
+                              const lessonProgress = progressList.find(
+                                (p: { lesson_id: string | null }) =>
+                                  p.lesson_id === lesson.id,
+                              );
+                              const isCurrentLesson = lesson.id === lessonId;
+                              const isCompleted =
+                                lessonProgress?.completed || false;
 
                               return (
                                 <Link
@@ -741,8 +761,9 @@ export default function VideoPlayer() {
                           )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    ),
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

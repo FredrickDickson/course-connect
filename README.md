@@ -5,6 +5,7 @@ A comprehensive Udemy-style Learning Management System (LMS) for the Center for 
 ## 🚀 Current Status
 
 **✅ Production-Ready Architecture**
+
 - **All Major Gaps Resolved**: Auth mismatch, broken payments, and schema drift fixed.
 - **Authentication**: Fully synchronized with **Supabase Auth** using Service Role JWT verification.
 - **Data Integrity**: All dashboard and analytics endpoints replaced with **real database queries**.
@@ -14,18 +15,24 @@ A comprehensive Udemy-style Learning Management System (LMS) for the Center for 
 ## ✨ Key Architecture Updates (April 2026)
 
 ### 🔑 **Supabase Authentication Sync**
+
 The platform has transitioned from a dual-auth system to a pure **Supabase JWT-based architecture**.
+
 - **Auto-Provisioning**: New Supabase users are automatically synced to the local PostgreSQL `users` table on their first authenticated request.
 - **Service Role Verification**: Backend security is hardened using the Supabase Service Role key for reliable server-side JWT validation.
 
 ### 📊 **Real-Data Dashboards**
+
 All hardcoded/mocked analytics have been replaced with live database aggregations:
+
 - **Admin**: Real revenue tracking, active student counts, and course performance metrics.
 - **Instructors**: Live monthly revenue charts and pending assignment submission feeds.
 - **Students**: Personalized course recommendations and progress tracking.
 
 ### 📝 **Relational Quiz Engine**
+
 Fixed schema mismatches to support a fully relational quiz system:
+
 - **Automated Grading**: Functional grading engine converts student responses into scores and pass/fail results based on DB-stored answers.
 - **Relational Integrity**: Quizzes, questions, and answers are now correctly joined across the schema.
 
@@ -34,6 +41,7 @@ Fixed schema mismatches to support a fully relational quiz system:
 ## 🛠 Technology Stack
 
 ### **Frontend**
+
 - **React 18** with TypeScript
 - **Wouter** for lightweight routing
 - **TanStack Query** for server state management
@@ -41,8 +49,9 @@ Fixed schema mismatches to support a fully relational quiz system:
 - **Supabase Auth Helper** for client-side session management
 
 ### **Backend**
+
 - **Express.js** with TypeScript
-- **Drizzle ORM** for type-safe PostgreSQL operations
+- **Supabase Client** for PostgreSQL operations and authentication
 - **Supabase Service Role** for JWT verification
 - **PostgreSQL (Supabase/Neon)**
 - **Paystack API** for secure payment processing
@@ -52,6 +61,7 @@ Fixed schema mismatches to support a fully relational quiz system:
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - PostgreSQL database (Supabase recommended)
 - Paystack account for payment processing
@@ -59,6 +69,7 @@ Fixed schema mismatches to support a fully relational quiz system:
 ### Installation
 
 1. **Clone and Install**
+
    ```bash
    git clone [repository-url]
    cd course-connect
@@ -67,6 +78,7 @@ Fixed schema mismatches to support a fully relational quiz system:
 
 2. **Environment Setup**
    Create a `.env` file with the following variables:
+
    ```env
    DATABASE_URL=your_postgresql_url
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
@@ -78,12 +90,19 @@ Fixed schema mismatches to support a fully relational quiz system:
    VITE_PAYSTACK_PUBLIC_KEY=your_public_key
    ```
 
-3. **Initialize Database**
+3. **Supabase Setup**
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Get your Project ID from the dashboard
+   - Run the migration files in `supabase/migrations/` using the SQL Editor
+   - Or use the Supabase CLI: `npx supabase db push`
+
+4. **Generate Database Types**
+
    ```bash
-   npm run db:push
+   npx supabase gen types typescript --project-id YOUR_PROJECT_ID > shared/database.types.ts
    ```
 
-4. **Start Development Server**
+5. **Start Development Server**
    ```bash
    npm run dev
    ```
@@ -101,6 +120,7 @@ The application will be available at `http://localhost:8080`.
 ## 📊 Features Roadmap
 
 ### **Completed - Phase 5 (Current)**
+
 - ✅ **Supabase Auth Sync**: Eliminated auth mismatch issues.
 - ✅ **Real-Data Aggregation**: Replaced mocks in all dashboards.
 - ✅ **Quiz Relational Fix**: Functional grading and schema alignment.
@@ -108,6 +128,7 @@ The application will be available at `http://localhost:8080`.
 - ✅ **Legacy Cleanup**: Removed Passport, memorystore, and broken auth routes.
 
 ### **Upcoming**
+
 - 🔄 **Advanced Video Analytics**: Heatmaps and drop-off rates for lessons.
 - 🔄 **Mobile Companion App**: React Native bridge for offline learning.
 - 🔄 **AI Course Builder**: Automated module generation based on topics.
@@ -120,4 +141,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Last updated: April 3, 2026*
+_Last updated: April 3, 2026_

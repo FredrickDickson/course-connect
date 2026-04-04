@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import {
@@ -67,12 +67,67 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Types for Supabase query results (snake_case from database)
+interface SupabaseUser {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  created_at: string;
+}
+
+interface SupabaseApplication {
+  id: string;
+  user_id: string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  bio: string;
+  experience: string;
+  qualifications: string;
+  previous_teaching: string;
+  areas_of_expertise: string[];
+  cv_url: string | null;
+  video_intro_url: string | null;
+  status: "pending" | "approved" | "rejected" | string | null;
+  submitted_at: string | null;
+  review_comments: string | null;
+  user?: SupabaseUser | null;
+}
+
+interface SupabaseCourse {
+  id: string;
+  title: string;
+  price: string;
+  is_published: boolean;
+  enrollment_count: number;
+  instructor?: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
+interface AdminStats {
+  totalStudents: number;
+  totalInstructors: number;
+  totalCourses: number;
+  totalRevenue: number;
+  pendingApplications: number;
+  totalUsers?: number;
+  activeStudents?: number;
+}
+
 export default function AdminDashboard() {
   const {
     isLoading: authLoading,
     hasAccess,
     user,
-  } = useRoleProtection({ requiredRole: "admin", showToast: false });
+  } = useRoleProtection({
+    requiredRole: "admin",
+    showToast: false,
+  });
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
@@ -91,16 +146,38 @@ export default function AdminDashboard() {
     queryKey: ["admin_stats"],
     enabled: hasAccess,
     queryFn: async () => {
-      const [{ count: totalStudents }, { count: totalInstructors }, { count: totalCourses }, { count: pendingApplications }, { data: orders }] = await Promise.all([
-        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'instructor'),
-        supabase.from('courses').select('*', { count: 'exact', head: true }),
-        supabase.from('instructor_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('orders').select('amount')
+      const [
+        { count: totalStudents },
+        { count: totalInstructors },
+        { count: totalCourses },
+        { count: pendingApplications },
+        { data: orders },
+      ] = await Promise.all([
+        supabase
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "student"),
+        supabase
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "instructor"),
+        supabase.from("courses").select("*", { count: "exact", head: true }),
+        supabase
+          .from("instructor_applications")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabase.from("orders").select("amount"),
       ]);
-      const totalRevenue = orders?.reduce((s, o) => s + Number(o.amount), 0) || 0;
-      return { totalStudents: totalStudents || 0, totalInstructors: totalInstructors || 0, totalCourses: totalCourses || 0, totalRevenue, pendingApplications: pendingApplications || 0 };
-    }
+      const totalRevenue =
+        orders?.reduce((s, o) => s + Number(o.amount), 0) || 0;
+      return {
+        totalStudents: totalStudents || 0,
+        totalInstructors: totalInstructors || 0,
+        totalCourses: totalCourses || 0,
+        totalRevenue,
+        pendingApplications: pendingApplications || 0,
+      };
+    },
   });
 
   // Fetch instructor applications
@@ -108,12 +185,13 @@ export default function AdminDashboard() {
     queryKey: ["admin_instructor_applications"],
     enabled: hasAccess,
     queryFn: async () => {
-      const { data, error } = await supabase.from('instructor_applications')
-        .select('*, user:users(*)')
-        .order('submitted_at', { ascending: false });
+      const { data, error } = await supabase
+        .from("instructor_applications")
+        .select("*, user:users!instructor_applications_user_id_fkey(*)")
+        .order("submitted_at", { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // Fetch all users
@@ -121,10 +199,13 @@ export default function AdminDashboard() {
     queryKey: ["admin_users"],
     enabled: hasAccess && activeTab === "users",
     queryFn: async () => {
-      const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
   });
   const allUsers = usersData || [];
 
@@ -133,16 +214,19 @@ export default function AdminDashboard() {
     queryKey: ["admin_courses"],
     enabled: hasAccess && activeTab === "courses",
     queryFn: async () => {
-      const { data, error } = await supabase.from('courses')
-        .select(`*, instructor:users(first_name, last_name)`)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from("courses")
+        .select(
+          `*, instructor:users!courses_instructor_id_fkey(first_name, last_name)`,
+        )
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
   });
   const allCourses = coursesData || [];
 
-  // Approve/Reject application mutation via backend
+  // Approve/Reject application mutation via backend API
   const reviewApplication = useMutation({
     mutationFn: async ({
       applicationId,
@@ -153,18 +237,12 @@ export default function AdminDashboard() {
       status: "approved" | "rejected";
       comments: string;
     }) => {
-      const { error, data: appData } = await supabase.from('instructor_applications')
-        .update({ status, admin_notes: comments })
-        .eq('id', applicationId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      if (status === 'approved' && appData?.user_id) {
-         await supabase.from('users').update({ role: 'instructor' }).eq('id', appData.user_id);
-      }
-      return appData;
+      const res = await apiRequest(
+        "PUT",
+        `/api/admin/instructor-applications/${applicationId}`,
+        { status, comments },
+      );
+      return await res.json();
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({
@@ -184,7 +262,7 @@ export default function AdminDashboard() {
       });
       setReviewComments("");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
@@ -201,9 +279,10 @@ export default function AdminDashboard() {
       userId: string;
       newRole: string;
     }) => {
-      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId);
-      if (error) throw error;
-      return true;
+      const res = await apiRequest("PUT", `/api/admin/users/${userId}/role`, {
+        role: newRole,
+      });
+      return await res.json();
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["admin_users"] });
@@ -213,7 +292,7 @@ export default function AdminDashboard() {
         description: `User role changed to ${variables.newRole}.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
@@ -269,10 +348,11 @@ export default function AdminDashboard() {
       setShowCreateAdmin(false);
       qc.invalidateQueries({ queryKey: ["admin_users"] });
       qc.invalidateQueries({ queryKey: ["admin_stats"] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed",
-        description: error.message || "Could not create admin",
+        description:
+          error instanceof Error ? error.message : "Could not create admin",
         variant: "destructive",
       });
     } finally {
@@ -290,8 +370,8 @@ export default function AdminDashboard() {
 
   if (!hasAccess) return null;
 
-  const pendingApps = applications.filter((a: any) => a.status === "pending");
-  const reviewedApps = applications.filter((a: any) => a.status !== "pending");
+  const pendingApps = applications.filter((a) => a.status === "pending");
+  const reviewedApps = applications.filter((a) => a.status !== "pending");
 
   return (
     <div className="min-h-screen bg-background">
@@ -342,7 +422,9 @@ export default function AdminDashboard() {
                 {
                   icon: Users,
                   title: "Total Users",
-                  value: stats?.totalUsers || 0,
+                  value:
+                    (stats?.totalStudents || 0) +
+                    (stats?.totalInstructors || 0),
                   subtitle: "Registered users",
                 },
                 {
@@ -366,7 +448,7 @@ export default function AdminDashboard() {
                 {
                   icon: TrendingUp,
                   title: "Enrollments",
-                  value: stats?.activeStudents || 0,
+                  value: stats?.totalStudents || 0,
                   subtitle: "Total enrollments",
                 },
               ].map(({ icon: Icon, title, value, subtitle }) => (
@@ -423,7 +505,7 @@ export default function AdminDashboard() {
                     <h3 className="text-lg font-semibold text-foreground">
                       Pending Review
                     </h3>
-                    {pendingApps.map((app: any) => (
+                    {pendingApps.map((app) => (
                       <ApplicationCard
                         key={app.id}
                         application={app}
@@ -446,7 +528,7 @@ export default function AdminDashboard() {
                     <h3 className="text-lg font-semibold text-foreground mt-8">
                       Reviewed
                     </h3>
-                    {reviewedApps.map((app: any) => (
+                    {reviewedApps.map((app) => (
                       <ApplicationCard
                         key={app.id}
                         application={app}
@@ -569,7 +651,7 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {allUsers.map((u: any) => {
+                        {allUsers.map((u) => {
                           const isCurrentUser = u.id === user?.id;
                           return (
                             <tr
@@ -620,7 +702,9 @@ export default function AdminDashboard() {
                                 )}
                               </td>
                               <td className="p-4 text-muted-foreground">
-                                {new Date(u.created_at).toLocaleDateString()}
+                                {new Date(
+                                  u.created_at || "",
+                                ).toLocaleDateString()}
                               </td>
                             </tr>
                           );
@@ -671,7 +755,7 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {allCourses.map((c: any) => (
+                        {allCourses.map((c) => (
                           <tr
                             key={c.id}
                             className="border-b last:border-0 hover:bg-muted/30"
@@ -712,7 +796,7 @@ function ApplicationCard({
   onReview,
   isPending,
 }: {
-  application: any;
+  application: SupabaseApplication;
   reviewComments: string;
   setReviewComments: (v: string) => void;
   onReview: (status: "approved" | "rejected") => void;
@@ -723,12 +807,15 @@ function ApplicationCard({
     approved: "bg-green-100 text-green-800",
     rejected: "bg-red-100 text-red-800",
   };
-  const statusIcons: Record<string, any> = {
+  const statusIcons: Record<
+    string,
+    React.ComponentType<{ className?: string }>
+  > = {
     pending: Clock,
     approved: CheckCircle,
     rejected: XCircle,
   };
-  const StatusIcon = statusIcons[application.status] || Clock;
+  const StatusIcon = statusIcons[application.status || "pending"] || Clock;
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -747,17 +834,17 @@ function ApplicationCard({
               </p>
             </div>
           </div>
-          <Badge className={statusColors[application.status] || ""}>
+          <Badge className={statusColors[applicationStatus] || statusColors.pending}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {application.status?.charAt(0).toUpperCase() +
-              application.status?.slice(1)}
+            {applicationStatus.charAt(0).toUpperCase() +
+              applicationStatus.slice(1)}
           </Badge>
         </div>
 
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="w-4 h-4 mr-2" />
-            Applied {new Date(application.submitted_at).toLocaleDateString()}
+            Applied {application.submitted_at ? new Date(application.submitted_at).toLocaleDateString() : "N/A"}
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <GraduationCap className="w-4 h-4 mr-2" />

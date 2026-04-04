@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "wouter";
-import { Star, Clock, Users, BookOpen, PlayCircle, CheckCircle } from "lucide-react";
+import {
+  Star,
+  Clock,
+  Users,
+  BookOpen,
+  PlayCircle,
+  CheckCircle,
+} from "lucide-react";
 import type { CourseWithDetails, ReviewWithUser } from "@shared/schema";
 
 export default function CourseDetail() {
@@ -21,12 +27,14 @@ export default function CourseDetail() {
   const [, setLocation] = useLocation();
 
   const { data: course, isLoading } = useQuery<any>({
-    queryKey: ['course', id],
+    queryKey: ["course", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('courses')
-        .select('*, modules:modules(*, lessons:lessons(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)')
-        .eq('id', id)
+        .from("courses")
+        .select(
+          "*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
+        )
+        .eq("id", id)
         .single();
       if (error) throw error;
       return data;
@@ -35,13 +43,13 @@ export default function CourseDetail() {
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: ['enrollment-check', id, user?.id],
+    queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('enrollments')
-        .select('*')
-        .eq('course_id', id)
-        .eq('user_id', user?.id)
+        .from("enrollments")
+        .select("*")
+        .eq("course_id", id)
+        .eq("user_id", user?.id)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -50,12 +58,12 @@ export default function CourseDetail() {
   });
 
   const { data: reviews = [] } = useQuery<any[]>({
-    queryKey: ['reviews', id],
+    queryKey: ["reviews", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('reviews')
-        .select('*, user:users(*)')
-        .eq('course_id', id);
+        .from("reviews")
+        .select("*, user:users!reviews_user_id_fkey(*)")
+        .eq("course_id", id);
       if (error) throw error;
       return data || [];
     },
@@ -68,23 +76,25 @@ export default function CourseDetail() {
         setLocation(`/checkout/${id}`);
         return;
       }
-      
+
       const { data, error } = await supabase
-        .from('enrollments')
+        .from("enrollments")
         .insert({
           user_id: user?.id,
-          course_id: id
+          course_id: id,
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       if (!course?.price || parseFloat(course.price.toString()) === 0) {
-        queryClient.invalidateQueries({ queryKey: ['enrollment-check', id, user?.id] });
-        queryClient.invalidateQueries({ queryKey: ['enrollments', user?.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["enrollment-check", id, user?.id],
+        });
+        queryClient.invalidateQueries({ queryKey: ["enrollments", user?.id] });
         toast({
           title: "Enrolled Successfully",
           description: "You can now start learning!",
@@ -99,9 +109,9 @@ export default function CourseDetail() {
           variant: "destructive",
         });
         setTimeout(() => {
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 500);
         }, 500);
         return;
       }
@@ -146,8 +156,12 @@ export default function CourseDetail() {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Course Not Found</h1>
-          <p className="text-muted-foreground mb-8">The course you're looking for doesn't exist.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Course Not Found
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            The course you're looking for doesn't exist.
+          </p>
           <Link href="/courses">
             <Button>Browse Courses</Button>
           </Link>
@@ -158,8 +172,14 @@ export default function CourseDetail() {
   }
 
   const isEnrolled = !!enrollment;
-  const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
-  const avgRating = course.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
+  const totalLessons =
+    course.modules?.reduce(
+      (total, module) => total + (module.lessons?.length || 0),
+      0,
+    ) || 0;
+  const avgRating = course.avg_rating
+    ? parseFloat(course.avg_rating.toString())
+    : 0;
   const ratingCount = course.rating_count || 0;
 
   return (
@@ -181,30 +201,44 @@ export default function CourseDetail() {
                   </Badge>
                 )}
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-4" data-testid="course-title">
+              <h1
+                className="text-3xl lg:text-4xl font-bold mb-4"
+                data-testid="course-title"
+              >
                 {course.title}
               </h1>
               {course.subtitle && (
-                <p className="text-lg text-primary-foreground/90 mb-6" data-testid="course-subtitle">
+                <p
+                  className="text-lg text-primary-foreground/90 mb-6"
+                  data-testid="course-subtitle"
+                >
                   {course.subtitle}
                 </p>
               )}
-              
+
               <div className="flex flex-wrap items-center gap-6 text-sm">
                 {course.instructor && (
                   <div className="flex items-center space-x-2">
-                    <img 
-                      src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
+                    <img
+                      src={
+                        course.instructor.profile_image_url ||
+                        `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`
+                      }
                       alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
                       className="w-8 h-8 rounded-full object-cover"
                       data-testid="instructor-avatar"
                     />
-                    <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
+                    <span>
+                      By {course.instructor.first_name}{" "}
+                      {course.instructor.last_name}
+                    </span>
                   </div>
                 )}
                 <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 fill-current" />
-                  <span>{avgRating.toFixed(1)} ({ratingCount} reviews)</span>
+                  <span>
+                    {avgRating.toFixed(1)} ({ratingCount} reviews)
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Users className="w-4 h-4" />
@@ -218,7 +252,7 @@ export default function CourseDetail() {
               <Card className="bg-white shadow-lg">
                 <div className="aspect-video bg-muted rounded-t-lg relative overflow-hidden">
                   {course.thumbnail_url ? (
-                    <img 
+                    <img
                       src={course.thumbnail_url}
                       alt={course.title}
                       className="w-full h-full object-cover"
@@ -231,34 +265,40 @@ export default function CourseDetail() {
                   )}
                 </div>
                 <CardContent className="p-6">
-                  <div className="text-3xl font-bold text-foreground mb-4" data-testid="course-price">
-                    {course.price && parseFloat(course.price.toString()) > 0 
-                      ? `$${parseFloat(course.price.toString()).toFixed(2)} ${course.currency || 'USD'}`
-                      : 'Free'
-                    }
+                  <div
+                    className="text-3xl font-bold text-foreground mb-4"
+                    data-testid="course-price"
+                  >
+                    {course.price && parseFloat(course.price.toString()) > 0
+                      ? `$${parseFloat(course.price.toString()).toFixed(2)} ${course.currency || "USD"}`
+                      : "Free"}
                   </div>
-                  
+
                   {isEnrolled ? (
                     <Link href={`/learn/${course.id}/1`}>
-                      <Button className="w-full" size="lg" data-testid="button-continue-learning">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        data-testid="button-continue-learning"
+                      >
                         <PlayCircle className="w-4 h-4 mr-2" />
                         Continue Learning
                       </Button>
                     </Link>
                   ) : (
-                    <Button 
+                    <Button
                       onClick={() => enrollMutation.mutate()}
                       disabled={enrollMutation.isPending}
-                      className="w-full" 
+                      className="w-full"
                       size="lg"
                       data-testid="button-enroll"
                     >
-                      {enrollMutation.isPending 
-                        ? 'Processing...' 
-                        : course.price && parseFloat(course.price.toString()) > 0 
-                          ? 'Enroll Now' 
-                          : 'Enroll Free'
-                      }
+                      {enrollMutation.isPending
+                        ? "Processing..."
+                        : course.price &&
+                            parseFloat(course.price.toString()) > 0
+                          ? "Enroll Now"
+                          : "Enroll Free"}
                     </Button>
                   )}
 
@@ -271,7 +311,9 @@ export default function CourseDetail() {
                           <Clock className="w-4 h-4 text-muted-foreground" />
                           <span>Duration</span>
                         </div>
-                         <span className="font-medium">{course.duration_hours || course.duration} hours</span>
+                        <span className="font-medium">
+                          {course.duration_hours || course.duration} hours
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
@@ -303,24 +345,41 @@ export default function CourseDetail() {
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-                  <TabsTrigger value="curriculum" data-testid="tab-curriculum">Curriculum</TabsTrigger>
-                  <TabsTrigger value="reviews" data-testid="tab-reviews">Reviews</TabsTrigger>
+                  <TabsTrigger value="overview" data-testid="tab-overview">
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="curriculum" data-testid="tab-curriculum">
+                    Curriculum
+                  </TabsTrigger>
+                  <TabsTrigger value="reviews" data-testid="tab-reviews">
+                    Reviews
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-6">
                   <div className="prose prose-slate max-w-none">
-                    <h3 className="text-xl font-semibold mb-4">Course Description</h3>
-                    <div className="text-muted-foreground leading-relaxed mb-6" data-testid="course-description">
-                      {course.description || 'No description available.'}
+                    <h3 className="text-xl font-semibold mb-4">
+                      Course Description
+                    </h3>
+                    <div
+                      className="text-muted-foreground leading-relaxed mb-6"
+                      data-testid="course-description"
+                    >
+                      {course.description || "No description available."}
                     </div>
 
                     {course.tags && course.tags.length > 0 && (
                       <div>
-                        <h3 className="text-xl font-semibold mb-4">What you'll learn</h3>
+                        <h3 className="text-xl font-semibold mb-4">
+                          What you'll learn
+                        </h3>
                         <div className="flex flex-wrap gap-2">
                           {course.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" data-testid={`tag-${index}`}>
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              data-testid={`tag-${index}`}
+                            >
                               {tag}
                             </Badge>
                           ))}
@@ -336,25 +395,40 @@ export default function CourseDetail() {
                     {course.modules && course.modules.length > 0 ? (
                       <div className="space-y-4">
                         {course.modules.map((module, moduleIndex) => (
-                          <Card key={module.id} data-testid={`module-${moduleIndex}`}>
+                          <Card
+                            key={module.id}
+                            data-testid={`module-${moduleIndex}`}
+                          >
                             <CardContent className="p-4">
-                              <h4 className="font-semibold mb-2">{module.title}</h4>
+                              <h4 className="font-semibold mb-2">
+                                {module.title}
+                              </h4>
                               {module.description && (
-                                <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  {module.description}
+                                </p>
                               )}
                               {module.lessons && module.lessons.length > 0 && (
                                 <div className="space-y-2 ml-4">
                                   {module.lessons.map((lesson, lessonIndex) => (
-                                    <div key={lesson.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                                    <div
+                                      key={lesson.id}
+                                      className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                                    >
                                       <div className="flex items-center space-x-3">
                                         <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
                                           {lessonIndex + 1}
                                         </div>
-                                        <span className="text-sm">{lesson.title}</span>
+                                        <span className="text-sm">
+                                          {lesson.title}
+                                        </span>
                                       </div>
                                       {lesson.duration && (
                                         <span className="text-xs text-muted-foreground">
-                                          {Math.floor(lesson.duration / 60)}:{(lesson.duration % 60).toString().padStart(2, '0')}
+                                          {Math.floor(lesson.duration / 60)}:
+                                          {(lesson.duration % 60)
+                                            .toString()
+                                            .padStart(2, "0")}
                                         </span>
                                       )}
                                     </div>
@@ -366,7 +440,9 @@ export default function CourseDetail() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground">Curriculum will be available soon.</p>
+                      <p className="text-muted-foreground">
+                        Curriculum will be available soon.
+                      </p>
                     )}
                   </div>
                 </TabsContent>
@@ -378,14 +454,18 @@ export default function CourseDetail() {
                       <div className="flex items-center space-x-2">
                         <div className="flex items-center">
                           {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-4 h-4 ${i < Math.floor(avgRating) ? 'fill-current text-yellow-500' : 'text-muted-foreground'}`} 
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${i < Math.floor(avgRating) ? "fill-current text-yellow-500" : "text-muted-foreground"}`}
                             />
                           ))}
                         </div>
-                        <span className="font-medium">{avgRating.toFixed(1)}</span>
-                        <span className="text-muted-foreground">({ratingCount} reviews)</span>
+                        <span className="font-medium">
+                          {avgRating.toFixed(1)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({ratingCount} reviews)
+                        </span>
                       </div>
                     </div>
 
@@ -395,30 +475,42 @@ export default function CourseDetail() {
                           <Card key={review.id}>
                             <CardContent className="p-4">
                               <div className="flex items-start space-x-4">
-                                 <img 
-                                  src={review.user.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
+                                <img
+                                  src={
+                                    review.user.profile_image_url ||
+                                    `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`
+                                  }
                                   alt={`${review.user.first_name} ${review.user.last_name}`}
                                   className="w-10 h-10 rounded-full object-cover"
                                 />
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-2">
                                     <div>
-                                      <p className="font-medium">{review.user.first_name} {review.user.last_name}</p>
+                                      <p className="font-medium">
+                                        {review.user.first_name}{" "}
+                                        {review.user.last_name}
+                                      </p>
                                       <div className="flex items-center space-x-1">
                                         {[...Array(5)].map((_, i) => (
-                                          <Star 
-                                            key={i} 
-                                            className={`w-3 h-3 ${i < review.rating ? 'fill-current text-yellow-500' : 'text-muted-foreground'}`} 
+                                          <Star
+                                            key={i}
+                                            className={`w-3 h-3 ${i < review.rating ? "fill-current text-yellow-500" : "text-muted-foreground"}`}
                                           />
                                         ))}
                                       </div>
                                     </div>
-                                     <span className="text-xs text-muted-foreground">
-                                      {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'N/A'}
+                                    <span className="text-xs text-muted-foreground">
+                                      {review.created_at
+                                        ? new Date(
+                                            review.created_at,
+                                          ).toLocaleDateString()
+                                        : "N/A"}
                                     </span>
                                   </div>
                                   {review.comment && (
-                                    <p className="text-sm text-muted-foreground">{review.comment}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {review.comment}
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -427,7 +519,9 @@ export default function CourseDetail() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground">No reviews yet. Be the first to review this course!</p>
+                      <p className="text-muted-foreground">
+                        No reviews yet. Be the first to review this course!
+                      </p>
                     )}
                   </div>
                 </TabsContent>
@@ -441,15 +535,19 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-4">Instructor</h3>
                     <div className="text-center space-y-4">
-                      <img 
-                        src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`}
+                      <img
+                        src={
+                          course.instructor.profile_image_url ||
+                          `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`
+                        }
                         alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
                         className="w-20 h-20 rounded-full object-cover mx-auto"
                         data-testid="instructor-profile-image"
                       />
                       <div>
                         <h4 className="font-semibold text-lg">
-                          {course.instructor.first_name} {course.instructor.last_name}
+                          {course.instructor.first_name}{" "}
+                          {course.instructor.last_name}
                         </h4>
                         {course.instructor.bio && (
                           <p className="text-sm text-muted-foreground mt-2">

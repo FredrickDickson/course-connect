@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +54,7 @@ export default function QuizPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -71,29 +70,28 @@ export default function QuizPage() {
         variant: "destructive",
       });
       setTimeout(() => {
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 500);
       }, 500);
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: quiz = null, isLoading: quizLoading } = useQuery<Quiz | null>({
-    queryKey: ['quiz', quizId],
+    queryKey: ["quiz", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('quizzes')
-        .select(`
+        .from("quizzes")
+        .select(
+          `
           *,
-          questions:quiz_questions(
-            *,
-            answers:quiz_answers(*)
-          )
-        `)
-        .eq('id', quizId)
+          questions:quiz_questions!quiz_questions_quiz_id_fkey(*, answers:quiz_answers!quiz_answers_question_id_fkey(*))
+        `,
+        )
+        .eq("id", quizId)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -101,15 +99,15 @@ export default function QuizPage() {
   });
 
   const { data: attempts = [] } = useQuery<QuizAttempt[]>({
-    queryKey: ['quiz-attempts', quizId],
+    queryKey: ["quiz-attempts", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('quiz_attempts')
-        .select('*')
-        .eq('quiz_id', quizId)
-        .eq('user_id', user.id)
-        .order('completed_at', { ascending: false });
-      
+        .from("quiz_attempts")
+        .select("*")
+        .eq("quiz_id", quizId)
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false });
+
       if (error) throw error;
       return data;
     },
@@ -121,7 +119,7 @@ export default function QuizPage() {
     if (!quizStarted || timeRemaining <= 0 || quizSubmitted) return;
 
     const timer = setInterval(() => {
-      setTimeRemaining(prev => {
+      setTimeRemaining((prev) => {
         if (prev <= 1) {
           handleSubmitQuiz();
           return 0;
@@ -141,19 +139,19 @@ export default function QuizPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({
           answers: quizAnswers,
-          timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0
-        })
+          timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0,
+        }),
       });
       if (!response.ok) throw new Error("Failed to submit quiz");
       return response.json();
     },
     onSuccess: () => {
       setQuizSubmitted(true);
-      queryClient.invalidateQueries({ queryKey: ['quiz-attempts', quizId] });
+      queryClient.invalidateQueries({ queryKey: ["quiz-attempts", quizId] });
       toast({
         title: "Quiz Submitted",
         description: "Your quiz has been submitted successfully!",
@@ -167,9 +165,9 @@ export default function QuizPage() {
           variant: "destructive",
         });
         setTimeout(() => {
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 500);
         }, 500);
         return;
       }
@@ -183,15 +181,15 @@ export default function QuizPage() {
 
   const startQuiz = () => {
     setQuizStarted(true);
-    setTimeRemaining((quiz?.time_limit_minutes || 30) * 60); 
+    setTimeRemaining((quiz?.time_limit_minutes || 30) * 60);
     setCurrentQuestion(0);
     setAnswers({});
   };
 
   const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [questionId]: answer
+      [questionId]: answer,
     }));
   };
 
@@ -203,18 +201,18 @@ export default function QuizPage() {
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   const nextQuestion = () => {
     if (quiz && currentQuestion < (quiz.questions?.length || 0) - 1) {
-      setCurrentQuestion(prev => prev + 1);
+      setCurrentQuestion((prev) => prev + 1);
     }
   };
 
   const prevQuestion = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
+      setCurrentQuestion((prev) => prev - 1);
     }
   };
 
@@ -249,12 +247,21 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center" data-testid="max-attempts-reached">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Maximum Attempts Reached</h1>
+        <div
+          className="max-w-4xl mx-auto px-4 py-16 text-center"
+          data-testid="max-attempts-reached"
+        >
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            Maximum Attempts Reached
+          </h1>
           <p className="text-muted-foreground mb-8">
-            You have reached the maximum number of attempts ({quiz.max_attempts}) for this quiz.
+            You have reached the maximum number of attempts ({quiz.max_attempts}
+            ) for this quiz.
           </p>
-          <Button onClick={() => setLocation('/dashboard')} data-testid="back-to-dashboard">
+          <Button
+            onClick={() => setLocation("/dashboard")}
+            data-testid="back-to-dashboard"
+          >
             Back to Dashboard
           </Button>
         </div>
@@ -267,17 +274,20 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-16" data-testid="quiz-results">
+        <div
+          className="max-w-4xl mx-auto px-4 py-16"
+          data-testid="quiz-results"
+        >
           <Card>
             <CardHeader>
               <CardTitle className="text-center">Quiz Complete!</CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-6">
               <div className="text-6xl font-bold text-primary">
-                {latestAttempt?.score || 'N/A'}%
+                {latestAttempt?.score || "N/A"}%
               </div>
               <div>
-                <Badge 
+                <Badge
                   variant={latestAttempt?.passed ? "default" : "destructive"}
                   className="text-lg px-4 py-2"
                 >
@@ -288,26 +298,27 @@ export default function QuizPage() {
                 Passing score: {quiz.passing_score}%
               </p>
               <div className="flex justify-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setLocation('/dashboard')}
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/dashboard")}
                   data-testid="back-to-dashboard"
                 >
                   Back to Dashboard
                 </Button>
-                {!latestAttempt?.passed && attempts.length < quiz.max_attempts && (
-                  <Button 
-                    onClick={() => {
-                      setQuizSubmitted(false);
-                      setQuizStarted(false);
-                      setAnswers({});
-                      setCurrentQuestion(0);
-                    }}
-                    data-testid="retake-quiz"
-                  >
-                    Retake Quiz
-                  </Button>
-                )}
+                {!latestAttempt?.passed &&
+                  attempts.length < quiz.max_attempts && (
+                    <Button
+                      onClick={() => {
+                        setQuizSubmitted(false);
+                        setQuizStarted(false);
+                        setAnswers({});
+                        setCurrentQuestion(0);
+                      }}
+                      data-testid="retake-quiz"
+                    >
+                      Retake Quiz
+                    </Button>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -327,25 +338,37 @@ export default function QuizPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-muted-foreground">{quiz.description}</p>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <h3 className="font-semibold">Quiz Details</h3>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div>Questions: {quiz.questions?.length || 0}</div>
-                    <div>Time Limit: {formatTime(quiz.time_limit_minutes * 60)}</div>
+                    <div>
+                      Time Limit: {formatTime(quiz.time_limit_minutes * 60)}
+                    </div>
                     <div>Passing Score: {quiz.passing_score}%</div>
                     <div>Max Attempts: {quiz.max_attempts}</div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h3 className="font-semibold">Your Attempts</h3>
                   <div className="text-sm text-muted-foreground">
                     {attempts.length > 0 ? (
                       <div>
-                        <div>Attempts: {attempts.length} / {quiz.max_attempts}</div>
-                        <div>Best Score: {Math.max(...attempts.map((a: QuizAttempt) => parseInt(String(a.score || '0'))))}%</div>
+                        <div>
+                          Attempts: {attempts.length} / {quiz.max_attempts}
+                        </div>
+                        <div>
+                          Best Score:{" "}
+                          {Math.max(
+                            ...attempts.map((a: QuizAttempt) =>
+                              parseInt(String(a.score || "0")),
+                            ),
+                          )}
+                          %
+                        </div>
                       </div>
                     ) : (
                       <div>No previous attempts</div>
@@ -355,11 +378,7 @@ export default function QuizPage() {
               </div>
 
               <div className="flex justify-center">
-                <Button 
-                  onClick={startQuiz} 
-                  size="lg"
-                  data-testid="start-quiz"
-                >
+                <Button onClick={startQuiz} size="lg" data-testid="start-quiz">
                   Start Quiz
                 </Button>
               </div>
@@ -371,31 +390,43 @@ export default function QuizPage() {
   }
 
   const currentQ = quiz.questions?.[currentQuestion];
-  const progressPercentage = ((currentQuestion + 1) / (quiz.questions?.length || 1)) * 100;
+  const progressPercentage =
+    ((currentQuestion + 1) / (quiz.questions?.length || 1)) * 100;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8" data-testid="quiz-taking">
         {/* Quiz Header */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-foreground">{quiz.title}</h1>
             <div className="text-right">
-              <div className="text-lg font-semibold text-primary" data-testid="timer">
+              <div
+                className="text-lg font-semibold text-primary"
+                data-testid="timer"
+              >
                 {formatTime(timeRemaining)}
               </div>
-              <div className="text-sm text-muted-foreground">Time Remaining</div>
+              <div className="text-sm text-muted-foreground">
+                Time Remaining
+              </div>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Question {currentQuestion + 1} of {quiz.questions?.length}</span>
+              <span>
+                Question {currentQuestion + 1} of {quiz.questions?.length}
+              </span>
               <span>{progressPercentage.toFixed(0)}% Complete</span>
             </div>
-            <Progress value={progressPercentage} className="h-2" data-testid="quiz-progress" />
+            <Progress
+              value={progressPercentage}
+              className="h-2"
+              data-testid="quiz-progress"
+            />
           </div>
         </div>
 
@@ -411,30 +442,41 @@ export default function QuizPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {currentQ.question_type === 'multiple_choice' && currentQ.answers && (
-                <RadioGroup
-                  value={answers[currentQ.id] || ""}
-                  onValueChange={(value: string) => handleAnswerChange(currentQ.id, value)}
-                  data-testid="multiple-choice-answers"
-                >
-                  {currentQ.answers
-                    .sort((a: QuizAnswer, b: QuizAnswer) => a.order - b.order)
-                    .map((answer: QuizAnswer) => (
-                      <div key={answer.id} className="flex items-center space-x-2">
-                        <RadioGroupItem value={answer.id} id={answer.id} />
-                        <Label htmlFor={answer.id} className="flex-1 cursor-pointer">
-                          {answer.answer}
-                        </Label>
-                      </div>
-                    ))}
-                </RadioGroup>
-              )}
+              {currentQ.question_type === "multiple_choice" &&
+                currentQ.answers && (
+                  <RadioGroup
+                    value={answers[currentQ.id] || ""}
+                    onValueChange={(value: string) =>
+                      handleAnswerChange(currentQ.id, value)
+                    }
+                    data-testid="multiple-choice-answers"
+                  >
+                    {currentQ.answers
+                      .sort((a: QuizAnswer, b: QuizAnswer) => a.order - b.order)
+                      .map((answer: QuizAnswer) => (
+                        <div
+                          key={answer.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem value={answer.id} id={answer.id} />
+                          <Label
+                            htmlFor={answer.id}
+                            className="flex-1 cursor-pointer"
+                          >
+                            {answer.answer}
+                          </Label>
+                        </div>
+                      ))}
+                  </RadioGroup>
+                )}
 
-              {currentQ.question_type === 'essay' && (
+              {currentQ.question_type === "essay" && (
                 <Textarea
                   placeholder="Type your answer here..."
                   value={answers[currentQ.id] || ""}
-                  onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                  onChange={(e) =>
+                    handleAnswerChange(currentQ.id, e.target.value)
+                  }
                   className="min-h-[150px]"
                   data-testid="essay-answer"
                 />
@@ -447,8 +489,8 @@ export default function QuizPage() {
         <div className="flex justify-between items-center">
           <div>
             {currentQuestion > 0 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={prevQuestion}
                 data-testid="prev-question"
               >
@@ -456,17 +498,14 @@ export default function QuizPage() {
               </Button>
             )}
           </div>
-          
+
           <div className="flex space-x-2">
             {currentQuestion < (quiz.questions?.length || 0) - 1 ? (
-              <Button 
-                onClick={nextQuestion}
-                data-testid="next-question"
-              >
+              <Button onClick={nextQuestion} data-testid="next-question">
                 Next
               </Button>
             ) : (
-              <Button 
+              <Button
                 onClick={handleSubmitQuiz}
                 disabled={submitQuizMutation.isPending}
                 data-testid="submit-quiz"
@@ -487,7 +526,13 @@ export default function QuizPage() {
               {quiz.questions?.map((q: QuizQuestion, index: number) => (
                 <Button
                   key={q.id}
-                  variant={index === currentQuestion ? "default" : answers[q.id] ? "secondary" : "outline"}
+                  variant={
+                    index === currentQuestion
+                      ? "default"
+                      : answers[q.id]
+                        ? "secondary"
+                        : "outline"
+                  }
                   size="sm"
                   onClick={() => setCurrentQuestion(index)}
                   className="aspect-square"

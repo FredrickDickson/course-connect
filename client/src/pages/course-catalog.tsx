@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,42 +10,44 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
-  
+
   // Fetch categories from Supabase
   const { data: categoriesData = [] } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from('categories').select('*');
+      const { data, error } = await supabase.from("categories").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   // Fetch published courses from Supabase
   const { data: courses = [], isLoading } = useQuery<any[]>({
-    queryKey: ['courses'],
+    queryKey: ["courses"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('courses')
-        .select(`
-          *,
-          category:categories(name),
-          instructor:users(first_name, last_name)
-        `)
-        .eq('is_published', true);
-        
+        .from("courses")
+        .select(
+          `*,\n          category:categories(name),\n          instructor:users!courses_instructor_id_fkey(first_name, last_name)\n        `,
+        )
+        .eq("is_published", true);
+
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   const categories = ["all", ...categoriesData.map((cat: any) => cat.id)];
-  const categoryNames = { all: "All Courses", ...Object.fromEntries(categoriesData.map((cat: any) => [cat.id, cat.name])) };
-  
+  const categoryNames = {
+    all: "All Courses",
+    ...Object.fromEntries(categoriesData.map((cat: any) => [cat.id, cat.name])),
+  };
+
   // Filter courses by category
-  const filteredCourses = selectedCategory === "all" 
-    ? courses 
-    : courses.filter(course => course.category_id === selectedCategory);
+  const filteredCourses =
+    selectedCategory === "all"
+      ? courses
+      : courses.filter((course) => course.category_id === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,9 +69,15 @@ export default function CourseCatalog() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-12">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground" data-testid="title">Course Catalog</h1>
+            <h1
+              className="text-4xl font-bold text-foreground"
+              data-testid="title"
+            >
+              Course Catalog
+            </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Professional ADR training courses designed to build competency and expertise in international mediation and arbitration.
+              Professional ADR training courses designed to build competency and
+              expertise in international mediation and arbitration.
             </p>
           </div>
 
@@ -83,7 +90,7 @@ export default function CourseCatalog() {
                 size="sm"
                 className="rounded-full"
                 onClick={() => setSelectedCategory(category)}
-                data-testid={`filter-${typeof category === 'string' ? category.toLowerCase() : category}`}
+                data-testid={`filter-${typeof category === "string" ? category.toLowerCase() : category}`}
               >
                 {categoryNames[category] || category}
               </Button>
@@ -101,8 +108,12 @@ export default function CourseCatalog() {
           {/* Empty State */}
           {!isLoading && filteredCourses.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-xl text-muted-foreground">No courses available yet.</p>
-              <p className="text-sm text-muted-foreground mt-2">Check back soon for new courses!</p>
+              <p className="text-xl text-muted-foreground">
+                No courses available yet.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Check back soon for new courses!
+              </p>
             </div>
           )}
 

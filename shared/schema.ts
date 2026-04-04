@@ -21,7 +21,7 @@ export const userSchema = z.object({
   firstName: z.string().nullable().optional(),
   lastName: z.string().nullable().optional(),
   profileImageUrl: z.string().nullable().optional(),
-  role: z.enum(['student', 'instructor', 'admin']).default('student'),
+  role: z.enum(["student", "instructor", "admin"]).default("student"),
   bio: z.string().nullable().optional(),
   country: z.string().nullable().optional(),
   timezone: z.string().nullable().optional(),
@@ -47,15 +47,15 @@ export const courseSchema = z.object({
   description: z.string().nullable().optional(),
   instructorId: z.string().nullable().optional(),
   categoryId: z.string().uuid().nullable().optional(),
-  level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'),
+  level: z.enum(["beginner", "intermediate", "advanced"]).default("beginner"),
   price: z.string(), // Decimal as string for precision
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   thumbnailUrl: z.string().nullable().optional(),
   promoVideoUrl: z.string().nullable().optional(),
   duration: z.number().nullable().optional(), // duration_hours
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
-  avgRating: z.string().default('0'),
+  avgRating: z.string().default("0"),
   ratingCount: z.number().default(0),
   enrollmentCount: z.number().default(0),
   tags: z.array(z.string()).nullable().optional(),
@@ -79,7 +79,7 @@ export const lessonSchema = z.object({
   moduleId: z.string().uuid().nullable().optional(),
   title: z.string().min(1),
   description: z.string().nullable().optional(),
-  contentType: z.enum(['video', 'text', 'quiz', 'assignment']).default('video'),
+  contentType: z.enum(["video", "text", "quiz", "assignment"]).default("video"),
   videoUrl: z.string().nullable().optional(),
   duration: z.number().nullable().optional(), // duration_seconds
   content: z.string().nullable().optional(),
@@ -95,7 +95,7 @@ export const enrollmentSchema = z.object({
   courseId: z.string().uuid().nullable().optional(),
   enrolledAt: z.date().optional(),
   completedAt: z.date().nullable().optional(),
-  progress: z.string().default('0'),
+  progress: z.string().default("0"),
 });
 
 // Progress schema
@@ -154,8 +154,10 @@ export const orderSchema = z.object({
   userId: z.string().nullable().optional(),
   courseId: z.string().uuid().nullable().optional(),
   amount: z.string(), // decimal
-  currency: z.string().default('USD'),
-  status: z.enum(['pending', 'completed', 'failed', 'refunded']).default('pending'),
+  currency: z.string().default("USD"),
+  status: z
+    .enum(["pending", "completed", "failed", "refunded"])
+    .default("pending"),
   paystackReference: z.string().nullable().optional(),
   createdAt: z.date().optional(),
 });
@@ -177,7 +179,9 @@ export const quizQuestionSchema = z.object({
   id: z.string().uuid(),
   quizId: z.string().uuid().nullable().optional(),
   question: z.string().min(1),
-  questionType: z.enum(['multiple_choice', 'true_false', 'fill_blank']).default('multiple_choice'),
+  questionType: z
+    .enum(["multiple_choice", "true_false", "fill_blank"])
+    .default("multiple_choice"),
   points: z.number().default(1),
   order: z.number(),
   createdAt: z.date().optional(),
@@ -263,11 +267,13 @@ export const instructorPayoutSchema = z.object({
   id: z.string().uuid(),
   instructorId: z.string().nullable().optional(),
   amount: z.string(), // decimal
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   period: z.string().length(7), // YYYY-MM
-  revenueShare: z.string().default('70.00'),
+  revenueShare: z.string().default("70.00"),
   totalRevenue: z.string(),
-  status: z.enum(['pending', 'processing', 'completed', 'failed']).default('pending'),
+  status: z
+    .enum(["pending", "processing", "completed", "failed"])
+    .default("pending"),
   payoutReference: z.string().nullable().optional(),
   processedAt: z.date().nullable().optional(),
   createdAt: z.date().optional(),
@@ -288,7 +294,7 @@ export const instructorApplicationSchema = z.object({
   areasOfExpertise: z.array(z.string()).min(1),
   cvUrl: z.string().nullable().optional(),
   videoIntroUrl: z.string().nullable().optional(),
-  status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  status: z.enum(["pending", "approved", "rejected"]).default("pending"),
   submittedAt: z.date().optional(),
   reviewedAt: z.date().nullable().optional(),
   reviewedBy: z.string().nullable().optional(),
@@ -393,22 +399,25 @@ export const insertAssignmentSchema = assignmentSchema.omit({
   createdAt: true,
 });
 
-export const insertAssignmentSubmissionSchema = assignmentSubmissionSchema.omit({
-  id: true,
-  submittedAt: true,
-});
+export const insertAssignmentSubmissionSchema = assignmentSubmissionSchema.omit(
+  {
+    id: true,
+    submittedAt: true,
+  },
+);
 
 export const insertInstructorPayoutSchema = instructorPayoutSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertInstructorApplicationSchema = instructorApplicationSchema.omit({
-  id: true,
-  submittedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertInstructorApplicationSchema =
+  instructorApplicationSchema.omit({
+    id: true,
+    submittedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  });
 
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
@@ -423,16 +432,47 @@ export type InsertQuizAttempt = z.infer<typeof insertQuizAttemptSchema>;
 export type InsertQuizResponse = z.infer<typeof insertQuizResponseSchema>;
 export type InsertCourseResource = z.infer<typeof insertCourseResourceSchema>;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
-export type InsertAssignmentSubmission = z.infer<typeof insertAssignmentSubmissionSchema>;
-export type InsertInstructorPayout = z.infer<typeof insertInstructorPayoutSchema>;
-export type InsertInstructorApplication = z.infer<typeof insertInstructorApplicationSchema>;
+export type InsertAssignmentSubmission = z.infer<
+  typeof insertAssignmentSubmissionSchema
+>;
+export type InsertInstructorPayout = z.infer<
+  typeof insertInstructorPayoutSchema
+>;
+export type InsertInstructorApplication = z.infer<
+  typeof insertInstructorApplicationSchema
+>;
+
+export const insertCategorySchema = categorySchema.omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertModuleSchema = moduleSchema.omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLessonSchema = lessonSchema.omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCertificationSchema = certificationSchema.omit({
+  id: true,
+  issuedAt: true,
+});
+
+export const insertOrderSchema = orderSchema.omit({
+  id: true,
+  createdAt: true,
+});
 
 // Additional missing Insert types
-export type InsertCategory = z.infer<typeof categorySchema>;
-export type InsertModule = z.infer<typeof moduleSchema>;
-export type InsertLesson = z.infer<typeof lessonSchema>;
-export type InsertCertification = z.infer<typeof certificationSchema>;
-export type InsertOrder = z.infer<typeof orderSchema>;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type InsertModule = z.infer<typeof insertModuleSchema>;
+export type InsertLesson = z.infer<typeof insertLessonSchema>;
+export type InsertCertification = z.infer<typeof insertCertificationSchema>;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
 // Extended types for API responses
 export type CourseWithDetails = Course & {

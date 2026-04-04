@@ -25,7 +25,7 @@ ALTER TABLE "instructor_payouts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "favorites" ENABLE ROW LEVEL SECURITY;
 
 -- Ensure Cascading Deletes (Alter existing constraints)
--- This assumes the tables were created by Drizzle. We need to drop and re-add constraints or ensure they exist.
+-- This assumes the tables were created by a previous migration. We need to drop and re-add constraints or ensure they exist.
 -- To keep it simple and safe for existing data, we will just add policies for now.
 -- In a real migration, we'd use: ALTER TABLE "courses" DROP CONSTRAINT ... ADD CONSTRAINT ... FOREIGN KEY ... ON DELETE CASCADE;
 

@@ -23,6 +23,7 @@ DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].
 ```
 
 **Important Notes:**
+
 - Use **Transaction pooler** (port 6543) for best performance with Replit
 - The code is already configured with `prepare: false` for Supabase compatibility
 
@@ -38,15 +39,15 @@ You have two options to create the database tables:
 4. Copy and paste the entire contents of `migrations/0000_colossal_tomorrow_man.sql`
 5. Click **"Run"** to execute the migration
 
-### Option B: Using Drizzle Push (Automatic)
+### Option B: Using Supabase CLI (Automatic)
 
-Run this command in the Replit Shell:
+Run this command using the Supabase CLI:
 
 ```bash
-npx drizzle-kit push
+npx supabase db push
 ```
 
-This will automatically create all tables in your Supabase database.
+This will automatically apply all migrations in the `supabase/migrations/` folder to your Supabase database.
 
 ## Step 4: Verify the Setup
 
@@ -79,6 +80,7 @@ This will automatically create all tables in your Supabase database.
 ## Step 5: Restart Your Application
 
 Your application is now connected to Supabase! The database connection has been updated to use:
+
 - `postgres` package (instead of `@neondatabase/serverless`)
 - Transaction pooler compatible settings
 
@@ -87,6 +89,7 @@ Your application is now connected to Supabase! The database connection has been 
 The platform includes:
 
 **Core Tables:**
+
 - **users**: User profiles and authentication
 - **courses**: Course catalog with pricing
 - **modules & lessons**: Hierarchical course content
@@ -94,11 +97,13 @@ The platform includes:
 - **progress**: Learning progress tracking
 
 **Community Features:**
+
 - **discussions**: Course forums
 - **replies**: Discussion responses
 - **reviews**: Course ratings and feedback
 
 **Assessments:**
+
 - **quizzes**: Quiz metadata
 - **quiz_questions**: Quiz questions
 - **quiz_answers**: Answer options
@@ -108,12 +113,14 @@ The platform includes:
 - **assignment_submissions**: Student submissions
 
 **Business:**
+
 - **orders**: Payment transactions (Paystack)
 - **certifications**: Course certificates
 - **instructor_payouts**: Instructor earnings
 - **instructor_applications**: Instructor onboarding
 
 **System:**
+
 - **sessions**: User authentication sessions
 - **categories**: Course categories
 - **favorites**: Saved courses
@@ -121,21 +128,24 @@ The platform includes:
 ## Troubleshooting
 
 ### Connection Error
+
 - Verify your `DATABASE_URL` is correct
 - Ensure you're using the Transaction pooler (port 6543)
 - Check that your Supabase project is active
 
 ### Tables Not Created
+
 - Run the SQL migration again in Supabase SQL Editor
 - Verify you have permissions to create tables
 - Check for error messages in the SQL Editor
 
 ### Authentication Issues
+
 - Make sure the `sessions` table exists
 - Verify `SESSION_SECRET` is set in your environment variables
 
 ## Additional Resources
 
 - [Supabase Documentation](https://supabase.com/docs)
-- [Drizzle ORM with Supabase](https://orm.drizzle.team/docs/tutorials/drizzle-with-supabase)
+- [Supabase CLI Reference](https://supabase.com/docs/reference/cli)
 - [Connection Pooling Guide](https://supabase.com/docs/guides/database/connecting-to-postgres)
