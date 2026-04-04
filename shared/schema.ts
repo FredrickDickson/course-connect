@@ -410,6 +410,30 @@ export const insertInstructorApplicationSchema = instructorApplicationSchema.omi
   updatedAt: true,
 });
 
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type InsertDiscussion = z.infer<typeof insertDiscussionSchema>;
+export type InsertReply = z.infer<typeof insertReplySchema>;
+export type InsertProgress = z.infer<typeof insertProgressSchema>;
+export type InsertQuiz = z.infer<typeof insertQuizSchema>;
+export type InsertQuizQuestion = z.infer<typeof insertQuizQuestionSchema>;
+export type InsertQuizAnswer = z.infer<typeof insertQuizAnswerSchema>;
+export type InsertQuizAttempt = z.infer<typeof insertQuizAttemptSchema>;
+export type InsertQuizResponse = z.infer<typeof insertQuizResponseSchema>;
+export type InsertCourseResource = z.infer<typeof insertCourseResourceSchema>;
+export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
+export type InsertAssignmentSubmission = z.infer<typeof insertAssignmentSubmissionSchema>;
+export type InsertInstructorPayout = z.infer<typeof insertInstructorPayoutSchema>;
+export type InsertInstructorApplication = z.infer<typeof insertInstructorApplicationSchema>;
+
+// Additional missing Insert types
+export type InsertCategory = z.infer<typeof categorySchema>;
+export type InsertModule = z.infer<typeof moduleSchema>;
+export type InsertLesson = z.infer<typeof lessonSchema>;
+export type InsertCertification = z.infer<typeof certificationSchema>;
+export type InsertOrder = z.infer<typeof orderSchema>;
+
 // Extended types for API responses
 export type CourseWithDetails = Course & {
   instructor: User;

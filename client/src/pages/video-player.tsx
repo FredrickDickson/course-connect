@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +14,19 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AlertCircle } from "lucide-react";
+
+// Type definitions
+import { Database } from "@/integrations/supabase/types";
+
+type Lesson = Database['public']['Tables']['lessons']['Row'];
+type Module = Database['public']['Tables']['modules']['Row'] & { lessons?: Lesson[] };
+type Course = Database['public']['Tables']['courses']['Row'] & { modules?: Module[] };
+
+interface ProgressItem {
+  completed: boolean;
+  watch_time_seconds: number;
+  lesson: Lesson;
+}
 
 export default function VideoPlayer() {
   const { courseId, lessonId } = useParams();
@@ -56,7 +68,7 @@ export default function VideoPlayer() {
             lessons:lessons(*)
           )
         `)
-        .eq('id', courseId)
+        .eq('id', courseId as string)
         .single();
       if (error) throw error;
       return data;
@@ -67,10 +79,11 @@ export default function VideoPlayer() {
   const { data: enrollment } = useQuery({
     queryKey: ['enrollment-check', courseId],
     queryFn: async () => {
+      if (!user?.id) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from('enrollments')
         .select('*')
-        .eq('course_id', courseId)
+        .eq('course_id', courseId as string)
         .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
@@ -86,7 +99,7 @@ export default function VideoPlayer() {
       const { data, error } = await supabase
         .from('progress')
         .select('*, lesson:lessons!inner(*)')
-        .eq('user_id', user.id);
+        .eq('user_id', user?.id || '');
       
       if (error) throw error;
       
@@ -101,19 +114,19 @@ export default function VideoPlayer() {
   const updateProgressMutation = useMutation({
     mutationFn: async ({
       lessonId,
-      watchTime,
+      watch_time_seconds,
       completed,
     }: {
       lessonId: string;
-      watchTime: number;
+      watch_time_seconds: number;
       completed: boolean;
     }) => {
       const { data, error } = await supabase
         .from('progress')
         .upsert({
-          user_id: user.id,
+          user_id: user?.id || '',
           lesson_id: lessonId,
-          watch_time: watchTime,
+          watch_time_seconds: watch_time_seconds,
           completed: completed,
           last_watched_at: new Date().toISOString()
         }, {
@@ -141,23 +154,28 @@ export default function VideoPlayer() {
   });
 
   // Find current lesson and module
-  const currentLesson = course?.modules?.reduce((found: any, module: any) => {
-    if (found) return found;
-    return module.lessons?.find((lesson: any) => lesson.id === lessonId);
-  }, null);
+  const currentLesson = course?.modules?.reduce(
+    (found: Lesson | null, module: Module) => {
+      if (found) return found;
+      return (
+        module.lessons?.find((lesson: Lesson) => lesson.id === lessonId) || null
+      );
+    },
+    null as Lesson | null,
+  );
 
-  const currentModule = course?.modules?.find((module: any) =>
-    module.lessons?.some((lesson: any) => lesson.id === lessonId),
+  const currentModule = course?.modules?.find((module: Module) =>
+    module.lessons?.some((lesson: Lesson) => lesson.id === lessonId),
   );
 
   // Get all lessons in order
   const allLessons =
-    course?.modules?.reduce((acc: any[], module: any) => {
+    course?.modules?.reduce((acc: Lesson[], module: Module) => {
       return [...acc, ...(module.lessons || [])];
-    }, []) || [];
+    }, [] as Lesson[]) || [];
 
   const currentLessonIndex = allLessons.findIndex(
-    (lesson: any) => lesson.id === lessonId,
+    (lesson: Lesson) => lesson.id === lessonId,
   );
   const nextLesson = allLessons[currentLessonIndex + 1];
   const prevLesson = allLessons[currentLessonIndex - 1];
@@ -172,12 +190,12 @@ export default function VideoPlayer() {
 
       // Update progress every 10 seconds
       if (Math.floor(video.currentTime) % 10 === 0 && currentLesson) {
-        const watchTimeSeconds = Math.floor(video.currentTime);
+        const watchTimeSecondsValue = Math.floor(video.currentTime);
         const completed = video.currentTime >= video.duration * 0.9; // 90% completion
 
         updateProgressMutation.mutate({
           lessonId: currentLesson.id,
-          watchTime: watchTimeSeconds,
+          watch_time_seconds: watchTimeSecondsValue,
           completed,
         });
       }
@@ -190,8 +208,8 @@ export default function VideoPlayer() {
       const lessonProgress = progressList.find(
         (p: any) => p.lesson_id === lessonId, // Use lesson_id snake_case
       );
-      if (lessonProgress && lessonProgress.watch_time > 0) {
-        video.currentTime = lessonProgress.watch_time;
+      if (lessonProgress && (lessonProgress.watch_time_seconds || 0) > 0) {
+        video.currentTime = lessonProgress.watch_time_seconds || 0;
       }
     };
 
@@ -375,7 +393,6 @@ export default function VideoPlayer() {
                     <video
                       ref={videoRef}
                       className="w-full h-full"
-                      poster={currentLesson.thumbnail_url}
                       controls
                       data-testid="video-element"
                     >
@@ -427,12 +444,12 @@ export default function VideoPlayer() {
                   )}
                 </div>
                 <div className="text-right">
-                  {currentLesson.duration && (
+                  {currentLesson.duration_seconds && (
                     <div
                       className="text-sm text-muted-foreground"
                       data-testid="lesson-duration"
                     >
-                      {formatTime(currentLesson.duration)}
+                      {formatTime(currentLesson.duration_seconds)}
                     </div>
                   )}
                 </div>
@@ -669,63 +686,63 @@ export default function VideoPlayer() {
                             const isCompleted =
                               lessonProgress?.completed || false;
 
-                            return (
-                              <Link
-                                key={lesson.id}
-                                href={`/learn/${courseId}/${lesson.id}`}
-                              >
-                                <div
-                                  className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                                    isCurrentLesson
-                                      ? "bg-primary text-primary-foreground"
-                                      : "hover:bg-muted/50"
-                                  }`}
-                                  data-testid={`lesson-nav-${lesson.id}`}
+                              return (
+                                <Link
+                                  key={lesson.id}
+                                  href={`/learn/${courseId}/${lesson.id}`}
                                 >
-                                  <div className="flex-shrink-0">
-                                    {isCompleted ? (
-                                      <i className="fas fa-check-circle text-green-600"></i>
-                                    ) : (
-                                      <i
-                                        className={`fas ${lesson.content_type === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                  <div
+                                    className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
+                                      isCurrentLesson
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted/50"
+                                    }`}
+                                    data-testid={`lesson-nav-${lesson.id}`}
+                                  >
+                                    <div className="flex-shrink-0">
+                                      {isCompleted ? (
+                                        <i className="fas fa-check-circle text-green-600"></i>
+                                      ) : (
+                                        <i
+                                          className={`fas ${lesson.content_type === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                            isCurrentLesson
+                                              ? "text-primary-foreground"
+                                              : "text-muted-foreground"
+                                          }`}
+                                        ></i>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div
+                                        className={`font-medium truncate ${
                                           isCurrentLesson
                                             ? "text-primary-foreground"
-                                            : "text-muted-foreground"
-                                        }`}
-                                      ></i>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div
-                                      className={`font-medium truncate ${
-                                        isCurrentLesson
-                                          ? "text-primary-foreground"
-                                          : "text-foreground"
-                                      }`}
-                                    >
-                                      {lesson.title}
-                                    </div>
-                                    {lesson.duration && (
-                                      <div
-                                        className={`text-xs ${
-                                          isCurrentLesson
-                                            ? "text-primary-foreground/80"
-                                            : "text-muted-foreground"
+                                            : "text-foreground"
                                         }`}
                                       >
-                                        {formatTime(lesson.duration)}
+                                        {lesson.title}
                                       </div>
-                                    )}
+                                      {lesson.duration_seconds && (
+                                        <div
+                                          className={`text-xs ${
+                                            isCurrentLesson
+                                              ? "text-primary-foreground/80"
+                                              : "text-muted-foreground"
+                                          }`}
+                                        >
+                                          {formatTime(lesson.duration_seconds)}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              </Link>
-                            );
-                          },
-                        )}
+                                </Link>
+                              );
+                            },
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
               </CardContent>
             </Card>
           </div>
