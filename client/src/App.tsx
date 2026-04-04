@@ -95,8 +95,8 @@ function Router() {
       <Route path="/community-forum" component={CommunityForum} />
       <Route path="/professional-standards" component={ProfessionalStandards} />
 
-      {/* Admin bootstrap path (using anon key auth fallback is still supported in backend) */}
-      <Route path="/admin-setup" component={AdminSetup} />
+      {/* Admin bootstrap — protected behind admin role */}
+      <ProtectedRoute path="/admin-setup" component={AdminSetup} requiredRole="admin" />
 
       {/* Protected routes - using ProtectedRoute for proper redirection and role checking */}
       <ProtectedRoute path="/profile" component={Profile} />

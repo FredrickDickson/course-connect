@@ -1,4 +1,0 @@
-postgresql://postgres.ooeftergjjvxjrcbfjbn:BGFZ3850#$@aws-1-us-east-2.pooler.supabase.com:6543/postgres
-
-
-postgresql://postgres.ooeftergjjvxjrcbfjbn:BGFZ3850%23%24@aws-1-us-east-2.pooler.supabase.com:6543/postgres
