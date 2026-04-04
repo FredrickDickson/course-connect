@@ -37,21 +37,41 @@ export default function InstructorDashboard() {
     }
   }, [authLoading, isAuthenticated, isInstructor, setLocation]);
 
-  // Fetch instructor's courses from Express backend
+  // Fetch instructor's courses from Supabase
   const { data: courses = [], isLoading: coursesLoading } = useQuery<any[]>({
-    queryKey: ['/api/instructor/courses'],
+    queryKey: ['instructor_courses'],
     enabled: !!user && isInstructor(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('instructor_id', user!.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
   });
 
-  // Fetch instructor stats from Express backend
-  const { data: instructorStats } = useQuery<{
-    totalCourses: number;
-    totalStudents: number;
-    totalRevenue: number;
-    averageRating: number;
-  }>({
-    queryKey: ['/api/instructor/stats'],
+  // Fetch instructor stats from Supabase
+  const { data: instructorStats } = useQuery({
+    queryKey: ['instructor_stats'],
     enabled: !!user && isInstructor(),
+    queryFn: async () => {
+      if (!user) return null;
+      const { count: totalCourses } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('instructor_id', user.id);
+      const { data: cData } = await supabase.from('courses').select('id, enrollment_count').eq('instructor_id', user.id);
+      const courseIds = cData?.map(c => c.id) || [];
+      const totalStudents = cData?.reduce((acc, c) => acc + Number(c.enrollment_count || 0), 0) || 0;
+      
+      let totalRevenue = 0;
+      if (courseIds.length > 0) {
+        const { data: orders } = await supabase.from('orders').select('amount').in('course_id', courseIds);
+        totalRevenue = orders?.reduce((s, o) => s + Number(o.amount || 0), 0) || 0;
+      }
+
+      return { totalCourses: totalCourses || 0, totalStudents, totalRevenue, averageRating: 0 };
+    }
   });
 
 
@@ -167,16 +187,16 @@ export default function InstructorDashboard() {
                     {courses.slice(0, 4).map((course: any) => (
                       <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-video relative">
-                          {course.thumbnailUrl ? (
-                            <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
+                          {course.thumbnail_url ? (
+                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                               <BookOpen className="h-12 w-12 text-primary/40" />
                             </div>
                           )}
                           <div className="absolute top-2 right-2">
-                            <Badge variant={course.isPublished ? "default" : "secondary"}>
-                              {course.isPublished ? "Published" : "Draft"}
+                            <Badge variant={course.is_published ? "default" : "secondary"}>
+                              {course.is_published ? "Published" : "Draft"}
                             </Badge>
                           </div>
                         </div>
@@ -185,11 +205,11 @@ export default function InstructorDashboard() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                             <span className="flex items-center gap-1">
                               <Users className="h-3 w-3" />
-                              {course.enrollmentCount || 0}
+                              {course.enrollment_count || 0}
                             </span>
                             <span className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              {Number(course.avgRating || 0).toFixed(1)}
+                              {Number(course.avg_rating || 0).toFixed(1)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 mt-3">

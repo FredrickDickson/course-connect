@@ -12,20 +12,20 @@ interface CourseCardProps {
     description?: string;
     price: string;
     currency: string;
-    thumbnailUrl?: string;
+    thumbnail_url?: string;
     level: string;
-    avgRating: string;
-    ratingCount: number;
-    enrollmentCount: number;
-    duration?: number;
+    avg_rating: string;
+    rating_count: number;
+    enrollment_count: number;
+    duration_hours?: number;
     instructor?: {
-      firstName?: string;
-      lastName?: string;
+      first_name?: string;
+      last_name?: string;
     };
     category?: {
       name: string;
     };
-    isFeatured?: boolean;
+    is_featured?: boolean;
   };
 }
 
@@ -49,12 +49,12 @@ export default function CourseCard({ course }: CourseCardProps) {
     >
       <div className="relative">
         <img
-          src={course.thumbnailUrl || defaultThumbnail}
+          src={course.thumbnail_url || defaultThumbnail}
           alt={course.title}
           className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
           data-testid="course-thumbnail"
         />
-        {course.isFeatured && (
+        {course.is_featured && (
           <Badge
             className="absolute top-4 left-4 bg-primary text-primary-foreground shadow-lg backdrop-blur-sm"
             data-testid="featured-badge"
@@ -76,7 +76,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           <div className="flex items-center space-x-1.5 group/rating">
             <Star className="w-4 h-4 text-yellow-400 fill-current group-hover/rating:scale-125 transition-transform" />
             <span className="text-sm font-medium text-foreground" data-testid="course-rating">
-              {course.avgRating} <span className="text-muted-foreground font-normal">({course.ratingCount})</span>
+              {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
             </span>
           </div>
           {course.category && (
@@ -96,15 +96,15 @@ export default function CourseCard({ course }: CourseCardProps) {
 
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center space-x-5 text-sm text-muted-foreground">
-            {course.duration && (
+            {course.duration_hours && (
               <span className="flex items-center space-x-1.5" data-testid="course-duration">
                 <Clock className="w-3.5 h-3.5 text-primary/60" />
-                <span>{course.duration}h</span>
+                <span>{course.duration_hours}h</span>
               </span>
             )}
             <span className="flex items-center space-x-1.5" data-testid="course-students">
               <Users className="w-3.5 h-3.5 text-primary/60" />
-              <span>{course.enrollmentCount} learners</span>
+              <span>{course.enrollment_count || 0} learners</span>
             </span>
           </div>
         </div>
@@ -112,9 +112,9 @@ export default function CourseCard({ course }: CourseCardProps) {
         {course.instructor && (
           <div className="text-xs font-medium text-muted-foreground mb-6 flex items-center" data-testid="instructor-info">
             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary">
-              {course.instructor.firstName?.[0]}
+              {course.instructor.first_name?.[0]}
             </div>
-            By {course.instructor.firstName} {course.instructor.lastName}
+            By {course.instructor.first_name} {course.instructor.last_name}
           </div>
         )}
 

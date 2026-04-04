@@ -8,6 +8,13 @@
       "when": 1759616057536,
       "tag": "0000_colossal_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775253425299,
+      "tag": "0001_lazy_roulette",
+      "breakpoints": true
     }
   ]
 }

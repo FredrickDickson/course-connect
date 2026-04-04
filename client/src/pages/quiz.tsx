@@ -12,13 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 
 interface QuizQuestion {
   id: string;
   question: string;
-  type: string;
+  question_type: string;
   points: number;
   order: number;
   answers?: QuizAnswer[];
@@ -27,7 +27,7 @@ interface QuizQuestion {
 interface QuizAnswer {
   id: string;
   answer: string;
-  isCorrect: boolean;
+  is_correct: boolean;
   order: number;
 }
 
@@ -35,9 +35,9 @@ interface Quiz {
   id: string;
   title: string;
   description: string;
-  timeLimit: number;
-  passingScore: number;
-  maxAttempts: number;
+  time_limit_minutes: number;
+  passing_score: number;
+  max_attempts: number;
   questions: QuizQuestion[];
 }
 
@@ -45,8 +45,8 @@ interface QuizAttempt {
   id: string;
   score: number | string;
   passed: boolean;
-  timeSpentMinutes?: number;
-  completedAt?: string;
+  time_spent_minutes?: number;
+  completed_at?: string;
 }
 
 export default function QuizPage() {
@@ -71,20 +71,49 @@ export default function QuizPage() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 500);
       }, 500);
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: quiz = null, isLoading: quizLoading } = useQuery<Quiz | null>({
-    queryKey: [`/api/quizzes/${quizId}`],
+    queryKey: ['quiz', quizId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select(`
+          *,
+          questions:quiz_questions(
+            *,
+            answers:quiz_answers(*)
+          )
+        `)
+        .eq('id', quizId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
     enabled: !!quizId && isAuthenticated,
   });
 
   const { data: attempts = [] } = useQuery<QuizAttempt[]>({
-    queryKey: [`/api/quizzes/${quizId}/attempts`],
-    enabled: !!quizId && isAuthenticated,
+    queryKey: ['quiz-attempts', quizId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quiz_attempts')
+        .select('*')
+        .eq('quiz_id', quizId)
+        .eq('user_id', user.id)
+        .order('completed_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!quizId && !!user && isAuthenticated,
   });
 
   // Timer effect
@@ -107,15 +136,24 @@ export default function QuizPage() {
   // Submit quiz mutation
   const submitQuizMutation = useMutation({
     mutationFn: async (quizAnswers: Record<string, string>) => {
-      const response = await apiRequest("POST", `/api/quizzes/${quizId}/submit`, {
-        answers: quizAnswers,
-        timeSpent: quiz ? quiz.timeLimit - timeRemaining : 0
+      // We still use the server route for grading to hide correct answers from the client
+      const response = await fetch(`/api/quizzes/${quizId}/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          answers: quizAnswers,
+          timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0
+        })
       });
+      if (!response.ok) throw new Error("Failed to submit quiz");
       return response.json();
     },
     onSuccess: () => {
       setQuizSubmitted(true);
-      queryClient.invalidateQueries({ queryKey: [`/api/quizzes/${quizId}/attempts`] });
+      queryClient.invalidateQueries({ queryKey: ['quiz-attempts', quizId] });
       toast({
         title: "Quiz Submitted",
         description: "Your quiz has been submitted successfully!",
@@ -129,7 +167,9 @@ export default function QuizPage() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 500);
         }, 500);
         return;
       }
@@ -143,7 +183,7 @@ export default function QuizPage() {
 
   const startQuiz = () => {
     setQuizStarted(true);
-    setTimeRemaining(quiz?.timeLimit || 1800); // Default 30 minutes
+    setTimeRemaining((quiz?.time_limit_minutes || 30) * 60); 
     setCurrentQuestion(0);
     setAnswers({});
   };
@@ -203,7 +243,7 @@ export default function QuizPage() {
   }
 
   // Check if user has exceeded max attempts
-  const hasExceededAttempts = attempts.length >= (quiz.maxAttempts || 3);
+  const hasExceededAttempts = attempts.length >= (quiz.max_attempts || 3);
 
   if (hasExceededAttempts && !quizSubmitted) {
     return (
@@ -212,7 +252,7 @@ export default function QuizPage() {
         <div className="max-w-4xl mx-auto px-4 py-16 text-center" data-testid="max-attempts-reached">
           <h1 className="text-2xl font-bold text-foreground mb-4">Maximum Attempts Reached</h1>
           <p className="text-muted-foreground mb-8">
-            You have reached the maximum number of attempts ({quiz.maxAttempts}) for this quiz.
+            You have reached the maximum number of attempts ({quiz.max_attempts}) for this quiz.
           </p>
           <Button onClick={() => setLocation('/dashboard')} data-testid="back-to-dashboard">
             Back to Dashboard
@@ -245,7 +285,7 @@ export default function QuizPage() {
                 </Badge>
               </div>
               <p className="text-muted-foreground">
-                Passing score: {quiz.passingScore}%
+                Passing score: {quiz.passing_score}%
               </p>
               <div className="flex justify-center space-x-4">
                 <Button 
@@ -255,7 +295,7 @@ export default function QuizPage() {
                 >
                   Back to Dashboard
                 </Button>
-                {!latestAttempt?.passed && attempts.length < quiz.maxAttempts && (
+                {!latestAttempt?.passed && attempts.length < quiz.max_attempts && (
                   <Button 
                     onClick={() => {
                       setQuizSubmitted(false);
@@ -293,9 +333,9 @@ export default function QuizPage() {
                   <h3 className="font-semibold">Quiz Details</h3>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div>Questions: {quiz.questions?.length || 0}</div>
-                    <div>Time Limit: {formatTime(quiz.timeLimit)}</div>
-                    <div>Passing Score: {quiz.passingScore}%</div>
-                    <div>Max Attempts: {quiz.maxAttempts}</div>
+                    <div>Time Limit: {formatTime(quiz.time_limit_minutes * 60)}</div>
+                    <div>Passing Score: {quiz.passing_score}%</div>
+                    <div>Max Attempts: {quiz.max_attempts}</div>
                   </div>
                 </div>
                 
@@ -304,7 +344,7 @@ export default function QuizPage() {
                   <div className="text-sm text-muted-foreground">
                     {attempts.length > 0 ? (
                       <div>
-                        <div>Attempts: {attempts.length} / {quiz.maxAttempts}</div>
+                        <div>Attempts: {attempts.length} / {quiz.max_attempts}</div>
                         <div>Best Score: {Math.max(...attempts.map((a: QuizAttempt) => parseInt(String(a.score || '0'))))}%</div>
                       </div>
                     ) : (
@@ -371,7 +411,7 @@ export default function QuizPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {currentQ.type === 'multiple_choice' && currentQ.answers && (
+              {currentQ.question_type === 'multiple_choice' && currentQ.answers && (
                 <RadioGroup
                   value={answers[currentQ.id] || ""}
                   onValueChange={(value: string) => handleAnswerChange(currentQ.id, value)}
@@ -390,7 +430,7 @@ export default function QuizPage() {
                 </RadioGroup>
               )}
 
-              {currentQ.type === 'essay' && (
+              {currentQ.question_type === 'essay' && (
                 <Textarea
                   placeholder="Type your answer here..."
                   value={answers[currentQ.id] || ""}

@@ -173,6 +173,7 @@ export const en = {
     courseAddedToFavorites: "Course added to favorites",
     courseRemovedFromFavorites: "Course removed from favorites",
     enrollmentSuccessful: "Successfully enrolled in course",
+    signInSuccess: "You have successfully signed in.",
     paymentSuccessful: "Payment completed successfully",
     paymentFailed: "Payment failed. Please try again.",
     networkError: "Network error. Please check your connection.",

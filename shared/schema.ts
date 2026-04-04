@@ -1,685 +1,414 @@
-/**
- * Database Schema
- * 
- * Defines the complete data model for the CIMA Learning Platform using Drizzle ORM.
- * This schema is shared between frontend and backend for type safety.
- * 
- * Key Entities:
- * - Users: Authentication and profile data (integrated with Replit Auth)
- * - Courses: Course catalog with pricing and metadata
- * - Modules & Lessons: Hierarchical course content structure
- * - Enrollments: Student course registrations and progress
- * - Discussions: Community forums and Q&A
- * - Payments: Paystack integration for course purchases
- * - Quizzes & Assignments: Assessment tools for learning
- * - Certifications: Course completion certificates
- * - Instructor Analytics: Payouts and performance metrics
- * 
- * All tables use UUID primary keys except users (Replit Auth uses varchar IDs).
- * Timestamps are automatically managed with defaultNow() and updatedAt triggers.
- */
-
-import { sql } from 'drizzle-orm';
-import {
-  index,
-  jsonb,
-  pgTable,
-  timestamp,
-  varchar,
-  text,
-  integer,
-  boolean,
-  decimal,
-  uuid,
-  pgEnum,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // ============================================================================
-// AUTHENTICATION & SESSION TABLES
-// Required for Replit Auth integration
+// AUTHENTICATION & SESSION SCHEMAS
 // ============================================================================
 
 /**
- * Sessions table - Stores user session data for authentication
- * Required by express-session with PostgreSQL store
+ * Sessions schema - (Legacy)
  */
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
-
-// User storage table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }), // Password hash (nullable for OAuth-only users)
-  firstName: varchar("first_name", { length: 100 }),
-  lastName: varchar("last_name", { length: 100 }),
-  profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role", { enum: ['student', 'instructor', 'admin'] }).default('student'),
-  bio: text("bio"),
-  country: varchar("country", { length: 100 }),
-  timezone: varchar("timezone", { length: 100 }),
-  paystackCustomerCode: varchar("paystack_customer_code"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const sessionSchema = z.object({
+  sid: z.string(),
+  sess: z.any(),
+  expire: z.date(),
 });
 
-// Course categories
-export const categories = pgTable("categories", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  slug: varchar("slug", { length: 100 }).notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow(),
+// User schema
+export const userSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  password: z.string().nullable().optional(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  profileImageUrl: z.string().nullable().optional(),
+  role: z.enum(['student', 'instructor', 'admin']).default('student'),
+  bio: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  timezone: z.string().nullable().optional(),
+  paystackCustomerCode: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-// Courses
-export const courses = pgTable("courses", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: varchar("title", { length: 200 }).notNull(),
-  subtitle: varchar("subtitle", { length: 300 }),
-  description: text("description"),
-  instructorId: varchar("instructor_id").references(() => users.id),
-  categoryId: uuid("category_id").references(() => categories.id),
-  level: varchar("level", { enum: ['beginner', 'intermediate', 'advanced'] }).default('beginner'),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 3 }).default('USD'),
-  thumbnailUrl: varchar("thumbnail_url"),
-  promoVideoUrl: varchar("promo_video_url"),
-  duration: integer("duration_hours"),
-  isPublished: boolean("is_published").default(false),
-  isFeatured: boolean("is_featured").default(false),
-  avgRating: decimal("avg_rating", { precision: 3, scale: 2 }).default('0'),
-  ratingCount: integer("rating_count").default(0),
-  enrollmentCount: integer("enrollment_count").default(0),
-  tags: text("tags").array(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+// Category schema
+export const categorySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  slug: z.string().min(1),
+  createdAt: z.date().optional(),
 });
 
-// Course modules/sections
-export const modules = pgTable("modules", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  description: text("description"),
-  order: integer("order").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+// Course schema
+export const courseSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1),
+  subtitle: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  instructorId: z.string().nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'),
+  price: z.string(), // Decimal as string for precision
+  currency: z.string().default('USD'),
+  thumbnailUrl: z.string().nullable().optional(),
+  promoVideoUrl: z.string().nullable().optional(),
+  duration: z.number().nullable().optional(), // duration_hours
+  isPublished: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
+  avgRating: z.string().default('0'),
+  ratingCount: z.number().default(0),
+  enrollmentCount: z.number().default(0),
+  tags: z.array(z.string()).nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-// Lessons within modules
-export const lessons = pgTable("lessons", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  moduleId: uuid("module_id").references(() => modules.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  description: text("description"),
-  contentType: varchar("content_type", { enum: ['video', 'text', 'quiz', 'assignment'] }).default('video'),
-  videoUrl: varchar("video_url"),
-  duration: integer("duration_seconds"),
-  content: text("content"),
-  order: integer("order").notNull(),
-  isFree: boolean("is_free").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+// Module schema
+export const moduleSchema = z.object({
+  id: z.string().uuid(),
+  courseId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  order: z.number(),
+  createdAt: z.date().optional(),
 });
 
-// Course enrollments
-export const enrollments = pgTable("enrollments", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  enrolledAt: timestamp("enrolled_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default('0'),
+// Lesson schema
+export const lessonSchema = z.object({
+  id: z.string().uuid(),
+  moduleId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  contentType: z.enum(['video', 'text', 'quiz', 'assignment']).default('video'),
+  videoUrl: z.string().nullable().optional(),
+  duration: z.number().nullable().optional(), // duration_seconds
+  content: z.string().nullable().optional(),
+  order: z.number(),
+  isFree: z.boolean().default(false),
+  createdAt: z.date().optional(),
 });
 
-// User progress on lessons
-export const progress = pgTable("progress", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: 'cascade' }),
-  completed: boolean("completed").default(false),
-  watchTime: integer("watch_time_seconds").default(0),
-  lastWatchedAt: timestamp("last_watched_at").defaultNow(),
+// Enrollment schema
+export const enrollmentSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  courseId: z.string().uuid().nullable().optional(),
+  enrolledAt: z.date().optional(),
+  completedAt: z.date().nullable().optional(),
+  progress: z.string().default('0'),
 });
 
-// Course reviews and ratings
-export const reviews = pgTable("reviews", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  rating: integer("rating").notNull(),
-  comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
+// Progress schema
+export const progressSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  lessonId: z.string().uuid().nullable().optional(),
+  completed: z.boolean().default(false),
+  watchTime: z.number().default(0), // watch_time_seconds
+  lastWatchedAt: z.date().optional(),
 });
 
-// Discussion forums
-export const discussions = pgTable("discussions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+// Review schema
+export const reviewSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  courseId: z.string().uuid().nullable().optional(),
+  rating: z.number(),
+  comment: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
 });
 
-// Discussion replies
-export const replies = pgTable("replies", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  discussionId: uuid("discussion_id").references(() => discussions.id, { onDelete: 'cascade' }),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  content: text("content").notNull(),
-  parentId: uuid("parent_id"),
-  createdAt: timestamp("created_at").defaultNow(),
+// Discussion schema
+export const discussionSchema = z.object({
+  id: z.string().uuid(),
+  courseId: z.string().uuid().nullable().optional(),
+  userId: z.string().nullable().optional(),
+  title: z.string().min(1),
+  content: z.string().min(1),
+  createdAt: z.date().optional(),
 });
 
-// Certifications
-export const certifications = pgTable("certifications", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  certificateUrl: varchar("certificate_url"),
-  issuedAt: timestamp("issued_at").defaultNow(),
-  validUntil: timestamp("valid_until"),
+// Reply schema
+export const replySchema = z.object({
+  id: z.string().uuid(),
+  discussionId: z.string().uuid().nullable().optional(),
+  userId: z.string().nullable().optional(),
+  content: z.string().min(1),
+  parentId: z.string().uuid().nullable().optional(),
+  createdAt: z.date().optional(),
 });
 
-// Payment orders
-export const orders = pgTable("orders", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 3 }).default('USD'),
-  status: varchar("status", { enum: ['pending', 'completed', 'failed', 'refunded'] }).default('pending'),
-  paystackReference: varchar("paystack_reference"),
-  createdAt: timestamp("created_at").defaultNow(),
+// Certification schema
+export const certificationSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  courseId: z.string().uuid().nullable().optional(),
+  certificateUrl: z.string().nullable().optional(),
+  issuedAt: z.date().optional(),
+  validUntil: z.date().nullable().optional(),
 });
 
-// Quiz tables for interactive content
-export const quizzes = pgTable("quizzes", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  description: text("description"),
-  timeLimit: integer("time_limit_minutes"),
-  passingScore: integer("passing_score").default(80),
-  maxAttempts: integer("max_attempts").default(3),
-  isRequired: boolean("is_required").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+// Order schema
+export const orderSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  courseId: z.string().uuid().nullable().optional(),
+  amount: z.string(), // decimal
+  currency: z.string().default('USD'),
+  status: z.enum(['pending', 'completed', 'failed', 'refunded']).default('pending'),
+  paystackReference: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
 });
 
-export const quizQuestions = pgTable("quiz_questions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  quizId: uuid("quiz_id").references(() => quizzes.id, { onDelete: 'cascade' }),
-  question: text("question").notNull(),
-  questionType: varchar("question_type", { enum: ['multiple_choice', 'true_false', 'fill_blank'] }).default('multiple_choice'),
-  points: integer("points").default(1),
-  order: integer("order").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+// Quiz schemas
+export const quizSchema = z.object({
+  id: z.string().uuid(),
+  lessonId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  timeLimit: z.number().nullable().optional(), // time_limit_minutes
+  passingScore: z.number().default(80),
+  maxAttempts: z.number().default(3),
+  isRequired: z.boolean().default(false),
+  createdAt: z.date().optional(),
 });
 
-export const quizAnswers = pgTable("quiz_answers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  questionId: uuid("question_id").references(() => quizQuestions.id, { onDelete: 'cascade' }),
-  answer: text("answer").notNull(),
-  isCorrect: boolean("is_correct").default(false),
-  order: integer("order").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const quizQuestionSchema = z.object({
+  id: z.string().uuid(),
+  quizId: z.string().uuid().nullable().optional(),
+  question: z.string().min(1),
+  questionType: z.enum(['multiple_choice', 'true_false', 'fill_blank']).default('multiple_choice'),
+  points: z.number().default(1),
+  order: z.number(),
+  createdAt: z.date().optional(),
 });
 
-export const quizAttempts = pgTable("quiz_attempts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  quizId: uuid("quiz_id").references(() => quizzes.id, { onDelete: 'cascade' }),
-  score: decimal("score", { precision: 5, scale: 2 }),
-  totalPoints: integer("total_points"),
-  passed: boolean("passed").default(false),
-  timeSpent: integer("time_spent_minutes"),
-  startedAt: timestamp("started_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
+export const quizAnswerSchema = z.object({
+  id: z.string().uuid(),
+  questionId: z.string().uuid().nullable().optional(),
+  answer: z.string().min(1),
+  isCorrect: z.boolean().default(false),
+  order: z.number(),
+  createdAt: z.date().optional(),
 });
 
-export const quizResponses = pgTable("quiz_responses", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  attemptId: uuid("attempt_id").references(() => quizAttempts.id, { onDelete: 'cascade' }),
-  questionId: uuid("question_id").references(() => quizQuestions.id, { onDelete: 'cascade' }),
-  answerId: uuid("answer_id").references(() => quizAnswers.id),
-  responseText: text("response_text"),
-  isCorrect: boolean("is_correct").default(false),
-  pointsEarned: integer("points_earned").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
+export const quizAttemptSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  quizId: z.string().uuid().nullable().optional(),
+  score: z.string().nullable().optional(), // decimal
+  totalPoints: z.number().nullable().optional(),
+  passed: z.boolean().default(false),
+  timeSpent: z.number().nullable().optional(), // time_spent_minutes
+  startedAt: z.date().optional(),
+  completedAt: z.date().nullable().optional(),
 });
 
-// Course resources (downloadable files attached to lessons or courses)
-export const courseResources = pgTable("course_resources", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  description: text("description"),
-  fileUrl: varchar("file_url").notNull(),
-  fileName: varchar("file_name").notNull(),
-  fileType: varchar("file_type", { length: 50 }),
-  fileSize: integer("file_size"),
-  downloadCount: integer("download_count").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
+export const quizResponseSchema = z.object({
+  id: z.string().uuid(),
+  attemptId: z.string().uuid().nullable().optional(),
+  questionId: z.string().uuid().nullable().optional(),
+  answerId: z.string().uuid().nullable().optional(),
+  responseText: z.string().nullable().optional(),
+  isCorrect: z.boolean().default(false),
+  pointsEarned: z.number().default(0),
+  createdAt: z.date().optional(),
 });
 
-// Assignment tables
-export const assignments = pgTable("assignments", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: 'cascade' }),
-  title: varchar("title", { length: 200 }).notNull(),
-  description: text("description").notNull(),
-  instructions: text("instructions"),
-  dueDate: timestamp("due_date"),
-  maxScore: integer("max_score").default(100),
-  allowLateSubmission: boolean("allow_late_submission").default(true),
-  isRequired: boolean("is_required").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+// Course resource schema
+export const courseResourceSchema = z.object({
+  id: z.string().uuid(),
+  lessonId: z.string().uuid().nullable().optional(),
+  courseId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  fileUrl: z.string().min(1),
+  fileName: z.string().min(1),
+  fileType: z.string().nullable().optional(),
+  fileSize: z.number().nullable().optional(),
+  downloadCount: z.number().default(0),
+  createdAt: z.date().optional(),
 });
 
-export const assignmentSubmissions = pgTable("assignment_submissions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  assignmentId: uuid("assignment_id").references(() => assignments.id, { onDelete: 'cascade' }),
-  content: text("content").notNull(),
-  attachmentUrls: text("attachment_urls").array(),
-  score: integer("score"),
-  feedback: text("feedback"),
-  gradedAt: timestamp("graded_at"),
-  gradedBy: varchar("graded_by").references(() => users.id),
-  isLateSubmission: boolean("is_late_submission").default(false),
-  submittedAt: timestamp("submitted_at").defaultNow(),
+// Assignment schemas
+export const assignmentSchema = z.object({
+  id: z.string().uuid(),
+  lessonId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  instructions: z.string().nullable().optional(),
+  dueDate: z.date().nullable().optional(),
+  maxScore: z.number().default(100),
+  allowLateSubmission: z.boolean().default(true),
+  isRequired: z.boolean().default(false),
+  createdAt: z.date().optional(),
+});
+
+export const assignmentSubmissionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  assignmentId: z.string().uuid().nullable().optional(),
+  content: z.string().min(1),
+  attachmentUrls: z.array(z.string()).nullable().optional(),
+  score: z.number().nullable().optional(),
+  feedback: z.string().nullable().optional(),
+  gradedAt: z.date().nullable().optional(),
+  gradedBy: z.string().nullable().optional(),
+  isLateSubmission: z.boolean().default(false),
+  submittedAt: z.date().optional(),
 });
 
 // Instructor payout tracking
-export const instructorPayouts = pgTable("instructor_payouts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  instructorId: varchar("instructor_id").references(() => users.id, { onDelete: 'cascade' }),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 3 }).default('USD'),
-  period: varchar("period", { length: 7 }).notNull(), // YYYY-MM format
-  revenueShare: decimal("revenue_share", { precision: 5, scale: 2 }).default('70.00'), // 70% default
-  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status", { enum: ['pending', 'processing', 'completed', 'failed'] }).default('pending'),
-  payoutReference: varchar("payout_reference"),
-  processedAt: timestamp("processed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Course favorites
-export const favorites = pgTable("favorites", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  courseId: uuid("course_id").references(() => courses.id, { onDelete: 'cascade' }),
-  createdAt: timestamp("created_at").defaultNow(),
+export const instructorPayoutSchema = z.object({
+  id: z.string().uuid(),
+  instructorId: z.string().nullable().optional(),
+  amount: z.string(), // decimal
+  currency: z.string().default('USD'),
+  period: z.string().length(7), // YYYY-MM
+  revenueShare: z.string().default('70.00'),
+  totalRevenue: z.string(),
+  status: z.enum(['pending', 'processing', 'completed', 'failed']).default('pending'),
+  payoutReference: z.string().nullable().optional(),
+  processedAt: z.date().nullable().optional(),
+  createdAt: z.date().optional(),
 });
 
 // Instructor applications
-export const instructorApplications = pgTable("instructor_applications", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  firstName: varchar("first_name", { length: 100 }).notNull(),
-  lastName: varchar("last_name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull(),
-  phone: varchar("phone", { length: 50 }).notNull(),
-  bio: text("bio").notNull(),
-  experience: text("experience").notNull(),
-  qualifications: text("qualifications").notNull(),
-  previousTeaching: text("previous_teaching").notNull(),
-  areasOfExpertise: text("areas_of_expertise").array().notNull(),
-  cvUrl: varchar("cv_url"),
-  videoIntroUrl: varchar("video_intro_url"),
-  status: varchar("status", { enum: ['pending', 'approved', 'rejected'] }).default('pending'),
-  submittedAt: timestamp("submitted_at").defaultNow(),
-  reviewedAt: timestamp("reviewed_at"),
-  reviewedBy: varchar("reviewed_by").references(() => users.id),
-  reviewComments: text("review_comments"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const instructorApplicationSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().nullable().optional(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().min(1),
+  bio: z.string().min(1),
+  experience: z.string().min(1),
+  qualifications: z.string().min(1),
+  previousTeaching: z.string().min(1),
+  areasOfExpertise: z.array(z.string()).min(1),
+  cvUrl: z.string().nullable().optional(),
+  videoIntroUrl: z.string().nullable().optional(),
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  submittedAt: z.date().optional(),
+  reviewedAt: z.date().nullable().optional(),
+  reviewedBy: z.string().nullable().optional(),
+  reviewComments: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  courses: many(courses),
-  enrollments: many(enrollments),
-  progress: many(progress),
-  reviews: many(reviews),
-  discussions: many(discussions),
-  replies: many(replies),
-  certifications: many(certifications),
-  orders: many(orders),
-  favorites: many(favorites),
-  quizAttempts: many(quizAttempts),
-  assignmentSubmissions: many(assignmentSubmissions),
-  instructorPayouts: many(instructorPayouts),
-  instructorApplications: many(instructorApplications),
-  reviewedApplications: many(instructorApplications, {
-    relationName: "ApplicationReviewer",
-  }),
-}));
+// ============================================================================
+// TYPES & INFERRED SCHEMAS
+// ============================================================================
 
-export const coursesRelations = relations(courses, ({ one, many }) => ({
-  instructor: one(users, {
-    fields: [courses.instructorId],
-    references: [users.id],
-  }),
-  category: one(categories, {
-    fields: [courses.categoryId],
-    references: [categories.id],
-  }),
-  modules: many(modules),
-  enrollments: many(enrollments),
-  reviews: many(reviews),
-  discussions: many(discussions),
-  certifications: many(certifications),
-  orders: many(orders),
-  favorites: many(favorites),
-  resources: many(courseResources),
-}));
+// Base types
+export type User = z.infer<typeof userSchema>;
+export type UpsertUser = z.infer<typeof userSchema>;
+export type Course = z.infer<typeof courseSchema>;
+export type Module = z.infer<typeof moduleSchema>;
+export type Lesson = z.infer<typeof lessonSchema>;
+export type Enrollment = z.infer<typeof enrollmentSchema>;
+export type Progress = z.infer<typeof progressSchema>;
+export type Review = z.infer<typeof reviewSchema>;
+export type Discussion = z.infer<typeof discussionSchema>;
+export type Reply = z.infer<typeof replySchema>;
+export type Certification = z.infer<typeof certificationSchema>;
+export type Order = z.infer<typeof orderSchema>;
+export type Category = z.infer<typeof categorySchema>;
+export type CourseResource = z.infer<typeof courseResourceSchema>;
+export type Quiz = z.infer<typeof quizSchema>;
+export type QuizQuestion = z.infer<typeof quizQuestionSchema>;
+export type QuizAnswer = z.infer<typeof quizAnswerSchema>;
+export type QuizAttempt = z.infer<typeof quizAttemptSchema>;
+export type QuizResponse = z.infer<typeof quizResponseSchema>;
+export type Assignment = z.infer<typeof assignmentSchema>;
+export type AssignmentSubmission = z.infer<typeof assignmentSubmissionSchema>;
+export type InstructorPayout = z.infer<typeof instructorPayoutSchema>;
+export type InstructorApplication = z.infer<typeof instructorApplicationSchema>;
 
-export const modulesRelations = relations(modules, ({ one, many }) => ({
-  course: one(courses, {
-    fields: [modules.courseId],
-    references: [courses.id],
-  }),
-  lessons: many(lessons),
-}));
-
-export const lessonsRelations = relations(lessons, ({ one, many }) => ({
-  module: one(modules, {
-    fields: [lessons.moduleId],
-    references: [modules.id],
-  }),
-  progress: many(progress),
-  quizzes: many(quizzes),
-  assignments: many(assignments),
-  resources: many(courseResources),
-}));
-
-export const courseResourcesRelations = relations(courseResources, ({ one }) => ({
-  lesson: one(lessons, {
-    fields: [courseResources.lessonId],
-    references: [lessons.id],
-  }),
-  course: one(courses, {
-    fields: [courseResources.courseId],
-    references: [courses.id],
-  }),
-}));
-
-// Quiz relations
-export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
-  lesson: one(lessons, {
-    fields: [quizzes.lessonId],
-    references: [lessons.id],
-  }),
-  questions: many(quizQuestions),
-  attempts: many(quizAttempts),
-}));
-
-export const quizQuestionsRelations = relations(quizQuestions, ({ one, many }) => ({
-  quiz: one(quizzes, {
-    fields: [quizQuestions.quizId],
-    references: [quizzes.id],
-  }),
-  answers: many(quizAnswers),
-  responses: many(quizResponses),
-}));
-
-export const quizAnswersRelations = relations(quizAnswers, ({ one, many }) => ({
-  question: one(quizQuestions, {
-    fields: [quizAnswers.questionId],
-    references: [quizQuestions.id],
-  }),
-  responses: many(quizResponses),
-}));
-
-export const quizAttemptsRelations = relations(quizAttempts, ({ one, many }) => ({
-  user: one(users, {
-    fields: [quizAttempts.userId],
-    references: [users.id],
-  }),
-  quiz: one(quizzes, {
-    fields: [quizAttempts.quizId],
-    references: [quizzes.id],
-  }),
-  responses: many(quizResponses),
-}));
-
-export const quizResponsesRelations = relations(quizResponses, ({ one }) => ({
-  attempt: one(quizAttempts, {
-    fields: [quizResponses.attemptId],
-    references: [quizAttempts.id],
-  }),
-  question: one(quizQuestions, {
-    fields: [quizResponses.questionId],
-    references: [quizQuestions.id],
-  }),
-  answer: one(quizAnswers, {
-    fields: [quizResponses.answerId],
-    references: [quizAnswers.id],
-  }),
-}));
-
-// Assignment relations
-export const assignmentsRelations = relations(assignments, ({ one, many }) => ({
-  lesson: one(lessons, {
-    fields: [assignments.lessonId],
-    references: [lessons.id],
-  }),
-  submissions: many(assignmentSubmissions),
-}));
-
-export const assignmentSubmissionsRelations = relations(assignmentSubmissions, ({ one }) => ({
-  user: one(users, {
-    fields: [assignmentSubmissions.userId],
-    references: [users.id],
-  }),
-  assignment: one(assignments, {
-    fields: [assignmentSubmissions.assignmentId],
-    references: [assignments.id],
-  }),
-  grader: one(users, {
-    fields: [assignmentSubmissions.gradedBy],
-    references: [users.id],
-  }),
-}));
-
-// Instructor payout relations
-export const instructorPayoutsRelations = relations(instructorPayouts, ({ one }) => ({
-  instructor: one(users, {
-    fields: [instructorPayouts.instructorId],
-    references: [users.id],
-  }),
-}));
-
-// Instructor application relations
-export const instructorApplicationsRelations = relations(instructorApplications, ({ one }) => ({
-  user: one(users, {
-    fields: [instructorApplications.userId],
-    references: [users.id],
-  }),
-  reviewer: one(users, {
-    fields: [instructorApplications.reviewedBy],
-    references: [users.id],
-    relationName: "ApplicationReviewer",
-  }),
-}));
-
-// Export types
-export type UpsertUser = typeof users.$inferInsert;
-export type User = typeof users.$inferSelect;
-export type Course = typeof courses.$inferSelect;
-export type InsertCourse = typeof courses.$inferInsert;
-export type Module = typeof modules.$inferSelect;
-export type InsertModule = typeof modules.$inferInsert;
-export type Lesson = typeof lessons.$inferSelect;
-export type InsertLesson = typeof lessons.$inferInsert;
-export type Enrollment = typeof enrollments.$inferSelect;
-export type InsertEnrollment = typeof enrollments.$inferInsert;
-export type Progress = typeof progress.$inferSelect;
-export type InsertProgress = typeof progress.$inferInsert;
-export type Review = typeof reviews.$inferSelect;
-export type InsertReview = typeof reviews.$inferInsert;
-export type Discussion = typeof discussions.$inferSelect;
-export type InsertDiscussion = typeof discussions.$inferInsert;
-export type Reply = typeof replies.$inferSelect;
-export type InsertReply = typeof replies.$inferInsert;
-export type Certification = typeof certifications.$inferSelect;
-export type InsertCertification = typeof certifications.$inferInsert;
-export type Order = typeof orders.$inferSelect;
-export type InsertOrder = typeof orders.$inferInsert;
-export type Category = typeof categories.$inferSelect;
-export type InsertCategory = typeof categories.$inferInsert;
-export type Favorite = typeof favorites.$inferSelect;
-export type InsertFavorite = typeof favorites.$inferInsert;
-export type InstructorApplication = typeof instructorApplications.$inferSelect;
-export type InsertInstructorApplication = typeof instructorApplications.$inferInsert;
-
-// Quiz types
-export type Quiz = typeof quizzes.$inferSelect;
-export type InsertQuiz = typeof quizzes.$inferInsert;
-export type QuizQuestion = typeof quizQuestions.$inferSelect;
-export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
-export type QuizAnswer = typeof quizAnswers.$inferSelect;
-export type InsertQuizAnswer = typeof quizAnswers.$inferInsert;
-export type QuizAttempt = typeof quizAttempts.$inferSelect;
-export type InsertQuizAttempt = typeof quizAttempts.$inferInsert;
-export type QuizResponse = typeof quizResponses.$inferSelect;
-export type InsertQuizResponse = typeof quizResponses.$inferInsert;
-
-// Assignment types
-export type Assignment = typeof assignments.$inferSelect;
-export type InsertAssignment = typeof assignments.$inferInsert;
-export type AssignmentSubmission = typeof assignmentSubmissions.$inferSelect;
-export type InsertAssignmentSubmission = typeof assignmentSubmissions.$inferInsert;
-
-// Instructor payout types
-export type InstructorPayout = typeof instructorPayouts.$inferSelect;
-export type InsertInstructorPayout = typeof instructorPayouts.$inferInsert;
-
-// Course resource types
-export type CourseResource = typeof courseResources.$inferSelect;
-export type InsertCourseResource = typeof courseResources.$inferInsert;
-
-// Zod schemas for validation
-export const insertCourseSchema = createInsertSchema(courses).omit({
+// Insert schemas (omitting generated fields)
+export const insertCourseSchema = courseSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({
+export const insertEnrollmentSchema = enrollmentSchema.omit({
   id: true,
   enrolledAt: true,
 });
 
-export const insertReviewSchema = createInsertSchema(reviews).omit({
+export const insertReviewSchema = reviewSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertDiscussionSchema = createInsertSchema(discussions).omit({
+export const insertDiscussionSchema = discussionSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertReplySchema = createInsertSchema(replies).omit({
+export const insertReplySchema = replySchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertProgressSchema = createInsertSchema(progress).omit({
+export const insertProgressSchema = progressSchema.omit({
   id: true,
   lastWatchedAt: true,
 });
 
-// Quiz schemas
-export const insertQuizSchema = createInsertSchema(quizzes).omit({
+export const insertQuizSchema = quizSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertQuizQuestionSchema = createInsertSchema(quizQuestions).omit({
+export const insertQuizQuestionSchema = quizQuestionSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertQuizAnswerSchema = createInsertSchema(quizAnswers).omit({
+export const insertQuizAnswerSchema = quizAnswerSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertQuizAttemptSchema = createInsertSchema(quizAttempts).omit({
+export const insertQuizAttemptSchema = quizAttemptSchema.omit({
   id: true,
   startedAt: true,
 });
 
-export const insertQuizResponseSchema = createInsertSchema(quizResponses).omit({
+export const insertQuizResponseSchema = quizResponseSchema.omit({
   id: true,
   createdAt: true,
 });
 
-// Course resource schema
-export const insertCourseResourceSchema = createInsertSchema(courseResources).omit({
+export const insertCourseResourceSchema = courseResourceSchema.omit({
   id: true,
   createdAt: true,
 });
 
-// Assignment schemas
-export const insertAssignmentSchema = createInsertSchema(assignments).omit({
+export const insertAssignmentSchema = assignmentSchema.omit({
   id: true,
   createdAt: true,
 });
 
-export const insertAssignmentSubmissionSchema = createInsertSchema(assignmentSubmissions).omit({
+export const insertAssignmentSubmissionSchema = assignmentSubmissionSchema.omit({
   id: true,
   submittedAt: true,
 });
 
-// Instructor payout schema
-export const insertInstructorPayoutSchema = createInsertSchema(instructorPayouts).omit({
+export const insertInstructorPayoutSchema = instructorPayoutSchema.omit({
   id: true,
   createdAt: true,
 });
 
-// Instructor application schema
-export const insertInstructorApplicationSchema = createInsertSchema(instructorApplications).omit({
+export const insertInstructorApplicationSchema = instructorApplicationSchema.omit({
   id: true,
   submittedAt: true,
   createdAt: true,
   updatedAt: true,
 });
-
-// Add self-reference for replies after table definition
-export const repliesRelations = relations(replies, ({ one, many }) => ({
-  discussion: one(discussions, {
-    fields: [replies.discussionId],
-    references: [discussions.id],
-  }),
-  user: one(users, {
-    fields: [replies.userId],
-    references: [users.id],
-  }),
-  parent: one(replies, {
-    fields: [replies.parentId],
-    references: [replies.id],
-    relationName: "ParentChild",
-  }),
-  children: many(replies, {
-    relationName: "ParentChild",
-  }),
-}));
 
 // Extended types for API responses
 export type CourseWithDetails = Course & {
@@ -690,7 +419,6 @@ export type CourseWithDetails = Course & {
   isEnrolled?: boolean;
 };
 
-// Quiz extended types
 export type QuizWithQuestions = Quiz & {
   questions: (QuizQuestion & { answers: QuizAnswer[] })[];
 };
@@ -701,7 +429,6 @@ export type QuizAttemptWithDetails = QuizAttempt & {
   responses: (QuizResponse & { question: QuizQuestion; answer?: QuizAnswer })[];
 };
 
-// Assignment extended types
 export type AssignmentWithSubmissions = Assignment & {
   submissions: (AssignmentSubmission & { user: User })[];
 };
@@ -718,7 +445,7 @@ export type EnrollmentWithCourse = Enrollment & {
 
 export type DiscussionWithUser = Discussion & {
   user: User;
-  _count?: { replies: number };
+  replyCount?: number;
 };
 
 export type ReplyWithUser = Reply & {

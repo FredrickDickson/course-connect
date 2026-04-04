@@ -23,22 +23,61 @@ export default function Courses() {
   const [priceRange, setPriceRange] = useState("");
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['/api/categories'],
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('categories').select('*');
+      if (error) throw error;
+      return data;
+    }
   });
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['/api/courses', {
+    queryKey: ['courses_filtered', {
       search,
       category: category === 'all' ? '' : category,
       level: level === 'all' ? '' : level,
       sortBy,
       priceRange: priceRange === 'all' ? '' : priceRange
     }],
-    enabled: true,
+    queryFn: async () => {
+      let query = supabase
+        .from('courses')
+        .select('*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)')
+        .eq('is_published', true);
+      
+      if (search) {
+        query = query.ilike('title', `%${search}%`);
+      }
+      
+      if (category && category !== 'all') {
+        // If it's a slug, we might need a join or a second query.
+        // Assuming we have slugs in categories table.
+        const { data: catData } = await supabase.from('categories').select('id').eq('slug', category).maybeSingle();
+        if (catData) query = query.eq('category_id', catData.id);
+      }
+      
+      if (level && level !== 'all') {
+        query = query.eq('level', level);
+      }
+      
+      // Sort logic
+      if (sortBy === 'newest') query = query.order('created_at', { ascending: false });
+      else if (sortBy === 'price-low') query = query.order('price', { ascending: true });
+      else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
+      else if (sortBy === 'rating') query = query.order('avg_rating', { ascending: false });
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['/api/courses/stats'],
+    queryKey: ['courses_stats'],
+    queryFn: async () => {
+      const { count } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true);
+      return { totalCourses: count || 0 };
+    }
   });
 
   return (
@@ -237,11 +276,11 @@ export default function Courses() {
 
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {/* Highlight top courses */}
-            {courses.filter((course: any) => course.isFeatured).slice(0, 2).map((course: any) => (
+            {courses.filter((course: any) => course.is_featured).slice(0, 2).map((course: any) => (
               <Card key={course.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
                 <div className="relative">
                   <img
-                    src={course.thumbnailUrl}
+                    src={course.thumbnail_url}
                     alt={course.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -273,7 +312,7 @@ export default function Courses() {
                           ${course.price.toLocaleString()}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {course.duration} hours • {course.enrollmentCount} enrolled
+                          {course.duration_hours} hours • {course.enrollment_count} enrolled
                         </div>
                       </div>
                       <Button>
@@ -389,9 +428,9 @@ export default function Courses() {
                     <CardContent className="p-6">
                       <div className="flex space-x-4">
                         <div className="w-24 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
-                          {course.thumbnailUrl ? (
+                          {course.thumbnail_url ? (
                             <img
-                              src={course.thumbnailUrl}
+                              src={course.thumbnail_url}
                               alt={course.title}
                               className="w-full h-full object-cover"
                             />
@@ -415,16 +454,16 @@ export default function Courses() {
                               <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                                 <div className="flex items-center space-x-1">
                                   <Star className="w-4 h-4 fill-current text-yellow-500" />
-                                  <span>{course.avgRating?.toFixed(1) || '0.0'}</span>
+                                  <span>{course.avg_rating?.toFixed(1) || '0.0'}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <Users className="w-4 h-4" />
-                                  <span>{course.enrollmentCount || 0}</span>
+                                  <span>{course.enrollment_count || 0}</span>
                                 </div>
-                                {course.duration && (
+                                {course.duration_hours && (
                                   <div className="flex items-center space-x-1">
                                     <Clock className="w-4 h-4" />
-                                    <span>{course.duration}h</span>
+                                    <span>{course.duration_hours}h</span>
                                   </div>
                                 )}
                               </div>

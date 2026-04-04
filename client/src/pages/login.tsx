@@ -54,7 +54,7 @@ export default function Login() {
 
       toast({
         title: t("auth.welcomeBack"),
-        description: t("messages.enrollmentSuccessful"),
+        description: t("messages.signInSuccess"),
       });
 
       const role = profile?.role || data.user.user_metadata?.role || "student";

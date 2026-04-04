@@ -31,21 +31,27 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, toast, setLocation]);
 
-  // Fetch enrollments from Express backend
-  const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
-    queryKey: ['/api/enrollments'],
+  // Fetch enrollments and calculate progress locally
+  const { data: enrollmentsData = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
+    queryKey: ['enrollments', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*, course:courses(*)')
+        .eq('user_id', user!.id)
+        .order('enrolled_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
     enabled: !!user,
   });
 
-  // Fetch progress overview from Express backend
-  const { data: progressOverview } = useQuery<{
-    totalCourses: number;
-    completedCourses: number;
-    totalHours: number;
-  }>({
-    queryKey: ['/api/progress/overview'],
-    enabled: !!user,
-  });
+  const enrollments = enrollmentsData;
+  const progressOverview = {
+    totalCourses: enrollments.length,
+    completedCourses: enrollments.filter(e => Number(e.progress) >= 100).length,
+    totalHours: enrollments.reduce((sum, e) => sum + (e.course?.duration_hours || 0), 0)
+  };
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
@@ -63,6 +69,9 @@ export default function Dashboard() {
   const { data: certificates = [] } = useQuery({
     queryKey: ['certificates', user?.id],
     queryFn: async () => {
+      // [/] Refactor server/storage.ts to use Supabase Service Role client
+      // [/] Initialize supabaseAdmin client with service_role_key
+      // [/] Migrate User operations (getUser, upsertUser, updateUser)
       const { data, error } = await supabase
         .from("certifications")
         .select("*, course:courses(id, title)")

@@ -58,6 +58,7 @@ import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={BecomeInstructor} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

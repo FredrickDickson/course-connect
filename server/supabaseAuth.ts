@@ -1,30 +1,23 @@
 /**
  * Supabase Authentication Middleware
  * ----------------------------------
- * Handles user authentication using Supabase JWTs.
- * 
- * Features:
- * - Verifies JWT tokens from Supabase Auth.
- * - Automatically fetches user info from Supabase.
- * - Supports both public routes and protected routes.
- * 
- * Environment Variables:
- * - SUPABASE_URL: Supabase project URL
- * - SUPABASE_ANON_KEY: Public anon key for client requests
- * - SUPABASE_SERVICE_ROLE_KEY: Private service key for server operations
+ * Handles user authentication using Supabase JWTs and auto-provisions
+ * user records in the local database.
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
+import { storage } from "./storage";
 
-// Use VITE_ prefixed vars as fallback
+// Use VITE_ prefixed vars as fallback for consistency with frontend
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — auth middleware will be unavailable.');
+  console.warn('[AUTH] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — auth middleware will be unavailable.');
 }
 
+// Initialize Supabase client with service role for administrative access (getUser)
 const supabase: SupabaseClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? createClient(
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
@@ -39,8 +32,9 @@ const supabase: SupabaseClient = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? cre
 /**
  * Middleware to verify Supabase JWT tokens.
  * Extracts the Bearer token from Authorization header and verifies it.
+ * Also ensures the user exists in the local platform database (auto-provisioning).
  */
-export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+export async function requireSupabaseAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
 
@@ -50,42 +44,59 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
 
     const token = authHeader.split(" ")[1];
 
+    // Verify token with Supabase
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Unauthorized — Invalid token" });
     }
 
-    // Attach user to request for downstream handlers
-    (req as any).user = user;
+    // Auto-provision: ensure the Supabase user exists in the local platform 'users' table.
+    // This syncs the user on their very first API call after sign-up.
+    let localUser = await storage.getUser(user.id);
+    
+    if (!localUser) {
+      const fullName: string = user.user_metadata?.full_name || "";
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0] || user.email?.split("@")[0] || "User";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      try {
+        localUser = await storage.upsertUser({
+          id: user.id,
+          email: user.email!,
+          firstName,
+          lastName,
+          profileImageUrl: user.user_metadata?.avatar_url || null,
+          role: "student", // Default role
+          createdAt: new Date(),
+        });
+        console.log(`[AUTH] Auto-provisioned new user record: ${user.email} (${user.id})`);
+      } catch (provisionErr) {
+        console.error("[AUTH] Failed to auto-provision user:", provisionErr);
+        // We attempt to fetch one more time in case of race condition
+        localUser = await storage.getUser(user.id);
+        if (!localUser) {
+           return res.status(500).json({ message: "Failed to synchronize user data" });
+        }
+      }
+    }
+
+    // Attach user information to the request for downstream handlers and RBAC middleware
+    (req as any).user = {
+      ...user,
+      claims: { sub: user.id }, // Maintain compatibility with existing code
+      role: localUser.role || 'student'
+    };
+    
     next();
   } catch (error) {
-    console.error("Supabase auth check failed:", error);
-    res.status(401).json({ message: "Unauthorized" });
+    console.error("[AUTH] Supabase authentication failed:", error);
+    res.status(401).json({ message: "Unauthorized — Authentication failed" });
   }
-}
-
-/**
- * Sets up Supabase Auth middleware and endpoints on an Express app.
- * 
- * @param app Express instance
- */
-export function setupAuth(app: Express) {
-  // Example protected route (for testing)
-  app.get("/api/protected", isAuthenticated, (req: Request, res: Response) => {
-    res.json({
-      message: "You are authenticated!",
-      user: (req as any).user,
-    });
-  });
-
-  // Example public route
-  app.get("/api/public", (_req, res) => {
-    res.json({ message: "This route is public." });
-  });
 }
 
 export { supabase };

@@ -8,9 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "wouter";
 import { Star, Clock, Users, BookOpen, PlayCircle, CheckCircle } from "lucide-react";
 import type { CourseWithDetails, ReviewWithUser } from "@shared/schema";
@@ -22,18 +20,45 @@ export default function CourseDetail() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
-  const { data: course, isLoading } = useQuery<CourseWithDetails>({
-    queryKey: [`/api/courses/${id}`],
+  const { data: course, isLoading } = useQuery<any>({
+    queryKey: ['course', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*, modules:modules(*, lessons:lessons(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: [`/api/enrollments/check/${id}`],
+    queryKey: ['enrollment-check', id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('course_id', id)
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id && !!user,
   });
 
-  const { data: reviews = [] } = useQuery<ReviewWithUser[]>({
-    queryKey: [`/api/reviews/${id}`],
+  const { data: reviews = [] } = useQuery<any[]>({
+    queryKey: ['reviews', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, user:users(*)')
+        .eq('course_id', id);
+      if (error) throw error;
+      return data || [];
+    },
     enabled: !!id,
   });
 
@@ -43,19 +68,23 @@ export default function CourseDetail() {
         setLocation(`/checkout/${id}`);
         return;
       }
-      const response = await fetch('/api/enrollments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId: id }),
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to enroll');
-      return response.json();
+      
+      const { data, error } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: user?.id,
+          course_id: id
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       if (!course?.price || parseFloat(course.price.toString()) === 0) {
-        queryClient.invalidateQueries({ queryKey: [`/api/enrollments/check/${id}`] });
-        queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+        queryClient.invalidateQueries({ queryKey: ['enrollment-check', id, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ['enrollments', user?.id] });
         toast({
           title: "Enrolled Successfully",
           description: "You can now start learning!",
@@ -70,7 +99,9 @@ export default function CourseDetail() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 500);
         }, 500);
         return;
       }
@@ -128,8 +159,8 @@ export default function CourseDetail() {
 
   const isEnrolled = !!enrollment;
   const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
-  const avgRating = course.avgRating ? parseFloat(course.avgRating.toString()) : 0;
-  const ratingCount = course.ratingCount || 0;
+  const avgRating = course.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
+  const ratingCount = course.rating_count || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,12 +194,12 @@ export default function CourseDetail() {
                 {course.instructor && (
                   <div className="flex items-center space-x-2">
                     <img 
-                      src={course.instructor.profileImageUrl || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                      alt={`${course.instructor.firstName} ${course.instructor.lastName}`}
+                      src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
+                      alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
                       className="w-8 h-8 rounded-full object-cover"
                       data-testid="instructor-avatar"
                     />
-                    <span>By {course.instructor.firstName} {course.instructor.lastName}</span>
+                    <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
                   </div>
                 )}
                 <div className="flex items-center space-x-1">
@@ -177,7 +208,7 @@ export default function CourseDetail() {
                 </div>
                 <div className="flex items-center space-x-1">
                   <Users className="w-4 h-4" />
-                  <span>{course.enrollmentCount} students</span>
+                  <span>{course.enrollment_count} students</span>
                 </div>
               </div>
             </div>
@@ -186,9 +217,9 @@ export default function CourseDetail() {
             <div className="lg:col-span-1">
               <Card className="bg-white shadow-lg">
                 <div className="aspect-video bg-muted rounded-t-lg relative overflow-hidden">
-                  {course.thumbnailUrl ? (
+                  {course.thumbnail_url ? (
                     <img 
-                      src={course.thumbnailUrl}
+                      src={course.thumbnail_url}
                       alt={course.title}
                       className="w-full h-full object-cover"
                       data-testid="course-thumbnail"
@@ -240,7 +271,7 @@ export default function CourseDetail() {
                           <Clock className="w-4 h-4 text-muted-foreground" />
                           <span>Duration</span>
                         </div>
-                        <span className="font-medium">{course.duration} hours</span>
+                         <span className="font-medium">{course.duration_hours || course.duration} hours</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
@@ -364,15 +395,15 @@ export default function CourseDetail() {
                           <Card key={review.id}>
                             <CardContent className="p-4">
                               <div className="flex items-start space-x-4">
-                                <img 
-                                  src={review.user.profileImageUrl || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                                  alt={`${review.user.firstName} ${review.user.lastName}`}
+                                 <img 
+                                  src={review.user.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
+                                  alt={`${review.user.first_name} ${review.user.last_name}`}
                                   className="w-10 h-10 rounded-full object-cover"
                                 />
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-2">
                                     <div>
-                                      <p className="font-medium">{review.user.firstName} {review.user.lastName}</p>
+                                      <p className="font-medium">{review.user.first_name} {review.user.last_name}</p>
                                       <div className="flex items-center space-x-1">
                                         {[...Array(5)].map((_, i) => (
                                           <Star 
@@ -382,8 +413,8 @@ export default function CourseDetail() {
                                         ))}
                                       </div>
                                     </div>
-                                    <span className="text-xs text-muted-foreground">
-                                      {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                                     <span className="text-xs text-muted-foreground">
+                                      {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'N/A'}
                                     </span>
                                   </div>
                                   {review.comment && (
@@ -411,14 +442,14 @@ export default function CourseDetail() {
                     <h3 className="text-lg font-semibold mb-4">Instructor</h3>
                     <div className="text-center space-y-4">
                       <img 
-                        src={course.instructor.profileImageUrl || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`}
-                        alt={`${course.instructor.firstName} ${course.instructor.lastName}`}
+                        src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`}
+                        alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
                         className="w-20 h-20 rounded-full object-cover mx-auto"
                         data-testid="instructor-profile-image"
                       />
                       <div>
                         <h4 className="font-semibold text-lg">
-                          {course.instructor.firstName} {course.instructor.lastName}
+                          {course.instructor.first_name} {course.instructor.last_name}
                         </h4>
                         {course.instructor.bio && (
                           <p className="text-sm text-muted-foreground mt-2">

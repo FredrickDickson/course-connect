@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AlertCircle } from "lucide-react";
@@ -45,18 +45,56 @@ export default function VideoPlayer() {
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: [`/api/courses/${courseId}`],
+    queryKey: ['course', courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          modules:modules(
+            *,
+            lessons:lessons(*)
+          )
+        `)
+        .eq('id', courseId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!courseId && isAuthenticated,
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: [`/api/enrollments/check/${courseId}`],
-    enabled: !!courseId && isAuthenticated,
+    queryKey: ['enrollment-check', courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? { isEnrolled: true, ...data } : { isEnrolled: false };
+    },
+    enabled: !!courseId && !!user && isAuthenticated,
   });
 
-  const { data: progress = [] } = useQuery({
-    queryKey: [`/api/progress/${courseId}`],
-    enabled: !!courseId && isAuthenticated,
+  const { data: progressList = [] } = useQuery({
+    queryKey: ['progress', courseId],
+    queryFn: async () => {
+      // Get all modules and lessons for this course first to filter progress correctly
+      const { data, error } = await supabase
+        .from('progress')
+        .select('*, lesson:lessons!inner(*)')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Filter the progress records that belong to this course's lessons
+      const courseLessons = course?.modules?.flatMap((m: any) => m.lessons.map((l: any) => l.id)) || [];
+      return (data || []).filter((p: any) => courseLessons.includes(p.lesson_id));
+    },
+    enabled: !!courseId && !!user && !!course && isAuthenticated,
   });
 
   // Update progress mutation
@@ -70,12 +108,22 @@ export default function VideoPlayer() {
       watchTime: number;
       completed: boolean;
     }) => {
-      const response = await apiRequest("POST", "/api/progress", {
-        lessonId,
-        watchTime,
-        completed,
-      });
-      return response.json();
+      const { data, error } = await supabase
+        .from('progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          watch_time: watchTime,
+          completed: completed,
+          last_watched_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,lesson_id'
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -139,11 +187,11 @@ export default function VideoPlayer() {
       setDuration(video.duration);
 
       // Resume from last watched position
-      const lessonProgress = progress.find(
-        (p: any) => p.lesson.id === lessonId,
+      const lessonProgress = progressList.find(
+        (p: any) => p.lesson_id === lessonId, // Use lesson_id snake_case
       );
-      if (lessonProgress && lessonProgress.watchTime > 0) {
-        video.currentTime = lessonProgress.watchTime;
+      if (lessonProgress && lessonProgress.watch_time > 0) {
+        video.currentTime = lessonProgress.watch_time;
       }
     };
 
@@ -182,7 +230,7 @@ export default function VideoPlayer() {
       video.removeEventListener("loadstart", handleLoadStart);
       video.removeEventListener("canplay", handleCanPlay);
     };
-  }, [currentLesson, progress, lessonId]);
+  }, [currentLesson, progressList, lessonId]);
 
   const togglePlayPause = () => {
     const video = videoRef.current;
@@ -295,7 +343,7 @@ export default function VideoPlayer() {
             <ErrorBoundary>
               <Card className="overflow-hidden" data-testid="video-player">
                 <div className="relative bg-black aspect-video">
-                  {isVideoLoading && currentLesson.videoUrl && (
+                  {isVideoLoading && currentLesson.video_url && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                     </div>
@@ -323,15 +371,15 @@ export default function VideoPlayer() {
                       </div>
                     </div>
                   )}
-                  {currentLesson.videoUrl ? (
+                  {currentLesson.video_url ? (
                     <video
                       ref={videoRef}
                       className="w-full h-full"
-                      poster={currentLesson.thumbnailUrl}
+                      poster={currentLesson.thumbnail_url}
                       controls
                       data-testid="video-element"
                     >
-                      <source src={currentLesson.videoUrl} type="video/mp4" />
+                      <source src={currentLesson.video_url} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                   ) : (
@@ -355,12 +403,12 @@ export default function VideoPlayer() {
                     <Badge
                       data-testid="lesson-type"
                       className={
-                        currentLesson.contentType === "video"
+                        currentLesson.content_type === "video"
                           ? "bg-primary"
                           : "bg-secondary"
                       }
                     >
-                      {currentLesson.contentType}
+                      {currentLesson.content_type}
                     </Badge>
                   </div>
                   <h1
@@ -583,13 +631,13 @@ export default function VideoPlayer() {
                       Overall Progress
                     </span>
                     <span className="font-medium">
-                      {progress.filter((p: any) => p.completed).length} /{" "}
+                      {progressList.filter((p: any) => p.completed).length} /{" "}
                       {allLessons.length}
                     </span>
                   </div>
                   <Progress
                     value={
-                      (progress.filter((p: any) => p.completed).length /
+                      (progressList.filter((p: any) => p.completed).length /
                         allLessons.length) *
                       100
                     }
@@ -614,8 +662,8 @@ export default function VideoPlayer() {
                       <div className="space-y-1">
                         {module.lessons?.map(
                           (lesson: any, lessonIndex: number) => {
-                            const lessonProgress = progress.find(
-                              (p: any) => p.lesson.id === lesson.id,
+                            const lessonProgress = progressList.find(
+                              (p: any) => p.lesson_id === lesson.id,
                             );
                             const isCurrentLesson = lesson.id === lessonId;
                             const isCompleted =
@@ -639,7 +687,7 @@ export default function VideoPlayer() {
                                       <i className="fas fa-check-circle text-green-600"></i>
                                     ) : (
                                       <i
-                                        className={`fas ${lesson.contentType === "video" ? "fa-play-circle" : "fa-file-text"} ${
+                                        className={`fas ${lesson.content_type === "video" ? "fa-play-circle" : "fa-file-text"} ${
                                           isCurrentLesson
                                             ? "text-primary-foreground"
                                             : "text-muted-foreground"

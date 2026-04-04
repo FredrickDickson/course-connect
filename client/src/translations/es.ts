@@ -177,6 +177,7 @@ export const es = {
     courseAddedToFavorites: "Curso agregado a favoritos",
     courseRemovedFromFavorites: "Curso eliminado de favoritos",
     enrollmentSuccessful: "Inscripción al curso exitosa",
+    signInSuccess: "Ha iniciado sesión correctamente.",
     paymentSuccessful: "Pago completado exitosamente",
     paymentFailed: "Pago fallido. Por favor intenta de nuevo.",
     networkError: "Error de red. Por favor verifica tu conexión.",

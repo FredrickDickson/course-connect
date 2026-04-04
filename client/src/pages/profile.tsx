@@ -11,19 +11,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { supabase } from "@/integrations/supabase/client";
+import { queryClient } from "@/lib/queryClient";
 import { User, Mail, Globe, Clock, BookOpen, Award, Edit2, Save, X, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { CourseWithDetails } from "@shared/schema";
 
 interface EnrollmentWithCourse {
   id: string;
-  userId: string;
-  courseId: string;
-  enrolledAt: string;
-  completedAt: string | null;
+  user_id: string;
+  course_id: string;
+  enrolled_at: string;
+  completed_at: string | null;
   progress: string;
-  course: CourseWithDetails;
+  course: any; 
 }
 
 export default function Profile() {
@@ -52,13 +53,35 @@ export default function Profile() {
 
   // Fetch user enrollments
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<EnrollmentWithCourse[]>({
-    queryKey: ['/api/enrollments'],
+    queryKey: ['enrollments', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*, course:courses(*)')
+        .eq('user_id', user?.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return await apiRequest('PATCH', '/api/user/profile', data);
+      const { error } = await supabase
+        .from('users')
+        .update({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          bio: data.bio,
+          country: data.country,
+          timezone: data.timezone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      return { success: true };
     },
     onSuccess: () => {
       toast({
@@ -92,8 +115,8 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const completedCourses = enrollments.filter(e => e.completedAt);
-  const inProgressCourses = enrollments.filter(e => !e.completedAt);
+  const completedCourses = enrollments.filter(e => e.completed_at);
+  const inProgressCourses = enrollments.filter(e => !e.completed_at);
 
   if (!user) {
     return (
@@ -284,11 +307,11 @@ export default function Profile() {
                   <CardContent>
                     <div className="space-y-4">
                       {inProgressCourses.map((enrollment) => (
-                        <Link key={enrollment.id} href={`/course/${enrollment.courseId}/learn`}>
+                        <Link key={enrollment.id} href={`/learn/${enrollment.course_id}/${enrollment.course.id}`}>
                           <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer" data-testid={`enrollment-${enrollment.id}`}>
-                            {enrollment.course.thumbnailUrl && (
+                            {enrollment.course.thumbnail_url && (
                               <img 
-                                src={enrollment.course.thumbnailUrl} 
+                                src={enrollment.course.thumbnail_url} 
                                 alt={enrollment.course.title}
                                 className="w-24 h-16 object-cover rounded"
                               />
@@ -328,16 +351,16 @@ export default function Profile() {
                     <div className="grid md:grid-cols-2 gap-4">
                       {completedCourses.map((enrollment) => (
                         <div key={enrollment.id} className="border rounded-lg p-4" data-testid={`completed-${enrollment.id}`}>
-                          {enrollment.course.thumbnailUrl && (
+                          {enrollment.course.thumbnail_url && (
                             <img 
-                              src={enrollment.course.thumbnailUrl} 
+                              src={enrollment.course.thumbnail_url} 
                               alt={enrollment.course.title}
                               className="w-full h-32 object-cover rounded mb-3"
                             />
                           )}
                           <h4 className="font-semibold mb-2">{enrollment.course.title}</h4>
                           <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>Completed: {new Date(enrollment.completedAt!).toLocaleDateString()}</span>
+                            <span>Completed: {new Date(enrollment.completed_at!).toLocaleDateString()}</span>
                             <Badge variant="secondary">
                               <Award className="h-3 w-3 mr-1" />
                               Certified
@@ -398,7 +421,7 @@ export default function Profile() {
                           <div className="flex-1">
                             <h4 className="font-semibold text-sm">{enrollment.course.title}</h4>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(enrollment.completedAt!).toLocaleDateString()}
+                              {new Date(enrollment.completed_at!).toLocaleDateString()}
                             </p>
                           </div>
                         </div>

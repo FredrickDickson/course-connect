@@ -11,7 +11,7 @@ import { createServer, type Server } from "http";
 import express from "express";
 import crypto from "crypto";
 import { storage } from "./storage";
-import { isAuthenticated } from "./sessionAuth";
+import { requireSupabaseAuth } from "./supabaseAuth";
 import { requireRole, requireInstructor } from "./middleware/roleProtection";
 import {
   securityMiddleware,
@@ -41,9 +41,12 @@ import {
   insertInstructorApplicationSchema,
 } from "@shared/schema";
 
-// Define authenticated request type
+/// Define authenticated request type for TypeScript compatibility
 interface AuthRequest extends Request {
   user: {
+    id: string;
+    email: string;
+    role: string;
     claims: {
       sub: string;
     };
@@ -69,83 +72,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
   // ADMIN ROUTES
   // ============================================================================
-
-  app.post(
-    "/api/admin/setup",
-    asyncHandler(async (req: Request, res: Response) => {
-      const { email, password, firstName, lastName, setupKey } = req.body;
-
-      const validSetupKey = process.env.SETUP_KEY || "CIMA_ADMIN_SETUP_2024";
-
-      if (setupKey !== validSetupKey) {
-        return res.status(401).json({ message: "Invalid setup key" });
-      }
-
-      if (!email || !password) {
-        return res
-          .status(400)
-          .json({ message: "Email and password are required" });
-      }
-
-      // Validate password strength
-      if (password.length < 8) {
-        return res
-          .status(400)
-          .json({ message: "Password must be at least 8 characters" });
-      }
-
-      const hasUpper = /[A-Z]/.test(password);
-      const hasLower = /[a-z]/.test(password);
-      const hasNumber = /[0-9]/.test(password);
-      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-      if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-        return res.status(400).json({
-          message:
-            "Password must contain uppercase, lowercase, number, and special character",
-        });
-      }
-
-      // Import hashPassword from sessionAuth
-      const { hashPassword } = await import("./sessionAuth");
-      const passwordHash = await hashPassword(password);
-
-      // Check if user exists
-      let user = await storage.getUserByEmail(email);
-
-      if (user) {
-        // Update existing user to admin with new password
-        await storage.updateUser(user.id, {
-          password: passwordHash,
-          role: "admin",
-          firstName: firstName || user.firstName,
-          lastName: lastName || user.lastName,
-        });
-        user = await storage.getUser(user.id);
-      } else {
-        // Create new admin user
-        user = await storage.upsertUser({
-          email: email.toLowerCase().trim(),
-          password: passwordHash,
-          firstName: firstName || "Admin",
-          lastName: lastName || "User",
-          role: "admin",
-        });
-      }
-
-      // Create session
-      req.session.userId = user!.id;
-
-      res.json({
-        message: "Admin setup successful",
-        user: {
-          id: user!.id,
-          email: user!.email,
-          role: user!.role,
-        },
-      });
-    }),
-  );
 
   app.post(
     "/api/admin/check-user",
@@ -175,48 +101,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
   );
 
-  app.post(
-    "/api/admin/create-user",
-    asyncHandler(async (req: Request, res: Response) => {
-      if (process.env.NODE_ENV === "production") {
-        return res.status(403).json({ message: "Not available in production" });
-      }
-
-      const { email, firstName, lastName, setupKey } = req.body;
-
-      const validSetupKey = process.env.SETUP_KEY || "CIMA_ADMIN_SETUP_2024";
-      if (setupKey !== validSetupKey) {
-        return res.status(401).json({ message: "Invalid setup key" });
-      }
-
-      try {
-        const newUser = await storage.upsertUser({
-          id: `manual_${Date.now()}`,
-          email: email,
-          firstName: firstName || "Admin",
-          lastName: lastName || "User",
-          role: "admin",
-        });
-
-        res.json({
-          message: "User created and admin access granted",
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            role: newUser.role,
-          },
-        });
-      } catch (error) {
-        res.status(500).json({
-          message: "Failed to create user",
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }),
-  );
-
   app.get(
     "/api/debug/status",
     asyncHandler(async (req: Request, res: Response) => {
@@ -239,7 +123,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           database_status: "failed",
           error: error instanceof Error ? error.message : String(error),
-          using_memory_sessions: true,
         });
       }
     }),
@@ -251,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/auth/user",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -264,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put(
     "/api/auth/profile",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { firstName, lastName, bio, country, timezone } = req.body;
@@ -283,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/user/profile",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { firstName, lastName, bio, country, timezone } = req.body;
@@ -302,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/auth/profile/image",
-    isAuthenticated,
+    requireSupabaseAuth,
     uploadLimiter,
     profileImageUpload.single("image"),
     handleUploadError,
@@ -346,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/categories",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { name, description, slug } = req.body;
@@ -422,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/upload/video",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     uploadLimiter,
     videoUpload.single("video"),
@@ -445,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/upload/image",
-    isAuthenticated,
+    requireSupabaseAuth,
     uploadLimiter,
     imageUpload.single("image"),
     handleUploadError,
@@ -466,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/upload/document",
-    isAuthenticated,
+    requireSupabaseAuth,
     uploadLimiter,
     documentUpload.single("document"),
     handleUploadError,
@@ -487,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/upload/course-content",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     uploadLimiter,
     courseContentUpload.array("files", 10),
@@ -523,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/enrollments",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const enrollmentData = insertEnrollmentSchema.parse({
@@ -548,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/enrollments",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const enrollments = await storage.getUserEnrollments(userId);
@@ -558,7 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/enrollments/check/:courseId",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { courseId } = req.params;
@@ -569,14 +452,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/progress",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const progressData = insertProgressSchema.parse({ ...req.body, userId });
       const progress = await storage.updateProgress(progressData);
 
       // Check if course is completed and generate certificate
-      if (progressData.completed) {
+      if (progressData.completed && progressData.lessonId) {
         try {
           const lesson = await storage.getLessonById(progressData.lessonId);
           if (lesson) {
@@ -636,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/progress/:courseId",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { courseId } = req.params;
@@ -647,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/progress/overview",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const overview = await storage.getUserOverallProgress(userId);
@@ -658,7 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Student dashboard endpoints — real DB data
   app.get(
     "/api/assignments",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const assignments = await storage.getStudentPendingAssignments(userId);
@@ -668,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/quizzes/pending",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const quizzes = await storage.getStudentPendingQuizzes(userId);
@@ -678,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/recommendations",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const recommendations = await storage.getCourseRecommendations(userId);
@@ -688,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/resources/downloadable",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const resources = await storage.getStudentDownloadableResources(userId);
@@ -703,7 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz with questions (answers shuffled, isCorrect hidden)
   app.get(
     "/api/quizzes/:quizId",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { quizId } = req.params;
       const quiz = await storage.getQuizWithQuestions(quizId, true); // hideCorrect=true for students
@@ -717,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backward compatibility alias for singular
   app.get(
     "/api/quiz/:quizId",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       res.redirect(`/api/quizzes/${req.params.quizId}`);
     }),
@@ -726,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz attempts for current user
   app.get(
     "/api/quizzes/:quizId/attempts",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { quizId } = req.params;
@@ -738,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit quiz answers → grades and returns score
   app.post(
     "/api/quizzes/:quizId/submit",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const { quizId } = req.params;
@@ -787,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reviews
   app.post(
     "/api/reviews",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const reviewData = insertReviewSchema.parse({ ...req.body, userId });
@@ -811,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/discussions",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const discussionData = insertDiscussionSchema.parse({
@@ -834,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/replies",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const replyData = insertReplySchema.parse({ ...req.body, userId });
@@ -855,7 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Certifications
   app.get(
     "/api/certifications",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const certifications = await storage.getUserCertifications(userId);
@@ -870,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create an order and initialize payment
   app.post(
     "/api/orders",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       if (!PAYSTACK_SECRET_KEY) {
         return res.status(503).json({
@@ -955,7 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Backward compatibility alias
-  app.post("/api/initialize-payment", isAuthenticated, (req, res) => {
+  app.post("/api/initialize-payment", requireSupabaseAuth, (req, res) => {
     res.redirect(307, "/api/orders");
   });
 
@@ -964,38 +847,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     express.raw({ type: "application/json" }),
     asyncHandler(async (req: Request, res: Response) => {
       if (!PAYSTACK_SECRET_KEY) {
-        return res
-          .status(503)
-          .json({ message: "Payment system is not configured" });
+        console.error("Paystack webhook received but SECRET_KEY is missing");
+        return res.status(503).json({ message: "Payment system is not configured" });
       }
 
-      const hash = crypto
-        .createHmac("sha512", PAYSTACK_SECRET_KEY)
-        .update(req.body)
-        .digest("hex");
-      const signature = req.headers["x-paystack-signature"] as string;
+      try {
+        const hash = crypto
+          .createHmac("sha512", PAYSTACK_SECRET_KEY)
+          .update(req.body)
+          .digest("hex");
+        const signature = req.headers["x-paystack-signature"] as string;
 
-      if (hash !== signature) {
-        return res.status(400).send("Invalid signature");
+        if (hash !== signature) {
+          console.warn("Invalid Paystack signature received");
+          return res.status(400).send("Invalid signature");
+        }
+
+        const event = JSON.parse(req.body.toString());
+        console.log(`Paystack Webhook Event: ${event.event}`, {
+          reference: event.data?.reference,
+          status: event.data?.status
+        });
+
+        if (event.event === "charge.success") {
+          const { reference, metadata } = event.data;
+          const { courseId, userId } = metadata;
+
+          if (!courseId || !userId) {
+            console.error("Missing metadata in Paystack success event", { metadata });
+            return res.status(400).json({ message: "Missing metadata" });
+          }
+
+          console.log(`Processing successful payment for user ${userId}, course ${courseId}`);
+          await storage.updateOrderByReference(reference, "completed");
+          await storage.enrollUser({ userId, courseId });
+        }
+
+        res.json({ received: true });
+      } catch (error) {
+        console.error("Error processing Paystack webhook:", error);
+        // Still return 200 to Paystack to avoid retries if the signature was valid but processing failed
+        res.status(200).json({ received: true, error: "Internal processing error" });
       }
-
-      const event = JSON.parse(req.body.toString());
-
-      if (event.event === "charge.success") {
-        const { reference, metadata } = event.data;
-        const { courseId, userId } = metadata;
-
-        await storage.updateOrderByReference(reference, "completed");
-        await storage.enrollUser({ userId, courseId });
-      }
-
-      res.json({ received: true });
     }),
   );
 
   app.post(
     "/api/verify-payment",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       if (!PAYSTACK_SECRET_KEY) {
         return res.status(503).json({
@@ -1035,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/orders",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const orders = await storage.getUserOrders(userId);
@@ -1049,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor/courses",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1060,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor/stats",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1072,7 +971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Instructor routes — real DB data
   app.get(
     "/api/instructor/revenue",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1084,7 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor/submissions/pending",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1096,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor/questions",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1108,7 +1007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor/analytics",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1119,7 +1018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/instructor/courses",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1134,7 +1033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put(
     "/api/instructor/courses/:id",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1153,7 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete(
     "/api/instructor/courses/:id",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1176,7 +1075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get course modules with lessons
   app.get(
     "/api/instructor/courses/:courseId/modules",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1195,7 +1094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new module
   app.post(
     "/api/instructor/courses/:courseId/modules",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const instructorId = req.user.claims.sub;
@@ -1220,7 +1119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a module
   app.put(
     "/api/instructor/modules/:moduleId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { moduleId } = req.params;
@@ -1238,7 +1137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a module
   app.delete(
     "/api/instructor/modules/:moduleId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { moduleId } = req.params;
@@ -1250,7 +1149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reorder modules
   app.put(
     "/api/instructor/courses/:courseId/modules/reorder",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { courseId } = req.params;
@@ -1263,7 +1162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reorder lessons within a module
   app.put(
     "/api/instructor/modules/:moduleId/lessons/reorder",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { moduleId } = req.params;
@@ -1276,7 +1175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new lesson
   app.post(
     "/api/instructor/modules/:moduleId/lessons",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { moduleId } = req.params;
@@ -1300,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update a lesson
   app.put(
     "/api/instructor/lessons/:lessonId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1314,7 +1213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a lesson
   app.delete(
     "/api/instructor/lessons/:lessonId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1330,7 +1229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload video for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/video",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     uploadLimiter,
     videoUpload.single("video"),
@@ -1365,7 +1264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload resource/attachment for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/resources",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     uploadLimiter,
     documentUpload.single("resource"),
@@ -1403,7 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get resources for a lesson
   app.get(
     "/api/lessons/:lessonId/resources",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
       const resources = await storage.getLessonResources(lessonId);
@@ -1414,7 +1313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete a resource
   app.delete(
     "/api/instructor/resources/:resourceId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { resourceId } = req.params;
@@ -1430,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get presigned URL for uploading video to object storage
   app.post(
     "/api/objects/upload",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const objectStorageService = new ObjectStorageService();
@@ -1442,7 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update lesson with video URL after upload to object storage
   app.put(
     "/api/instructor/lessons/:lessonId/video-url",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1511,7 +1410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or update quiz for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/quiz",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1525,7 +1424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz for a lesson
   app.get(
     "/api/lessons/:lessonId/quiz",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
       const quizzes = await storage.getLessonQuizzes(lessonId);
@@ -1536,15 +1435,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete quiz
   app.delete(
     "/api/instructor/quizzes/:quizId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { quizId } = req.params;
-      // Delete quiz by removing from DB directly
-      const { db } = await import("./db");
-      const { quizzes } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      await db.delete(quizzes).where(eq(quizzes.id, quizId));
+      await storage.deleteQuiz(quizId);
       res.json({ success: true });
     }),
   );
@@ -1556,7 +1451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or update assignment for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/assignment",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1573,17 +1468,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get assignment for a lesson
   app.get(
     "/api/lessons/:lessonId/assignment",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
-      const { db } = await import("./db");
-      const { assignments } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      const [assignment] = await db
-        .select()
-        .from(assignments)
-        .where(eq(assignments.lessonId, lessonId))
-        .limit(1);
+      const assignment = await storage.getAssignmentByLessonId(lessonId);
       res.json(assignment || null);
     }),
   );
@@ -1591,14 +1479,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete assignment
   app.delete(
     "/api/instructor/assignments/:assignmentId",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { assignmentId } = req.params;
-      const { db } = await import("./db");
-      const { assignments } = await import("@shared/schema");
-      const { eq } = await import("drizzle-orm");
-      await db.delete(assignments).where(eq(assignments.id, assignmentId));
+      await storage.deleteAssignment(assignmentId);
       res.json({ success: true });
     }),
   );
@@ -1610,7 +1495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate course before publishing
   app.get(
     "/api/instructor/courses/:courseId/validation",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { courseId } = req.params;
@@ -1622,7 +1507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Publish course
   app.post(
     "/api/instructor/courses/:courseId/publish",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { courseId } = req.params;
@@ -1644,7 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Unpublish course
   app.post(
     "/api/instructor/courses/:courseId/unpublish",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { courseId } = req.params;
@@ -1656,7 +1541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or update quiz for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/quiz",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1670,7 +1555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or update assignment for a lesson
   app.post(
     "/api/instructor/lessons/:lessonId/assignment",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireInstructor(),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { lessonId } = req.params;
@@ -1687,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz routes
   app.get(
     "/api/courses/:courseId/quizzes",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { courseId } = req.params;
       const userId = req.user.claims.sub;
@@ -1704,7 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/quizzes/:quizId/attempts",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { quizId } = req.params;
       const userId = req.user.claims.sub;
@@ -1717,7 +1602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Instructor application routes
   app.post(
     "/api/instructor-applications",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const applicationData = insertInstructorApplicationSchema.parse({
@@ -1745,7 +1630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/instructor-applications/my-application",
-    isAuthenticated,
+    requireSupabaseAuth,
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const userId = req.user.claims.sub;
       const application =
@@ -1762,7 +1647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes
   app.get(
     "/api/admin/stats",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const stats = await storage.getAdminStats();
@@ -1772,7 +1657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/admin/instructor-applications",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { status, page = "1", limit = "20" } = req.query;
@@ -1787,7 +1672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put(
     "/api/admin/instructor-applications/:id",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: AuthRequest, res: Response) => {
       const { id } = req.params;
@@ -1821,7 +1706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/admin/users",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { page = "1", limit = "20", search, role } = req.query;
@@ -1837,7 +1722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/admin/courses",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { page = "1", limit = "20", status, instructor } = req.query;
@@ -1853,7 +1738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put(
     "/api/admin/users/:id/role",
-    isAuthenticated,
+    requireSupabaseAuth,
     requireRole("admin"),
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import {
   Users,
@@ -85,31 +86,61 @@ export default function AdminDashboard() {
   });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
-  // Fetch stats from Express backend
+  // Fetch stats from Supabase
   const { data: stats } = useQuery({
-    queryKey: ["/api/admin/stats"],
+    queryKey: ["admin_stats"],
     enabled: hasAccess,
+    queryFn: async () => {
+      const [{ count: totalStudents }, { count: totalInstructors }, { count: totalCourses }, { count: pendingApplications }, { data: orders }] = await Promise.all([
+        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'instructor'),
+        supabase.from('courses').select('*', { count: 'exact', head: true }),
+        supabase.from('instructor_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('orders').select('amount')
+      ]);
+      const totalRevenue = orders?.reduce((s, o) => s + Number(o.amount), 0) || 0;
+      return { totalStudents: totalStudents || 0, totalInstructors: totalInstructors || 0, totalCourses: totalCourses || 0, totalRevenue, pendingApplications: pendingApplications || 0 };
+    }
   });
 
-  // Fetch instructor applications from backend
+  // Fetch instructor applications
   const { data: applications = [], isLoading: applicationsLoading } = useQuery({
-    queryKey: ["/api/admin/instructor-applications"],
+    queryKey: ["admin_instructor_applications"],
     enabled: hasAccess,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('instructor_applications')
+        .select('*, user:users(*)')
+        .order('submitted_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
   });
 
-  // Fetch all users from backend
+  // Fetch all users
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/admin/users"],
+    queryKey: ["admin_users"],
     enabled: hasAccess && activeTab === "users",
+    queryFn: async () => {
+      const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
   });
-  const allUsers = usersData?.users || [];
+  const allUsers = usersData || [];
 
-  // Fetch all courses from backend
+  // Fetch all courses
   const { data: coursesData, isLoading: coursesLoading } = useQuery({
-    queryKey: ["/api/admin/courses"],
+    queryKey: ["admin_courses"],
     enabled: hasAccess && activeTab === "courses",
+    queryFn: async () => {
+      const { data, error } = await supabase.from('courses')
+        .select(`*, instructor:users(first_name, last_name)`)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
   });
-  const allCourses = coursesData?.courses || [];
+  const allCourses = coursesData || [];
 
   // Approve/Reject application mutation via backend
   const reviewApplication = useMutation({
@@ -122,26 +153,25 @@ export default function AdminDashboard() {
       status: "approved" | "rejected";
       comments: string;
     }) => {
-      const response = await fetch(
-        `/api/admin/instructor-applications/${applicationId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, comments }),
-        },
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update application");
+      const { error, data: appData } = await supabase.from('instructor_applications')
+        .update({ status, admin_notes: comments })
+        .eq('id', applicationId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      if (status === 'approved' && appData?.user_id) {
+         await supabase.from('users').update({ role: 'instructor' }).eq('id', appData.user_id);
       }
-      return response.json();
+      return appData;
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({
-        queryKey: ["/api/admin/instructor-applications"],
+        queryKey: ["admin_instructor_applications"],
       });
-      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      qc.invalidateQueries({ queryKey: ["admin_stats"] });
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
       toast({
         title:
           variables.status === "approved"
@@ -171,20 +201,13 @@ export default function AdminDashboard() {
       userId: string;
       newRole: string;
     }) => {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update role");
-      }
-      return response.json();
+      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId);
+      if (error) throw error;
+      return true;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
+      qc.invalidateQueries({ queryKey: ["admin_stats"] });
       toast({
         title: "Role Updated",
         description: `User role changed to ${variables.newRole}.`,
@@ -244,8 +267,8 @@ export default function AdminDashboard() {
       });
       setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
       setShowCreateAdmin(false);
-      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
+      qc.invalidateQueries({ queryKey: ["admin_stats"] });
     } catch (error: any) {
       toast({
         title: "Failed",

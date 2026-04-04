@@ -7,19 +7,37 @@ import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CourseCard from "@/components/course-card";
-import type { CourseWithDetails } from "@shared/schema";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   
-  // Fetch published courses from the API
-  const { data: courses = [], isLoading } = useQuery<CourseWithDetails[]>({
-    queryKey: ['/api/courses'],
-  });
-  
-  // Fetch categories from the API
+  // Fetch categories from Supabase
   const { data: categoriesData = [] } = useQuery({
-    queryKey: ['/api/categories'],
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('categories').select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch published courses from Supabase
+  const { data: courses = [], isLoading } = useQuery<any[]>({
+    queryKey: ['courses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          category:categories(name),
+          instructor:users(first_name, last_name)
+        `)
+        .eq('is_published', true);
+        
+      if (error) throw error;
+      return data;
+    }
   });
 
   const categories = ["all", ...categoriesData.map((cat: any) => cat.id)];
@@ -28,7 +46,7 @@ export default function CourseCatalog() {
   // Filter courses by category
   const filteredCourses = selectedCategory === "all" 
     ? courses 
-    : courses.filter(course => course.categoryId === selectedCategory);
+    : courses.filter(course => course.category_id === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background">

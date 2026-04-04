@@ -169,6 +169,7 @@ export const zh = {
     courseAddedToFavorites: "课程已添加到收藏",
     courseRemovedFromFavorites: "课程已从收藏中移除",
     enrollmentSuccessful: "成功注册课程",
+    signInSuccess: "您已成功登录。",
     paymentSuccessful: "支付成功完成",
     paymentFailed: "支付失败。请重试。",
     networkError: "网络错误。请检查您的连接。",

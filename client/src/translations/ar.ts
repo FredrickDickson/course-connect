@@ -237,6 +237,7 @@ export const ar = {
     courseAddedToFavorites: "تمت إضافة الدورة للمفضلة",
     courseRemovedFromFavorites: "تمت إزالة الدورة من المفضلة",
     enrollmentSuccessful: "تم التسجيل في الدورة بنجاح",
+    signInSuccess: "تم تسجيل الدخول بنجاح.",
     paymentSuccessful: "تم الدفع بنجاح",
     paymentFailed: "فشل الدفع. يرجى المحاولة مرة أخرى.",
     networkError: "خطأ في الشبكة. يرجى التحقق من اتصالك.",

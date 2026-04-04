@@ -24,23 +24,7 @@ export default function Home() {
         .order('created_at', { ascending: false })
         .limit(6);
       if (error) throw error;
-      return (data || []).map((c: any) => ({
-        id: c.id,
-        title: c.title,
-        subtitle: c.subtitle,
-        description: c.description,
-        price: String(c.price),
-        currency: c.currency || 'USD',
-        thumbnailUrl: c.thumbnail_url,
-        level: c.level || 'beginner',
-        avgRating: String(c.avg_rating || 0),
-        ratingCount: c.rating_count || 0,
-        enrollmentCount: c.enrollment_count || 0,
-        duration: c.duration_hours,
-        isFeatured: c.is_featured,
-        instructor: c.instructor ? { firstName: c.instructor.first_name, lastName: c.instructor.last_name } : undefined,
-        category: c.category ? { name: c.category.name } : undefined,
-      }));
+      return data || [];
     },
   });
 
@@ -56,29 +40,19 @@ export default function Home() {
         .order('enrolled_at', { ascending: false })
         .limit(3);
       if (error) throw error;
-      return (data || []).map((e: any) => ({
-        id: e.id,
-        progress: e.progress || 0,
-        course: {
-          id: e.course.id,
-          title: e.course.title,
-          thumbnailUrl: e.course.thumbnail_url,
-          instructor: e.course.instructor ? { firstName: e.course.instructor.first_name, lastName: e.course.instructor.last_name } : undefined,
-        },
-      }));
+      return data || [];
     },
   });
 
-  // Fetch progress overview from Express backend
-  const { data: progressOverview } = useQuery<{
-    totalCourses: number;
-    completedCourses: number;
-    totalHours: number;
-    averageProgress: number;
-  }>({
-    queryKey: ['/api/progress/overview'],
-    enabled: !!user,
-  });
+  // Calculate progress overview from existing enrollments
+  const progressOverview = user ? {
+    totalCourses: enrollments.length,
+    completedCourses: enrollments.filter(e => Number(e.progress) >= 100).length,
+    totalHours: enrollments.reduce((sum, e) => sum + (e.course?.duration_hours || 0), 0),
+    averageProgress: enrollments.length > 0 
+      ? enrollments.reduce((sum, e) => sum + Number(e.progress), 0) / enrollments.length 
+      : 0
+  } : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,7 +174,7 @@ export default function Home() {
                   <CardContent className="p-0">
                     <div className="relative h-32 overflow-hidden">
                       <img
-                        src={enrollment.course.thumbnailUrl || `https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250`}
+                        src={enrollment.course.thumbnail_url || `https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250`}
                         alt={enrollment.course.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
                       />
@@ -208,7 +182,7 @@ export default function Home() {
                       <div className="absolute bottom-4 left-4 right-4">
                         <h3 className="font-bold text-white mb-0.5 line-clamp-1">{enrollment.course.title}</h3>
                         <p className="text-xs text-white/80">
-                          {enrollment.course.instructor?.firstName} {enrollment.course.instructor?.lastName}
+                          {enrollment.course.instructor?.first_name} {enrollment.course.instructor?.last_name}
                         </p>
                       </div>
                     </div>

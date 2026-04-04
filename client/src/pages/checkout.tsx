@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
@@ -42,15 +40,23 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const scriptLoaded = useRef(false);
-
+  const [useStateFixed] = useState(0); // Dummy for trigger
   const [isPaystackReady, setIsPaystackReady] = useState(false);
-  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(
-    null,
-  );
+  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(null);
+
   const paystackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: course, isLoading } = useQuery<CourseWithDetails>({
-    queryKey: [`/api/courses/${id}`],
+  const { data: course, isLoading } = useQuery<any>({
+    queryKey: ['course', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*, instructor:users!courses_instructor_id_fkey(*)')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
   });
 
@@ -109,11 +115,14 @@ export default function Checkout() {
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({ courseId: id }),
-        credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to create order");
       return response.json();
@@ -172,10 +181,12 @@ export default function Checkout() {
           if (response.status === "success") {
             // Verify payment on server
             try {
+              const { data: { session } } = await supabase.auth.getSession();
               const verifyResponse = await fetch("/api/verify-payment", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  "Authorization": `Bearer ${session?.access_token}`
                 },
                 body: JSON.stringify({ reference: response.reference }),
               });
@@ -190,10 +201,10 @@ export default function Checkout() {
 
                 // Invalidate relevant queries
                 queryClient.invalidateQueries({
-                  queryKey: [`/api/enrollments/check/${id}`],
+                  queryKey: ['enrollment-check', id, user?.id],
                 });
                 queryClient.invalidateQueries({
-                  queryKey: ["/api/enrollments"],
+                  queryKey: ['enrollments', user?.id],
                 });
 
                 // Redirect to course
@@ -295,9 +306,9 @@ export default function Checkout() {
     );
   }
 
-  const coursePrice = parseFloat(course.price.toString());
-  const avgRating = course.avgRating
-    ? parseFloat(course.avgRating.toString())
+  const coursePrice = parseFloat(course.price?.toString() || "0");
+  const avgRating = course.avg_rating
+    ? parseFloat(course.avg_rating.toString())
     : 0;
 
   return (
@@ -356,9 +367,9 @@ export default function Checkout() {
               <CardContent className="space-y-4">
                 <div className="flex space-x-4">
                   <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
-                    {course.thumbnailUrl ? (
+                    {course.thumbnail_url ? (
                       <img
-                        src={course.thumbnailUrl}
+                        src={course.thumbnail_url}
                         alt={course.title}
                         className="w-full h-full object-cover"
                       />
@@ -384,8 +395,8 @@ export default function Checkout() {
                     )}
                     {course.instructor && (
                       <p className="text-sm text-muted-foreground">
-                        By {course.instructor.firstName}{" "}
-                        {course.instructor.lastName}
+                        By {course.instructor.first_name}{" "}
+                        {course.instructor.last_name}
                       </p>
                     )}
                   </div>
@@ -399,12 +410,12 @@ export default function Checkout() {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="w-4 h-4 text-muted-foreground" />
-                      <span>{course.enrollmentCount} students</span>
+                      <span>{course.enrollment_count} students</span>
                     </div>
-                    {course.duration && (
+                    {course.duration_hours && (
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{course.duration}h</span>
+                        <span>{course.duration_hours}h</span>
                       </div>
                     )}
                   </div>
