@@ -55,7 +55,7 @@ export default function Checkout() {
       const { data, error } = await supabase
         .from("courses")
         .select("*, instructor:users!courses_instructor_id_fkey(*)")
-        .eq("id", id)
+        .eq("id", id!)
         .single();
       if (error) throw error;
       return data;
