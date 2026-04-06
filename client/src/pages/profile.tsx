@@ -133,8 +133,8 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const completedCourses = enrollments.filter((e) => e.completed_at);
-  const inProgressCourses = enrollments.filter((e) => !e.completed_at);
+  const completedCourses = (enrollments as any[]).filter((e: any) => e.completed_at);
+  const inProgressCourses = (enrollments as any[]).filter((e: any) => !e.completed_at);
 
   if (!user) {
     return (
