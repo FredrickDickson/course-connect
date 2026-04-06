@@ -170,6 +170,92 @@ export type Database = {
           },
         ]
       }
+      course_enrollments: {
+        Row: {
+          address: string | null
+          admin_notes: string | null
+          booking_ref: string
+          confirmed_at: string | null
+          country: string | null
+          course_id: string | null
+          created_at: string
+          currency: string
+          email: string
+          full_name: string
+          id: string
+          institution: string | null
+          invoice_expiry_date: string | null
+          payment_method: string
+          payment_status: string
+          paystack_reference: string | null
+          personal_statement: string | null
+          phone: string | null
+          programme_selected: string | null
+          ticket_price: number
+          ticket_type: string
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          admin_notes?: string | null
+          booking_ref: string
+          confirmed_at?: string | null
+          country?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          email: string
+          full_name: string
+          id?: string
+          institution?: string | null
+          invoice_expiry_date?: string | null
+          payment_method?: string
+          payment_status?: string
+          paystack_reference?: string | null
+          personal_statement?: string | null
+          phone?: string | null
+          programme_selected?: string | null
+          ticket_price?: number
+          ticket_type?: string
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          admin_notes?: string | null
+          booking_ref?: string
+          confirmed_at?: string | null
+          country?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          email?: string
+          full_name?: string
+          id?: string
+          institution?: string | null
+          invoice_expiry_date?: string | null
+          payment_method?: string
+          payment_status?: string
+          paystack_reference?: string | null
+          personal_statement?: string | null
+          phone?: string | null
+          programme_selected?: string | null
+          ticket_price?: number
+          ticket_type?: string
+          user_id?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_resources: {
         Row: {
           course_id: string | null
@@ -227,6 +313,41 @@ export type Database = {
           },
         ]
       }
+      course_waitlist: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          ticket_type: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          ticket_type?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          ticket_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_waitlist_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           avg_rating: number | null
@@ -235,6 +356,8 @@ export type Database = {
           currency: string | null
           description: string | null
           duration_hours: number | null
+          enquiry_phone_1: string | null
+          enquiry_phone_2: string | null
           enrollment_count: number | null
           id: string
           instructor_id: string | null
@@ -247,7 +370,9 @@ export type Database = {
           subtitle: string | null
           tags: string[] | null
           thumbnail_url: string | null
+          ticket_types: Json | null
           title: string
+          total_capacity: number | null
           updated_at: string | null
         }
         Insert: {
@@ -257,6 +382,8 @@ export type Database = {
           currency?: string | null
           description?: string | null
           duration_hours?: number | null
+          enquiry_phone_1?: string | null
+          enquiry_phone_2?: string | null
           enrollment_count?: number | null
           id?: string
           instructor_id?: string | null
@@ -269,7 +396,9 @@ export type Database = {
           subtitle?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
+          ticket_types?: Json | null
           title: string
+          total_capacity?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -279,6 +408,8 @@ export type Database = {
           currency?: string | null
           description?: string | null
           duration_hours?: number | null
+          enquiry_phone_1?: string | null
+          enquiry_phone_2?: string | null
           enrollment_count?: number | null
           id?: string
           instructor_id?: string | null
@@ -291,7 +422,9 @@ export type Database = {
           subtitle?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
+          ticket_types?: Json | null
           title?: string
+          total_capacity?: number | null
           updated_at?: string | null
         }
         Relationships: [

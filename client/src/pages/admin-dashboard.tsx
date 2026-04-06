@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import AdminMembershipTable from "@/components/admin-membership-table";
+import AdminEnrollmentsTable from "@/components/admin-enrollments-table";
 import {
   Users,
   BookOpen,
@@ -399,7 +400,7 @@ export default function AdminDashboard() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="applications">
               Applications
@@ -412,10 +413,16 @@ export default function AdminDashboard() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
           </TabsList>
+
+          {/* Enrollments Tab */}
+          <TabsContent value="enrollments">
+            <AdminEnrollmentsTable />
+          </TabsContent>
 
           {/* Members Tab */}
           <TabsContent value="members">
