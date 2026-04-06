@@ -76,7 +76,7 @@ export default function Profile() {
       const { data, error } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
-        .eq("user_id", user?.id);
+        .eq("user_id", user?.id!);
       if (error) throw error;
       return data || [];
     },
