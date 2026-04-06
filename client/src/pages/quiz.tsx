@@ -98,7 +98,7 @@ export default function QuizPage() {
     enabled: !!quizId && isAuthenticated,
   });
 
-  const { data: attempts = [] } = useQuery<QuizAttempt[]>({
+  const { data: attempts = [] } = useQuery<any[]>({
     queryKey: ["quiz-attempts", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
