@@ -144,6 +144,9 @@ function Router() {
       <Route path="/qualification-pathway" component={QualificationPathway} />
       <Route path="/verify/:memberId" component={VerifyMember} />
 
+      {/* Protected membership routes */}
+      <ProtectedRoute path="/renew-membership" component={RenewMembership} />
+
       {/* Admin bootstrap — protected behind admin role */}
       <ProtectedRoute
         path="/admin-setup"
