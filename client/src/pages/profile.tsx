@@ -69,7 +69,7 @@ export default function Profile() {
 
   // Fetch user enrollments
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<
-    EnrollmentWithCourse[]
+    any[]
   >({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {

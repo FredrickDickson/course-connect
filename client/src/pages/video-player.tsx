@@ -111,7 +111,7 @@ export default function VideoPlayer() {
         course?.modules?.flatMap(
           (m: Module) => m.lessons?.map((l: Lesson) => l.id) || [],
         ) || [];
-      return (data || []).filter((p: { lesson_id: string }) =>
+      return (data || []).filter((p: any) =>
         courseLessons.includes(p.lesson_id),
       );
     },
