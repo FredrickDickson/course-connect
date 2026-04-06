@@ -96,7 +96,7 @@ export default function Profile() {
           timezone: data.timezone,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user!.id);
 
       if (error) throw error;
       return { success: true };
