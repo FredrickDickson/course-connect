@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "../supabaseAuth";
 import { uploadLimiter, asyncHandler } from "../middleware/security";
 import { profileImageUpload, handleUploadError, getFileUrl } from "../middleware/upload";
 
-interface AuthRequest extends Request {
+interface AuthRequest extends ExpressRequest {
   user: {
     id: string;
     email: string;
