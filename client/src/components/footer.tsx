@@ -52,16 +52,9 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider">Learning</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/course-catalog">
+                <Link href="/qualification-pathway">
                   <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Course Catalog
-                  </span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/global-ma-program">
-                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Global M&A Program
+                    Qualification Pathway
                   </span>
                 </Link>
               </li>
