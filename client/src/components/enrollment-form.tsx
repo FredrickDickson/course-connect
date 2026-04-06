@@ -194,7 +194,7 @@ export default function EnrollmentForm({
       confirmed_at: paymentMethod === "paystack" ? new Date().toISOString() : null,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("course_enrollments")
       .insert(payload)
       .select()

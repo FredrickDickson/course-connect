@@ -109,7 +109,7 @@ export default function AdminEnrollmentsTable() {
 
   const saveNoteMutation = useMutation({
     mutationFn: async ({ id, note }: { id: string; note: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("course_enrollments")
         .update({ admin_notes: note })
         .eq("id", id);
