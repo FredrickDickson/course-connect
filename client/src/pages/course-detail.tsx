@@ -175,7 +175,7 @@ export default function CourseDetail() {
   const isEnrolled = !!enrollment;
   const totalLessons =
     course.modules?.reduce(
-      (total, module) => total + (module.lessons?.length || 0),
+      (total: number, module: any) => total + (module.lessons?.length || 0),
       0,
     ) || 0;
   const avgRating = course.avg_rating
