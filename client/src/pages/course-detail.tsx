@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
 import {
   Star,
@@ -17,7 +19,6 @@ import {
   PlayCircle,
   CheckCircle,
 } from "lucide-react";
-import type { CourseWithDetails, ReviewWithUser } from "@shared/schema";
 
 export default function CourseDetail() {
   const { id } = useParams();
