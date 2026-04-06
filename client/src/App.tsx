@@ -47,6 +47,7 @@ import GlobalMAProgram from "@/pages/global-ma-program";
 import FCIMarbFellowship from "@/pages/fcrimarb-fellowship";
 import Certification from "@/pages/certification";
 import Resources from "@/pages/resources";
+import QualificationPathway from "@/pages/qualification-pathway";
 import CommunityForum from "@/pages/community-forum";
 import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
@@ -138,6 +139,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/community-forum" component={CommunityForum} />
       <Route path="/professional-standards" component={ProfessionalStandards} />
+      <Route path="/qualification-pathway" component={QualificationPathway} />
 
       {/* Admin bootstrap — protected behind admin role */}
       <ProtectedRoute
