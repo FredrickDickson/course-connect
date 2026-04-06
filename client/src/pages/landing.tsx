@@ -1,675 +1,309 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import WorldMap from "@/components/world-map";
-import { ScrollReveal, StaggerItem } from "@/components/ScrollReveal";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import fellowshipImage from "@assets/stock_images/professional_arbitra_195864e0.jpg";
-import maImage from "@assets/stock_images/mergers_acquisitions_0f9cf993.jpg";
+import { Link } from "wouter";
+import {
+  ArrowRight,
+  Calendar,
+  MapPin,
+  Users,
+  Award,
+  BookOpen,
+  Scale,
+  GraduationCap,
+  ChevronRight,
+  Globe,
+  Shield,
+  Star,
+} from "lucide-react";
 
-/**
- * Landing Component - WITH SCROLL ANIMATIONS
- *
- * Main landing page for the ADR (Alternative Dispute Resolution) professional
- * development platform. Features scroll-triggered fade-up animations on all sections.
- */
+const courses = [
+  {
+    id: "arb-training-1",
+    title: "Law, Practice and Procedure in Domestic & International Arbitration Training",
+    dates: "February 25, 2026 – February 27, 2026",
+    description:
+      "Foundational training in domestic and international arbitration law, practice and procedure. Ideal for professionals seeking ACIMArb certification.",
+    color: "bg-white border-border",
+    banner: "bg-gradient-to-r from-primary/10 to-primary/5",
+  },
+  {
+    id: "arb-training-2",
+    title: "Law, Practice and Procedure in Domestic & International Arbitration Training II",
+    dates: "May 27, 2026 – May 29, 2026",
+    description:
+      "Advanced practice covering case management, ethics, cybersecurity and AI in ADR, and mediation law. For MCIMArb candidates.",
+    color: "bg-white border-border",
+    banner: "bg-gradient-to-r from-blue-600/10 to-blue-500/5",
+  },
+  {
+    id: "arb-training-3",
+    title: "Law, Practice and Procedure in Domestic & International Arbitration Training III",
+    dates: "August 26, 2026 – August 28, 2026",
+    description:
+      "Intensive fellowship-level training in award writing, dissertation research, and arbitral practice in new markets.",
+    color: "bg-white border-border",
+    banner: "bg-gradient-to-r from-amber-500/10 to-amber-400/5",
+  },
+  {
+    id: "arb-training-4",
+    title: "Law, Practice and Procedure in Domestic & International Arbitration Training IV",
+    dates: "November 25, 2026 – November 27, 2026",
+    description:
+      "Specialist modules in emerging areas of international arbitration, including investment treaty and construction disputes.",
+    color: "bg-white border-border",
+    banner: "bg-gradient-to-r from-green-600/10 to-green-500/5",
+  },
+  {
+    id: "expedited-fellowship",
+    title: "Expedited Route to Fellowship (FCIMArb)",
+    dates: "December 15, 2025 – December 31, 2025",
+    description:
+      "Fast-track pathway for experienced practitioners to achieve FCIMArb fellowship through a 48-hour take-home award writing examination.",
+    color: "bg-white border-primary/30",
+    banner: "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground",
+    featured: true,
+  },
+  {
+    id: "advanced-arb",
+    title: "Advanced Law, Practice & Procedure in Domestic and International Arbitration",
+    dates: "November 26, 2025 – November 28, 2025",
+    description:
+      "High-level training for seasoned practitioners covering complex multi-party arbitration and cross-border enforcement.",
+    color: "bg-white border-border",
+    banner: "bg-gradient-to-r from-primary/10 to-amber-500/10",
+  },
+];
+
 export default function Landing() {
-  const { t, isRTL } = useLanguage();
-  const [selectedCourse, setSelectedCourse] = useState(0);
-
-  const currentCourse =
-    selectedCourse === 0
-      ? {
-          title: t("landing.featuredCourseTitle"),
-          category: t("landing.featuredCourseCategory"),
-          rating: 4.9,
-          reviews: 2847,
-          students: 12450,
-          description: t("landing.featuredCourseDescription"),
-          price: 2950,
-          originalPrice: 5900,
-          badge: t("landing.mostPopularBadge"),
-          features: [
-            t("landing.featuredCourseFeature1"),
-            t("landing.featuredCourseFeature2"),
-            t("landing.featuredCourseFeature3"),
-          ],
-        }
-      : {
-          title: t("landing.fellowshipTitle"),
-          category: t("landing.fellowshipCategory"),
-          rating: 4.8,
-          reviews: 1523,
-          students: 8200,
-          description: t("landing.fellowshipDescription"),
-          price: 4750,
-          originalPrice: 9500,
-          badge: t("landing.premiumBadge"),
-          features: [
-            t("landing.fellowshipFeature1"),
-            t("landing.fellowshipFeature2"),
-            t("landing.fellowshipFeature3"),
-          ],
-        };
-
-  const discount = Math.round(
-    ((currentCourse.originalPrice - currentCourse.price) /
-      currentCourse.originalPrice) *
-      100,
-  );
-
-  // For stagger animations in grid
-  const { ref: programCardsRef, isVisible: programCardsVisible } =
-    useScrollAnimation({ threshold: 0.2 });
-  const { ref: locationsRef, isVisible: locationsVisible } = useScrollAnimation(
-    { threshold: 0.2 },
-  );
-  const { ref: benefitsRef, isVisible: benefitsVisible } = useScrollAnimation({
-    threshold: 0.2,
-  });
-
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="min-h-screen bg-background">
       <Header />
 
-      {/* ============ HERO SECTION ============ */}
-      <section className="bg-gradient-to-br from-primary via-primary to-blue-900 text-primary-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* LEFT COLUMN: Headline, Description & CTA */}
-            <ScrollReveal
-              direction="up"
-              distance={40}
-              duration={0.7}
-              className="space-y-8"
-            >
-              <div className="space-y-4">
-                <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                  {t("landing.heroTitle")}{" "}
-                  <span className="text-white">
-                    {t("landing.heroHighlight")}
-                  </span>
-                </h1>
-                <p className="text-xl text-blue-100 leading-relaxed">
-                  {t("landing.heroSubtitle")}
-                </p>
-              </div>
-
-              {/* Call-to-Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  data-testid="button-explore-programs"
-                  onClick={() => (window.location.href = "/register")}
-                  className="bg-amber-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-amber-600 transition-colors shadow-lg"
-                >
-                  {t("landing.getStarted")}
+      {/* ====== HERO ====== */}
+      <section className="relative bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-sm text-sm px-5 py-2">
+              <Scale className="w-4 h-4 mr-2 text-amber-400" />
+              Center for International Mediators and Arbitrators
+            </Badge>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+              The world's best online ADR education{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
+                available from Oxfordshire.
+              </span>
+            </h1>
+            <p className="text-lg lg:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+              Professional certification in mediation and arbitration trusted by legal practitioners in 33+ countries worldwide.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Link href="/qualification-pathway">
+                <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 shadow-lg">
+                  Qualification Pathway
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
-                <Button
-                  data-testid="button-watch-overview"
-                  variant="outline"
-                  onClick={() =>
-                    window.open("https://youtu.be/Y7eAsjyGaoI", "_blank")
-                  }
-                  className="border-2 border-white/30 bg-white/10 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition-colors backdrop-blur-sm"
-                >
-                  <i className="fas fa-play mr-2"></i>
-                  {t("landing.watchOverview")}
+              </Link>
+              <Link href="/register">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                  Get Started
                 </Button>
-              </div>
-
-              {/* KEY STATISTICS */}
-              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-blue-400">
-                <div className="text-center">
-                  <div
-                    className="text-2xl font-bold text-white"
-                    data-testid="stat-members"
-                  >
-                    5,000+
-                  </div>
-                  <div className="text-sm text-blue-200">
-                    {t("landing.globalMembers")}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div
-                    className="text-2xl font-bold text-white"
-                    data-testid="stat-success"
-                  >
-                    95%
-                  </div>
-                  <div className="text-sm text-blue-200">
-                    {t("landing.successRate")}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div
-                    className="text-2xl font-bold text-white"
-                    data-testid="stat-countries"
-                  >
-                    50+
-                  </div>
-                  <div className="text-sm text-blue-200">
-                    {t("landing.countries")}
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* RIGHT COLUMN: Featured Course Card */}
-            <ScrollReveal
-              direction="up"
-              distance={40}
-              delay={0.2}
-              duration={0.7}
-            >
-              <Card className="shadow-2xl border-2 border-amber-200 overflow-hidden bg-white">
-                <div className="bg-gradient-to-r from-primary to-blue-700 p-6 border-b border-amber-200">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <div className="inline-block bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full text-xs font-bold mb-2">
-                        {currentCourse.badge}
-                      </div>
-                      <h3 className="font-bold text-white text-lg">
-                        {currentCourse.title}
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-
-                <CardContent className="p-6 space-y-4">
-                  <p className="text-sm text-primary font-semibold">
-                    {currentCourse.category}
-                  </p>
-
-                  <div className="flex items-center gap-4 text-sm pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-1">
-                      <i className="fas fa-star text-amber-500"></i>
-                      <span className="text-foreground font-semibold">
-                        {currentCourse.rating}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ({currentCourse.reviews.toLocaleString()})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <i className="fas fa-users text-primary"></i>
-                      <span className="text-muted-foreground">
-                        {currentCourse.students.toLocaleString()}{" "}
-                        {t("courses.students")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {currentCourse.description}
-                  </p>
-
-                  <div className="space-y-2 py-4 border-t border-b border-gray-200">
-                    {currentCourse.features.map((feature, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 text-sm text-gray-700"
-                      >
-                        <i className="fas fa-check-circle text-green-600"></i>
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="bg-amber-50 rounded-lg p-4">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-foreground">
-                        ${currentCourse.price}
-                      </span>
-                      <span className="text-sm text-muted-foreground line-through">
-                        ${currentCourse.originalPrice}
-                      </span>
-                      <span className="text-xs bg-green-600 text-white px-2 py-1 rounded font-bold">
-                        {discount}% OFF
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => (window.location.href = "/login")}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md"
-                  >
-                    <i className="fas fa-play mr-2"></i>
-                    {t("courses.enrollNow")}
-                  </Button>
-
-                  <div className="flex gap-2 justify-center pt-4">
-                    {[0, 1].map((idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedCourse(idx)}
-                        className={`h-2 w-8 rounded-full transition ${idx === selectedCourse ? "bg-primary" : "bg-gray-300 hover:bg-gray-400"}`}
-                        aria-label={`Select course ${idx + 1}`}
-                      ></button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </ScrollReveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ FEATURED PROGRAMS SECTION ============ */}
-      <section className="py-20 bg-muted/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <ScrollReveal direction="up" distance={30} duration={0.6}>
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
-                {t("landing.featuredCoursesTitle")}
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                {t("courses.subtitle")}
-              </p>
+              </Link>
             </div>
-          </ScrollReveal>
 
-          {/* Two-column grid of program cards */}
-          <div ref={programCardsRef} className="grid lg:grid-cols-2 gap-8">
-            {/* PROGRAM CARD 1: Global M&A Program */}
-            <StaggerItem
-              index={0}
-              isVisible={programCardsVisible}
-              staggerDelay={0.1}
-              direction="up"
-              distance={30}
-              duration={0.6}
-            >
-              <Card
-                className="shadow-lg border border-border overflow-hidden group hover:shadow-xl transition-shadow h-full"
-                data-testid="card-program-ma"
-              >
-                <img
-                  src={maImage}
-                  alt="M&A arbitration and mediation training"
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground mb-2">
-                        {t("landing.maProgramTitle")}
-                      </h3>
-                      <p className="text-sm text-primary font-medium">
-                        {t("landing.maProgramCategory")}
-                      </p>
-                    </div>
-                    <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
-                      {t("landing.maProgramBadge")}
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground mb-6">
-                    {t("landing.maProgramDescription")}
-                  </p>
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-clock text-primary"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.maProgramFeature1")}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-globe text-primary"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.maProgramFeature2")}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-certificate text-primary"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.maProgramFeature3")}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div
-                        className="text-2xl font-bold text-foreground"
-                        data-testid="price-ma"
-                      >
-                        $2,950
-                      </div>
-                      <div className="text-sm text-muted-foreground">USD</div>
-                    </div>
-                    <Button
-                      data-testid="button-learn-more-ma"
-                      onClick={() => (window.location.href = "/login")}
-                      className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors"
-                    >
-                      {t("courseDetail.learnMore")}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </StaggerItem>
-
-            {/* PROGRAM CARD 2: FCIMArb Fellowship */}
-            <StaggerItem
-              index={1}
-              isVisible={programCardsVisible}
-              staggerDelay={0.1}
-              direction="up"
-              distance={30}
-              duration={0.6}
-            >
-              <Card
-                className="shadow-lg border border-border overflow-hidden group hover:shadow-xl transition-shadow relative h-full"
-                data-testid="card-program-fellowship"
-              >
-                <div className="absolute top-4 right-4 z-10">
-                  <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 shadow-lg">
-                    <i className="fas fa-ribbon text-xs"></i>
-                    <span>{t("landing.fellowshipBadgeText")}</span>
-                  </div>
-                </div>
-                <img
-                  src={fellowshipImage}
-                  alt="FCIMArb Fellowship professional development"
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground mb-2">
-                        {t("landing.fellowshipTitle")}
-                      </h3>
-                      <p className="text-sm text-primary font-medium">
-                        {t("landing.fellowshipCategory")}
-                      </p>
-                    </div>
-                    <div className="bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full text-sm font-medium">
-                      {t("landing.fellowshipBadge")}
-                    </div>
-                  </div>
-                  <p className="text-muted-foreground mb-6">
-                    {t("landing.fellowshipDescription")}
-                  </p>
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-award text-amber-600"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.fellowshipFeature1")}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-users text-amber-600"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.fellowshipFeature2")}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <i className="fas fa-infinity text-amber-600"></i>
-                      <span className="text-sm text-muted-foreground">
-                        {t("landing.fellowshipFeature3")}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div
-                        className="text-2xl font-bold text-foreground"
-                        data-testid="price-fellowship"
-                      >
-                        $4,750
-                      </div>
-                      <div className="text-sm text-muted-foreground">USD</div>
-                    </div>
-                    <Button
-                      data-testid="button-apply-fellowship"
-                      onClick={() => (window.location.href = "/login")}
-                      className="bg-amber-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-amber-600 transition-colors"
-                    >
-                      {t("courseDetail.enrollNow")}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </StaggerItem>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-8 pt-12 border-t border-white/10 max-w-lg mx-auto">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-400">5,000+</div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mt-1">Global Members</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-400">33+</div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mt-1">Countries</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-400">95%</div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mt-1">Success Rate</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ============ GLOBAL COMMUNITY SECTION ============ */}
+      {/* ====== UPCOMING COURSES ====== */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">All Upcoming Courses</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Structured training programmes designed for legal professionals, arbitrators, and mediators at every stage of their career.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course) => (
+              <Card key={course.id} className={`overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${course.color}`}>
+                <div className={`px-6 py-4 ${course.banner}`}>
+                  {course.featured && (
+                    <Badge className="bg-primary text-primary-foreground mb-2 text-[10px] uppercase tracking-widest font-bold">
+                      <Award className="w-3 h-3 mr-1" />
+                      Expedited Route to Fellowship
+                    </Badge>
+                  )}
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4 mr-2 text-primary shrink-0" />
+                    <span className={course.featured ? "text-primary-foreground/80" : ""}>{course.dates}</span>
+                  </div>
+                </div>
+                <CardContent className="p-6 space-y-4">
+                  <h3 className="font-bold text-foreground text-lg leading-snug line-clamp-2">{course.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{course.description}</p>
+                  <Link href="/register">
+                    <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold group transition-all">
+                      REGISTER
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Resource Buttons */}
+          <div className="grid sm:grid-cols-3 gap-4 mt-14">
+            <Link href="/resources">
+              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                <BookOpen className="w-5 h-5 mr-2 text-primary" />
+                Arbitrator Resources
+              </Button>
+            </Link>
+            <Link href="/resources">
+              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                <Users className="w-5 h-5 mr-2 text-primary" />
+                Mediator Resources
+              </Button>
+            </Link>
+            <Link href="/resources">
+              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                <GraduationCap className="w-5 h-5 mr-2 text-primary" />
+                Practitioner Journals
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== QUALIFICATION PATHWAY PREVIEW ====== */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ScrollReveal direction="up" distance={30} duration={0.6}>
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
-                {t("landing.whyChooseTitle")}
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                {t("landing.worldwidePresenceDescription")}
-              </p>
-            </div>
-          </ScrollReveal>
+          <div className="text-center mb-14">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">CIMA Qualification Pathway</h2>
+            <p className="text-lg text-muted-foreground">
+              Structured courses and eligibility requirements for each level
+            </p>
+          </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <ScrollReveal
-              direction="up"
-              distance={30}
-              delay={0.1}
-              duration={0.6}
-            >
-              <WorldMap />
-            </ScrollReveal>
-
-            <div className="space-y-8">
-              <ScrollReveal
-                direction="up"
-                distance={30}
-                delay={0.2}
-                duration={0.6}
-              >
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {t("landing.worldwidePresenceTitle")}
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {t("landing.worldwidePresenceDescription")}
-                  </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Associate */}
+            <Card className="overflow-hidden border-2 border-primary/10 hover:border-primary/30 transition-colors">
+              <div className="bg-primary/5 p-6 text-center border-b border-primary/10">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Shield className="w-8 h-8 text-primary" />
                 </div>
-              </ScrollReveal>
-
-              {/* Locations Grid */}
-              <div ref={locationsRef} className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <StaggerItem
-                    index={0}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-london"
-                    >
-                      <i className="fas fa-map-marker-alt text-amber-500"></i>
-                      <span className="font-medium text-foreground">
-                        London
-                      </span>
-                    </div>
-                  </StaggerItem>
-                  <StaggerItem
-                    index={1}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-accra"
-                    >
-                      <i className="fas fa-map-marker-alt text-primary"></i>
-                      <span className="font-medium text-foreground">Accra</span>
-                    </div>
-                  </StaggerItem>
-                  <StaggerItem
-                    index={2}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-singapore"
-                    >
-                      <i className="fas fa-map-marker-alt text-secondary"></i>
-                      <span className="font-medium text-foreground">
-                        Singapore
-                      </span>
-                    </div>
-                  </StaggerItem>
-                </div>
-                <div className="space-y-4">
-                  <StaggerItem
-                    index={3}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-dubai"
-                    >
-                      <i className="fas fa-map-marker-alt text-amber-500"></i>
-                      <span className="font-medium text-foreground">Dubai</span>
-                    </div>
-                  </StaggerItem>
-                  <StaggerItem
-                    index={4}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-newyork"
-                    >
-                      <i className="fas fa-map-marker-alt text-primary"></i>
-                      <span className="font-medium text-foreground">
-                        New York
-                      </span>
-                    </div>
-                  </StaggerItem>
-                  <StaggerItem
-                    index={5}
-                    isVisible={locationsVisible}
-                    staggerDelay={0.1}
-                    direction="up"
-                    distance={20}
-                    duration={0.5}
-                  >
-                    <div
-                      className="flex items-center space-x-3"
-                      data-testid="location-oxford"
-                    >
-                      <i className="fas fa-map-marker-alt text-secondary"></i>
-                      <span className="font-medium text-foreground">
-                        Oxford
-                      </span>
-                    </div>
-                  </StaggerItem>
-                </div>
+                <h3 className="text-xl font-bold text-foreground">Associate</h3>
+                <Badge className="mt-2 bg-primary text-primary-foreground text-xs">ACIMArb</Badge>
               </div>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-sm text-muted-foreground">Foundation level — introduction to arbitration and ADR for all professionals.</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />2–3 day training</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />Multiple choice assessment</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />Open to all professionals</li>
+                </ul>
+              </CardContent>
+            </Card>
 
-              {/* Benefits Cards */}
-              <div ref={benefitsRef} className="space-y-4">
-                <StaggerItem
-                  index={0}
-                  isVisible={benefitsVisible}
-                  staggerDelay={0.1}
-                  direction="up"
-                  distance={25}
-                  duration={0.5}
-                >
-                  <Card
-                    className="p-4 bg-muted/30"
-                    data-testid="benefit-network"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <i className="fas fa-users text-primary text-xl"></i>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {t("landing.professionalNetworkTitle")}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {t("landing.professionalNetworkDesc")}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </StaggerItem>
-                <StaggerItem
-                  index={1}
-                  isVisible={benefitsVisible}
-                  staggerDelay={0.1}
-                  direction="up"
-                  distance={25}
-                  duration={0.5}
-                >
-                  <Card
-                    className="p-4 bg-muted/30"
-                    data-testid="benefit-opportunities"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <i className="fas fa-briefcase text-amber-500 text-xl"></i>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {t("landing.careerOpportunitiesTitle")}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {t("landing.careerOpportunitiesDesc")}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </StaggerItem>
-                <StaggerItem
-                  index={2}
-                  isVisible={benefitsVisible}
-                  staggerDelay={0.1}
-                  direction="up"
-                  distance={25}
-                  duration={0.5}
-                >
-                  <Card
-                    className="p-4 bg-muted/30"
-                    data-testid="benefit-recognition"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <i className="fas fa-globe text-secondary text-xl"></i>
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {t("landing.internationalRecognitionTitle")}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {t("landing.internationalRecognitionDesc")}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </StaggerItem>
+            {/* Member */}
+            <Card className="overflow-hidden border-2 border-amber-500/20 hover:border-amber-500/40 transition-colors">
+              <div className="bg-amber-500/5 p-6 text-center border-b border-amber-500/10">
+                <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                  <Star className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Member</h3>
+                <Badge className="mt-2 bg-amber-500 text-white text-xs">MCIMArb</Badge>
               </div>
-            </div>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-sm text-muted-foreground">Applied practice — case management, ethics, mediation and arbitral practice.</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />3–5 day training</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />Written or exemption exam</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />ACIMArb required</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Fellow */}
+            <Card className="overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors relative">
+              <div className="absolute top-3 right-3">
+                <Badge className="bg-amber-500 text-white text-[10px] uppercase tracking-wider">Mastery</Badge>
+              </div>
+              <div className="bg-gradient-to-br from-primary/5 to-amber-500/5 p-6 text-center border-b border-primary/10">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Award className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Fellow</h3>
+                <Badge className="mt-2 bg-primary text-primary-foreground text-xs">FCIMArb</Badge>
+              </div>
+              <CardContent className="p-6 space-y-3">
+                <p className="text-sm text-muted-foreground">Mastery level — award writing, dissertation, and panel listing eligibility.</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5">
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />5-day intensive + dissertation</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />Take-home award writing</li>
+                  <li className="flex items-start gap-2"><ChevronRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />MCIMArb + 7 years experience</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/qualification-pathway">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-10 shadow-md">
+                View Full Qualification Pathway
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ====== CTA ====== */}
+      <section className="relative py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-primary to-slate-900" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+          <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+            Ready to Advance{" "}
+            <span className="text-amber-400">Your Professional Career?</span>
+          </h2>
+          <p className="text-xl text-white/70 max-w-2xl mx-auto">
+            Join professionals in 33+ countries who have elevated their careers with CIMA's internationally recognised ADR programmes.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/register">
+              <Button size="lg" className="bg-amber-500 text-white hover:bg-amber-600 font-bold px-8 shadow-lg">
+                Get Started Today
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/qualification-pathway">
+              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                Explore Pathways
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
