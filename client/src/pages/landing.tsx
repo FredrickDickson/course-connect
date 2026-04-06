@@ -3,18 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { ScrollReveal, StaggerContainer } from "@/components/ScrollReveal";
 import { Link } from "wouter";
 import {
   ArrowRight,
   Calendar,
-  MapPin,
   Users,
   Award,
   BookOpen,
   Scale,
   GraduationCap,
   ChevronRight,
-  Globe,
   Shield,
   Star,
 } from "lucide-react";
@@ -26,7 +25,6 @@ const courses = [
     dates: "February 25, 2026 – February 27, 2026",
     description:
       "Foundational training in domestic and international arbitration law, practice and procedure. Ideal for professionals seeking ACIMArb certification.",
-    color: "bg-white border-border",
     banner: "bg-gradient-to-r from-primary/10 to-primary/5",
   },
   {
@@ -35,7 +33,6 @@ const courses = [
     dates: "May 27, 2026 – May 29, 2026",
     description:
       "Advanced practice covering case management, ethics, cybersecurity and AI in ADR, and mediation law. For MCIMArb candidates.",
-    color: "bg-white border-border",
     banner: "bg-gradient-to-r from-blue-600/10 to-blue-500/5",
   },
   {
@@ -44,7 +41,6 @@ const courses = [
     dates: "August 26, 2026 – August 28, 2026",
     description:
       "Intensive fellowship-level training in award writing, dissertation research, and arbitral practice in new markets.",
-    color: "bg-white border-border",
     banner: "bg-gradient-to-r from-amber-500/10 to-amber-400/5",
   },
   {
@@ -53,7 +49,6 @@ const courses = [
     dates: "November 25, 2026 – November 27, 2026",
     description:
       "Specialist modules in emerging areas of international arbitration, including investment treaty and construction disputes.",
-    color: "bg-white border-border",
     banner: "bg-gradient-to-r from-green-600/10 to-green-500/5",
   },
   {
@@ -62,7 +57,6 @@ const courses = [
     dates: "December 15, 2025 – December 31, 2025",
     description:
       "Fast-track pathway for experienced practitioners to achieve FCIMArb fellowship through a 48-hour take-home award writing examination.",
-    color: "bg-white border-primary/30",
     banner: "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground",
     featured: true,
   },
@@ -72,7 +66,6 @@ const courses = [
     dates: "November 26, 2025 – November 28, 2025",
     description:
       "High-level training for seasoned practitioners covering complex multi-party arbitration and cross-border enforcement.",
-    color: "bg-white border-border",
     banner: "bg-gradient-to-r from-primary/10 to-amber-500/10",
   },
 ];
@@ -88,36 +81,40 @@ export default function Landing() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-sm text-sm px-5 py-2">
-              <Scale className="w-4 h-4 mr-2 text-amber-400" />
-              Center for International Mediators and Arbitrators
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-              The world's best online ADR education{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
-                available from Oxfordshire.
-              </span>
-            </h1>
-            <p className="text-lg lg:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-              Professional certification in mediation and arbitration trusted by legal practitioners in 33+ countries worldwide.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/qualification-pathway">
-                <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 shadow-lg">
-                  Qualification Pathway
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
-                  Get Started
-                </Button>
-              </Link>
+          <ScrollReveal direction="up" distance={40} duration={0.7}>
+            <div className="max-w-4xl mx-auto text-center space-y-6">
+              <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-sm text-sm px-5 py-2">
+                <Scale className="w-4 h-4 mr-2 text-amber-400" />
+                Center for International Mediators and Arbitrators
+              </Badge>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+                The world's best online ADR education{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
+                  available from Oxfordshire.
+                </span>
+              </h1>
+              <p className="text-lg lg:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+                Professional certification in mediation and arbitration trusted by legal practitioners in 33+ countries worldwide.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                <Link href="/qualification-pathway">
+                  <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 shadow-lg">
+                    Qualification Pathway
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
             </div>
+          </ScrollReveal>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 pt-12 border-t border-white/10 max-w-lg mx-auto">
+          {/* Stats */}
+          <ScrollReveal direction="up" distance={30} delay={0.3} duration={0.6}>
+            <div className="grid grid-cols-3 gap-8 pt-12 border-t border-white/10 max-w-lg mx-auto mt-12">
               <div className="text-center">
                 <div className="text-2xl font-bold text-amber-400">5,000+</div>
                 <div className="text-xs text-white/50 uppercase tracking-wider mt-1">Global Members</div>
@@ -131,23 +128,25 @@ export default function Landing() {
                 <div className="text-xs text-white/50 uppercase tracking-wider mt-1">Success Rate</div>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ====== UPCOMING COURSES ====== */}
       <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">All Upcoming Courses</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Structured training programmes designed for legal professionals, arbitrators, and mediators at every stage of their career.
-            </p>
-          </div>
+          <ScrollReveal direction="up" distance={30} duration={0.6}>
+            <div className="text-center mb-14">
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">All Upcoming Courses</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Structured training programmes designed for legal professionals, arbitrators, and mediators at every stage of their career.
+              </p>
+            </div>
+          </ScrollReveal>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.1} threshold={0.15}>
             {courses.map((course) => (
-              <Card key={course.id} className={`overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${course.color}`}>
+              <Card key={course.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card border-border">
                 <div className={`px-6 py-4 ${course.banner}`}>
                   {course.featured && (
                     <Badge className="bg-primary text-primary-foreground mb-2 text-[10px] uppercase tracking-widest font-bold">
@@ -172,43 +171,47 @@ export default function Landing() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </StaggerContainer>
 
           {/* Resource Buttons */}
-          <div className="grid sm:grid-cols-3 gap-4 mt-14">
-            <Link href="/resources">
-              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
-                <BookOpen className="w-5 h-5 mr-2 text-primary" />
-                Arbitrator Resources
-              </Button>
-            </Link>
-            <Link href="/resources">
-              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
-                <Users className="w-5 h-5 mr-2 text-primary" />
-                Mediator Resources
-              </Button>
-            </Link>
-            <Link href="/resources">
-              <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
-                <GraduationCap className="w-5 h-5 mr-2 text-primary" />
-                Practitioner Journals
-              </Button>
-            </Link>
-          </div>
+          <ScrollReveal direction="up" distance={20} delay={0.2} duration={0.5}>
+            <div className="grid sm:grid-cols-3 gap-4 mt-14">
+              <Link href="/resources">
+                <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                  <BookOpen className="w-5 h-5 mr-2 text-primary" />
+                  Arbitrator Resources
+                </Button>
+              </Link>
+              <Link href="/resources">
+                <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                  <Users className="w-5 h-5 mr-2 text-primary" />
+                  Mediator Resources
+                </Button>
+              </Link>
+              <Link href="/resources">
+                <Button variant="outline" className="w-full h-14 text-sm font-bold uppercase tracking-wider border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all">
+                  <GraduationCap className="w-5 h-5 mr-2 text-primary" />
+                  Practitioner Journals
+                </Button>
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ====== QUALIFICATION PATHWAY PREVIEW ====== */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">CIMA Qualification Pathway</h2>
-            <p className="text-lg text-muted-foreground">
-              Structured courses and eligibility requirements for each level
-            </p>
-          </div>
+          <ScrollReveal direction="up" distance={30} duration={0.6}>
+            <div className="text-center mb-14">
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">CIMA Qualification Pathway</h2>
+              <p className="text-lg text-muted-foreground">
+                Structured courses and eligibility requirements for each level
+              </p>
+            </div>
+          </ScrollReveal>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <StaggerContainer className="grid md:grid-cols-3 gap-8" staggerDelay={0.1} threshold={0.15}>
             {/* Associate */}
             <Card className="overflow-hidden border-2 border-primary/10 hover:border-primary/30 transition-colors">
               <div className="bg-primary/5 p-6 text-center border-b border-primary/10">
@@ -268,44 +271,48 @@ export default function Landing() {
                 </ul>
               </CardContent>
             </Card>
-          </div>
+          </StaggerContainer>
 
-          <div className="text-center mt-10">
-            <Link href="/qualification-pathway">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-10 shadow-md">
-                View Full Qualification Pathway
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-          </div>
+          <ScrollReveal direction="up" distance={20} delay={0.3} duration={0.5}>
+            <div className="text-center mt-10">
+              <Link href="/qualification-pathway">
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-10 shadow-md">
+                  View Full Qualification Pathway
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ====== CTA ====== */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-primary to-slate-900" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-            Ready to Advance{" "}
-            <span className="text-amber-400">Your Professional Career?</span>
-          </h2>
-          <p className="text-xl text-white/70 max-w-2xl mx-auto">
-            Join professionals in 33+ countries who have elevated their careers with CIMA's internationally recognised ADR programmes.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register">
-              <Button size="lg" className="bg-amber-500 text-white hover:bg-amber-600 font-bold px-8 shadow-lg">
-                Get Started Today
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/qualification-pathway">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
-                Explore Pathways
-              </Button>
-            </Link>
+        <ScrollReveal direction="up" distance={30} duration={0.7}>
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+            <h2 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+              Ready to Advance{" "}
+              <span className="text-amber-400">Your Professional Career?</span>
+            </h2>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              Join professionals in 33+ countries who have elevated their careers with CIMA's internationally recognised ADR programmes.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/register">
+                <Button size="lg" className="bg-amber-500 text-white hover:bg-amber-600 font-bold px-8 shadow-lg">
+                  Get Started Today
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/qualification-pathway">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                  Explore Pathways
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       <Footer />
