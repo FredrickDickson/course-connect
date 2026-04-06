@@ -411,7 +411,7 @@ export default function CourseDetail() {
                               )}
                               {module.lessons && module.lessons.length > 0 && (
                                 <div className="space-y-2 ml-4">
-                                  {module.lessons.map((lesson, lessonIndex) => (
+                                  {module.lessons.map((lesson: any, lessonIndex: number) => (
                                     <div
                                       key={lesson.id}
                                       className="flex items-center justify-between py-2 border-b border-border last:border-0"
