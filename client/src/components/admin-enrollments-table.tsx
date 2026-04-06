@@ -81,7 +81,7 @@ export default function AdminEnrollmentsTable() {
 
   const markPaidMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("course_enrollments")
         .update({ payment_status: "confirmed", confirmed_at: new Date().toISOString() })
         .eq("id", id);
