@@ -224,7 +224,7 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrollments.slice(0, 3).map((enrollment) => (
+              {enrollments.slice(0, 3).map((enrollment: any) => (
                 <Card
                   key={enrollment.id}
                   className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden border-primary/5 hover:border-primary/20 bg-card"
