@@ -3,6 +3,7 @@ import Footer from "@/components/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollReveal, StaggerContainer } from "@/components/ScrollReveal";
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,8 +30,6 @@ import {
   ArrowRight,
   Zap,
   Scale,
-  GraduationCap,
-  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -86,7 +85,7 @@ function PathwayCard({
                 <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
               </div>
             </div>
-            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
           </div>
         </CollapsibleTrigger>
 
@@ -203,32 +202,36 @@ export default function QualificationPathway() {
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-sm text-sm px-5 py-2">
-            <Scale className="w-4 h-4 mr-2 text-amber-400" />
-            CIMA Professional Development
-          </Badge>
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">
-            CIMA Qualification Pathway
-          </h1>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto">
-            Structured Courses and Eligibility Requirements for Each Level
-          </p>
-          <p className="text-amber-400 font-semibold text-lg">
-            Learning Becomes Leadership — Join Professionals in 33+ Countries
-          </p>
-        </div>
+        <ScrollReveal direction="up" distance={40} duration={0.7}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+            <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-sm text-sm px-5 py-2">
+              <Scale className="w-4 h-4 mr-2 text-amber-400" />
+              CIMA Professional Development
+            </Badge>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight">
+              CIMA Qualification Pathway
+            </h1>
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+              Structured Courses and Eligibility Requirements for Each Level
+            </p>
+            <p className="text-amber-400 font-semibold text-lg">
+              Learning Becomes Leadership — Join Professionals in 33+ Countries
+            </p>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* ====== ARBITRATION PATHWAY ====== */}
       <section className="py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <Scale className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Arbitration Pathway</h2>
-          </div>
+          <ScrollReveal direction="up" distance={25} duration={0.6}>
+            <div className="flex items-center gap-3 mb-8">
+              <Scale className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Arbitration Pathway</h2>
+            </div>
+          </ScrollReveal>
 
-          <div className="space-y-4">
+          <StaggerContainer className="space-y-4" staggerDelay={0.15} threshold={0.1}>
             <PathwayCard
               icon={Shield}
               iconColor="text-primary"
@@ -301,120 +304,128 @@ export default function QualificationPathway() {
               eligibility="MCIMArb or equivalent, 7+ years ADR or 10+ legal experience, proven award-writing skills"
               outcome="Certificate of Fellowship, FCIMArb post-nominal, listed on CIMA panels, eligible to train/mentor/examine"
             />
-          </div>
+          </StaggerContainer>
 
           {/* Expedited Routes */}
-          <div className="mt-10">
-            <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-600" />
-              Expedited Routes
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <ExpeditedCard
-                title="Expedited Route to MCIMArb"
-                description="Fast-track for LL.M holders, ACIMArb members, and experienced legal professionals."
-                assessment="14-day take-home assessment (scenario-based)"
-                passMark="50%"
-                outcome="MCIMArb certificate upon passing"
-              />
-              <ExpeditedCard
-                title="Expedited Route to FCIMArb"
-                description="For MCIMArb or equivalent with 7+ years ADR / 10+ legal experience."
-                assessment="48-hour take-home award writing exam"
-                outcome="FCIMArb certificate, panel listing"
-              />
+          <ScrollReveal direction="up" distance={25} delay={0.1} duration={0.6}>
+            <div className="mt-10">
+              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-600" />
+                Expedited Routes
+              </h3>
             </div>
-          </div>
+          </ScrollReveal>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6" staggerDelay={0.1} threshold={0.15}>
+            <ExpeditedCard
+              title="Expedited Route to MCIMArb"
+              description="Fast-track for LL.M holders, ACIMArb members, and experienced legal professionals."
+              assessment="14-day take-home assessment (scenario-based)"
+              passMark="50%"
+              outcome="MCIMArb certificate upon passing"
+            />
+            <ExpeditedCard
+              title="Expedited Route to FCIMArb"
+              description="For MCIMArb or equivalent with 7+ years ADR / 10+ legal experience."
+              assessment="48-hour take-home award writing exam"
+              outcome="FCIMArb certificate, panel listing"
+            />
+          </StaggerContainer>
         </div>
       </section>
 
       {/* ====== PROGRESSION TABLE ====== */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Arbitration Progression</h2>
-          <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/5">
-                  <TableHead className="font-bold text-foreground">Level</TableHead>
-                  <TableHead className="font-bold text-foreground">Course Title</TableHead>
-                  <TableHead className="font-bold text-foreground">Eligibility</TableHead>
-                  <TableHead className="font-bold text-foreground">Post Nominal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Associate</TableCell>
-                  <TableCell>Introduction to Law, Practice & Procedure in Arbitration</TableCell>
-                  <TableCell>Open to all; no prior ADR experience</TableCell>
-                  <TableCell><span className="text-primary font-bold">ACIMArb</span></TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Member</TableCell>
-                  <TableCell>Advanced Law, Practice & Procedure in International Arb.</TableCell>
-                  <TableCell>ACIMArb or equivalent; legal training</TableCell>
-                  <TableCell><span className="text-primary font-bold">MCIMArb</span></TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Fellow</TableCell>
-                  <TableCell>Qualifying Route to Fellowship</TableCell>
-                  <TableCell>MCIMArb or 10+ years ADR/legal practice</TableCell>
-                  <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Card>
+          <ScrollReveal direction="up" distance={25} duration={0.6}>
+            <h2 className="text-2xl font-bold text-foreground mb-6">Arbitration Progression</h2>
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="font-bold text-foreground">Level</TableHead>
+                    <TableHead className="font-bold text-foreground">Course Title</TableHead>
+                    <TableHead className="font-bold text-foreground">Eligibility</TableHead>
+                    <TableHead className="font-bold text-foreground">Post Nominal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Associate</TableCell>
+                    <TableCell>Introduction to Law, Practice & Procedure in Arbitration</TableCell>
+                    <TableCell>Open to all; no prior ADR experience</TableCell>
+                    <TableCell><span className="text-primary font-bold">ACIMArb</span></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Member</TableCell>
+                    <TableCell>Advanced Law, Practice & Procedure in International Arb.</TableCell>
+                    <TableCell>ACIMArb or equivalent; legal training</TableCell>
+                    <TableCell><span className="text-primary font-bold">MCIMArb</span></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Fellow</TableCell>
+                    <TableCell>Qualifying Route to Fellowship</TableCell>
+                    <TableCell>MCIMArb or 10+ years ADR/legal practice</TableCell>
+                    <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </Card>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ====== OVERVIEW TABLE ====== */}
       <section className="py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Overview of CIMA Levels</h2>
-          <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/5">
-                  <TableHead className="font-bold text-foreground">Level</TableHead>
-                  <TableHead className="font-bold text-foreground">Post Nominal</TableHead>
-                  <TableHead className="font-bold text-foreground">Qualification Description</TableHead>
-                  <TableHead className="font-bold text-foreground">Recognised As</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Associate</TableCell>
-                  <TableCell><span className="text-primary font-bold">ACIMArb</span></TableCell>
-                  <TableCell>Introductory knowledge; suitable for support roles</TableCell>
-                  <TableCell><span className="text-amber-600 font-semibold">Arbitration Associate</span></TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Member</TableCell>
-                  <TableCell><span className="text-primary font-bold">MCIMArb</span></TableCell>
-                  <TableCell>Intermediate; can participate in arbitral process</TableCell>
-                  <TableCell><span className="text-amber-600 font-semibold">Arbitration Practitioner</span></TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Fellow</TableCell>
-                  <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
-                  <TableCell>Advanced; meets global standards to sit as arbitrator</TableCell>
-                  <TableCell><span className="text-amber-600 font-semibold">Certified International Arbitrator</span></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Card>
+          <ScrollReveal direction="up" distance={25} duration={0.6}>
+            <h2 className="text-2xl font-bold text-foreground mb-6">Overview of CIMA Levels</h2>
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="font-bold text-foreground">Level</TableHead>
+                    <TableHead className="font-bold text-foreground">Post Nominal</TableHead>
+                    <TableHead className="font-bold text-foreground">Qualification Description</TableHead>
+                    <TableHead className="font-bold text-foreground">Recognised As</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Associate</TableCell>
+                    <TableCell><span className="text-primary font-bold">ACIMArb</span></TableCell>
+                    <TableCell>Introductory knowledge; suitable for support roles</TableCell>
+                    <TableCell><span className="text-amber-600 font-semibold">Arbitration Associate</span></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Member</TableCell>
+                    <TableCell><span className="text-primary font-bold">MCIMArb</span></TableCell>
+                    <TableCell>Intermediate; can participate in arbitral process</TableCell>
+                    <TableCell><span className="text-amber-600 font-semibold">Arbitration Practitioner</span></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Fellow</TableCell>
+                    <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
+                    <TableCell>Advanced; meets global standards to sit as arbitrator</TableCell>
+                    <TableCell><span className="text-amber-600 font-semibold">Certified International Arbitrator</span></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </Card>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ====== MEDIATION PATHWAY ====== */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-8">
-            <Users className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">Mediation Pathway</h2>
-          </div>
+          <ScrollReveal direction="up" distance={25} duration={0.6}>
+            <div className="flex items-center gap-3 mb-8">
+              <Users className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Mediation Pathway</h2>
+            </div>
+          </ScrollReveal>
 
-          <div className="space-y-4">
+          <StaggerContainer className="space-y-4" staggerDelay={0.15} threshold={0.1}>
             <PathwayCard
               icon={Shield}
               iconColor="text-primary"
@@ -485,31 +496,33 @@ export default function QualificationPathway() {
               eligibility="MCIMed + 20 mediations or 10 years mediation experience"
               outcome="Certificate of Fellowship, FCIMed post-nominal, listed on CIMA mediation panels"
             />
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       {/* CTA */}
       <section className="py-20 bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <h2 className="text-3xl lg:text-4xl font-bold">Begin Your Professional Journey</h2>
-          <p className="text-lg text-white/70 max-w-xl mx-auto">
-            Choose your pathway and join an international community of ADR professionals.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button size="lg" className="bg-amber-500 text-white hover:bg-amber-600 font-bold px-8 shadow-lg">
-                Register Now
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
-                Contact Us
-              </Button>
-            </Link>
+        <ScrollReveal direction="up" distance={30} duration={0.7}>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <h2 className="text-3xl lg:text-4xl font-bold">Begin Your Professional Journey</h2>
+            <p className="text-lg text-white/70 max-w-xl mx-auto">
+              Choose your pathway and join an international community of ADR professionals.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/register">
+                <Button size="lg" className="bg-amber-500 text-white hover:bg-amber-600 font-bold px-8 shadow-lg">
+                  Register Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                  Contact Us
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       <Footer />
