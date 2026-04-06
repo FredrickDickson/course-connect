@@ -35,7 +35,7 @@ export default function CourseDetail() {
         .select(
           "*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
         )
-        .eq("id", id)
+        .eq("id", id!)
         .single();
       if (error) throw error;
       return data;
