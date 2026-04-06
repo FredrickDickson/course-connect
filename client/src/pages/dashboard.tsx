@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import MembershipDashboard from "@/components/membership-dashboard";
 import { Link, useLocation } from "wouter";
 import {
   BookOpen, Clock, Trophy, Heart, Play, Star, Award, Brain,
@@ -243,6 +244,9 @@ export default function Dashboard() {
 
             {/* Sidebar */}
             <div className="space-y-8">
+              {/* CIMA Membership */}
+              <MembershipDashboard />
+
               {/* Learning Stats */}
               <Card>
                 <CardHeader>
