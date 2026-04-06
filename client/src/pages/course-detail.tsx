@@ -375,7 +375,7 @@ export default function CourseDetail() {
                           What you'll learn
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {course.tags.map((tag, index) => (
+                          {course.tags.map((tag: any, index: number) => (
                             <Badge
                               key={index}
                               variant="outline"
