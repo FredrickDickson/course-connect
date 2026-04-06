@@ -2,14 +2,14 @@
  * Auth Routes - /api/auth/* endpoints
  */
 
-import { Router } from "express";
+import { Router, Request as ExpressRequest } from "express";
 import type { Response } from "express";
 import { storage } from "../storage";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { uploadLimiter, asyncHandler } from "../middleware/security";
 import { profileImageUpload, handleUploadError, getFileUrl } from "../middleware/upload";
 
-interface AuthRequest extends Request {
+interface AuthRequest extends ExpressRequest {
   user: {
     id: string;
     email: string;

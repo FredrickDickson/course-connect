@@ -70,11 +70,11 @@ import {
 // Types for Supabase query results (snake_case from database)
 interface SupabaseUser {
   id: string;
-  email: string;
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
-  role: string;
-  created_at: string;
+  role: string | null;
+  created_at: string | null;
 }
 
 interface SupabaseApplication {
@@ -834,10 +834,10 @@ function ApplicationCard({
               </p>
             </div>
           </div>
-          <Badge className={statusColors[applicationStatus] || statusColors.pending}>
+          <Badge className={statusColors[application.status || "pending"] || statusColors.pending}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {applicationStatus.charAt(0).toUpperCase() +
-              applicationStatus.slice(1)}
+            {(application.status || "pending").charAt(0).toUpperCase() +
+              (application.status || "pending").slice(1)}
           </Badge>
         </div>
 

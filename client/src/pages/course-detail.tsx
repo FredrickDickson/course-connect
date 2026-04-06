@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
 import {
   Star,
@@ -17,7 +19,6 @@ import {
   PlayCircle,
   CheckCircle,
 } from "lucide-react";
-import type { CourseWithDetails, ReviewWithUser } from "@shared/schema";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -34,7 +35,7 @@ export default function CourseDetail() {
         .select(
           "*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
         )
-        .eq("id", id)
+        .eq("id", id!)
         .single();
       if (error) throw error;
       return data;
@@ -48,8 +49,8 @@ export default function CourseDetail() {
       const { data, error } = await supabase
         .from("enrollments")
         .select("*")
-        .eq("course_id", id)
-        .eq("user_id", user?.id)
+        .eq("course_id", id!)
+        .eq("user_id", user?.id!)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -63,7 +64,7 @@ export default function CourseDetail() {
       const { data, error } = await supabase
         .from("reviews")
         .select("*, user:users!reviews_user_id_fkey(*)")
-        .eq("course_id", id);
+        .eq("course_id", id!);
       if (error) throw error;
       return data || [];
     },
@@ -102,7 +103,7 @@ export default function CourseDetail() {
       }
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if ((error as any)?.status === 401) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -174,7 +175,7 @@ export default function CourseDetail() {
   const isEnrolled = !!enrollment;
   const totalLessons =
     course.modules?.reduce(
-      (total, module) => total + (module.lessons?.length || 0),
+      (total: number, module: any) => total + (module.lessons?.length || 0),
       0,
     ) || 0;
   const avgRating = course.avg_rating
@@ -374,7 +375,7 @@ export default function CourseDetail() {
                           What you'll learn
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                          {course.tags.map((tag, index) => (
+                          {course.tags.map((tag: any, index: number) => (
                             <Badge
                               key={index}
                               variant="outline"
@@ -394,7 +395,7 @@ export default function CourseDetail() {
                     <h3 className="text-xl font-semibold">Course Curriculum</h3>
                     {course.modules && course.modules.length > 0 ? (
                       <div className="space-y-4">
-                        {course.modules.map((module, moduleIndex) => (
+                        {course.modules.map((module: any, moduleIndex: number) => (
                           <Card
                             key={module.id}
                             data-testid={`module-${moduleIndex}`}
@@ -410,7 +411,7 @@ export default function CourseDetail() {
                               )}
                               {module.lessons && module.lessons.length > 0 && (
                                 <div className="space-y-2 ml-4">
-                                  {module.lessons.map((lesson, lessonIndex) => (
+                                  {module.lessons.map((lesson: any, lessonIndex: number) => (
                                     <div
                                       key={lesson.id}
                                       className="flex items-center justify-between py-2 border-b border-border last:border-0"

@@ -35,11 +35,11 @@ import type { CourseWithDetails } from "@shared/schema";
 
 interface EnrollmentWithCourse {
   id: string;
-  user_id: string;
-  course_id: string;
-  enrolled_at: string;
+  user_id: string | null;
+  course_id: string | null;
+  enrolled_at: string | null;
   completed_at: string | null;
-  progress: string;
+  progress: number | null;
   course: any;
 }
 
@@ -69,14 +69,14 @@ export default function Profile() {
 
   // Fetch user enrollments
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<
-    EnrollmentWithCourse[]
+    any[]
   >({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
-        .eq("user_id", user?.id);
+        .eq("user_id", user?.id!);
       if (error) throw error;
       return data || [];
     },
@@ -96,7 +96,7 @@ export default function Profile() {
           timezone: data.timezone,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user!.id);
 
       if (error) throw error;
       return { success: true };
@@ -133,8 +133,8 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const completedCourses = enrollments.filter((e) => e.completed_at);
-  const inProgressCourses = enrollments.filter((e) => !e.completed_at);
+  const completedCourses = (enrollments as any[]).filter((e: any) => e.completed_at);
+  const inProgressCourses = (enrollments as any[]).filter((e: any) => !e.completed_at);
 
   if (!user) {
     return (
