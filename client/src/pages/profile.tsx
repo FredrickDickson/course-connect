@@ -35,11 +35,11 @@ import type { CourseWithDetails } from "@shared/schema";
 
 interface EnrollmentWithCourse {
   id: string;
-  user_id: string;
-  course_id: string;
-  enrolled_at: string;
+  user_id: string | null;
+  course_id: string | null;
+  enrolled_at: string | null;
   completed_at: string | null;
-  progress: string;
+  progress: number | null;
   course: any;
 }
 
