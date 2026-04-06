@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import AdminMembershipTable from "@/components/admin-membership-table";
+import AdminEnrollmentsTable from "@/components/admin-enrollments-table";
 import {
   Users,
   BookOpen,
