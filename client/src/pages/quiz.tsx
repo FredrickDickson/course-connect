@@ -105,7 +105,7 @@ export default function QuizPage() {
         .from("quiz_attempts")
         .select("*")
         .eq("quiz_id", quizId)
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .order("completed_at", { ascending: false });
 
       if (error) throw error;
