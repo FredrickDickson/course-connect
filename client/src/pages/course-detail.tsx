@@ -64,7 +64,7 @@ export default function CourseDetail() {
       const { data, error } = await supabase
         .from("reviews")
         .select("*, user:users!reviews_user_id_fkey(*)")
-        .eq("course_id", id);
+        .eq("course_id", id!);
       if (error) throw error;
       return data || [];
     },
