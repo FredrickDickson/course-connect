@@ -160,31 +160,12 @@ function Router() {
       <ProtectedRoute path="/checkout/:courseId" component={Checkout} />
 
       {/* Instructor-only routes */}
-      <ProtectedRoute path="/instructor" requiredRole="instructor">
-        <Suspense fallback={<PageLoader />}>
-          <InstructorDashboard />
-        </Suspense>
-      </ProtectedRoute>
-      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor">
-        <Suspense fallback={<PageLoader />}>
-          <CreateCourse />
-        </Suspense>
-      </ProtectedRoute>
-      <ProtectedRoute
-        path="/instructor/courses/:courseId/curriculum"
-        requiredRole="instructor"
-      >
-        <Suspense fallback={<PageLoader />}>
-          <CourseCurriculum />
-        </Suspense>
-      </ProtectedRoute>
+      <ProtectedRoute path="/instructor" requiredRole="instructor" component={InstructorDashboard} />
+      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={CreateCourse} />
+      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={CourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin">
-        <Suspense fallback={<PageLoader />}>
-          <AdminDashboard />
-        </Suspense>
-      </ProtectedRoute>
+      <ProtectedRoute path="/admin" requiredRole="admin" component={AdminDashboard} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>

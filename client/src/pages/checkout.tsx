@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,8 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { CourseWithDetails } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 // PayStack configuration
 declare global {
@@ -53,7 +55,7 @@ export default function Checkout() {
       const { data, error } = await supabase
         .from("courses")
         .select("*, instructor:users!courses_instructor_id_fkey(*)")
-        .eq("id", id)
+        .eq("id", id!)
         .single();
       if (error) throw error;
       return data;
@@ -131,7 +133,7 @@ export default function Checkout() {
       return response.json();
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if ((error as any)?.status === 401) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",

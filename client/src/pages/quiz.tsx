@@ -78,7 +78,7 @@ export default function QuizPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: quiz = null, isLoading: quizLoading } = useQuery<Quiz | null>({
+  const { data: quiz = null, isLoading: quizLoading } = useQuery<any>({
     queryKey: ["quiz", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -98,14 +98,14 @@ export default function QuizPage() {
     enabled: !!quizId && isAuthenticated,
   });
 
-  const { data: attempts = [] } = useQuery<QuizAttempt[]>({
+  const { data: attempts = [] } = useQuery<any[]>({
     queryKey: ["quiz-attempts", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quiz_attempts")
         .select("*")
         .eq("quiz_id", quizId)
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .order("completed_at", { ascending: false });
 
       if (error) throw error;
