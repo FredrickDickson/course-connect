@@ -141,8 +141,8 @@ export default function Header() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* Language Switcher - temporarily disabled */}
+            {/* <LanguageSwitcher /> */}
             
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-3">
