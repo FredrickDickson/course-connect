@@ -244,6 +244,9 @@ export default function Dashboard() {
 
             {/* Sidebar */}
             <div className="space-y-8">
+              {/* CIMA Membership */}
+              <MembershipDashboard />
+
               {/* Learning Stats */}
               <Card>
                 <CardHeader>
