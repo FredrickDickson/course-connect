@@ -31,6 +31,7 @@ export default function TicketWidget({
 
   const defaultTickets: TicketType[] = ticketTypes.length > 0 ? ticketTypes : [
     { name: "Associate", price_ghs: 5500 },
+    { name: "Member", price_ghs: 7000 },
     { name: "Fellow", price_ghs: 8500 },
   ];
 
