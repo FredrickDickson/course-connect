@@ -193,9 +193,11 @@ export default function MembershipDashboard() {
             </>
           )}
           {(membership.status === "expiring" || membership.status === "expired") && (
-            <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
-              <RefreshCw className="h-4 w-4 mr-1" /> Renew Membership
-            </Button>
+            <Link href="/renew-membership">
+              <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
+                <RefreshCw className="h-4 w-4 mr-1" /> {membership.status === "expired" ? "Renew to Reinstate" : "Renew Now"}
+              </Button>
+            </Link>
           )}
         </div>
 
