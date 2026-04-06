@@ -78,7 +78,7 @@ export default function QuizPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: quiz = null, isLoading: quizLoading } = useQuery<Quiz | null>({
+  const { data: quiz = null, isLoading: quizLoading } = useQuery<any>({
     queryKey: ["quiz", quizId],
     queryFn: async () => {
       const { data, error } = await supabase
