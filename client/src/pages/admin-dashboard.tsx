@@ -70,11 +70,11 @@ import {
 // Types for Supabase query results (snake_case from database)
 interface SupabaseUser {
   id: string;
-  email: string;
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
-  role: string;
-  created_at: string;
+  role: string | null;
+  created_at: string | null;
 }
 
 interface SupabaseApplication {
