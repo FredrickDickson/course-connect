@@ -47,7 +47,7 @@ export default function VerifyMember() {
       if (error || !data) {
         setNotFound(true);
       } else {
-        setMember(data as MemberVerification);
+        setMember(data as unknown as MemberVerification);
       }
       setLoading(false);
     })();
