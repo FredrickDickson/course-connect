@@ -739,7 +739,7 @@ export class DatabaseStorage implements IStorage {
       user_id: review.userId,
       course_id: review.courseId,
       rating: review.rating,
-      content: review.content,
+      comment: review.comment,
     };
     const { data, error } = await supabaseAdmin
       .from("reviews")
