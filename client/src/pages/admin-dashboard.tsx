@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
+import AdminMembershipTable from "@/components/admin-membership-table";
 import {
   Users,
   BookOpen,
