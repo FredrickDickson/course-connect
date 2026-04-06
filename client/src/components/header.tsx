@@ -25,6 +25,7 @@ export default function Header() {
 
   const navigation = [
     { name: t('nav.home'), href: "/", icon: BookOpen },
+    { name: "Pathways", href: "/qualification-pathway", icon: GraduationCap },
     { name: t('nav.courses'), href: "/courses", icon: GraduationCap, authRequired: true },
     { name: t('nav.dashboard'), href: "/dashboard", icon: User, authRequired: true },
     { name: "Instructor", href: "/instructor", icon: Presentation, authRequired: true, instructorOnly: true },

@@ -139,6 +139,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/community-forum" component={CommunityForum} />
       <Route path="/professional-standards" component={ProfessionalStandards} />
+      <Route path="/qualification-pathway" component={QualificationPathway} />
 
       {/* Admin bootstrap — protected behind admin role */}
       <ProtectedRoute
