@@ -75,12 +75,12 @@ export default function MembershipDashboard() {
     queryKey: ["membership", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("members")
+        .from("members" as any)
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!user,
   });
