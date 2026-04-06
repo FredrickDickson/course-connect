@@ -95,7 +95,7 @@ export default function AdminEnrollmentsTable() {
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("course_enrollments")
         .update({ payment_status: "cancelled" })
         .eq("id", id);
