@@ -70,12 +70,12 @@ export default function AdminEnrollmentsTable() {
   const { data: enrollments = [], isLoading } = useQuery<Enrollment[]>({
     queryKey: ["admin-course-enrollments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("course_enrollments")
         .select("*, course:courses(title)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as any;
+      return (data || []) as Enrollment[];
     },
   });
 
