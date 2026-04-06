@@ -109,6 +109,23 @@ export default function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
 
+        {/* Capacity indicator */}
+        {(course as any).total_capacity && (
+          <div className="mb-3">
+            {((course as any).total_capacity - (course.enrollment_count || 0)) <= 0 ? (
+              <Badge variant="destructive" className="text-xs">Sold Out — Join Waitlist</Badge>
+            ) : ((course as any).total_capacity - (course.enrollment_count || 0)) <= 10 ? (
+              <Badge className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100">
+                Only {(course as any).total_capacity - (course.enrollment_count || 0)} spots left!
+              </Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {(course as any).total_capacity - (course.enrollment_count || 0)} spots remaining
+              </span>
+            )}
+          </div>
+        )}
+
         {course.instructor && (
           <div className="text-xs font-medium text-muted-foreground mb-6 flex items-center" data-testid="instructor-info">
             <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary">
