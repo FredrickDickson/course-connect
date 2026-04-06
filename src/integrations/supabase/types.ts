@@ -346,6 +346,41 @@ export type Database = {
           },
         ]
       }
+      email_reminder_logs: {
+        Row: {
+          email_type: string
+          error_message: string | null
+          id: string
+          member_id: string
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          email_type: string
+          error_message?: string | null
+          id?: string
+          member_id: string
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          member_id?: string
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_reminder_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           completed_at: string | null
@@ -567,6 +602,74 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          certificate_url: string | null
+          country: string | null
+          created_at: string
+          email: string
+          expiry_date: string | null
+          full_name: string
+          id: string
+          issue_date: string | null
+          member_id: string
+          membership_level: Database["public"]["Enums"]["membership_level"]
+          payment_reference: string | null
+          payment_status: string | null
+          phone: string | null
+          post_nominal: string | null
+          status: Database["public"]["Enums"]["membership_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          certificate_url?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          expiry_date?: string | null
+          full_name: string
+          id?: string
+          issue_date?: string | null
+          member_id: string
+          membership_level?: Database["public"]["Enums"]["membership_level"]
+          payment_reference?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          post_nominal?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          certificate_url?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          expiry_date?: string | null
+          full_name?: string
+          id?: string
+          issue_date?: string | null
+          member_id?: string
+          membership_level?: Database["public"]["Enums"]["membership_level"]
+          payment_reference?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          post_nominal?: string | null
+          status?: Database["public"]["Enums"]["membership_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1046,10 +1149,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_member_id: { Args: never; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      membership_level: "associate" | "member" | "fellow"
+      membership_status: "pending" | "active" | "expiring" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1176,6 +1281,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      membership_level: ["associate", "member", "fellow"],
+      membership_status: ["pending", "active", "expiring", "expired"],
+    },
   },
 } as const
