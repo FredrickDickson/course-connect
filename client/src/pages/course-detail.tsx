@@ -395,7 +395,7 @@ export default function CourseDetail() {
                     <h3 className="text-xl font-semibold">Course Curriculum</h3>
                     {course.modules && course.modules.length > 0 ? (
                       <div className="space-y-4">
-                        {course.modules.map((module, moduleIndex) => (
+                        {course.modules.map((module: any, moduleIndex: number) => (
                           <Card
                             key={module.id}
                             data-testid={`module-${moduleIndex}`}
