@@ -53,7 +53,7 @@ export default function VerifyMember() {
     })();
   }, [memberId]);
 
-  const isValid = member && (member.status === "active" || member.status === "expiring");
+  const isValid = member && member.expiry_date && new Date(member.expiry_date) >= new Date();
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">

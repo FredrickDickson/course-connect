@@ -749,12 +749,14 @@ export type Database = {
           full_name: string
           id: string
           issue_date: string | null
+          last_reminder_sent: string | null
           member_id: string
           membership_level: Database["public"]["Enums"]["membership_level"]
           payment_reference: string | null
           payment_status: string | null
           phone: string | null
           post_nominal: string | null
+          renewal_count: number
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
           user_id: string | null
@@ -768,12 +770,14 @@ export type Database = {
           full_name: string
           id?: string
           issue_date?: string | null
+          last_reminder_sent?: string | null
           member_id: string
           membership_level?: Database["public"]["Enums"]["membership_level"]
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
           post_nominal?: string | null
+          renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string | null
@@ -787,12 +791,14 @@ export type Database = {
           full_name?: string
           id?: string
           issue_date?: string | null
+          last_reminder_sent?: string | null
           member_id?: string
           membership_level?: Database["public"]["Enums"]["membership_level"]
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
           post_nominal?: string | null
+          renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string | null
@@ -1130,6 +1136,59 @@ export type Database = {
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_history: {
+        Row: {
+          amount_paid: number
+          certificate_url: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          member_id: string
+          new_expiry_date: string
+          notes: string | null
+          payment_method: string
+          payment_reference: string | null
+          renewal_date: string
+        }
+        Insert: {
+          amount_paid?: number
+          certificate_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          member_id: string
+          new_expiry_date: string
+          notes?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          renewal_date?: string
+        }
+        Update: {
+          amount_paid?: number
+          certificate_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          member_id?: string
+          new_expiry_date?: string
+          notes?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          renewal_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_history_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
