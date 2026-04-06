@@ -40,7 +40,7 @@ export default function VerifyMember() {
     if (!memberId) return;
     (async () => {
       const { data, error } = await supabase
-        .from("members")
+        .from("members" as any)
         .select("full_name, membership_level, status, issue_date, expiry_date, member_id, post_nominal")
         .eq("member_id", memberId)
         .maybeSingle();

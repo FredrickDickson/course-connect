@@ -38,7 +38,7 @@ export default function AdminMembershipTable() {
     queryKey: ["admin-members"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("members")
+        .from("members" as any)
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;

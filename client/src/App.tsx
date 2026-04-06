@@ -48,6 +48,7 @@ import FCIMarbFellowship from "@/pages/fcrimarb-fellowship";
 import Certification from "@/pages/certification";
 import Resources from "@/pages/resources";
 import QualificationPathway from "@/pages/qualification-pathway";
+import VerifyMember from "@/pages/verify-member";
 import CommunityForum from "@/pages/community-forum";
 import ProfessionalStandards from "@/pages/professional-standards";
 import QuizPage from "@/pages/quiz";
