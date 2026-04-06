@@ -133,7 +133,7 @@ export default function Checkout() {
       return response.json();
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if ((error as any)?.status === 401) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
