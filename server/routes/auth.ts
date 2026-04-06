@@ -2,7 +2,7 @@
  * Auth Routes - /api/auth/* endpoints
  */
 
-import { Router } from "express";
+import { Router, Request as ExpressRequest } from "express";
 import type { Response } from "express";
 import { storage } from "../storage";
 import { requireSupabaseAuth } from "../supabaseAuth";
