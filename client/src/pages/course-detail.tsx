@@ -49,8 +49,8 @@ export default function CourseDetail() {
       const { data, error } = await supabase
         .from("enrollments")
         .select("*")
-        .eq("course_id", id)
-        .eq("user_id", user?.id)
+        .eq("course_id", id!)
+        .eq("user_id", user?.id!)
         .maybeSingle();
       if (error) throw error;
       return data;
