@@ -834,10 +834,10 @@ function ApplicationCard({
               </p>
             </div>
           </div>
-          <Badge className={statusColors[applicationStatus] || statusColors.pending}>
+          <Badge className={statusColors[application.status || "pending"] || statusColors.pending}>
             <StatusIcon className="w-3 h-3 mr-1" />
-            {applicationStatus.charAt(0).toUpperCase() +
-              applicationStatus.slice(1)}
+            {(application.status || "pending").charAt(0).toUpperCase() +
+              (application.status || "pending").slice(1)}
           </Badge>
         </div>
 

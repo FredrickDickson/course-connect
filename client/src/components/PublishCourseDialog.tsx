@@ -112,9 +112,9 @@ export function PublishCourseDialog({
     },
   });
 
-  const checks = validation?.checks || {};
-  const errors = validation?.errors || [];
-  const isValid = validation?.isValid || false;
+  const checks: Record<string, boolean> = validation?.checks || {};
+  const errors: string[] = validation?.errors || [];
+  const isValid: boolean = validation?.isValid || false;
 
   const checkItems = [
     { key: "hasTitle", label: "Course has a title", checked: checks.hasTitle },
