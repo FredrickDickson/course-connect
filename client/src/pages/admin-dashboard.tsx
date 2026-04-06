@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import AdminMembershipTable from "@/components/admin-membership-table";
 import AdminEnrollmentsTable from "@/components/admin-enrollments-table";
+import AdminRenewalManagement from "@/components/admin-renewal-management";
 import {
   Users,
   BookOpen,
