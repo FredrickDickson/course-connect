@@ -117,8 +117,9 @@ export default function MembershipDashboard() {
   const daysLeft = membership.expiry_date ? getDaysUntilExpiry(membership.expiry_date) : null;
   const nextLevel = NEXT_LEVEL[membership.membership_level];
 
-  const handleDownload = () => {
-    downloadCertificate({
+  const handleDownload = async () => {
+    toast({ title: "Generating certificate..." });
+    await downloadCertificate({
       fullName: membership.full_name,
       membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
       memberId: membership.member_id,
