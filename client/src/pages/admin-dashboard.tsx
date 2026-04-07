@@ -264,18 +264,18 @@ export default function AdminDashboard() {
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage courses, enrollments, members, and platform operations
+            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage instructors, courses, and platform operations
             </p>
           </div>
-          <div className="flex items-center gap-3 mt-4 sm:mt-0">
+          <div className="flex items-center gap-2 mt-3 sm:mt-0">
             <AdminNotifications />
-            <Badge variant="outline">
+            <Badge variant="outline" className="text-xs">
               <AlertCircle className="w-3 h-3 mr-1" />
-              Admin Access
+              Admin
             </Badge>
           </div>
         </div>
