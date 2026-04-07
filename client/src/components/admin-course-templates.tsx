@@ -210,7 +210,7 @@ export default function AdminCourseTemplates() {
       const cohortId = generateCohortId(template.short_code, year, month);
 
       // Check for duplicate cohort
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from("courses")
         .select("id")
         .eq("cohort_id", cohortId)
