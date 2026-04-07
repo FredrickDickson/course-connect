@@ -264,43 +264,45 @@ export default function AdminDashboard() {
       <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage courses, enrollments, members, and platform operations
+            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage instructors, courses, and platform operations
             </p>
           </div>
-          <div className="flex items-center gap-3 mt-4 sm:mt-0">
+          <div className="flex items-center gap-2 mt-3 sm:mt-0">
             <AdminNotifications />
-            <Badge variant="outline">
+            <Badge variant="outline" className="text-xs">
               <AlertCircle className="w-3 h-3 mr-1" />
-              Admin Access
+              Admin
             </Badge>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-wrap">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
-            <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="renewals">Renewals</TabsTrigger>
-            <TabsTrigger value="applications">
-              Applications
-              {(pendingCount || 0) > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                >
-                  {pendingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1">
+              <TabsTrigger value="overview" className="text-sm px-4 py-2">Overview</TabsTrigger>
+              <TabsTrigger value="enrollments" className="text-sm px-4 py-2">Enrollments</TabsTrigger>
+              <TabsTrigger value="courses" className="text-sm px-4 py-2">Courses</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2">Templates</TabsTrigger>
+              <TabsTrigger value="members" className="text-sm px-4 py-2">Members</TabsTrigger>
+              <TabsTrigger value="renewals" className="text-sm px-4 py-2">Renewals</TabsTrigger>
+              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative">
+                Applications
+                {(pendingCount || 0) > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1.5 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px]"
+                  >
+                    {pendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="users" className="text-sm px-4 py-2">Users</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab — Year selector, charts, YoY */}
           <TabsContent value="overview">
