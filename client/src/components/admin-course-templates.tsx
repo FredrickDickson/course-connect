@@ -166,13 +166,13 @@ export default function AdminCourseTemplates() {
       };
 
       if (isEdit && editingId) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("course_templates")
           .update(payload)
           .eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("course_templates")
           .insert(payload);
         if (error) throw error;
