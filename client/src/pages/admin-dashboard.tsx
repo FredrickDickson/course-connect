@@ -24,6 +24,7 @@ import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
 import AdminNotifications from "@/components/admin-notifications";
+import AdminCourseTemplates from "@/components/admin-course-templates";
 import {
   Users,
   BookOpen,
@@ -284,6 +285,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="renewals">Renewals</TabsTrigger>
             <TabsTrigger value="applications">
@@ -313,6 +315,11 @@ export default function AdminDashboard() {
           {/* Courses Tab — Enhanced with capacity bars */}
           <TabsContent value="courses">
             <AdminCoursesTable />
+          </TabsContent>
+
+          {/* Templates Tab — Reusable course templates & cohort system */}
+          <TabsContent value="templates">
+            <AdminCourseTemplates />
           </TabsContent>
 
           {/* Members Tab */}
