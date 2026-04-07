@@ -313,6 +313,60 @@ export type Database = {
           },
         ]
       }
+      course_templates: {
+        Row: {
+          banner_image_url: string | null
+          created_at: string
+          default_capacity: number | null
+          default_currency: string | null
+          default_price: number | null
+          default_ticket_types: Json | null
+          description: string | null
+          duration_hours: number | null
+          enquiry_phone_1: string | null
+          enquiry_phone_2: string | null
+          format: string | null
+          id: string
+          name: string
+          short_code: string
+          updated_at: string
+        }
+        Insert: {
+          banner_image_url?: string | null
+          created_at?: string
+          default_capacity?: number | null
+          default_currency?: string | null
+          default_price?: number | null
+          default_ticket_types?: Json | null
+          description?: string | null
+          duration_hours?: number | null
+          enquiry_phone_1?: string | null
+          enquiry_phone_2?: string | null
+          format?: string | null
+          id?: string
+          name: string
+          short_code: string
+          updated_at?: string
+        }
+        Update: {
+          banner_image_url?: string | null
+          created_at?: string
+          default_capacity?: number | null
+          default_currency?: string | null
+          default_price?: number | null
+          default_ticket_types?: Json | null
+          description?: string | null
+          duration_hours?: number | null
+          enquiry_phone_1?: string | null
+          enquiry_phone_2?: string | null
+          format?: string | null
+          id?: string
+          name?: string
+          short_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_waitlist: {
         Row: {
           course_id: string | null
@@ -352,10 +406,13 @@ export type Database = {
         Row: {
           avg_rating: number | null
           category_id: string | null
+          cohort_id: string | null
+          course_status: string | null
           created_at: string | null
           currency: string | null
           description: string | null
           duration_hours: number | null
+          end_date: string | null
           enquiry_phone_1: string | null
           enquiry_phone_2: string | null
           enrollment_count: number | null
@@ -367,21 +424,27 @@ export type Database = {
           price: number
           promo_video_url: string | null
           rating_count: number | null
+          start_date: string | null
           subtitle: string | null
           tags: string[] | null
+          template_id: string | null
           thumbnail_url: string | null
           ticket_types: Json | null
           title: string
           total_capacity: number | null
           updated_at: string | null
+          venue: string | null
         }
         Insert: {
           avg_rating?: number | null
           category_id?: string | null
+          cohort_id?: string | null
+          course_status?: string | null
           created_at?: string | null
           currency?: string | null
           description?: string | null
           duration_hours?: number | null
+          end_date?: string | null
           enquiry_phone_1?: string | null
           enquiry_phone_2?: string | null
           enrollment_count?: number | null
@@ -393,21 +456,27 @@ export type Database = {
           price: number
           promo_video_url?: string | null
           rating_count?: number | null
+          start_date?: string | null
           subtitle?: string | null
           tags?: string[] | null
+          template_id?: string | null
           thumbnail_url?: string | null
           ticket_types?: Json | null
           title: string
           total_capacity?: number | null
           updated_at?: string | null
+          venue?: string | null
         }
         Update: {
           avg_rating?: number | null
           category_id?: string | null
+          cohort_id?: string | null
+          course_status?: string | null
           created_at?: string | null
           currency?: string | null
           description?: string | null
           duration_hours?: number | null
+          end_date?: string | null
           enquiry_phone_1?: string | null
           enquiry_phone_2?: string | null
           enrollment_count?: number | null
@@ -419,13 +488,16 @@ export type Database = {
           price?: number
           promo_video_url?: string | null
           rating_count?: number | null
+          start_date?: string | null
           subtitle?: string | null
           tags?: string[] | null
+          template_id?: string | null
           thumbnail_url?: string | null
           ticket_types?: Json | null
           title?: string
           total_capacity?: number | null
           updated_at?: string | null
+          venue?: string | null
         }
         Relationships: [
           {
@@ -440,6 +512,13 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "course_templates"
             referencedColumns: ["id"]
           },
         ]

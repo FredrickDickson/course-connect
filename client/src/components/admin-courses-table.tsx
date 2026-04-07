@@ -48,6 +48,8 @@ interface CourseWithEnrollments {
   price: number;
   currency: string;
   enrollment_count: number;
+  cohort_id?: string | null;
+  course_status?: string | null;
   instructor?: { first_name: string | null; last_name: string | null } | null;
   confirmedCount: number;
   pendingCount: number;
@@ -286,6 +288,7 @@ export default function AdminCoursesTable() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium">Course</th>
+                <th className="text-left p-3 font-medium">Cohort</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">
                   Instructor
                 </th>
@@ -308,6 +311,9 @@ export default function AdminCoursesTable() {
                 >
                   <td className="p-3 font-medium max-w-[250px] truncate">
                     {c.title}
+                  </td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">
+                    {c.cohort_id || "—"}
                   </td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">
                     {c.instructor?.first_name} {c.instructor?.last_name}
