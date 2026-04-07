@@ -317,6 +317,11 @@ export default function AdminDashboard() {
             <AdminCoursesTable />
           </TabsContent>
 
+          {/* Templates Tab — Reusable course templates & cohort system */}
+          <TabsContent value="templates">
+            <AdminCourseTemplates />
+          </TabsContent>
+
           {/* Members Tab */}
           <TabsContent value="members">
             <AdminMembershipTable />
