@@ -48,6 +48,8 @@ interface CourseWithEnrollments {
   price: number;
   currency: string;
   enrollment_count: number;
+  cohort_id?: string | null;
+  course_status?: string | null;
   instructor?: { first_name: string | null; last_name: string | null } | null;
   confirmedCount: number;
   pendingCount: number;
