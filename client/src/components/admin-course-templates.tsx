@@ -220,7 +220,7 @@ export default function AdminCourseTemplates() {
       const ticketTypes = template.default_ticket_types || [];
       const title = editionForm.title_override || `${template.name} — ${cohortId}`;
 
-      const { error } = await supabase.from("courses").insert({
+      const { error } = await (supabase as any).from("courses").insert({
         title,
         description: template.description,
         thumbnail_url: template.banner_image_url,
