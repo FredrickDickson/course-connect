@@ -125,12 +125,12 @@ export default function AdminCourseTemplates() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["course-templates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("course_templates")
         .select("*")
         .order("short_code");
       if (error) throw error;
-      return data as CourseTemplate[];
+      return (data || []) as CourseTemplate[];
     },
   });
 
