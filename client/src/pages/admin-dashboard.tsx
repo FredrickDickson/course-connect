@@ -24,6 +24,7 @@ import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
 import AdminNotifications from "@/components/admin-notifications";
+import AdminCourseTemplates from "@/components/admin-course-templates";
 import {
   Users,
   BookOpen,

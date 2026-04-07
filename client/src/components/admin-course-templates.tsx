@@ -138,7 +138,7 @@ export default function AdminCourseTemplates() {
   const { data: courses = [] } = useQuery({
     queryKey: ["courses-with-templates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("courses")
         .select("id, template_id, cohort_id, course_status, start_date, title");
       if (error) throw error;
