@@ -25,6 +25,7 @@ import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
 import AdminNotifications from "@/components/admin-notifications";
 import AdminCourseTemplates from "@/components/admin-course-templates";
+import AdminUsersProfiles from "@/components/admin-users-profiles";
 import {
   Users,
   BookOpen,
