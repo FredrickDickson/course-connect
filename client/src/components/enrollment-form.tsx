@@ -25,8 +25,11 @@ import {
   Shield,
   Lock,
   Copy,
-  Download,
   Calendar,
+  User,
+  Briefcase,
+  BookOpen,
+  CreditCard,
 } from "lucide-react";
 import { COUNTRIES } from "@/lib/countries";
 
@@ -51,7 +54,56 @@ const PROGRAMMES = [
   "Expedited Route to Fellowship in International Arbitration (Oxfordshire)",
 ];
 
-const STORAGE_KEY = "cima-enrollment-form";
+const INDUSTRIES = [
+  "Legal",
+  "Business / Corporate",
+  "Public Sector / Government",
+  "Academic / Education",
+  "Financial Services",
+  "Construction / Real Estate",
+  "Energy / Oil & Gas",
+  "Maritime / Shipping",
+  "Technology",
+  "Healthcare",
+  "Other",
+];
+
+const ROLE_CATEGORIES = [
+  "Legal Practitioner",
+  "Business Professional",
+  "Public Sector Official",
+  "Academic / Researcher",
+  "Arbitrator / Mediator",
+  "Student",
+  "Other",
+];
+
+const EDUCATION_LEVELS = [
+  "High School / Secondary",
+  "Diploma / Certificate",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate / PhD",
+  "Professional Qualification",
+];
+
+const EXPERIENCE_LEVELS = [
+  "0-2 years",
+  "3-5 years",
+  "6-10 years",
+  "11-15 years",
+  "16-20 years",
+  "20+ years",
+];
+
+const ADR_EXPERIENCE_OPTIONS = [
+  { value: "none", label: "None" },
+  { value: "beginner", label: "Beginner — Studied ADR or attended short courses" },
+  { value: "intermediate", label: "Intermediate — Participated in or observed proceedings" },
+  { value: "advanced", label: "Advanced — Served as arbitrator/mediator or counsel" },
+];
+
+const STORAGE_KEY = "cima-enrollment-form-v2";
 
 export default function EnrollmentForm({
   course,
@@ -64,6 +116,7 @@ export default function EnrollmentForm({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const paystackLoaded = useRef(false);
 
   // Determine selected ticket
@@ -73,21 +126,34 @@ export default function EnrollmentForm({
   const ticketInfo = ticketTypes.find((t) => t.name === ticketName) || { name: ticketName, price_ghs: 5500 };
   const totalPrice = ticketInfo.price_ghs * ticketQty;
 
-  // Form state with localStorage persistence
+  // Determine course level for conditional fields
+  const isFellowLevel = ticketName.toLowerCase().includes("fellow");
+
+  // Form state
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? JSON.parse(saved) : {};
     return {
+      // Step 1: Identity
       email: parsed.email || user?.email || "",
       fullName: parsed.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
-      country: parsed.country || "",
       phone: parsed.phone || "",
+      country: parsed.country || "Ghana",
       whatsapp: parsed.whatsapp || "",
       sameAsPhone: parsed.sameAsPhone ?? true,
+      // Step 2: Professional Profile
       institution: parsed.institution || "",
+      jobTitle: parsed.jobTitle || "",
+      yearsExperience: parsed.yearsExperience || "",
+      industry: parsed.industry || "",
+      roleCategory: parsed.roleCategory || "",
+      educationLevel: parsed.educationLevel || "",
+      adrExperience: parsed.adrExperience || "none",
       address: parsed.address || "",
+      // Step 3: Course-Specific
       personalStatement: parsed.personalStatement || "",
       programme: parsed.programme || "",
+      // Step 4: Review & Pay
       paymentMethod: parsed.paymentMethod || "paystack",
       confirmAccurate: false,
       agreeTerms: false,
@@ -95,6 +161,37 @@ export default function EnrollmentForm({
       understandPayment: false,
     };
   });
+
+  // Load existing profile from DB
+  useEffect(() => {
+    if (!user?.id || profileLoaded) return;
+    const loadProfile = async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setFormData((prev: any) => ({
+          ...prev,
+          fullName: data.full_name || prev.fullName,
+          phone: data.phone || prev.phone,
+          whatsapp: data.whatsapp || prev.whatsapp,
+          country: data.country || prev.country,
+          address: data.address || prev.address,
+          institution: data.institution || prev.institution,
+          jobTitle: data.job_title || prev.jobTitle,
+          yearsExperience: data.years_experience || prev.yearsExperience,
+          industry: data.industry || prev.industry,
+          roleCategory: data.role_category || prev.roleCategory,
+          educationLevel: data.education_level || prev.educationLevel,
+          adrExperience: data.adr_experience || prev.adrExperience,
+        }));
+      }
+      setProfileLoaded(true);
+    };
+    loadProfile();
+  }, [user?.id, profileLoaded]);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -151,13 +248,27 @@ export default function EnrollmentForm({
     if (!formData.country) e.country = "Country required";
     if (!formData.phone.trim()) e.phone = "Phone required";
     if (!formData.whatsapp.trim()) e.whatsapp = "WhatsApp required";
-    if (!formData.institution.trim()) e.institution = "Institution required";
-    if (!formData.address.trim()) e.address = "Address required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const validateStep2 = () => {
+    const e: Record<string, string> = {};
+    if (!formData.institution.trim()) e.institution = "Institution required";
+    if (!formData.industry) e.industry = "Select your industry";
+    if (!formData.roleCategory) e.roleCategory = "Select your role category";
+    if (!formData.educationLevel) e.educationLevel = "Select your education level";
+    if (isFellowLevel && formData.yearsExperience) {
+      const years = parseInt(formData.yearsExperience);
+      if (!isNaN(years) && years < 7) {
+        e.yearsExperience = "Fellow candidates typically require 7+ years of experience";
+      }
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep3 = () => {
     const e: Record<string, string> = {};
     if (!formData.personalStatement || formData.personalStatement.length < 50)
       e.personalStatement = "Minimum 50 characters required";
@@ -166,10 +277,69 @@ export default function EnrollmentForm({
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
-    else if (step === 2 && validateStep2()) setStep(3);
+  const saveProfile = async () => {
+    if (!user?.id) return;
+    const profileData = {
+      user_id: user.id,
+      full_name: formData.fullName,
+      phone: formData.phone,
+      whatsapp: formData.whatsapp,
+      country: formData.country,
+      address: formData.address,
+      institution: formData.institution,
+      job_title: formData.jobTitle,
+      years_experience: formData.yearsExperience,
+      industry: formData.industry,
+      role_category: formData.roleCategory,
+      education_level: formData.educationLevel,
+      adr_experience: formData.adrExperience,
+      profile_completed: true,
+      updated_at: new Date().toISOString(),
+    };
+    await (supabase as any)
+      .from("profiles")
+      .upsert(profileData, { onConflict: "user_id" });
   };
+
+  const handleNext = async () => {
+    if (step === 1 && validateStep1()) {
+      // Save identity to profile on step 1 completion
+      if (user?.id) {
+        await (supabase as any).from("profiles").upsert({
+          user_id: user.id,
+          full_name: formData.fullName,
+          phone: formData.phone,
+          whatsapp: formData.whatsapp,
+          country: formData.country,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+      }
+      setStep(2);
+    } else if (step === 2 && validateStep2()) {
+      // Save professional profile
+      await saveProfile();
+      setStep(3);
+    } else if (step === 3 && validateStep3()) {
+      setStep(4);
+    }
+  };
+
+  const createProfileSnapshot = () => ({
+    full_name: formData.fullName,
+    email: formData.email,
+    phone: formData.phone,
+    whatsapp: formData.whatsapp,
+    country: formData.country,
+    address: formData.address,
+    institution: formData.institution,
+    job_title: formData.jobTitle,
+    years_experience: formData.yearsExperience,
+    industry: formData.industry,
+    role_category: formData.roleCategory,
+    education_level: formData.educationLevel,
+    adr_experience: formData.adrExperience,
+    snapshot_at: new Date().toISOString(),
+  });
 
   const createEnrollment = async (paymentMethod: string, paystackRef?: string) => {
     const payload = {
@@ -192,6 +362,7 @@ export default function EnrollmentForm({
       paystack_reference: paystackRef || null,
       user_id: user?.id || null,
       confirmed_at: paymentMethod === "paystack" ? new Date().toISOString() : null,
+      profile_snapshot: createProfileSnapshot(),
     };
 
     const { data, error } = await (supabase as any)
@@ -204,11 +375,14 @@ export default function EnrollmentForm({
     return data;
   };
 
-  const handlePaystack = async () => {
+  const handleSubmit = async () => {
     if (!formData.confirmAccurate || !formData.agreeTerms || !formData.consentContact || !formData.understandPayment) {
       toast({ title: "Please accept all agreements", variant: "destructive" });
       return;
     }
+
+    // Save full profile before enrollment
+    await saveProfile();
 
     if (formData.paymentMethod === "paystack") {
       if (!window.PaystackPop) {
@@ -227,7 +401,7 @@ export default function EnrollmentForm({
             const enrollment = await createEnrollment("paystack", response.reference);
             localStorage.removeItem(STORAGE_KEY);
             setBookingResult(enrollment);
-            setStep(4);
+            setStep(5);
           } catch (err: any) {
             toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
           }
@@ -240,13 +414,12 @@ export default function EnrollmentForm({
       });
       handler.openIframe();
     } else {
-      // Bank transfer or invoice
       setIsSubmitting(true);
       try {
         const enrollment = await createEnrollment(formData.paymentMethod);
         localStorage.removeItem(STORAGE_KEY);
         setBookingResult(enrollment);
-        setStep(4);
+        setStep(5);
       } catch (err: any) {
         toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
       }
@@ -254,10 +427,16 @@ export default function EnrollmentForm({
     }
   };
 
-  const progressPercent = step === 1 ? 25 : step === 2 ? 50 : step === 3 ? 75 : 100;
+  const stepLabels = [
+    { icon: User, label: "Identity" },
+    { icon: Briefcase, label: "Profile" },
+    { icon: BookOpen, label: "Course" },
+    { icon: CreditCard, label: "Review & Pay" },
+  ];
+  const progressPercent = step === 1 ? 20 : step === 2 ? 40 : step === 3 ? 60 : step === 4 ? 80 : 100;
 
-  // Confirmation screen (step 4)
-  if (step === 4 && bookingResult) {
+  // Confirmation screen (step 5)
+  if (step === 5 && bookingResult) {
     const isPaystack = bookingResult.payment_method === "paystack";
     return (
       <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
@@ -362,20 +541,45 @@ export default function EnrollmentForm({
           </Badge>
         </div>
 
-        {/* Progress */}
+        {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span className={step >= 1 ? "text-primary font-semibold" : ""}>1. Personal Details</span>
-            <span className={step >= 2 ? "text-primary font-semibold" : ""}>2. Background</span>
-            <span className={step >= 3 ? "text-primary font-semibold" : ""}>3. Review & Payment</span>
+            {stepLabels.map((s, i) => (
+              <button
+                key={i}
+                className={`flex items-center gap-1 transition-colors ${step >= i + 1 ? "text-primary font-semibold" : ""} ${step > i + 1 ? "cursor-pointer hover:text-primary/80" : "cursor-default"}`}
+                onClick={() => { if (step > i + 1) setStep(i + 1); }}
+                disabled={step <= i + 1}
+              >
+                <s.icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{s.label}</span>
+                <span className="sm:hidden">{i + 1}</span>
+              </button>
+            ))}
           </div>
           <Progress value={progressPercent} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-1 text-right">
+            Step {step} of 4
+          </p>
         </div>
 
-        {/* Step 1: Personal Details */}
+        {/* Returning user banner */}
+        {profileLoaded && formData.institution && step === 1 && (
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardContent className="p-3 text-sm flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+              <span>Welcome back, <strong>{formData.fullName.split(" ")[0]}</strong> — your details have been pre-filled from your profile.</span>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ===== STEP 1: Identity ===== */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-foreground">Personal Details</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Personal Details</h2>
+              <p className="text-sm text-muted-foreground">Basic contact information</p>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -408,37 +612,15 @@ export default function EnrollmentForm({
                 {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
               </div>
               <div>
-                <Label htmlFor="whatsapp">WhatsApp (with country code) *</Label>
+                <Label htmlFor="whatsapp">WhatsApp *</Label>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="sameAsPhone"
-                      checked={formData.sameAsPhone}
-                      onCheckedChange={(c) => updateField("sameAsPhone", c)}
-                    />
+                    <Checkbox id="sameAsPhone" checked={formData.sameAsPhone} onCheckedChange={(c) => updateField("sameAsPhone", c)} />
                     <label htmlFor="sameAsPhone" className="text-xs text-muted-foreground">Same as phone</label>
                   </div>
-                  <Input
-                    id="whatsapp"
-                    type="tel"
-                    placeholder="+233..."
-                    value={formData.whatsapp}
-                    onChange={(e) => updateField("whatsapp", e.target.value)}
-                    disabled={formData.sameAsPhone}
-                    className={errors.whatsapp ? "border-destructive" : ""}
-                  />
+                  <Input id="whatsapp" type="tel" placeholder="+233..." value={formData.whatsapp} onChange={(e) => updateField("whatsapp", e.target.value)} disabled={formData.sameAsPhone} className={errors.whatsapp ? "border-destructive" : ""} />
                 </div>
                 {errors.whatsapp && <p className="text-xs text-destructive mt-1">{errors.whatsapp}</p>}
-              </div>
-              <div className="sm:col-span-2">
-                <Label htmlFor="institution">Name of Institution / Office / Firm *</Label>
-                <Input id="institution" value={formData.institution} onChange={(e) => updateField("institution", e.target.value)} className={errors.institution ? "border-destructive" : ""} />
-                {errors.institution && <p className="text-xs text-destructive mt-1">{errors.institution}</p>}
-              </div>
-              <div className="sm:col-span-2">
-                <Label htmlFor="address">Current Address *</Label>
-                <Input id="address" value={formData.address} onChange={(e) => updateField("address", e.target.value)} className={errors.address ? "border-destructive" : ""} />
-                {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
               </div>
             </div>
 
@@ -448,33 +630,115 @@ export default function EnrollmentForm({
           </div>
         )}
 
-        {/* Step 2: Background & Motivation */}
+        {/* ===== STEP 2: Professional Profile ===== */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-foreground">Background & Motivation</h2>
-
             <div>
-              <Label htmlFor="personalStatement">
-                Please tell us about yourself. Also tell us where you saw the advert or learnt about the course. Kindly include why you have enrolled for this course. *
-              </Label>
-              <Textarea
-                id="personalStatement"
-                value={formData.personalStatement}
-                onChange={(e) => updateField("personalStatement", e.target.value)}
-                rows={6}
-                className={`mt-2 ${errors.personalStatement ? "border-destructive" : ""}`}
-                placeholder="Minimum 50 characters..."
-              />
-              <div className="flex justify-between mt-1">
-                {errors.personalStatement && <p className="text-xs text-destructive">{errors.personalStatement}</p>}
-                <p className="text-xs text-muted-foreground ml-auto">{formData.personalStatement.length} characters</p>
+              <h2 className="text-lg font-semibold text-foreground">Professional Profile</h2>
+              <p className="text-sm text-muted-foreground">This information is saved to your profile and reused across future enrollments.</p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label htmlFor="institution">Institution / Firm / Organisation *</Label>
+                <Input id="institution" value={formData.institution} onChange={(e) => updateField("institution", e.target.value)} className={errors.institution ? "border-destructive" : ""} />
+                {errors.institution && <p className="text-xs text-destructive mt-1">{errors.institution}</p>}
               </div>
+              <div>
+                <Label htmlFor="jobTitle">Job Title</Label>
+                <Input id="jobTitle" value={formData.jobTitle} onChange={(e) => updateField("jobTitle", e.target.value)} placeholder="e.g. Senior Associate" />
+              </div>
+              <div>
+                <Label htmlFor="yearsExperience">Years of Experience</Label>
+                <Select value={formData.yearsExperience} onValueChange={(v) => updateField("yearsExperience", v)}>
+                  <SelectTrigger className={errors.yearsExperience ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPERIENCE_LEVELS.map((e) => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.yearsExperience && <p className="text-xs text-destructive mt-1">{errors.yearsExperience}</p>}
+              </div>
+              <div>
+                <Label htmlFor="industry">Industry *</Label>
+                <Select value={formData.industry} onValueChange={(v) => updateField("industry", v)}>
+                  <SelectTrigger className={errors.industry ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select your industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDUSTRIES.map((i) => (
+                      <SelectItem key={i} value={i}>{i}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.industry && <p className="text-xs text-destructive mt-1">{errors.industry}</p>}
+              </div>
+              <div>
+                <Label htmlFor="roleCategory">Role Category *</Label>
+                <Select value={formData.roleCategory} onValueChange={(v) => updateField("roleCategory", v)}>
+                  <SelectTrigger className={errors.roleCategory ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLE_CATEGORIES.map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.roleCategory && <p className="text-xs text-destructive mt-1">{errors.roleCategory}</p>}
+              </div>
+              <div>
+                <Label htmlFor="educationLevel">Education Level *</Label>
+                <Select value={formData.educationLevel} onValueChange={(v) => updateField("educationLevel", v)}>
+                  <SelectTrigger className={errors.educationLevel ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EDUCATION_LEVELS.map((e) => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.educationLevel && <p className="text-xs text-destructive mt-1">{errors.educationLevel}</p>}
+              </div>
+              <div className="sm:col-span-2">
+                <Label>ADR Experience</Label>
+                <RadioGroup value={formData.adrExperience} onValueChange={(v) => updateField("adrExperience", v)} className="grid sm:grid-cols-2 gap-2 mt-2">
+                  {ADR_EXPERIENCE_OPTIONS.map((opt) => (
+                    <div key={opt.value} className="flex items-start gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value={opt.value} id={`adr-${opt.value}`} className="mt-0.5" />
+                      <label htmlFor={`adr-${opt.value}`} className="text-sm cursor-pointer leading-relaxed">{opt.label}</label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="address">Current Address</Label>
+                <Input id="address" value={formData.address} onChange={(e) => updateField("address", e.target.value)} placeholder="Street address, city" />
+              </div>
+            </div>
+
+            <Button className="w-full" size="lg" onClick={handleNext}>
+              Continue <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
+
+        {/* ===== STEP 3: Course-Specific ===== */}
+        {step === 3 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Course Details</h2>
+              <p className="text-sm text-muted-foreground">Information specific to this enrollment</p>
             </div>
 
             <div>
               <Label className="mb-3 block">Professional Training Programme *</Label>
               {errors.programme && <p className="text-xs text-destructive mb-2">{errors.programme}</p>}
-              <RadioGroup value={formData.programme} onValueChange={(v) => updateField("programme", v)} className="space-y-3">
+              <RadioGroup value={formData.programme} onValueChange={(v) => updateField("programme", v)} className="space-y-2">
                 {PROGRAMMES.map((p) => (
                   <div key={p} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                     <RadioGroupItem value={p} id={p} className="mt-0.5" />
@@ -484,34 +748,77 @@ export default function EnrollmentForm({
               </RadioGroup>
             </div>
 
+            <div>
+              <Label htmlFor="personalStatement">
+                Tell us about yourself and why you enrolled for this course *
+              </Label>
+              <Textarea
+                id="personalStatement"
+                value={formData.personalStatement}
+                onChange={(e) => updateField("personalStatement", e.target.value)}
+                rows={5}
+                className={`mt-2 ${errors.personalStatement ? "border-destructive" : ""}`}
+                placeholder="Minimum 50 characters..."
+              />
+              <div className="flex justify-between mt-1">
+                {errors.personalStatement && <p className="text-xs text-destructive">{errors.personalStatement}</p>}
+                <p className="text-xs text-muted-foreground ml-auto">{formData.personalStatement.length} / 50 characters</p>
+              </div>
+            </div>
+
             <Button className="w-full" size="lg" onClick={handleNext}>
               Continue to Review <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         )}
 
-        {/* Step 3: Review & Payment */}
-        {step === 3 && (
+        {/* ===== STEP 4: Review & Payment ===== */}
+        {step === 4 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-foreground">Review & Payment</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Review & Payment</h2>
+              <p className="text-sm text-muted-foreground">Confirm your details and complete payment</p>
+            </div>
 
+            {/* Summary */}
             <Card>
-              <CardContent className="p-4 space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-2">
-                  <span className="text-muted-foreground">Name</span>
-                  <span className="font-medium">{formData.fullName}</span>
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium">{formData.email}</span>
-                  <span className="text-muted-foreground">Phone</span>
-                  <span className="font-medium">{formData.phone}</span>
-                  <span className="text-muted-foreground">WhatsApp</span>
-                  <span className="font-medium">{formData.whatsapp}</span>
-                  <span className="text-muted-foreground">Country</span>
-                  <span className="font-medium">{formData.country}</span>
-                  <span className="text-muted-foreground">Institution</span>
-                  <span className="font-medium">{formData.institution}</span>
-                  <span className="text-muted-foreground">Programme</span>
-                  <span className="font-medium text-right">{formData.programme}</span>
+              <CardContent className="p-4 space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Details</h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-muted-foreground">Name</span>
+                    <span className="font-medium">{formData.fullName}</span>
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium">{formData.email}</span>
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="font-medium">{formData.phone}</span>
+                    <span className="text-muted-foreground">Country</span>
+                    <span className="font-medium">{formData.country}</span>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Professional Profile</h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-muted-foreground">Institution</span>
+                    <span className="font-medium">{formData.institution}</span>
+                    {formData.jobTitle && <>
+                      <span className="text-muted-foreground">Job Title</span>
+                      <span className="font-medium">{formData.jobTitle}</span>
+                    </>}
+                    <span className="text-muted-foreground">Industry</span>
+                    <span className="font-medium">{formData.industry}</span>
+                    <span className="text-muted-foreground">ADR Experience</span>
+                    <span className="font-medium capitalize">{formData.adrExperience}</span>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Course</h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-muted-foreground">Programme</span>
+                    <span className="font-medium text-right">{formData.programme}</span>
+                    <span className="text-muted-foreground">Ticket</span>
+                    <span className="font-medium">{ticketName}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -520,9 +827,11 @@ export default function EnrollmentForm({
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-4 text-sm space-y-2">
                 <h3 className="font-bold text-foreground">PAYMENT DETAILS</h3>
-                <p>Course Fee:</p>
-                <p className="font-medium">GHS 5,500 (Associates) | GHS 8,500 (Fellows)</p>
-                <div className="border-t pt-2 mt-2">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">GHS {totalPrice.toLocaleString()}.00</span>
+                </div>
+                <div className="border-t pt-2 mt-2 text-xs text-muted-foreground">
                   <p>MoMo No: 0241022964</p>
                   <p>Cheque: Center for International Mediators and Arbitrators</p>
                   <p>Stanbic Bank, Accra Main — Account No: 9040012902985</p>
@@ -539,11 +848,7 @@ export default function EnrollmentForm({
                 { key: "understandPayment", label: "I understand my place is confirmed upon receipt of payment" },
               ].map(({ key, label }) => (
                 <div key={key} className="flex items-start gap-3">
-                  <Checkbox
-                    id={key}
-                    checked={(formData as any)[key]}
-                    onCheckedChange={(c) => updateField(key, c)}
-                  />
+                  <Checkbox id={key} checked={(formData as any)[key]} onCheckedChange={(c) => updateField(key, c)} />
                   <label htmlFor={key} className="text-sm cursor-pointer">{label}</label>
                 </div>
               ))}
@@ -574,7 +879,7 @@ export default function EnrollmentForm({
             <Button
               className="w-full"
               size="lg"
-              onClick={handlePaystack}
+              onClick={handleSubmit}
               disabled={isSubmitting || !formData.confirmAccurate || !formData.agreeTerms || !formData.consentContact || !formData.understandPayment}
             >
               {isSubmitting ? "Processing..." : (
