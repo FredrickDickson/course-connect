@@ -37,7 +37,7 @@ import {
 
 interface UserRow {
   id: string;
-  email: string;
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
   role: string | null;
