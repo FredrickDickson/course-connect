@@ -190,6 +190,7 @@ export type Database = {
           paystack_reference: string | null
           personal_statement: string | null
           phone: string | null
+          profile_snapshot: Json | null
           programme_selected: string | null
           ticket_price: number
           ticket_type: string
@@ -215,6 +216,7 @@ export type Database = {
           paystack_reference?: string | null
           personal_statement?: string | null
           phone?: string | null
+          profile_snapshot?: Json | null
           programme_selected?: string | null
           ticket_price?: number
           ticket_type?: string
@@ -240,6 +242,7 @@ export type Database = {
           paystack_reference?: string | null
           personal_statement?: string | null
           phone?: string | null
+          profile_snapshot?: Json | null
           programme_selected?: string | null
           ticket_price?: number
           ticket_type?: string
@@ -967,6 +970,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          adr_experience: string | null
+          country: string | null
+          created_at: string
+          education_level: string | null
+          full_name: string | null
+          id: string
+          industry: string | null
+          institution: string | null
+          job_title: string | null
+          phone: string | null
+          profile_completed: boolean
+          role_category: string | null
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+          years_experience: string | null
+        }
+        Insert: {
+          address?: string | null
+          adr_experience?: string | null
+          country?: string | null
+          created_at?: string
+          education_level?: string | null
+          full_name?: string | null
+          id?: string
+          industry?: string | null
+          institution?: string | null
+          job_title?: string | null
+          phone?: string | null
+          profile_completed?: boolean
+          role_category?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+          years_experience?: string | null
+        }
+        Update: {
+          address?: string | null
+          adr_experience?: string | null
+          country?: string | null
+          created_at?: string
+          education_level?: string | null
+          full_name?: string | null
+          id?: string
+          industry?: string | null
+          institution?: string | null
+          job_title?: string | null
+          phone?: string | null
+          profile_completed?: boolean
+          role_category?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+          years_experience?: string | null
+        }
+        Relationships: []
       }
       progress: {
         Row: {
