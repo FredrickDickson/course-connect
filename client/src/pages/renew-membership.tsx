@@ -256,9 +256,9 @@ export default function RenewMembership() {
     }
   };
 
-  const handleDownloadNewCert = () => {
+  const handleDownloadNewCert = async () => {
     if (!renewalResult) return;
-    downloadCertificate({
+    await downloadCertificate({
       fullName: membership.full_name,
       membershipLevel: level,
       memberId: membership.member_id,
