@@ -193,7 +193,7 @@ export default function AdminCourseTemplates() {
   // Delete template
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("course_templates").delete().eq("id", id);
+      const { error } = await (supabase as any).from("course_templates").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
