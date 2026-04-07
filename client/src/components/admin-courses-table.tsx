@@ -288,6 +288,7 @@ export default function AdminCoursesTable() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium">Course</th>
+                <th className="text-left p-3 font-medium">Cohort</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">
                   Instructor
                 </th>
