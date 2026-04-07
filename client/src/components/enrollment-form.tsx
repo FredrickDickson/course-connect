@@ -30,6 +30,8 @@ import {
   Briefcase,
   BookOpen,
   CreditCard,
+  Download,
+  LayoutDashboard,
 } from "lucide-react";
 import { COUNTRIES } from "@/lib/countries";
 
@@ -113,7 +115,8 @@ export default function EnrollmentForm({
 }: EnrollmentFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  // Step 0 = Quick Start, Steps 1-4 = main form, Step 5 = success
+  const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -134,9 +137,10 @@ export default function EnrollmentForm({
     const saved = localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? JSON.parse(saved) : {};
     return {
-      // Step 1: Identity
+      // Step 0: Quick Start
       email: parsed.email || user?.email || "",
       fullName: parsed.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+      // Step 1: Identity (remaining)
       phone: parsed.phone || "",
       country: parsed.country || "Ghana",
       whatsapp: parsed.whatsapp || "",
@@ -161,6 +165,19 @@ export default function EnrollmentForm({
       understandPayment: false,
     };
   });
+
+  // If user is already logged in and has name+email, skip Step 0
+  useEffect(() => {
+    if (step === 0 && user?.email && formData.fullName.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        email: prev.email || user.email || "",
+        fullName: prev.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+      }));
+      // Auto-advance past Quick Start for logged-in users with name
+      setStep(1);
+    }
+  }, [user, step]);
 
   // Load existing profile from DB
   useEffect(() => {
@@ -241,10 +258,16 @@ export default function EnrollmentForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateStep1 = () => {
+  const validateStep0 = () => {
     const e: Record<string, string> = {};
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = "Valid email required";
     if (!formData.fullName.trim()) e.fullName = "Full name required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validateStep1 = () => {
+    const e: Record<string, string> = {};
     if (!formData.country) e.country = "Country required";
     if (!formData.phone.trim()) e.phone = "Phone required";
     if (!formData.whatsapp.trim()) e.whatsapp = "WhatsApp required";
@@ -302,7 +325,10 @@ export default function EnrollmentForm({
   };
 
   const handleNext = async () => {
-    if (step === 1 && validateStep1()) {
+    if (step === 0 && validateStep0()) {
+      // Capture lead immediately
+      setStep(1);
+    } else if (step === 1 && validateStep1()) {
       // Save identity to profile on step 1 completion
       if (user?.id) {
         await (supabase as any).from("profiles").upsert({
@@ -428,14 +454,16 @@ export default function EnrollmentForm({
   };
 
   const stepLabels = [
-    { icon: User, label: "Identity" },
-    { icon: Briefcase, label: "Profile" },
+    { icon: User, label: "Profile" },
+    { icon: Briefcase, label: "Professional" },
     { icon: BookOpen, label: "Course" },
     { icon: CreditCard, label: "Review & Pay" },
   ];
-  const progressPercent = step === 1 ? 20 : step === 2 ? 40 : step === 3 ? 60 : step === 4 ? 80 : 100;
+  
+  // For steps 1-4, map to progress. Step 0 is pre-progress.
+  const progressPercent = step === 0 ? 5 : step === 1 ? 25 : step === 2 ? 50 : step === 3 ? 75 : step === 4 ? 90 : 100;
 
-  // Confirmation screen (step 5)
+  // ===== SUCCESS SCREEN (step 5) =====
   if (step === 5 && bookingResult) {
     const isPaystack = bookingResult.payment_method === "paystack";
     return (
@@ -448,6 +476,11 @@ export default function EnrollmentForm({
             <h1 className="text-3xl font-bold text-foreground">
               {isPaystack ? `You're registered, ${formData.fullName.split(" ")[0]}!` : "Registration Received"}
             </h1>
+            <p className="text-muted-foreground">
+              {isPaystack
+                ? "Your place is confirmed. See you at the course!"
+                : "Complete your payment to confirm your spot."}
+            </p>
 
             <Card className="text-left">
               <CardContent className="p-6 space-y-3">
@@ -469,6 +502,18 @@ export default function EnrollmentForm({
                     {isPaystack ? "✓ Confirmed via Paystack" : bookingResult.payment_status === "pending_invoice" ? "Invoice Pending" : "Pending Bank Transfer"}
                   </Badge>
                 </div>
+                {course.start_date && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Course Date</span>
+                    <span className="font-medium">{new Date(course.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  </div>
+                )}
+                {course.venue && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Venue</span>
+                    <span className="font-medium text-right max-w-[60%]">{course.venue}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -501,6 +546,31 @@ export default function EnrollmentForm({
               Enquiries: 0536735535 | 0241022964
             </p>
 
+            {/* What's Next */}
+            <Card className="text-left border-primary/20">
+              <CardContent className="p-5 space-y-3">
+                <h3 className="font-semibold text-foreground">What happens next?</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>{isPaystack ? "Payment confirmed" : "Submit payment"}</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+                    <span>Receive confirmation email with joining instructions</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+                    <span>Complete your profile for a smoother experience</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+                    <span>Access course materials via your dashboard</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="flex flex-wrap justify-center gap-3">
               <Button variant="outline" onClick={() => {
                 navigator.clipboard.writeText(bookingResult.booking_ref);
@@ -510,11 +580,52 @@ export default function EnrollmentForm({
               </Button>
               <Button
                 variant="outline"
-                onClick={() => window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(course.title)}`, "_blank")}
+                onClick={() => window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(course.title)}${course.start_date ? `&dates=${course.start_date.replace(/-/g, "")}` : ""}`, "_blank")}
               >
                 <Calendar className="w-4 h-4 mr-2" /> Add to Calendar
               </Button>
-              <Button onClick={onClose}>Back to Courses</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Simple receipt download
+                  const receipt = `
+CIMA COURSE REGISTRATION RECEIPT
+================================
+Booking Ref: ${bookingResult.booking_ref}
+Date: ${new Date().toLocaleDateString("en-GB")}
+
+Student: ${formData.fullName}
+Email: ${formData.email}
+Phone: ${formData.phone}
+
+Course: ${course.title}
+Programme: ${formData.programme}
+Ticket: ${ticketName}
+Amount: GHS ${ticketInfo.price_ghs.toLocaleString()}.00
+Payment: ${isPaystack ? "Paid via Paystack" : bookingResult.payment_status === "pending_invoice" ? "Invoice Requested" : "Pending Bank Transfer"}
+
+Status: ${isPaystack ? "CONFIRMED" : "PENDING PAYMENT"}
+================================
+Center for International Mediators and Arbitrators
+Enquiries: 0536735535 | 0241022964
+                  `.trim();
+                  const blob = new Blob([receipt], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `CIMA-Receipt-${bookingResult.booking_ref}.txt`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" /> Download Receipt
+              </Button>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button onClick={() => window.location.href = "/dashboard"} className="gap-2">
+                <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+              </Button>
+              <Button variant="ghost" onClick={onClose}>Back to Courses</Button>
             </div>
           </div>
         </div>
@@ -528,7 +639,7 @@ export default function EnrollmentForm({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={step > 1 ? () => setStep(step - 1) : onClose}>
+            <Button variant="ghost" size="icon" onClick={step > 0 ? () => setStep(step === 1 && !user ? 0 : Math.max(step - 1, 1)) : onClose}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -536,32 +647,36 @@ export default function EnrollmentForm({
               <p className="text-sm text-muted-foreground">{course.title}</p>
             </div>
           </div>
-          <Badge variant="secondary" className="text-primary">
-            {ticketName} — GHS {totalPrice.toLocaleString()}
-          </Badge>
+          {step > 0 && (
+            <Badge variant="secondary" className="text-primary">
+              {ticketName} — GHS {totalPrice.toLocaleString()}
+            </Badge>
+          )}
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            {stepLabels.map((s, i) => (
-              <button
-                key={i}
-                className={`flex items-center gap-1 transition-colors ${step >= i + 1 ? "text-primary font-semibold" : ""} ${step > i + 1 ? "cursor-pointer hover:text-primary/80" : "cursor-default"}`}
-                onClick={() => { if (step > i + 1) setStep(i + 1); }}
-                disabled={step <= i + 1}
-              >
-                <s.icon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{s.label}</span>
-                <span className="sm:hidden">{i + 1}</span>
-              </button>
-            ))}
+        {/* Progress Steps (shown for steps 1-4) */}
+        {step >= 1 && step <= 4 && (
+          <div className="mb-8">
+            <div className="flex justify-between text-xs text-muted-foreground mb-2">
+              {stepLabels.map((s, i) => (
+                <button
+                  key={i}
+                  className={`flex items-center gap-1 transition-colors ${step >= i + 1 ? "text-primary font-semibold" : ""} ${step > i + 1 ? "cursor-pointer hover:text-primary/80" : "cursor-default"}`}
+                  onClick={() => { if (step > i + 1) setStep(i + 1); }}
+                  disabled={step <= i + 1}
+                >
+                  <s.icon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{s.label}</span>
+                  <span className="sm:hidden">{i + 1}</span>
+                </button>
+              ))}
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1 text-right">
+              Step {step} of 4
+            </p>
           </div>
-          <Progress value={progressPercent} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-1 text-right">
-            Step {step} of 4
-          </p>
-        </div>
+        )}
 
         {/* Returning user banner */}
         {profileLoaded && formData.institution && step === 1 && (
@@ -573,25 +688,90 @@ export default function EnrollmentForm({
           </Card>
         )}
 
+        {/* ===== STEP 0: Quick Start (Lead Capture) ===== */}
+        {step === 0 && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Register for this course</h2>
+              <p className="text-muted-foreground">Enter your details to get started — it only takes a few minutes.</p>
+            </div>
+
+            <Card className="border-primary/20">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{course.title}</p>
+                    <p className="text-sm text-muted-foreground">{ticketName} — GHS {totalPrice.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="qs-email">Email *</Label>
+                    <Input
+                      id="qs-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => updateField("email", e.target.value)}
+                      placeholder="you@example.com"
+                      className={errors.email ? "border-destructive" : ""}
+                    />
+                    {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="qs-name">Full Name *</Label>
+                    <Input
+                      id="qs-name"
+                      value={formData.fullName}
+                      onChange={(e) => updateField("fullName", e.target.value)}
+                      placeholder="First Last"
+                      className={errors.fullName ? "border-destructive" : ""}
+                    />
+                    {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName}</p>}
+                  </div>
+                </div>
+
+                <Button className="w-full" size="lg" onClick={handleNext}>
+                  Continue Registration <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  <Lock className="w-3 h-3 inline mr-1" />
+                  Your data is saved securely. You can resume later.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* ===== STEP 1: Identity ===== */}
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Personal Details</h2>
-              <p className="text-sm text-muted-foreground">Basic contact information</p>
+              <h2 className="text-lg font-semibold text-foreground">Contact Details</h2>
+              <p className="text-sm text-muted-foreground">Phone, country, and messaging details</p>
             </div>
 
+            {/* Show locked email/name */}
+            <Card className="bg-muted/50">
+              <CardContent className="p-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-muted-foreground">Name:</span> <strong>{formData.fullName}</strong>
+                    <span className="mx-2 text-muted-foreground">|</span>
+                    <span className="text-muted-foreground">Email:</span> <strong>{formData.email}</strong>
+                  </div>
+                  {!user && (
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setStep(0)}>Edit</Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={(e) => updateField("email", e.target.value)} className={errors.email ? "border-destructive" : ""} />
-                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
-              </div>
-              <div className="sm:col-span-2">
-                <Label htmlFor="fullName">Full Name *</Label>
-                <Input id="fullName" value={formData.fullName} onChange={(e) => updateField("fullName", e.target.value)} className={errors.fullName ? "border-destructive" : ""} />
-                {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName}</p>}
-              </div>
               <div className="sm:col-span-2">
                 <Label htmlFor="country">Country *</Label>
                 <Select value={formData.country} onValueChange={(v) => updateField("country", v)}>
