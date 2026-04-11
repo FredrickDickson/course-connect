@@ -1865,48 +1865,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             } else {
               tableStructure = 'No existing members found';
-            }
-            
-            let successCount = 0;
-            let errorCount = 0;
-            
-            for (const member of members) {
-              try {
-                // Try insert instead of upsert to avoid UUID issues
-                const { data, error } = await supabaseAdmin
-                  .from('members')
-                  .insert(member);
-                
-                if (error) {
-                  console.error('Error inserting member:', member.id, error.message);
-                  errorCount++;
-                } else {
-                  console.log('Added member:', member.id, '-', member.full_name);
-                  successCount++;
-                }
-              } catch (memberError: any) {
-                console.error('Exception inserting member:', member.id, memberError.message);
-                errorCount++;
-              }
-            }
-            
-            if (successCount > 0) {
               res.send(`
                 <html>
-                <head><title>Members Setup Complete</title></head>
+                <head><title>No Members</title></head>
                 <body style="font-family: Arial; text-align: center; margin-top: 50px;">
-                  <h1 style="color: #8B0000;">Members Table Setup Complete</h1>
-                  <p>${tableStructure}</p>
-                  <p>Successfully added ${successCount} members to database</p>
-                  ${errorCount > 0 ? `<p style="color: orange;">${errorCount} members failed to insert</p>` : ''}
-                  <p><a href="/certificate/CIM001">Test Certificate</a></p>
+                  <h1 style="color: #8B0000;">No Members Found</h1>
+                  <p>Add members via the admin dashboard first.</p>
                   <p><a href="/">Back to Home</a></p>
                 </body>
                 </html>
               `);
-              return;
-            } else {
-              res.status(500).send('Failed to add any members to database');
               return;
             }
           } else {
