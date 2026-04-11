@@ -11,6 +11,13 @@ import { createServer, type Server } from "http";
 import express from "express";
 import crypto from "crypto";
 import { storage } from "./storage";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase Admin client directly for certificate route
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 import { requireSupabaseAuth } from "./supabaseAuth";
 import { requireRole, requireInstructor } from "./middleware/roleProtection";
 import {
@@ -1790,6 +1797,391 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }),
   );
+
+  // ============================================================================
+  // CERTIFICATE SETUP ROUTE
+  // ============================================================================
+
+  app.get(
+    "/setup-members",
+    asyncHandler(async (req: Request, res: Response) => {
+      try {
+        console.log('Inspecting existing members table structure...');
+        
+        // First, try to get table structure by attempting a simple query
+        let tableStructure = '';
+        try {
+          const { data: testData, error: testError } = await supabaseAdmin
+            .from('members')
+            .select('*')
+            .limit(1);
+          
+          if (testError) {
+            console.error('Table query error:', testError);
+            tableStructure = 'Error accessing table: ' + testError.message;
+          } else if (testData && testData.length > 0) {
+            const columns = Object.keys(testData[0]);
+            tableStructure = 'Columns found: ' + columns.join(', ');
+            console.log('Table columns:', columns);
+            
+            // First check if there are existing members, if so use their IDs
+            const { data: existingMembers, error: existingError } = await supabaseAdmin
+              .from('members')
+              .select('id, full_name, membership_level, issue_date, expiry_date')
+              .limit(5);
+            
+            if (existingError) {
+              console.error('Error checking existing members:', existingError);
+              tableStructure = 'Error checking existing members: ' + existingError.message;
+            } else if (existingMembers && existingMembers.length > 0) {
+              console.log('Found existing members:', existingMembers.length);
+              tableStructure = 'Existing members found: ' + existingMembers.map(m => m.id + ' - ' + m.full_name).join(', ');
+              
+              // Use existing member data for certificate testing
+              let successCount = existingMembers.length;
+              let errorCount = 0;
+              
+              for (const member of existingMembers) {
+                console.log('Using existing member:', member.id, '-', member.full_name);
+              }
+              
+              if (successCount > 0) {
+                res.send(`
+                  <html>
+                  <head><title>Members Found</title></head>
+                  <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+                    <h1 style="color: #8B0000;">Members Table Ready</h1>
+                    <p>Found ${successCount} existing members in database</p>
+                    <p>${tableStructure}</p>
+                    <p><a href="/certificate/${existingMembers[0].id}">Test Certificate with ${existingMembers[0].full_name}</a></p>
+                    <p><a href="/">Back to Home</a></p>
+                  </body>
+                  </html>
+                `);
+                return;
+              } else {
+                res.status(500).send('No existing members found');
+                return;
+              }
+            } else {
+              tableStructure = 'No existing members found';
+            }
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const member of members) {
+              try {
+                // Try insert instead of upsert to avoid UUID issues
+                const { data, error } = await supabaseAdmin
+                  .from('members')
+                  .insert(member);
+                
+                if (error) {
+                  console.error('Error inserting member:', member.id, error.message);
+                  errorCount++;
+                } else {
+                  console.log('Added member:', member.id, '-', member.full_name);
+                  successCount++;
+                }
+              } catch (memberError: any) {
+                console.error('Exception inserting member:', member.id, memberError.message);
+                errorCount++;
+              }
+            }
+            
+            if (successCount > 0) {
+              res.send(`
+                <html>
+                <head><title>Members Setup Complete</title></head>
+                <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+                  <h1 style="color: #8B0000;">Members Table Setup Complete</h1>
+                  <p>${tableStructure}</p>
+                  <p>Successfully added ${successCount} members to database</p>
+                  ${errorCount > 0 ? `<p style="color: orange;">${errorCount} members failed to insert</p>` : ''}
+                  <p><a href="/certificate/CIM001">Test Certificate</a></p>
+                  <p><a href="/">Back to Home</a></p>
+                </body>
+                </html>
+              `);
+              return;
+            } else {
+              res.status(500).send('Failed to add any members to database');
+              return;
+            }
+          } else {
+            tableStructure = 'Table exists but is empty';
+          }
+        } catch (queryError: any) {
+          tableStructure = 'Query failed: ' + queryError.message;
+        }
+        
+        res.send(`
+          <html>
+          <head><title>Table Inspection</title></head>
+          <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+            <h1 style="color: #8B0000;">Table Structure Analysis</h1>
+            <p>${tableStructure}</p>
+            <p><a href="/">Back to Home</a></p>
+          </body>
+          </html>
+        `);
+        
+      } catch (err: any) {
+        console.error('Setup error:', err.message);
+        res.status(500).send('Setup failed: ' + err.message);
+      }
+    }),
+  );
+
+  // ============================================================================
+  // CERTIFICATE ROUTES
+  // ============================================================================
+
+  app.get(
+    "/certificate/:memberId",
+    asyncHandler(async (req: Request, res: Response) => {
+      const { memberId } = req.params;
+
+      // Validate member ID
+      if (!memberId || !memberId.trim()) {
+        return res.status(400).send(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Error</title></head>
+          <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+            <h1 style="color: #8B0000;">Error</h1>
+            <p>Invalid member ID</p>
+            <a href="/" style="background: #8B0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Back to Home</a>
+          </body>
+          </html>
+        `);
+      }
+
+      try {
+        // Fetch member from Supabase
+        const { data: member, error } = await supabaseAdmin
+          .from('members')
+          .select('*')
+          .eq('id', memberId)
+          .single();
+
+        if (error || !member) {
+          // Member not found in database
+          return res.status(404).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Member Not Found</title></head>
+            <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+              <h1 style="color: #8B0000;">Member Not Found</h1>
+              <p>Member with ID ${memberId} not found in database</p>
+              <p>Please check the member ID or contact administrator</p>
+              <a href="/" style="background: #8B0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Back to Home</a>
+            </body>
+            </html>
+          `);
+        }
+
+        // Handle actual table structure
+        const memberData: any = {
+          id: member.id,
+          name: member.full_name || member.name,
+          membership_type: member.membership_level || member.type,
+          issue_date: member.issue_date,
+          expiry_date: member.expiry_date
+        };
+
+        return generateCertificate(res, memberData);
+
+      } catch (err) {
+        console.error('Error generating certificate:', err);
+        return res.status(500).send(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Server Error</title></head>
+          <body style="font-family: Arial; text-align: center; margin-top: 50px;">
+            <h1 style="color: #8B0000;">Server Error</h1>
+            <p>Unable to generate certificate</p>
+            <a href="/" style="background: #8B0000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Back to Home</a>
+          </body>
+          </html>
+        `);
+      }
+    }),
+  );
+
+  // Helper function to generate certificate HTML
+  function generateCertificate(res: Response, member: any) {
+    const membershipLabels: Record<string, string> = {
+      "associate": "Associate Member",
+      "member": "Member", 
+      "fellow": "Fellow Member"
+    };
+
+    const membershipType = membershipLabels[member.membership_type] || "Member";
+    const article = membershipType.startsWith('A') ? 'n' : '';
+
+    const certificateHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CIMA Certificate of Membership</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato&display=swap" rel="stylesheet">
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      background: #f0f0f0;
+      font-family: 'Lato', sans-serif;
+    }
+
+    .certificate {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      margin: 0 auto;
+      padding: 20mm 15mm;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .no-print { 
+      text-align: center; 
+      padding: 20px; 
+      background: white;
+      margin-bottom: 20px;
+    }
+
+    .no-print button {
+      background: #8B0000;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .no-print button:hover {
+      background: #660000;
+    }
+
+    .logo { width: 130px; margin-bottom: 10px; }
+
+    .org-name { font-size: 20px; font-family: 'Playfair Display', serif; }
+    .org-sub  { font-size: 14px; font-weight: bold; }
+
+    .cert-title {
+      font-size: 58px;
+      color: #8B0000;
+      font-family: 'Playfair Display', serif;
+      line-height: 1.2;
+      margin: 10px 0;
+    }
+
+    .certify-text  { font-size: 16px; font-style: italic; }
+    .member-name   { font-size: 32px; font-family: 'Playfair Display', serif; }
+    .member-status { font-size: 16px; }
+    .valid-until   { font-size: 18px; }
+    .seal-text     { font-size: 16px; line-height: 1.6; }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .sig-block { text-align: left; font-size: 13px; }
+    .signature { width: 120px; display: block; margin-bottom: 5px; }
+    .seal      { width: 130px; }
+
+    .issue-block { text-align: right; font-size: 14px; line-height: 1.8; }
+
+    .footer-note {
+      font-size: 11px;
+      color: #555;
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    /* ---- PRINT STYLES ---- */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      body { background: white; }
+
+      .no-print { display: none !important; }
+
+      .certificate {
+        width: 100%;
+        min-height: 100vh;
+        padding: 15mm 12mm;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()">🖨️ Print Certificate</button>
+  </div>
+
+  <div class="certificate">
+    <img src="/images/cima_logo.png" class="logo" alt="CIMA Logo">
+
+    <p class="org-name">The Center for International<br>Mediators and Arbitrators</p>
+    <p class="org-sub">England &amp; Wales</p>
+
+    <h1 class="cert-title">Certificate of<br>Membership</h1>
+
+    <p class="certify-text">This is to certify that</p>
+
+    <h2 class="member-name">${member.name}</h2>
+    <p class="member-status">is a${article} ${membershipType} of the Center</p>
+
+    <p class="valid-until">This certificate is valid until ${member.expiry_date}</p>
+
+    <p class="seal-text">Given under the seal of the Center for<br>International Mediators and Arbitrators</p>
+
+    <div class="footer-row">
+      <div class="sig-block">
+        <img src="/images/signature.png" class="signature" alt="Signature">
+        <p>Francesco Campagna FCIMArb</p>
+        <p><em>President</em></p>
+      </div>
+
+      <img src="/images/cima_seal.png" class="seal" alt="CIMA Seal">
+
+      <div class="issue-block">
+        <p>Issued on<br>${member.issue_date}</p>
+        <p><strong>Member ID No:<br>${member.id}</strong></p>
+      </div>
+    </div>
+
+    <p class="footer-note">This certificate must be returned to CIMA on cessation of Membership<br>
+    Company No.: 16140063 Registered in England &amp; Wales</p>
+  </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(certificateHTML);
+  }
 
   // Error handling middleware (must be last)
   app.use(errorHandler);
