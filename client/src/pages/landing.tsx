@@ -88,24 +88,24 @@ export default function Landing() {
                 Center for International Mediators and Arbitrators
               </Badge>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                The world's best online ADR education{" "}
+                Build a Career in{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
-                  available from Oxfordshire.
+                  International Arbitration
                 </span>
               </h1>
               <p className="text-lg lg:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-                Professional certification in mediation and arbitration trusted by legal practitioners in 33+ countries worldwide.
+                CIMA-accredited courses for legal professionals in 33+ countries. Progress from Associate to Fellow at your own pace.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Link href="/qualification-pathway">
+                <Link href="/register">
                   <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 shadow-lg">
-                    Qualification Pathway
+                    Get Started — It's Free
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/course-catalog">
                   <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
-                    Get Started
+                    Browse Courses
                   </Button>
                 </Link>
               </div>
