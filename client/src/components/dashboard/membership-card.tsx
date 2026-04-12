@@ -95,70 +95,87 @@ export default function MembershipCard() {
     expiryDate: membership.expiry_date || new Date().toISOString(),
   };
 
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-5 w-5 text-primary" /> CIMA Membership
-          </CardTitle>
-          <StatusBadge status={membership.status} daysLeft={daysLeft ?? undefined} />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Level</p>
-            <p className="text-lg font-semibold">{LEVEL_LABELS[membership.membership_level] || membership.membership_level}</p>
-          </div>
-          <Badge variant="outline" className="text-primary border-primary font-bold text-base px-3 py-1">
-            {POST_NOMINALS[membership.membership_level] || membership.post_nominal}
-          </Badge>
-        </div>
+  const handleShare = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/verify/${membership.member_id}`);
+    toast({ title: "Verification link copied" });
+  };
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-muted-foreground">Member ID</p>
-            <p className="font-mono font-bold">{membership.member_id}</p>
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Shield className="h-5 w-5 text-primary" /> CIMA Membership
+            </CardTitle>
+            <StatusBadge status={membership.status} daysLeft={daysLeft ?? undefined} />
           </div>
-          <div>
-            <p className="text-muted-foreground">Expires</p>
-            <p className="font-medium">
-              {membership.expiry_date
-                ? new Date(membership.expiry_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-                : "—"}
-            </p>
-            {daysLeft !== null && daysLeft > 0 && daysLeft <= 60 && (
-              <p className="text-xs text-amber-600 font-medium">{daysLeft} days remaining</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Level</p>
+              <p className="text-lg font-semibold">{LEVEL_LABELS[membership.membership_level] || membership.membership_level}</p>
+            </div>
+            <Badge variant="outline" className="text-primary border-primary font-bold text-base px-3 py-1">
+              {POST_NOMINALS[membership.membership_level] || membership.post_nominal}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Member ID</p>
+              <p className="font-mono font-bold">{membership.member_id}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Expires</p>
+              <p className="font-medium">
+                {membership.expiry_date
+                  ? new Date(membership.expiry_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                  : "—"}
+              </p>
+              {daysLeft !== null && daysLeft > 0 && daysLeft <= 60 && (
+                <p className="text-xs text-amber-600 font-medium">{daysLeft} days remaining</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {membership.status !== "pending" && (
+              <>
+                <Button size="sm" onClick={() => setPreviewOpen(true)}>
+                  <Eye className="h-4 w-4 mr-1" /> Certificate
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-1" /> Share
+                </Button>
+              </>
+            )}
+            {(membership.status === "expiring" || membership.status === "expired") && (
+              <Link href="/renew-membership">
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                  <RefreshCw className="h-4 w-4 mr-1" /> {membership.status === "expired" ? "Reinstate" : "Renew"}
+                </Button>
+              </Link>
             )}
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-2">
-          {membership.status !== "pending" && (
-            <>
-              <Button size="sm" onClick={handleDownload}><Download className="h-4 w-4 mr-1" /> Certificate</Button>
-              <Button size="sm" variant="outline" onClick={handleShare}><Share2 className="h-4 w-4 mr-1" /> Share</Button>
-            </>
+          {nextLevel && membership.status === "active" && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800">
+                Ready for <span className="font-bold">{nextLevel.label}</span>?{" "}
+                <Link href="/qualification-pathway" className="underline font-semibold">View requirements →</Link>
+              </p>
+            </div>
           )}
-          {(membership.status === "expiring" || membership.status === "expired") && (
-            <Link href="/renew-membership">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                <RefreshCw className="h-4 w-4 mr-1" /> {membership.status === "expired" ? "Reinstate" : "Renew"}
-              </Button>
-            </Link>
-          )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {nextLevel && membership.status === "active" && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-sm text-amber-800">
-              Ready for <span className="font-bold">{nextLevel.label}</span>?{" "}
-              <Link href="/qualification-pathway" className="underline font-semibold">View requirements →</Link>
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <CertificatePreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        data={certData}
+      />
+    </>
   );
 }
