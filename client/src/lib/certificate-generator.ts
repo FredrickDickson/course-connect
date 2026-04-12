@@ -56,9 +56,9 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Load all images
   const [crestData, sealData, signatureData] = await Promise.all([
-    loadImageAsDataUrl("/images/cima_logo.png"),
-    loadImageAsDataUrl("/images/cima_seal.png"),
-    loadImageAsDataUrl("/images/signature.png"),
+    loadImageAsArrayBuffer("/images/cima_logo.png"),
+    loadImageAsArrayBuffer("/images/cima_seal.png"),
+    loadImageAsArrayBuffer("/images/signature.png"),
   ]);
 
   // White background
