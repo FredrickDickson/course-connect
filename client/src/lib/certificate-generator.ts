@@ -42,16 +42,27 @@ function formatDate(dateStr: string): string {
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-async function loadImageAsBase64(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to load image: ${url}`);
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+async function loadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.warn(`Failed to load image: ${url} - Status: ${response.status}`);
+      return null;
+    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = (e) => {
+        console.warn(`FileReader error for ${url}:`, e);
+        resolve(null);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn(`Error loading image ${url}:`, error);
+    return null;
+  }
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<jsPDF> {
@@ -73,7 +84,9 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Coat of Arms crest
   const crestW = 55;
   const crestH = 45;
-  doc.addImage(crestData, (pw - crestW) / 2, 18, crestW, crestH);
+  if (crestData) {
+    doc.addImage(crestData, (pw - crestW) / 2, 18, crestW, crestH);
+  }
 
   // Organization name
   doc.setFont("times", "normal");
@@ -137,7 +150,9 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Signature image (left)
   const sigW = 38;
   const sigH = 18;
-  doc.addImage(signatureData, 45 - sigW / 2, bottomY - 20, sigW, sigH);
+  if (signatureData) {
+    doc.addImage(signatureData, 45 - sigW / 2, bottomY - 20, sigW, sigH);
+  }
 
   doc.setFont("times", "normal");
   doc.setFontSize(10);
@@ -149,7 +164,9 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Red wax seal (center)
   const sealSize = 42;
-  doc.addImage(sealData, (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
+  if (sealData) {
+    doc.addImage(sealData, (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
+  }
 
   // Issue date and Member ID (right)
   doc.setFont("times", "normal");

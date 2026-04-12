@@ -118,15 +118,24 @@ export default function MembershipDashboard() {
   const nextLevel = NEXT_LEVEL[membership.membership_level];
 
   const handleDownload = async () => {
-    toast({ title: "Generating certificate..." });
-    await downloadCertificate({
-      fullName: membership.full_name,
-      membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
-      memberId: membership.member_id,
-      issueDate: membership.issue_date || new Date().toISOString(),
-      expiryDate: membership.expiry_date || new Date().toISOString(),
-    });
-    toast({ title: "Certificate downloaded" });
+    try {
+      toast({ title: "Generating certificate..." });
+      await downloadCertificate({
+        fullName: membership.full_name,
+        membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
+        memberId: membership.member_id,
+        issueDate: membership.issue_date || new Date().toISOString(),
+        expiryDate: membership.expiry_date || new Date().toISOString(),
+      });
+      toast({ title: "Certificate downloaded" });
+    } catch (err) {
+      console.error("Certificate download error:", err);
+      toast({ 
+        title: "Failed to generate certificate", 
+        description: "Please try again or use the print option from your certificate page.",
+        variant: "destructive" 
+      });
+    }
   };
 
   const handleShare = () => {
