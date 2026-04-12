@@ -1,18 +1,8 @@
 /**
  * CIMA Certificate PDF Generator
- * Matches the official CIMA membership certificate design exactly:
- * - Clean white background (no borders/ornaments)
- * - Coat of arms crest at top
- * - Organization name + "England & Wales"
- * - Certificate title in red italic
- * - Member name, description, validity, seal text
- * - Bottom: signature (left), red wax seal (center), issued/ID (right)
- * - Footer disclaimer
+ * Matches the official CIMA membership certificate design exactly.
  */
 import jsPDF from "jspdf";
-const crestUrl = "/images/cima_logo.png";
-const sealUrl = "/images/cima_seal.png";
-const signatureUrl = "/images/signature.png";
 
 interface CertificateData {
   fullName: string;
@@ -24,7 +14,7 @@ interface CertificateData {
 
 const LEVEL_LABELS: Record<string, { title: string; description: string; postNominal: string }> = {
   associate: {
-    title: "Certificate of\nAssociate Membership",
+    title: "Certificate of\nMembership",
     description: "is an Associate Member of the Center",
     postNominal: "ACIMArb",
   },
@@ -42,6 +32,7 @@ const LEVEL_LABELS: Record<string, { title: string; description: string; postNom
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   const day = date.getDate();
   const ordinal = day === 1 || day === 21 || day === 31 ? "st" :
                   day === 2 || day === 22 ? "nd" :
@@ -51,53 +42,61 @@ function formatDate(dateStr: string): string {
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-async function loadImage(url: string): Promise<string> {
-  const resp = await fetch(url);
-  const blob = await resp.blob();
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.readAsDataURL(blob);
+async function loadImageAsDataUrl(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+    img.src = url;
   });
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pw = 210; // page width
+  const pw = 210;
   const level = LEVEL_LABELS[data.membershipLevel];
 
+  // Load all images
   const [crestData, sealData, signatureData] = await Promise.all([
-    loadImage(crestUrl),
-    loadImage(sealUrl),
-    loadImage(signatureUrl),
+    loadImageAsDataUrl("/images/cima_logo.png"),
+    loadImageAsDataUrl("/images/cima_seal.png"),
+    loadImageAsDataUrl("/images/signature.png"),
   ]);
 
-  // Clean white background
+  // White background
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, 210, 297, "F");
 
-  // Coat of Arms crest — large, centered at top
-  const crestW = 60;
-  const crestH = 50;
+  // Coat of Arms crest
+  const crestW = 55;
+  const crestH = 45;
   doc.addImage(crestData, "PNG", (pw - crestW) / 2, 18, crestW, crestH);
 
   // Organization name
   doc.setFont("times", "normal");
   doc.setFontSize(20);
   doc.setTextColor(40, 40, 40);
-  doc.text("The Center for International", pw / 2, 78, { align: "center" });
-  doc.text("Mediators and Arbitrators", pw / 2, 87, { align: "center" });
+  doc.text("The Center for International", pw / 2, 74, { align: "center" });
+  doc.text("Mediators and Arbitrators", pw / 2, 83, { align: "center" });
 
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.setTextColor(80, 80, 80);
-  doc.text("England & Wales", pw / 2, 96, { align: "center" });
+  doc.text("England & Wales", pw / 2, 92, { align: "center" });
 
   // Certificate title — large red italic
   doc.setFont("times", "bolditalic");
   doc.setFontSize(42);
   doc.setTextColor(185, 28, 28);
   const titleLines = level.title.split("\n");
-  let titleY = 118;
+  let titleY = 114;
   titleLines.forEach((line) => {
     doc.text(line, pw / 2, titleY, { align: "center" });
     titleY += 18;
@@ -107,43 +106,43 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   doc.setFont("times", "italic");
   doc.setFontSize(16);
   doc.setTextColor(40, 40, 40);
-  doc.text("This is to certify that", pw / 2, titleY + 14, { align: "center" });
+  doc.text("This is to certify that", pw / 2, titleY + 12, { align: "center" });
 
-  // Member name — large elegant
+  // Member name
   doc.setFont("times", "normal");
-  doc.setFontSize(32);
+  doc.setFontSize(30);
   doc.setTextColor(30, 30, 30);
-  doc.text(data.fullName, pw / 2, titleY + 34, { align: "center" });
+  doc.text(data.fullName, pw / 2, titleY + 30, { align: "center" });
 
-  // Description — italic
+  // Description
   doc.setFont("times", "italic");
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setTextColor(40, 40, 40);
-  doc.text(level.description, pw / 2, titleY + 46, { align: "center" });
+  doc.text(level.description, pw / 2, titleY + 40, { align: "center" });
 
-  // Validity line
+  // Validity
   doc.setFont("times", "italic");
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.text(
     `This certificate is valid until ${formatDate(data.expiryDate)}`,
     pw / 2,
-    titleY + 64,
+    titleY + 56,
     { align: "center" }
   );
 
-  // "Given under the seal" text
+  // "Given under the seal"
   doc.setFont("times", "italic");
-  doc.setFontSize(14);
-  doc.text("Given under the seal of the Center for", pw / 2, titleY + 82, { align: "center" });
-  doc.text("International Mediators and Arbitrators", pw / 2, titleY + 90, { align: "center" });
+  doc.setFontSize(13);
+  doc.text("Given under the seal of the Center for", pw / 2, titleY + 72, { align: "center" });
+  doc.text("International Mediators and Arbitrators", pw / 2, titleY + 80, { align: "center" });
 
   // === Bottom section ===
-  const bottomY = 248;
+  const bottomY = 250;
 
-  // Signature image (left side)
-  const sigW = 40;
-  const sigH = 20;
-  doc.addImage(signatureData, "PNG", 45 - sigW / 2, bottomY - 22, sigW, sigH);
+  // Signature image (left)
+  const sigW = 38;
+  const sigH = 18;
+  doc.addImage(signatureData, "PNG", 45 - sigW / 2, bottomY - 20, sigW, sigH);
 
   doc.setFont("times", "normal");
   doc.setFontSize(10);
@@ -157,7 +156,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   const sealSize = 42;
   doc.addImage(sealData, "PNG", (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
 
-  // Issue date and Member ID (right side)
+  // Issue date and Member ID (right)
   doc.setFont("times", "normal");
   doc.setFontSize(11);
   doc.setTextColor(40, 40, 40);
@@ -192,6 +191,11 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 }
 
 export async function downloadCertificate(data: CertificateData) {
-  const doc = await generateCertificatePDF(data);
-  doc.save(`CIMA_Certificate_${data.memberId}.pdf`);
+  try {
+    const doc = await generateCertificatePDF(data);
+    doc.save(`CIMA_Certificate_${data.memberId}.pdf`);
+  } catch (error) {
+    console.error("Certificate generation failed:", error);
+    throw error;
+  }
 }
