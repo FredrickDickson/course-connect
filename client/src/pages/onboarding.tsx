@@ -90,36 +90,36 @@ export default function Onboarding() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("profiles")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data) {
+      const d = data as any;
+      if (d) {
         setForm(prev => ({
           ...prev,
-          full_name: data.full_name || `${user.firstName} ${user.lastName}`.trim(),
+          full_name: d.full_name || `${user.firstName} ${user.lastName}`.trim(),
           email: user.email || "",
-          date_of_birth: data.date_of_birth || "",
-          gender: data.gender || "",
-          nationality: data.nationality || "",
-          country: data.country || "",
-          city: data.city || "",
-          phone: data.phone || "",
-          whatsapp: data.whatsapp || "",
-          address: data.address || "",
-          profile_photo_url: data.profile_photo_url || "",
-          job_title: data.job_title || "",
-          organisation: data.organisation || data.institution || "",
-          professional_background: data.professional_background || "",
-          highest_qualification: data.highest_qualification || data.education_level || "",
-          years_experience: data.years_experience || "",
-          linkedin_url: data.linkedin_url || "",
-          referral_source: data.referral_source || "",
+          date_of_birth: d.date_of_birth || "",
+          gender: d.gender || "",
+          nationality: d.nationality || "",
+          country: d.country || "",
+          city: d.city || "",
+          phone: d.phone || "",
+          whatsapp: d.whatsapp || "",
+          address: d.address || "",
+          profile_photo_url: d.profile_photo_url || "",
+          job_title: d.job_title || "",
+          organisation: d.organisation || d.institution || "",
+          professional_background: d.professional_background || "",
+          highest_qualification: d.highest_qualification || d.education_level || "",
+          years_experience: d.years_experience || "",
+          linkedin_url: d.linkedin_url || "",
+          referral_source: d.referral_source || "",
         }));
-        // If step 1 is done, resume at step 2
-        if (data.phone && data.country && !data.bio_data_completed) {
+        if (d.phone && d.country && !d.bio_data_completed) {
           setStep(2);
         }
       } else {
@@ -149,7 +149,7 @@ export default function Onboarding() {
     }
     setIsSaving(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
+      const { error } = await (supabase as any).from("profiles").upsert({
         user_id: user.id,
         full_name: form.full_name,
         date_of_birth: form.date_of_birth,
@@ -181,7 +181,7 @@ export default function Onboarding() {
     }
     setIsSaving(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
+      const { error } = await (supabase as any).from("profiles").upsert({
         user_id: user.id,
         job_title: form.job_title,
         organisation: form.organisation,
@@ -203,7 +203,7 @@ export default function Onboarding() {
       if (error) throw error;
 
       // Log activity
-      await supabase.from("activity_log").insert({
+      await (supabase as any).from("activity_log").insert({
         user_id: user.id,
         event_type: "profile_completed",
         description: "Profile onboarding completed",
