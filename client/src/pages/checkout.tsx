@@ -1,290 +1,288 @@
-import { useState } from "react";
-import { useParams } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
   ArrowLeft,
+  ArrowRight,
   CreditCard,
   Shield,
   Clock,
   Users,
   Star,
+  CheckCircle,
+  BookOpen,
+  Copy,
+  Download,
+  LayoutDashboard,
+  Calendar,
+  Loader2,
+  AlertCircle,
+  Lock,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 
-// PayStack configuration
 declare global {
   interface Window {
     PaystackPop: any;
   }
 }
 
+type CheckoutStep = "review" | "pay" | "confirm";
+
+const STEP_CONFIG: Record<CheckoutStep, { label: string; number: number; progress: number }> = {
+  review: { label: "Review", number: 1, progress: 33 },
+  pay: { label: "Pay", number: 2, progress: 66 },
+  confirm: { label: "Confirm", number: 3, progress: 100 },
+};
+
 export default function Checkout() {
-  const { id } = useParams();
-  const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const { courseId } = useParams<{ courseId: string }>();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const scriptLoaded = useRef(false);
-  const [useStateFixed] = useState(0); // Dummy for trigger
+  const [step, setStep] = useState<CheckoutStep>("review");
+  const [paymentMethod, setPaymentMethod] = useState("paystack");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [bookingResult, setBookingResult] = useState<any>(null);
+  const paystackLoaded = useRef(false);
   const [isPaystackReady, setIsPaystackReady] = useState(false);
-  const [paystackLoadError, setPaystackLoadError] = useState<string | null>(
-    null,
-  );
 
-  const paystackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const { data: course, isLoading } = useQuery<any>({
-    queryKey: ["course", id],
+  // Load course
+  const { data: course, isLoading: courseLoading } = useQuery<any>({
+    queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
         .select("*, instructor:users!courses_instructor_id_fkey(*)")
-        .eq("id", id!)
+        .eq("id", courseId!)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!courseId,
   });
 
-  // Load PayStack script with timeout
+  // Check existing enrollment
+  const { data: existingEnrollment } = useQuery({
+    queryKey: ["enrollment-check", courseId, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("enrollments")
+        .select("*")
+        .eq("course_id", courseId!)
+        .eq("user_id", user?.id!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!courseId && !!user?.id,
+  });
+
+  // Load user profile
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Load Paystack script
   useEffect(() => {
-    if (!scriptLoaded.current) {
-      const script = document.createElement("script");
-      script.src = "https://js.paystack.co/v1/inline.js";
-      script.async = true;
-
-      // Set timeout for script loading
-      paystackTimeoutRef.current = setTimeout(() => {
-        if (!window.PaystackPop) {
-          setPaystackLoadError(
-            "Payment system failed to load. Please check your connection and try again.",
-          );
-          toast({
-            title: "Payment System Error",
-            description:
-              "Failed to load payment system. Please refresh the page.",
-            variant: "destructive",
-          });
-        }
-      }, 10000); // 10 second timeout
-
-      script.onload = () => {
-        if (paystackTimeoutRef.current) {
-          clearTimeout(paystackTimeoutRef.current);
-        }
-        setIsPaystackReady(true);
-      };
-
-      script.onerror = () => {
-        if (paystackTimeoutRef.current) {
-          clearTimeout(paystackTimeoutRef.current);
-        }
-        setPaystackLoadError("Failed to load payment system.");
-        toast({
-          title: "Payment System Error",
-          description:
-            "Failed to load payment system. Please check your connection.",
-          variant: "destructive",
-        });
-      };
-
-      document.body.appendChild(script);
-      scriptLoaded.current = true;
+    if (!paystackLoaded.current) {
+      const s = document.createElement("script");
+      s.src = "https://js.paystack.co/v1/inline.js";
+      s.async = true;
+      s.onload = () => setIsPaystackReady(true);
+      s.onerror = () => toast.error("Payment system failed to load. Please refresh.");
+      document.body.appendChild(s);
+      paystackLoaded.current = true;
     }
-
-    return () => {
-      if (paystackTimeoutRef.current) {
-        clearTimeout(paystackTimeoutRef.current);
-      }
-    };
-  }, [toast]);
-
-  const createOrderMutation = useMutation({
-    mutationFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ courseId: id }),
-      });
-      if (!response.ok) throw new Error("Failed to create order");
-      return response.json();
-    },
-    onError: (error) => {
-      if ((error as any)?.status === 401) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Order Creation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handlePayment = async () => {
-    if (!user || !course) {
-      toast({
-        title: "Payment Error",
-        description: "Missing user or course information.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!window.PaystackPop) {
-      toast({
-        title: "Payment System Not Ready",
-        description:
-          paystackLoadError ||
-          "Payment system is still loading. Please wait a moment and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const order = await createOrderMutation.mutateAsync();
-
-      const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: user?.email || "",
-        amount: Math.round(parseFloat(course.price.toString()) * 100), // Convert to kobo
-        currency: course.currency || "USD",
-        ref: order.paystackReference,
-        callback: async function (response: any) {
-          if (response.status === "success") {
-            // Verify payment on server
-            try {
-              const {
-                data: { session },
-              } = await supabase.auth.getSession();
-              const verifyResponse = await fetch("/api/verify-payment", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${session?.access_token}`,
-                },
-                body: JSON.stringify({ reference: response.reference }),
-              });
-
-              const verifyResult = await verifyResponse.json();
-
-              if (verifyResult.success) {
-                toast({
-                  title: "Payment Successful!",
-                  description: "You have been enrolled in the course.",
-                });
-
-                // Invalidate relevant queries
-                queryClient.invalidateQueries({
-                  queryKey: ["enrollment-check", id, user?.id],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["enrollments", user?.id],
-                });
-
-                // Redirect to course
-                setLocation(`/learn/${id}/1`);
-              } else {
-                toast({
-                  title: "Payment Verification Failed",
-                  description: "Please contact support if this persists.",
-                  variant: "destructive",
-                });
-              }
-            } catch (error) {
-              console.error("Verification error:", error);
-              toast({
-                title: "Payment Verification Error",
-                description:
-                  "Please contact support to confirm your enrollment.",
-                variant: "destructive",
-              });
-            }
-          }
-        },
-        onClose: function () {
-          toast({
-            title: "Payment Cancelled",
-            description: "You can retry the payment anytime.",
-            variant: "destructive",
-          });
-        },
-      });
-
-      handler.openIframe();
-    } catch (error) {
-      console.error("Payment error:", error);
-      toast({
-        title: "Payment Error",
-        description: "Failed to process payment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You need to sign in to purchase courses.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
+    if (!authLoading && !isAuthenticated) {
+      toast.error("Please sign in to enroll in courses.");
+      setLocation(`/login?redirect=/checkout/${courseId}`);
+    }
+  }, [authLoading, isAuthenticated, courseId, setLocation]);
+
+  // Already enrolled redirect
+  useEffect(() => {
+    if (existingEnrollment) {
+      toast.info("You're already enrolled in this course!");
+      setLocation(`/learn/${courseId}/1`);
+    }
+  }, [existingEnrollment, courseId, setLocation]);
+
+  const coursePrice = parseFloat(course?.price?.toString() || "0");
+  const currency = course?.currency || "USD";
+  const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
+
+  const handlePaystackPayment = () => {
+    if (!window.PaystackPop) {
+      toast.error("Payment system is loading. Please wait a moment.");
       return;
     }
-  }, [isAuthenticated, toast]);
+    if (!user || !course) return;
 
-  if (isLoading) {
+    setIsProcessing(true);
+
+    const handler = window.PaystackPop.setup({
+      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+      email: user.email || "",
+      amount: Math.round(coursePrice * 100),
+      currency,
+      metadata: {
+        courseId: course.id,
+        courseName: course.title,
+        userId: user.id,
+      },
+      callback: async (response: any) => {
+        try {
+          // Create enrollment
+          const { data: enrollment, error: enrollError } = await supabase
+            .from("enrollments")
+            .insert({
+              course_id: course.id,
+              user_id: user.id,
+              progress: 0,
+            })
+            .select()
+            .single();
+
+          if (enrollError) throw enrollError;
+
+          // Log activity
+          await (supabase as any).from("activity_log").insert({
+            user_id: user.id,
+            event_type: "course_enrolled",
+            description: `Enrolled in ${course.title}`,
+            metadata: {
+              course_id: course.id,
+              payment_ref: response.reference,
+              amount: coursePrice,
+              currency,
+            },
+          });
+
+          // Invalidate queries
+          queryClient.invalidateQueries({ queryKey: ["enrollment-check", courseId, user.id] });
+          queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+
+          setBookingResult({
+            reference: response.reference,
+            amount: coursePrice,
+            currency,
+            courseName: course.title,
+            enrolledAt: new Date().toISOString(),
+          });
+          setStep("confirm");
+        } catch (err: any) {
+          toast.error("Enrollment failed: " + err.message);
+        }
+        setIsProcessing(false);
+      },
+      onClose: () => {
+        setIsProcessing(false);
+        toast.info("Payment window closed. You can try again.");
+      },
+    });
+
+    handler.openIframe();
+  };
+
+  const handleBankTransfer = async () => {
+    if (!user || !course) return;
+    setIsProcessing(true);
+    try {
+      // Create a pending enrollment via course_enrollments
+      const { data, error } = await (supabase as any)
+        .from("course_enrollments")
+        .insert({
+          booking_ref: "",
+          course_id: course.id,
+          email: user.email,
+          full_name: profile?.full_name || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          ticket_type: "Standard",
+          ticket_price: coursePrice,
+          currency,
+          payment_method: "bank_transfer",
+          payment_status: "pending_bank",
+          user_id: user.id,
+          profile_snapshot: {
+            full_name: profile?.full_name,
+            email: user.email,
+            phone: profile?.phone,
+            snapshot_at: new Date().toISOString(),
+          },
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setBookingResult({
+        reference: data.booking_ref,
+        amount: coursePrice,
+        currency,
+        courseName: course.title,
+        paymentMethod: "bank_transfer",
+        bookingRef: data.booking_ref,
+      });
+      setStep("confirm");
+    } catch (err: any) {
+      toast.error("Registration failed: " + err.message);
+    }
+    setIsProcessing(false);
+  };
+
+  const handleProceedToPayment = () => {
+    setStep("pay");
+  };
+
+  const handleConfirmPayment = () => {
+    if (paymentMethod === "paystack") {
+      handlePaystackPayment();
+    } else {
+      handleBankTransfer();
+    }
+  };
+
+  // Loading state
+  if (courseLoading || authLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-1/3 mb-6"></div>
-            <div className="grid lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="h-64 bg-muted rounded"></div>
-                <div className="space-y-4">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                </div>
-              </div>
-              <div className="h-96 bg-muted rounded"></div>
+        <div className="max-w-3xl mx-auto px-4 py-16">
+          <div className="animate-pulse space-y-6">
+            <div className="h-3 bg-muted rounded w-full" />
+            <div className="h-8 bg-muted rounded w-2/3" />
+            <div className="grid md:grid-cols-5 gap-6">
+              <div className="md:col-span-3 h-64 bg-muted rounded" />
+              <div className="md:col-span-2 h-64 bg-muted rounded" />
             </div>
           </div>
         </div>
@@ -297,14 +295,11 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Course Not Found
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            The course you're trying to purchase doesn't exist.
-          </p>
-          <Link href="/courses">
+        <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+          <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Course Not Found</h1>
+          <p className="text-muted-foreground mb-6">We couldn't find this course.</p>
+          <Link href="/course-catalog">
             <Button>Browse Courses</Button>
           </Link>
         </div>
@@ -313,272 +308,455 @@ export default function Checkout() {
     );
   }
 
-  const coursePrice = parseFloat(course.price?.toString() || "0");
-  const avgRating = course.avg_rating
-    ? parseFloat(course.avg_rating.toString())
-    : 0;
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Breadcrumb */}
-      <div className="border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Link href="/courses" className="hover:text-primary">
-              Courses
-            </Link>
-            <span>/</span>
-            <Link href={`/courses/${id}`} className="hover:text-primary">
-              {course.title}
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">Checkout</span>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+        {/* Back button */}
+        <Link href={`/course/${courseId}`}>
+          <Button variant="ghost" size="sm" className="mb-4 -ml-2">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Course
+          </Button>
+        </Link>
+
+        {/* Step indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between text-sm mb-3">
+            {(["review", "pay", "confirm"] as CheckoutStep[]).map((s, i) => {
+              const config = STEP_CONFIG[s];
+              const isActive = s === step;
+              const isDone = config.number < STEP_CONFIG[step].number;
+              return (
+                <div
+                  key={s}
+                  className={`flex items-center gap-2 ${
+                    isActive ? "text-primary font-semibold" : isDone ? "text-primary/70" : "text-muted-foreground"
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isDone
+                        ? "bg-primary text-primary-foreground"
+                        : isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {isDone ? <CheckCircle className="w-4 h-4" /> : config.number}
+                  </div>
+                  <span className="hidden sm:inline">{config.label}</span>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href={`/courses/${id}`}>
-            <Button variant="ghost" size="sm" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Course
-            </Button>
-          </Link>
-          <h1
-            className="text-3xl font-bold text-foreground"
-            data-testid="checkout-title"
-          >
-            Complete Your Enrollment
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Secure checkout with industry-standard encryption
-          </p>
+          <Progress value={STEP_CONFIG[step].progress} className="h-1.5" />
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Course Summary */}
+        {/* ═══════════════ STEP 1: REVIEW ═══════════════ */}
+        {step === "review" && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <span>Course Details</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {course.level}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex space-x-4">
-                  <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
-                    {course.thumbnail_url ? (
-                      <img
-                        src={course.thumbnail_url}
-                        alt={course.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
-                        <span className="text-primary font-semibold text-sm">
-                          {course.title.charAt(0)}
+            <div>
+              <h1 className="text-2xl font-bold">Review Your Enrollment</h1>
+              <p className="text-muted-foreground mt-1">
+                Confirm the details below before proceeding to payment.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-5 gap-6">
+              {/* Course details */}
+              <div className="md:col-span-3 space-y-4">
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex gap-4">
+                      <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                        {course.thumbnail_url ? (
+                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                            <BookOpen className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg leading-tight">{course.title}</h3>
+                        {course.subtitle && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.subtitle}</p>
+                        )}
+                        {course.instructor && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            By {course.instructor.first_name} {course.instructor.last_name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
+                      {course.level && <Badge variant="secondary">{course.level}</Badge>}
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-current text-yellow-500" />
+                        <span>{avgRating.toFixed(1)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{course.enrollment_count || 0} students</span>
+                      </div>
+                      {course.duration_hours && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{course.duration_hours}h</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* What's Included */}
+                <Card>
+                  <CardContent className="p-5">
+                    <h4 className="font-semibold mb-3">What's Included</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
+                      {[
+                        "Full course access",
+                        "Certificate of completion",
+                        "Community forum access",
+                        "Mobile & desktop access",
+                        "Downloadable resources",
+                        "Lifetime access",
+                      ].map((item) => (
+                        <div key={item} className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Student info */}
+                <Card>
+                  <CardContent className="p-5">
+                    <h4 className="font-semibold mb-3">Student Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Name</span>
+                        <span className="font-medium">
+                          {profile?.full_name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "—"}
                         </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3
-                      className="font-semibold text-lg mb-1"
-                      data-testid="course-title"
-                    >
-                      {course.title}
-                    </h3>
-                    {course.subtitle && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {course.subtitle}
-                      </p>
-                    )}
-                    {course.instructor && (
-                      <p className="text-sm text-muted-foreground">
-                        By {course.instructor.first_name}{" "}
-                        {course.instructor.last_name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 fill-current text-yellow-500" />
-                      <span>{avgRating.toFixed(1)}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <span>{course.enrollment_count} students</span>
-                    </div>
-                    {course.duration_hours && (
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{course.duration_hours}h</span>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email</span>
+                        <span className="font-medium">{user?.email}</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* What's Included */}
-            <Card>
-              <CardHeader>
-                <CardTitle>What's Included</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-600"></div>
+                      {profile?.phone && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Phone</span>
+                          <span className="font-medium">{profile.phone}</span>
+                        </div>
+                      )}
                     </div>
-                    <span>Lifetime access to course content</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                    </div>
-                    <span>Certificate of completion</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                    </div>
-                    <span>Access to course discussions</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                    </div>
-                    <span>Mobile and desktop access</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Payment Summary */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CreditCard className="w-5 h-5" />
-                  <span>Payment Summary</span>
-                </CardTitle>
-                <CardDescription>
-                  Review your order before completing payment
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>Course Price</span>
-                    <span className="font-medium" data-testid="course-price">
-                      ${coursePrice.toFixed(2)} {course.currency || "USD"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Processing Fee</span>
-                    <span>$0.00</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span data-testid="total-price">
-                    ${coursePrice.toFixed(2)} {course.currency || "USD"}
-                  </span>
-                </div>
-
-                <div className="pt-4">
-                  {paystackLoadError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-sm text-red-600">
-                        {paystackLoadError}
+                    {!profile?.profile_completed && (
+                      <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Complete your profile in settings for a better experience.
                       </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order summary sticky */}
+              <div className="md:col-span-2">
+                <Card className="md:sticky md:top-24 border-primary/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Course Price</span>
+                        <span>{currency} {coursePrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Processing Fee</span>
+                        <span className="text-green-600">Free</span>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                    </div>
+                    <Button className="w-full" size="lg" onClick={handleProceedToPayment}>
+                      Proceed to Payment
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                      <Lock className="w-3 h-3" />
+                      <span>Secure checkout · SSL encrypted</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════ STEP 2: PAY ═══════════════ */}
+        {step === "pay" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold">Choose Payment Method</h1>
+              <p className="text-muted-foreground mt-1">
+                Select how you'd like to pay for <strong>{course.title}</strong>.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-5 gap-6">
+              <div className="md:col-span-3 space-y-4">
+                <RadioGroup
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                  className="space-y-3"
+                >
+                  {/* Paystack option */}
+                  <Label
+                    htmlFor="method-paystack"
+                    className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      paymentMethod === "paystack"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <RadioGroupItem value="paystack" id="method-paystack" className="mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        <span className="font-semibold">Pay with Card / Mobile Money</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Instant confirmation via Paystack. Supports Visa, Mastercard, and Mobile Money.
+                      </p>
+                      <Badge variant="secondary" className="mt-2 text-xs">Recommended · Instant</Badge>
+                    </div>
+                  </Label>
+
+                  {/* Bank transfer option */}
+                  <Label
+                    htmlFor="method-bank"
+                    className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      paymentMethod === "bank_transfer"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <RadioGroupItem value="bank_transfer" id="method-bank" className="mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-semibold">Bank Transfer</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Pay via bank transfer. Your spot is held for 5 business days while we confirm payment.
+                      </p>
+                      <Badge variant="outline" className="mt-2 text-xs">Manual · 1-3 days</Badge>
+                    </div>
+                  </Label>
+                </RadioGroup>
+
+                {paymentMethod === "bank_transfer" && (
+                  <Card className="border-amber-200 bg-amber-50">
+                    <CardContent className="p-4 text-sm text-amber-900 space-y-2">
+                      <p className="font-semibold">Bank Transfer Details:</p>
+                      <p>MoMo No: 0241022964</p>
+                      <p>Stanbic Bank, Accra Main — Acct: 9040012902985</p>
+                      <p>Cheque payable to: Center for International Mediators and Arbitrators</p>
+                      <p className="mt-2 text-xs">Include your full name as the reference.</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Price summary */}
+              <div className="md:col-span-2">
+                <Card className="md:sticky md:top-24 border-primary/20">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex gap-3">
+                      <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+                        {course.thumbnail_url ? (
+                          <img src={course.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm leading-tight line-clamp-2">{course.title}</p>
+                        {course.level && <Badge variant="secondary" className="mt-1 text-xs">{course.level}</Badge>}
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setStep("review")} className="flex-1">
+                        <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                      </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-2 text-red-600"
-                        onClick={() => window.location.reload()}
+                        onClick={handleConfirmPayment}
+                        disabled={isProcessing || (paymentMethod === "paystack" && !isPaystackReady)}
+                        className="flex-[2]"
+                        size="lg"
                       >
-                        <i className="fas fa-redo mr-2"></i>
-                        Retry Loading Payment
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : paymentMethod === "paystack" && !isPaystackReady ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            {paymentMethod === "paystack" ? "Pay Now" : "Submit Registration"}
+                          </>
+                        )}
                       </Button>
                     </div>
-                  )}
-                  <Button
-                    onClick={handlePayment}
-                    disabled={createOrderMutation.isPending || !isPaystackReady}
-                    className="w-full"
-                    size="lg"
-                    data-testid="pay-now-button"
-                  >
-                    {createOrderMutation.isPending ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Processing...</span>
-                      </div>
-                    ) : !isPaystackReady ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Loading Payment...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <CreditCard className="w-4 h-4" />
-                        <span>Pay Now</span>
-                      </div>
-                    )}
-                  </Button>
-                </div>
 
-                <div className="text-xs text-muted-foreground text-center space-y-2 pt-4">
-                  <div className="flex items-center justify-center space-x-1">
-                    <Shield className="w-3 h-3" />
-                    <span>Secure 256-bit SSL encryption</span>
-                  </div>
-                  <p>
-                    By clicking "Pay Now", you agree to our Terms of Service and
-                    Privacy Policy. You'll be charged immediately upon
-                    successful payment.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Money Back Guarantee */}
-            <Card className="border-green-200 bg-green-50">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-green-800 mb-1">
-                      30-Day Money-Back Guarantee
-                    </h4>
-                    <p className="text-sm text-green-700">
-                      If you're not satisfied with this course, we'll refund
-                      your payment within 30 days of purchase.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                      <Shield className="w-3 h-3" />
+                      <span>256-bit SSL encryption</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ═══════════════ STEP 3: CONFIRM ═══════════════ */}
+        {step === "confirm" && bookingResult && (
+          <div className="max-w-lg mx-auto space-y-6 text-center">
+            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-bold">
+                {bookingResult.paymentMethod === "bank_transfer"
+                  ? "Registration Received!"
+                  : "Payment Successful!"}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {bookingResult.paymentMethod === "bank_transfer"
+                  ? "Complete your bank transfer to confirm your enrollment."
+                  : `You're now enrolled in ${bookingResult.courseName}. Start learning right away!`}
+              </p>
+            </div>
+
+            <Card className="text-left">
+              <CardContent className="p-5 space-y-3 text-sm">
+                {bookingResult.bookingRef && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booking Ref</span>
+                    <span className="font-bold text-primary">{bookingResult.bookingRef}</span>
+                  </div>
+                )}
+                {bookingResult.reference && !bookingResult.bookingRef && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Transaction Ref</span>
+                    <span className="font-mono text-xs">{bookingResult.reference}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Course</span>
+                  <span className="font-medium text-right max-w-[60%]">{bookingResult.courseName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-medium">{bookingResult.currency} {bookingResult.amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge variant={bookingResult.paymentMethod === "bank_transfer" ? "secondary" : "default"}>
+                    {bookingResult.paymentMethod === "bank_transfer" ? "Pending Payment" : "✓ Confirmed"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {bookingResult.paymentMethod === "bank_transfer" && (
+              <Card className="text-left border-amber-200 bg-amber-50">
+                <CardContent className="p-4 text-sm text-amber-900 space-y-1">
+                  <p className="font-semibold">Complete your payment:</p>
+                  <p>MoMo No: 0241022964</p>
+                  <p>Stanbic Bank, Accra Main — Acct: 9040012902985</p>
+                  <p className="text-xs mt-2">Your spot is held for 5 business days.</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* What's Next */}
+            <Card className="text-left border-primary/20">
+              <CardContent className="p-5 space-y-3">
+                <h3 className="font-semibold">What happens next?</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {[
+                    bookingResult.paymentMethod === "bank_transfer" ? "Submit payment via bank transfer" : "Payment confirmed ✓",
+                    "Confirmation email sent to your inbox",
+                    "Access course materials via your dashboard",
+                    "Complete your profile to unlock all features",
+                  ].map((text, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${i === 0 && bookingResult.paymentMethod !== "bank_transfer" ? "text-green-500" : "text-muted-foreground/40"}`} />
+                      <span>{text}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+              {bookingResult.paymentMethod !== "bank_transfer" && (
+                <Link href={`/learn/${courseId}/1`}>
+                  <Button size="lg">
+                    <BookOpen className="w-4 h-4 mr-2" /> Start Learning
+                  </Button>
+                </Link>
+              )}
+              <Link href="/dashboard">
+                <Button variant={bookingResult.paymentMethod === "bank_transfer" ? "default" : "outline"} size="lg">
+                  <LayoutDashboard className="w-4 h-4 mr-2" /> Go to Dashboard
+                </Button>
+              </Link>
+              {bookingResult.bookingRef && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    navigator.clipboard.writeText(bookingResult.bookingRef);
+                    toast.success("Booking reference copied!");
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" /> Copy Ref
+                </Button>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground pt-4">
+              A confirmation email has been sent to {user?.email}. For support, contact us at{" "}
+              <Link href="/contact" className="underline">our help center</Link>.
+            </p>
+          </div>
+        )}
       </div>
 
       <Footer />
