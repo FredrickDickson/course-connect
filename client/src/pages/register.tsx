@@ -89,13 +89,9 @@ export default function Register() {
           title: "Account created successfully!",
           description: "Welcome to CIMA Learn. Let's get started.",
         });
-        setLocation("/dashboard");
+        setLocation("/onboarding");
       } else {
-        toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link. Please verify your email to continue.",
-        });
-        setLocation("/login");
+        setLocation(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during registration");
