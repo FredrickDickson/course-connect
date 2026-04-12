@@ -42,11 +42,16 @@ function formatDate(dateStr: string): string {
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-async function loadImageAsArrayBuffer(url: string): Promise<Uint8Array> {
+async function loadImageAsBase64(url: string): Promise<string> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to load image: ${url}`);
-  const buffer = await response.arrayBuffer();
-  return new Uint8Array(buffer);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<jsPDF> {
@@ -54,11 +59,11 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   const pw = 210;
   const level = LEVEL_LABELS[data.membershipLevel];
 
-  // Load all images
+  // Load all images as base64 data URLs
   const [crestData, sealData, signatureData] = await Promise.all([
-    loadImageAsArrayBuffer("/images/cima_logo.png"),
-    loadImageAsArrayBuffer("/images/cima_seal.png"),
-    loadImageAsArrayBuffer("/images/signature.png"),
+    loadImageAsBase64("/images/cima_logo.png"),
+    loadImageAsBase64("/images/cima_seal.png"),
+    loadImageAsBase64("/images/signature.png"),
   ]);
 
   // White background
@@ -68,7 +73,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Coat of Arms crest
   const crestW = 55;
   const crestH = 45;
-  doc.addImage(crestData, "PNG", (pw - crestW) / 2, 18, crestW, crestH);
+  doc.addImage(crestData, (pw - crestW) / 2, 18, crestW, crestH);
 
   // Organization name
   doc.setFont("times", "normal");
