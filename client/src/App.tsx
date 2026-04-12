@@ -171,6 +171,7 @@ function Router() {
       <ProtectedRoute path="/quiz/:quizId" component={QuizPage} />
       <ProtectedRoute path="/community" component={Community} />
       <ProtectedRoute path="/checkout/:courseId" component={Checkout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
 
       {/* Instructor-only routes */}
       <ProtectedRoute path="/instructor" requiredRole="instructor" component={InstructorDashboard} />
