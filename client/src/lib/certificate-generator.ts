@@ -10,8 +10,9 @@
  * - Footer disclaimer
  */
 import jsPDF from "jspdf";
-import crestUrl from "@/assets/cima-crest.png";
-import sealUrl from "@/assets/cima-seal.png";
+const crestUrl = "/images/cima_logo.png";
+const sealUrl = "/images/cima_seal.png";
+const signatureUrl = "/images/signature.png";
 
 interface CertificateData {
   fullName: string;
@@ -65,9 +66,10 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   const pw = 210; // page width
   const level = LEVEL_LABELS[data.membershipLevel];
 
-  const [crestData, sealData] = await Promise.all([
+  const [crestData, sealData, signatureData] = await Promise.all([
     loadImage(crestUrl),
     loadImage(sealUrl),
+    loadImage(signatureUrl),
   ]);
 
   // Clean white background
@@ -138,20 +140,10 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // === Bottom section ===
   const bottomY = 248;
 
-  // Signature (left side) — hand-drawn style strokes
-  doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(0.6);
-  const sigX = 45;
-  const sigY = bottomY - 12;
-  // Approximate signature curves
-  const pts = [
-    [sigX - 18, sigY + 3], [sigX - 12, sigY - 6], [sigX - 6, sigY + 2],
-    [sigX, sigY - 4], [sigX + 6, sigY + 3], [sigX + 12, sigY - 3],
-    [sigX + 18, sigY + 1],
-  ];
-  for (let i = 0; i < pts.length - 1; i++) {
-    doc.line(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
-  }
+  // Signature image (left side)
+  const sigW = 40;
+  const sigH = 20;
+  doc.addImage(signatureData, "PNG", 45 - sigW / 2, bottomY - 22, sigW, sigH);
 
   doc.setFont("times", "normal");
   doc.setFontSize(10);
