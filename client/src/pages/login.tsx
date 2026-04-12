@@ -57,15 +57,36 @@ export default function Login() {
         description: t("messages.signInSuccess"),
       });
 
-      const role = profile?.role || data.user.user_metadata?.role || "student";
-      const destination =
-        role === "admin"
-          ? "/admin"
-          : role === "instructor"
-            ? "/instructor"
-            : "/dashboard";
+      // Check if onboarding is completed
+      const { data: profileData } = await (supabase as any)
+        .from("profiles")
+        .select("bio_data_completed")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
 
-      window.location.assign(destination);
+      const bioComplete = (profileData as any)?.bio_data_completed ?? false;
+
+      if (!bioComplete) {
+        setLocation("/onboarding");
+        return;
+      }
+
+      // Redirect based on role or stored destination
+      const redirect = sessionStorage.getItem("redirectAfterLogin");
+      sessionStorage.removeItem("redirectAfterLogin");
+      
+      if (redirect) {
+        window.location.assign(redirect);
+      } else {
+        const role = profile?.role || data.user.user_metadata?.role || "student";
+        const destination =
+          role === "admin"
+            ? "/admin"
+            : role === "instructor"
+              ? "/instructor"
+              : "/dashboard";
+        window.location.assign(destination);
+      }
     } catch (err: any) {
       setError(err.message || t("common.error"));
     } finally {
