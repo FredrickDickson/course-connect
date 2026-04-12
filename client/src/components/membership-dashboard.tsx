@@ -71,6 +71,7 @@ function StatusBadge({ status, daysLeft }: { status: string; daysLeft?: number }
 export default function MembershipDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: membership, isLoading } = useQuery({
     queryKey: ["membership", user?.id],
