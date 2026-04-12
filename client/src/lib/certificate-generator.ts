@@ -42,21 +42,11 @@ function formatDate(dateStr: string): string {
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-async function loadImageAsDataUrl(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    img.src = url;
-  });
+async function loadImageAsArrayBuffer(url: string): Promise<Uint8Array> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to load image: ${url}`);
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<jsPDF> {
@@ -66,9 +56,9 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Load all images
   const [crestData, sealData, signatureData] = await Promise.all([
-    loadImageAsDataUrl("/images/cima_logo.png"),
-    loadImageAsDataUrl("/images/cima_seal.png"),
-    loadImageAsDataUrl("/images/signature.png"),
+    loadImageAsArrayBuffer("/images/cima_logo.png"),
+    loadImageAsArrayBuffer("/images/cima_seal.png"),
+    loadImageAsArrayBuffer("/images/signature.png"),
   ]);
 
   // White background
