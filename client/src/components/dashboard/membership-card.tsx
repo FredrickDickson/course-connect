@@ -1,14 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { downloadCertificate } from "@/lib/certificate-generator";
 import { useToast } from "@/hooks/use-toast";
+import CertificatePreviewModal from "@/components/dashboard/certificate-preview-modal";
 import {
   Award, Download, Share2, RefreshCw, ArrowRight, Shield,
-  Clock, CheckCircle, AlertTriangle, XCircle,
+  Clock, CheckCircle, AlertTriangle, XCircle, Eye,
 } from "lucide-react";
 import { Link } from "wouter";
 
