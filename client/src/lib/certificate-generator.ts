@@ -4,7 +4,7 @@
  */
 import jsPDF from "jspdf";
 
-interface CertificateData {
+export interface CertificateData {
   fullName: string;
   membershipLevel: "associate" | "member" | "fellow";
   memberId: string;
@@ -42,25 +42,21 @@ function formatDate(dateStr: string): string {
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-async function loadImageAsBase64(url: string): Promise<string | null> {
+/**
+ * Load image as raw Uint8Array — avoids data URL encoding issues with jsPDF.
+ */
+async function loadImageRaw(path: string): Promise<Uint8Array | null> {
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.warn(`Failed to load image: ${url} - Status: ${response.status}`);
+    const url = `${window.location.origin}${path}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`Image fetch failed: ${path} (${res.status})`);
       return null;
     }
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = (e) => {
-        console.warn(`FileReader error for ${url}:`, e);
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn(`Error loading image ${url}:`, error);
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  } catch (e) {
+    console.warn(`Image load error: ${path}`, e);
     return null;
   }
 }
@@ -70,11 +66,11 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   const pw = 210;
   const level = LEVEL_LABELS[data.membershipLevel];
 
-  // Load all images as base64 data URLs
-  const [crestData, sealData, signatureData] = await Promise.all([
-    loadImageAsBase64("/images/cima_logo.png"),
-    loadImageAsBase64("/images/cima_seal.png"),
-    loadImageAsBase64("/images/signature.png"),
+  // Load all images as raw bytes in parallel
+  const [crestBytes, sealBytes, sigBytes] = await Promise.all([
+    loadImageRaw("/images/cima_logo.png"),
+    loadImageRaw("/images/cima_seal.png"),
+    loadImageRaw("/images/signature.png"),
   ]);
 
   // White background
@@ -84,8 +80,8 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Coat of Arms crest
   const crestW = 55;
   const crestH = 45;
-  if (crestData) {
-    doc.addImage(crestData, (pw - crestW) / 2, 18, crestW, crestH);
+  if (crestBytes) {
+    doc.addImage(crestBytes, "PNG", (pw - crestW) / 2, 18, crestW, crestH);
   }
 
   // Organization name
@@ -150,8 +146,8 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Signature image (left)
   const sigW = 38;
   const sigH = 18;
-  if (signatureData) {
-    doc.addImage(signatureData, 45 - sigW / 2, bottomY - 20, sigW, sigH);
+  if (sigBytes) {
+    doc.addImage(sigBytes, "PNG", 45 - sigW / 2, bottomY - 20, sigW, sigH);
   }
 
   doc.setFont("times", "normal");
@@ -164,8 +160,8 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Red wax seal (center)
   const sealSize = 42;
-  if (sealData) {
-    doc.addImage(sealData, (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
+  if (sealBytes) {
+    doc.addImage(sealBytes, "PNG", (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
   }
 
   // Issue date and Member ID (right)
@@ -203,11 +199,6 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 }
 
 export async function downloadCertificate(data: CertificateData) {
-  try {
-    const doc = await generateCertificatePDF(data);
-    doc.save(`CIMA_Certificate_${data.memberId}.pdf`);
-  } catch (error) {
-    console.error("Certificate generation failed:", error);
-    throw error;
-  }
+  const doc = await generateCertificatePDF(data);
+  doc.save(`CIMA_Certificate_${data.memberId}.pdf`);
 }
