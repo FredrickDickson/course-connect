@@ -2103,10 +2103,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      
+      // Load images
+      const loadImage = (url) => fetch(url).then(r => r.blob()).then(b => new Promise((res) => {
+        const reader = new FileReader();
+        reader.onloadend = () => res(reader.result);
+        reader.readAsDataURL(b);
+      }));
+      
+      try {
+        const [crest, seal, sig] = await Promise.all([
+          loadImage('/images/cima_logo.png'),
+          loadImage('/images/cima_seal.png'),
+          loadImage('/images/signature.png')
+        ]);
+        
+        const pw = 210;
+        const level = { title: 'Certificate of\nMembership', description: 'is a${article} ${membershipType} of the Center' };
+        
+        // White background
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, 210, 297, 'F');
+        
+        // Crest
+        doc.addImage(crest, 'PNG', 75, 18, 60, 50);
+        
+        // Organization
+        doc.setFont('times', 'normal');
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text('The Center for International', pw/2, 78, { align: 'center' });
+        doc.text('Mediators and Arbitrators', pw/2, 87, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(80, 80, 80);
+        doc.text('England & Wales', pw/2, 96, { align: 'center' });
+        
+        // Title
+        doc.setFont('times', 'bolditalic');
+        doc.setFontSize(42);
+        doc.setTextColor(185, 28, 28);
+        doc.text('Certificate of', pw/2, 118, { align: 'center' });
+        doc.text('Membership', pw/2, 136, { align: 'center' });
+        
+        // Certify text
+        doc.setFont('times', 'italic');
+        doc.setFontSize(16);
+        doc.setTextColor(40, 40, 40);
+        doc.text('This is to certify that', pw/2, 154, { align: 'center' });
+        
+        // Member name
+        doc.setFont('times', 'normal');
+        doc.setFontSize(32);
+        doc.setTextColor(30, 30, 30);
+        doc.text('${member.name}', pw/2, 172, { align: 'center' });
+        
+        // Description
+        doc.setFont('times', 'italic');
+        doc.setFontSize(16);
+        doc.text('is a${article} ${membershipType} of the Center', pw/2, 186, { align: 'center' });
+        
+        // Validity
+        doc.text('This certificate is valid until ${member.expiry_date}', pw/2, 200, { align: 'center' });
+        
+        // Seal text
+        doc.setFontSize(14);
+        doc.text('Given under the seal of the Center for', pw/2, 216, { align: 'center' });
+        doc.text('International Mediators and Arbitrators', pw/2, 224, { align: 'center' });
+        
+        // Bottom section
+        const bottomY = 248;
+        
+        // Signature
+        doc.addImage(sig, 'PNG', 25, bottomY - 22, 40, 20);
+        doc.setFont('times', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 30, 30);
+        doc.text('Francesco Campagna FCIMArb', 45, bottomY, { align: 'center' });
+        doc.setFont('times', 'bolditalic');
+        doc.text('President', 45, bottomY + 5, { align: 'center' });
+        
+        // Seal
+        doc.addImage(seal, 'PNG', 84, bottomY - 22, 42, 42);
+        
+        // Issue date and ID
+        doc.setFont('times', 'normal');
+        doc.setFontSize(11);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Issued on', 170, bottomY - 10, { align: 'center' });
+        doc.text('${member.issue_date}', 170, bottomY - 4, { align: 'center' });
+        
+        doc.setFont('times', 'bold');
+        doc.setFontSize(13);
+        doc.text('Member ID No:', 170, bottomY + 6, { align: 'center' });
+        doc.setFontSize(15);
+        doc.text('${member.id}', 170, bottomY + 13, { align: 'center' });
+        
+        // Footer
+        doc.setFont('times', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(185, 28, 28);
+        doc.text('This certificate must be returned to CIMA on cessation of Membership', pw/2, 278, { align: 'center' });
+        doc.setTextColor(100, 100, 100);
+        doc.text('Company No.: 16140063 Registered in England & Wales', pw/2, 283, { align: 'center' });
+        
+        doc.save('CIMA_Certificate_${member.id}.pdf');
+      } catch (err) {
+        console.error('PDF generation failed:', err);
+        alert('PDF download failed. Please use the Print button instead.');
+      }
+    }
+  </script>
 </head>
 <body>
-  <div class="no-print">
-    <button onclick="window.print()">🖨️ Print Certificate</button>
+  <div class="no-print" style="display: flex; gap: 10px; justify-content: center; padding: 20px; background: white; margin-bottom: 20px;">
+    <button onclick="window.print()" style="background: #8B0000; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px;">🖨️ Print Certificate</button>
+    <button onclick="downloadPDF()" style="background: #1a365d; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px;">⬇️ Download PDF</button>
   </div>
 
   <div class="certificate">
