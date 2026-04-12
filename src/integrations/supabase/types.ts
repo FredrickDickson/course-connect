@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          created_at: string
+          description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string | null
@@ -821,6 +848,36 @@ export type Database = {
           },
         ]
       }
+      level_history: {
+        Row: {
+          changed_by: string
+          changed_from: string
+          changed_to: string
+          created_at: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_by?: string
+          changed_from: string
+          changed_to: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_by?: string
+          changed_from?: string
+          changed_to?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       members: {
         Row: {
           certificate_url: string | null
@@ -975,17 +1032,34 @@ export type Database = {
         Row: {
           address: string | null
           adr_experience: string | null
+          bio_data_completed: boolean
+          city: string | null
           country: string | null
           created_at: string
+          date_of_birth: string | null
           education_level: string | null
           full_name: string | null
+          gender: string | null
+          highest_qualification: string | null
           id: string
           industry: string | null
           institution: string | null
           job_title: string | null
+          level_assigned_at: string | null
+          level_assigned_by: string | null
+          level_assignment_reason: string | null
+          linkedin_url: string | null
+          membership_level: string
+          nationality: string | null
+          organisation: string | null
+          override_reason: string | null
           phone: string | null
+          professional_background: string | null
           profile_completed: boolean
+          profile_photo_url: string | null
+          referral_source: string | null
           role_category: string | null
+          status: string
           updated_at: string
           user_id: string
           whatsapp: string | null
@@ -994,17 +1068,34 @@ export type Database = {
         Insert: {
           address?: string | null
           adr_experience?: string | null
+          bio_data_completed?: boolean
+          city?: string | null
           country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           education_level?: string | null
           full_name?: string | null
+          gender?: string | null
+          highest_qualification?: string | null
           id?: string
           industry?: string | null
           institution?: string | null
           job_title?: string | null
+          level_assigned_at?: string | null
+          level_assigned_by?: string | null
+          level_assignment_reason?: string | null
+          linkedin_url?: string | null
+          membership_level?: string
+          nationality?: string | null
+          organisation?: string | null
+          override_reason?: string | null
           phone?: string | null
+          professional_background?: string | null
           profile_completed?: boolean
+          profile_photo_url?: string | null
+          referral_source?: string | null
           role_category?: string | null
+          status?: string
           updated_at?: string
           user_id: string
           whatsapp?: string | null
@@ -1013,17 +1104,34 @@ export type Database = {
         Update: {
           address?: string | null
           adr_experience?: string | null
+          bio_data_completed?: boolean
+          city?: string | null
           country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           education_level?: string | null
           full_name?: string | null
+          gender?: string | null
+          highest_qualification?: string | null
           id?: string
           industry?: string | null
           institution?: string | null
           job_title?: string | null
+          level_assigned_at?: string | null
+          level_assigned_by?: string | null
+          level_assignment_reason?: string | null
+          linkedin_url?: string | null
+          membership_level?: string
+          nationality?: string | null
+          organisation?: string | null
+          override_reason?: string | null
           phone?: string | null
+          professional_background?: string | null
           profile_completed?: boolean
+          profile_photo_url?: string | null
+          referral_source?: string | null
           role_category?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
           whatsapp?: string | null
@@ -1483,6 +1591,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_member_level: { Args: { p_user_id: string }; Returns: string }
       generate_member_id: { Args: never; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
