@@ -14,20 +14,29 @@ const LEVEL_POST: Record<string, string> = { associate: "ACIMArb", member: "MCIM
 export default function ProgressionBanner() {
   const { user } = useAuth();
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile-level", user?.id],
+  const { data: membership } = useQuery({
+    queryKey: ["membership-level", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      // Try members table first (source of truth for active members)
+      const { data: member } = await supabase
+        .from("members" as any)
+        .select("membership_level")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (member) return member as any;
+
+      // Fall back to profiles table
+      const { data: profile } = await supabase
         .from("profiles" as any)
         .select("membership_level")
         .eq("user_id", user!.id)
         .maybeSingle();
-      return data as any;
+      return profile as any;
     },
     enabled: !!user,
   });
 
-  const currentLevel = profile?.membership_level || "associate";
+  const currentLevel = membership?.membership_level || "associate";
   const currentIdx = LEVELS.indexOf(currentLevel as any);
   const progressPct = ((currentIdx + 1) / LEVELS.length) * 100;
   const nextLevel = currentIdx < LEVELS.length - 1 ? LEVELS[currentIdx + 1] : null;
