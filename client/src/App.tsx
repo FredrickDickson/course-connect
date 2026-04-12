@@ -43,6 +43,7 @@ import Contact from "@/pages/contact";
 import TechnicalSupport from "@/pages/technical-support";
 import AcademicAdvising from "@/pages/academic-advising";
 import CourseCatalog from "@/pages/course-catalog";
+import CourseBrowser from "@/pages/course-browser";
 import GlobalMAProgram from "@/pages/global-ma-program";
 import FCIMarbFellowship from "@/pages/fcrimarb-fellowship";
 import Certification from "@/pages/certification";
@@ -59,6 +60,8 @@ import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
+import VerifyEmail from "@/pages/verify-email";
+import Onboarding from "@/pages/onboarding";
 
 // Lazy loaded components - heavy/role-gated pages
 const InstructorDashboard = lazy(() => import("@/pages/instructor-dashboard"));
@@ -124,6 +127,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/course/:id" component={CourseDetail} />
       <Route path="/become-instructor" component={LazyBecomeInstructor} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
@@ -133,7 +137,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/technical-support" component={TechnicalSupport} />
       <Route path="/academic-advising" component={AcademicAdvising} />
-      <Route path="/course-catalog" component={CourseCatalog} />
+      <Route path="/course-catalog" component={CourseBrowser} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/global-ma-program" component={GlobalMAProgram} />
       <Route path="/fcrimarb-fellowship" component={FCIMarbFellowship} />
@@ -146,6 +150,7 @@ function Router() {
 
       {/* Protected membership routes */}
       <ProtectedRoute path="/renew-membership" component={RenewMembership} />
+      <ProtectedRoute path="/onboarding" component={Onboarding} />
 
       {/* Admin bootstrap — protected behind admin role */}
       <ProtectedRoute
