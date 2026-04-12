@@ -86,15 +86,20 @@ export default function MembershipCard() {
   const nextLevel = NEXT_LEVEL[membership.membership_level];
 
   const handleDownload = async () => {
-    toast({ title: "Generating certificate…" });
-    await downloadCertificate({
-      fullName: membership.full_name,
-      membershipLevel: membership.membership_level,
-      memberId: membership.member_id,
-      issueDate: membership.issue_date || new Date().toISOString(),
-      expiryDate: membership.expiry_date || new Date().toISOString(),
-    });
-    toast({ title: "Certificate downloaded" });
+    try {
+      toast({ title: "Generating certificate…" });
+      await downloadCertificate({
+        fullName: membership.full_name,
+        membershipLevel: membership.membership_level,
+        memberId: membership.member_id,
+        issueDate: membership.issue_date || new Date().toISOString(),
+        expiryDate: membership.expiry_date || new Date().toISOString(),
+      });
+      toast({ title: "Certificate downloaded" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Failed to generate certificate", description: "Please try again.", variant: "destructive" });
+    }
   };
 
   const handleShare = () => {
