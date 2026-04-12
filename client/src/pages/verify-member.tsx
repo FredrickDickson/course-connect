@@ -7,7 +7,7 @@ import { useRoute } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, XCircle, Shield, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import cimaLogo from "@/assets/cima-logo.png";
+const cimaLogo = "/images/cima_logo.png";
 
 interface MemberVerification {
   full_name: string;
