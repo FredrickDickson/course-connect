@@ -47,6 +47,7 @@ function StatusBadge({ status, daysLeft }: { status: string; daysLeft?: number }
 export default function MembershipCard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: membership, isLoading } = useQuery({
     queryKey: ["membership", user?.id],
@@ -86,26 +87,12 @@ export default function MembershipCard() {
   const daysLeft = membership.expiry_date ? getDaysUntilExpiry(membership.expiry_date) : null;
   const nextLevel = NEXT_LEVEL[membership.membership_level];
 
-  const handleDownload = async () => {
-    try {
-      toast({ title: "Generating certificate…" });
-      await downloadCertificate({
-        fullName: membership.full_name,
-        membershipLevel: membership.membership_level,
-        memberId: membership.member_id,
-        issueDate: membership.issue_date || new Date().toISOString(),
-        expiryDate: membership.expiry_date || new Date().toISOString(),
-      });
-      toast({ title: "Certificate downloaded" });
-    } catch (err) {
-      console.error(err);
-      toast({ title: "Failed to generate certificate", description: "Please try again.", variant: "destructive" });
-    }
-  };
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/verify/${membership.member_id}`);
-    toast({ title: "Verification link copied" });
+  const certData = {
+    fullName: membership.full_name,
+    membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
+    memberId: membership.member_id,
+    issueDate: membership.issue_date || new Date().toISOString(),
+    expiryDate: membership.expiry_date || new Date().toISOString(),
   };
 
   return (
