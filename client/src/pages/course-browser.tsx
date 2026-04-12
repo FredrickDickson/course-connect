@@ -66,7 +66,7 @@ export default function CourseBrowser() {
       if (courseIds.length === 0) return {};
       const counts: Record<string, number> = {};
       for (const id of courseIds) {
-        const { count } = await supabase
+        const { count } = await (supabase as any)
           .from("course_enrollments")
           .select("id", { count: "exact", head: true })
           .eq("course_id", id)
