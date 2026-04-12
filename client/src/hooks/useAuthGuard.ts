@@ -21,7 +21,6 @@ export function useAuthGuard() {
     if (isLoading) return;
 
     if (!isAuthenticated || !user) {
-      // Store intended destination
       if (location !== "/login" && location !== "/register") {
         sessionStorage.setItem("redirectAfterLogin", location);
       }
@@ -29,15 +28,14 @@ export function useAuthGuard() {
       return;
     }
 
-    // Check bio-data completion
     const checkProfile = async () => {
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from("profiles")
         .select("bio_data_completed")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const completed = profile?.bio_data_completed ?? false;
+      const completed = (profile as any)?.bio_data_completed ?? false;
       setBioDataCompleted(completed);
 
       if (!completed && location !== "/onboarding") {
