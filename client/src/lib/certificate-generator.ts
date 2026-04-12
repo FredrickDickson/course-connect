@@ -137,7 +137,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   // Signature image (left)
   const sigW = 38;
   const sigH = 18;
-  doc.addImage(signatureData, "PNG", 45 - sigW / 2, bottomY - 20, sigW, sigH);
+  doc.addImage(signatureData, 45 - sigW / 2, bottomY - 20, sigW, sigH);
 
   doc.setFont("times", "normal");
   doc.setFontSize(10);
@@ -149,7 +149,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Red wax seal (center)
   const sealSize = 42;
-  doc.addImage(sealData, "PNG", (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
+  doc.addImage(sealData, (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
 
   // Issue date and Member ID (right)
   doc.setFont("times", "normal");
