@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -215,6 +215,9 @@ export default function Community() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Start a New Discussion</DialogTitle>
+                          <DialogDescription>
+                            Share your thoughts or questions with the community.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
@@ -307,6 +310,9 @@ export default function Community() {
                           <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>{discussion.title}</DialogTitle>
+                              <DialogDescription>
+                                Discussion in {discussion.course?.title || 'Community'}
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-6">
                               <div className="border-b pb-4">

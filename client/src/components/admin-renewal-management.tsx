@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -261,6 +261,9 @@ export default function AdminRenewalManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Manually Renew Membership</DialogTitle>
+            <DialogDescription>
+              Confirm a manual renewal for a member.
+            </DialogDescription>
           </DialogHeader>
           {renewDialog && (
             <div className="space-y-4">

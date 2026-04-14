@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Eye, Loader2 } from "lucide-react";
@@ -64,6 +65,9 @@ export default function CertificatePreviewModal({ open, onOpenChange, data }: Pr
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Certificate Preview</DialogTitle>
+          <DialogDescription>
+            Preview and download your membership certificate.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0">

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -335,6 +335,9 @@ export default function AdminMembershipTable() {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Override Membership Level</DialogTitle>
+                        <DialogDescription>
+                          Manually change the membership level for this member.
+                        </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
