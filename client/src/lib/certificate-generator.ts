@@ -44,6 +44,7 @@ function formatDate(dateStr: string): string {
 
 /**
  * Load image as raw Uint8Array — avoids data URL encoding issues with jsPDF.
+ * @param path Path relative to public folder (e.g. /images/logo.png)
  */
 async function loadImageRaw(path: string): Promise<Uint8Array | null> {
   try {
@@ -68,7 +69,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Load all images as raw bytes in parallel
   const [crestBytes, sealBytes, sigBytes] = await Promise.all([
-    loadImageRaw("/images/cima_logo.png"),
+    loadImageRaw("/images/cima_crest.png"),
     loadImageRaw("/images/cima_seal.png"),
     loadImageRaw("/images/signature.png"),
   ]);
