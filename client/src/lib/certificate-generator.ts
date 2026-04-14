@@ -107,7 +107,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
 
   // Name is plain text (no bold) per reference
   doc.setFontSize(28);
-  doc.text(data.fullName, cx, 165, { align: "center" });
+  doc.text(`${data.fullName} ${level.postNominal}`, cx, 165, { align: "center" });
 
   doc.setFontSize(14);
   doc.text(level.description, cx, 178, { align: "center" });
