@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -462,6 +463,9 @@ export default function AdminCourseTemplates() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Template" : "New Course Template"}</DialogTitle>
+            <DialogDescription>
+              {editingId ? "Update the details of this course template." : "Create a new template for future course editions."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
@@ -644,6 +648,9 @@ export default function AdminCourseTemplates() {
               <CalendarPlus className="h-5 w-5 inline mr-2" />
               New Edition — {showNewEdition?.name}
             </DialogTitle>
+            <DialogDescription>
+              Create a specific cohort or edition of this course for a given year and season.
+            </DialogDescription>
           </DialogHeader>
           {showNewEdition && (
             <div className="space-y-4">

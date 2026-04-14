@@ -524,7 +524,12 @@ export default function AdminCoursesTable() {
       {/* Bulk Email Dialog */}
       <Dialog open={!!bulkEmailCourse} onOpenChange={() => setBulkEmailCourse(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Bulk Email — {bulkEmailCourse?.title}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Bulk Email — {bulkEmailCourse?.title}</DialogTitle>
+            <DialogDescription>
+              Send an email to all confirmed enrollees in this course.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div><label className="text-sm font-medium">Subject</label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Email subject..." /></div>
             <div><label className="text-sm font-medium">Body</label><Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} placeholder="Write your message..." /></div>

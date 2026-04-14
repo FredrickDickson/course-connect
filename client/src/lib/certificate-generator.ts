@@ -1,6 +1,7 @@
 /**
  * CIMA Certificate PDF Generator
- * Matches the official CIMA membership certificate design exactly.
+ * Layout: Matches Reference (Abigail Nartey) 
+ * Content: Professional / Corrected spelling
  */
 import jsPDF from "jspdf";
 
@@ -34,165 +35,142 @@ function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
   const day = date.getDate();
-  const ordinal = day === 1 || day === 21 || day === 31 ? "st" :
-                  day === 2 || day === 22 ? "nd" :
-                  day === 3 || day === 23 ? "rd" : "th";
-  const months = ["January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"];
+  const ordinal =
+    day === 1 || day === 21 || day === 31 ? "st" :
+    day === 2 || day === 22 ? "nd" :
+    day === 3 || day === 23 ? "rd" : "th";
+  const months = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December",
+  ];
   return `${day}${ordinal} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-/**
- * Load image as raw Uint8Array — avoids data URL encoding issues with jsPDF.
- * @param path Path relative to public folder (e.g. /images/logo.png)
- */
 async function loadImageRaw(path: string): Promise<Uint8Array | null> {
   try {
     const url = `${window.location.origin}${path}`;
     const res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`Image fetch failed: ${path} (${res.status})`);
-      return null;
-    }
+    if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     return new Uint8Array(buf);
   } catch (e) {
-    console.warn(`Image load error: ${path}`, e);
     return null;
   }
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<jsPDF> {
+  // Using Helvetica to match the clean Sans-Serif layout of the reference
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pw = 210;
+  const cx = pw / 2;
   const level = LEVEL_LABELS[data.membershipLevel];
 
-  // Load all images as raw bytes in parallel
   const [crestBytes, sealBytes, sigBytes] = await Promise.all([
     loadImageRaw("/images/cima_crest.png"),
     loadImageRaw("/images/cima_seal.png"),
     loadImageRaw("/images/signature.png"),
   ]);
 
-  // White background
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, 210, 297, "F");
 
-  // Coat of Arms crest
+  // ── CREST ──────────────────────────────────────────────
   const crestW = 55;
-  const crestH = 45;
+  const crestH = 48;
   if (crestBytes) {
-    doc.addImage(crestBytes, "PNG", (pw - crestW) / 2, 18, crestW, crestH);
+    doc.addImage(crestBytes, "PNG", (pw - crestW) / 2, 15, crestW, crestH);
   }
 
-  // Organization name
-  doc.setFont("times", "normal");
-  doc.setFontSize(20);
+  // ── ORG NAME (Sans-Serif, Regular Weight) ──────────────
+  doc.setFont("helvetica", "normal"); 
+  doc.setFontSize(18);
+  doc.setTextColor(60, 60, 60);
+  doc.text("The Center for International", cx, 72, { align: "center" });
+  doc.text("Mediators and Arbitrators", cx, 80, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.text("England & Wales", cx, 86, { align: "center" });
+
+  // ── CERTIFICATE TITLE (Red, Sans-Serif) ────────────────
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(48);
+  doc.setTextColor(190, 40, 40); 
+  doc.text("Certificate of", cx, 110, { align: "center" });
+  doc.text("Membership", cx, 128, { align: "center" });
+
+  // ── BODY TEXT (Layout mimicking Abigail's certificate) ──
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(40, 40, 40);
-  doc.text("The Center for International", pw / 2, 74, { align: "center" });
-  doc.text("Mediators and Arbitrators", pw / 2, 83, { align: "center" });
-
-  doc.setFontSize(13);
-  doc.setTextColor(80, 80, 80);
-  doc.text("England & Wales", pw / 2, 92, { align: "center" });
-
-  // Certificate title — large red italic
-  doc.setFont("times", "bolditalic");
-  doc.setFontSize(42);
-  doc.setTextColor(185, 28, 28);
-  const titleLines = level.title.split("\n");
-  let titleY = 114;
-  titleLines.forEach((line) => {
-    doc.text(line, pw / 2, titleY, { align: "center" });
-    titleY += 18;
-  });
-
-  // "This is to certify that"
-  doc.setFont("times", "italic");
-  doc.setFontSize(16);
-  doc.setTextColor(40, 40, 40);
-  doc.text("This is to certify that", pw / 2, titleY + 12, { align: "center" });
-
-  // Member name
-  doc.setFont("times", "normal");
-  doc.setFontSize(30);
-  doc.setTextColor(30, 30, 30);
-  doc.text(data.fullName, pw / 2, titleY + 30, { align: "center" });
-
-  // Description
-  doc.setFont("times", "italic");
+  
   doc.setFontSize(14);
-  doc.setTextColor(40, 40, 40);
-  doc.text(level.description, pw / 2, titleY + 40, { align: "center" });
+  doc.text("This is to certify that", cx, 148, { align: "center" });
 
-  // Validity
-  doc.setFont("times", "italic");
+  // Name is plain text (no bold) per reference
+  doc.setFontSize(28);
+  doc.text(data.fullName, cx, 165, { align: "center" });
+
+  doc.setFontSize(14);
+  doc.text(level.description, cx, 178, { align: "center" });
+
   doc.setFontSize(14);
   doc.text(
     `This certificate is valid until ${formatDate(data.expiryDate)}`,
-    pw / 2,
-    titleY + 56,
+    cx,
+    195,
     { align: "center" }
   );
 
-  // "Given under the seal"
-  doc.setFont("times", "italic");
-  doc.setFontSize(13);
-  doc.text("Given under the seal of the Center for", pw / 2, titleY + 72, { align: "center" });
-  doc.text("International Mediators and Arbitrators", pw / 2, titleY + 80, { align: "center" });
+  // Layout spacing maintained, spelling corrected
+  doc.setFontSize(12);
+  doc.text("Given under the seal of the Center for", cx, 210, { align: "center" });
+  doc.text("International Mediators and Arbitrators", cx, 217, { align: "center" });
 
-  // === Bottom section ===
-  const bottomY = 250;
-
-  // Signature image (left)
-  const sigW = 38;
-  const sigH = 18;
-  if (sigBytes) {
-    doc.addImage(sigBytes, "PNG", 45 - sigW / 2, bottomY - 20, sigW, sigH);
-  }
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(30, 30, 30);
-  doc.text("Francesco Campagna FCIMArb", 45, bottomY, { align: "center" });
-  doc.setFont("times", "bolditalic");
-  doc.setFontSize(10);
-  doc.text("President", 45, bottomY + 5, { align: "center" });
-
-  // Red wax seal (center)
-  const sealSize = 42;
+  // ── BOTTOM ROW (Alignment & Margins) ───────────────────
+  const sealSize = 52;
+  const sealX = (pw - sealSize) / 2;
+  const sealY = 225;
   if (sealBytes) {
-    doc.addImage(sealBytes, "PNG", (pw - sealSize) / 2, bottomY - 22, sealSize, sealSize);
+    doc.addImage(sealBytes, "PNG", sealX, sealY, sealSize, sealSize);
   }
 
-  // Issue date and Member ID (right)
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(40, 40, 40);
-  doc.text("Issued on", 170, bottomY - 10, { align: "center" });
-  doc.text(formatDate(data.issueDate), 170, bottomY - 4, { align: "center" });
+  // Signature (Shifted to left margin)
+  const sigW = 40;
+  const sigH = 15;
+  const sigX = 15; 
+  const sigY = 230;
+  if (sigBytes) {
+    doc.addImage(sigBytes, "PNG", sigX, sigY, sigW, sigH);
+  }
 
-  doc.setFont("times", "bold");
-  doc.setFontSize(13);
-  doc.text("Member ID No:", 170, bottomY + 6, { align: "center" });
-  doc.setFontSize(15);
-  doc.text(data.memberId, 170, bottomY + 13, { align: "center" });
+  doc.setFontSize(9);
+  const sigCx = sigX + sigW / 2;
+  doc.text("Francesco Campagna FCIMArb", sigCx, sigY + sigH + 5, { align: "center" });
+  doc.setFont("helvetica", "bolditalic");
+  doc.text("President", sigCx, sigY + sigH + 10, { align: "center" });
 
-  // Footer
-  doc.setFont("times", "italic");
-  doc.setFontSize(8);
-  doc.setTextColor(185, 28, 28);
+  // Member ID Block (Plain text, higher vertical anchor)
+  const rightCx = 175;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Issued on", rightCx, 245, { align: "center" });
+  doc.text(formatDate(data.issueDate), rightCx, 251, { align: "center" });
+
+  doc.text("Member ID No:", rightCx, 262, { align: "center" });
+  doc.text(data.memberId, rightCx, 268, { align: "center" });
+
+  // ── FOOTER ─────────────────────────────────────────────
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
   doc.text(
     "This certificate must be returned to CIMA on cessation of Membership",
-    pw / 2,
-    278,
+    cx,
+    288,
     { align: "center" }
   );
-  doc.setTextColor(100, 100, 100);
   doc.text(
     "Company No.: 16140063 Registered in England & Wales",
-    pw / 2,
-    283,
+    cx,
+    292,
     { align: "center" }
   );
 
