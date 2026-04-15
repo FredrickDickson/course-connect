@@ -81,6 +81,8 @@ export const lessonSchema = z.object({
   description: z.string().nullable().optional(),
   contentType: z.enum(["video", "text", "quiz", "assignment"]).default("video"),
   videoUrl: z.string().nullable().optional(),
+  videoPlatform: z.enum(["youtube", "vimeo"]).nullable().optional(),
+  videoId: z.string().nullable().optional(),
   duration: z.number().nullable().optional(), // duration_seconds
   content: z.string().nullable().optional(),
   order: z.number(),

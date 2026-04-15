@@ -9,6 +9,8 @@ import { VideoUploader } from './VideoUploader';
 import { RichTextEditor } from './RichTextEditor';
 import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
+import { VideoSourceSelector, VideoSource } from './VideoSourceSelector';
+import { VideoUrlInput } from './VideoUrlInput';
 import { Video, FileText, ClipboardCheck, FileUp, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +26,8 @@ interface LectureContentEditorProps {
     description?: string;
     contentType: 'video' | 'text' | 'quiz' | 'assignment';
     videoUrl?: string;
+    videoPlatform?: 'youtube' | 'vimeo';
+    videoId?: string;
     content?: string;
     duration?: number;
   };
@@ -43,7 +47,14 @@ export function LectureContentEditor({
   const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>(
     lesson?.contentType || 'video'
   );
+  const [videoSource, setVideoSource] = useState<VideoSource>(
+    lesson?.videoPlatform && lesson?.videoId ? 'external' : 'upload'
+  );
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || '');
+  const [videoPlatform, setVideoPlatform] = useState<'youtube' | 'vimeo' | null>(
+    lesson?.videoPlatform || null
+  );
+  const [videoId, setVideoId] = useState(lesson?.videoId || '');
   const [videoDuration, setVideoDuration] = useState(lesson?.duration || 0);
   const [articleContent, setArticleContent] = useState(lesson?.content || '');
   const [saving, setSaving] = useState(false);
@@ -55,7 +66,10 @@ export function LectureContentEditor({
     setTitle(lesson?.title || '');
     setDescription(lesson?.description || '');
     setContentType(lesson?.contentType || 'video');
+    setVideoSource(lesson?.videoPlatform && lesson?.videoId ? 'external' : 'upload');
     setVideoUrl(lesson?.videoUrl || '');
+    setVideoPlatform(lesson?.videoPlatform || null);
+    setVideoId(lesson?.videoId || '');
     setVideoDuration(lesson?.duration || 0);
     setArticleContent(lesson?.content || '');
     setSavedLessonId(lesson?.id || null);
@@ -104,14 +118,30 @@ export function LectureContentEditor({
     setSaving(true);
 
     try {
-      const lessonData = {
+      const lessonData: any = {
         title,
         description: description || null,
         content_type: contentType,
-        video_url: contentType === 'video' ? videoUrl || null : null,
         content: contentType === 'text' ? articleContent || null : null,
         duration_seconds: contentType === 'video' ? videoDuration || null : null,
       };
+
+      // Handle video data based on source
+      if (contentType === 'video') {
+        if (videoSource === 'upload') {
+          lessonData.video_url = videoUrl || null;
+          lessonData.video_platform = null;
+          lessonData.video_id = null;
+        } else if (videoSource === 'external') {
+          lessonData.video_url = videoUrl || null; // Store original URL for reference
+          lessonData.video_platform = videoPlatform;
+          lessonData.video_id = videoId || null;
+        }
+      } else {
+        lessonData.video_url = null;
+        lessonData.video_platform = null;
+        lessonData.video_id = null;
+      }
 
       if (savedLessonId) {
         const { error } = await supabase
@@ -161,8 +191,40 @@ export function LectureContentEditor({
     if (savedLessonId && url) {
       await supabase.from('lessons').update({
         video_url: url,
+        video_platform: null,
+        video_id: null,
         duration_seconds: duration || null,
       }).eq('id', savedLessonId);
+    }
+  };
+
+  const handleVideoUrlChange = (url: string, metadata?: { platform: 'youtube' | 'vimeo'; videoId: string }) => {
+    setVideoUrl(url);
+    if (metadata) {
+      setVideoPlatform(metadata.platform);
+      setVideoId(metadata.videoId);
+    }
+
+    // Auto-save video data to lesson if it exists
+    if (savedLessonId && url && metadata) {
+      supabase.from('lessons').update({
+        video_url: url,
+        video_platform: metadata.platform,
+        video_id: metadata.videoId,
+      }).eq('id', savedLessonId).then(({ error }) => {
+        if (error) console.error('Error saving video metadata:', error);
+      });
+    }
+  };
+
+  const handleVideoSourceChange = (source: VideoSource) => {
+    setVideoSource(source);
+    // Clear video data when switching sources
+    if (source === 'upload') {
+      setVideoPlatform(null);
+      setVideoId('');
+    } else {
+      setVideoUrl('');
     }
   };
 
@@ -213,11 +275,25 @@ export function LectureContentEditor({
               </TabsList>
 
               <TabsContent value="video" className="mt-6">
-                <VideoUploader
-                  lessonId={currentLessonId || undefined}
-                  currentVideoUrl={videoUrl}
-                  onUploadComplete={handleVideoUpload}
-                />
+                <div className="space-y-6">
+                  <VideoSourceSelector
+                    value={videoSource}
+                    onChange={handleVideoSourceChange}
+                  />
+                  
+                  {videoSource === 'upload' ? (
+                    <VideoUploader
+                      lessonId={currentLessonId || undefined}
+                      currentVideoUrl={videoUrl}
+                      onUploadComplete={handleVideoUpload}
+                    />
+                  ) : (
+                    <VideoUrlInput
+                      value={videoUrl}
+                      onChange={handleVideoUrlChange}
+                    />
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="text" className="mt-6">

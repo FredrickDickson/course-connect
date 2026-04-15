@@ -13,6 +13,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { VideoPlayer as VideoPlayerComponent } from "@/components/VideoPlayer";
 import { AlertCircle } from "lucide-react";
 
 // Type definitions
@@ -44,6 +45,7 @@ export default function VideoPlayer() {
   const [note, setNote] = useState("");
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isExternalVideo, setIsExternalVideo] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -191,8 +193,16 @@ export default function VideoPlayer() {
   const nextLesson = allLessons[currentLessonIndex + 1];
   const prevLesson = allLessons[currentLessonIndex - 1];
 
-  // Video event handlers
+  // Check if this is an external video (YouTube/Vimeo)
   useEffect(() => {
+    const lessonAny = currentLesson as any;
+    setIsExternalVideo(!!(lessonAny?.video_platform && lessonAny?.video_id));
+  }, [currentLesson]);
+
+  // Video event handlers (only for uploaded videos)
+  useEffect(() => {
+    if (isExternalVideo) return; // Skip for external videos
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -260,7 +270,29 @@ export default function VideoPlayer() {
       video.removeEventListener("loadstart", handleLoadStart);
       video.removeEventListener("canplay", handleCanPlay);
     };
-  }, [currentLesson, progressList, lessonId]);
+  }, [currentLesson, progressList, lessonId, isExternalVideo]);
+
+  // Auto-mark as complete for external videos after 30 seconds
+  useEffect(() => {
+    if (!isExternalVideo || !currentLesson) return;
+
+    const lessonProgress = progressList.find(
+      (p: { lesson_id: string | null }) => p.lesson_id === lessonId,
+    );
+
+    // If not already completed, mark as complete after 30 seconds
+    if (!lessonProgress?.completed) {
+      const timer = setTimeout(() => {
+        updateProgressMutation.mutate({
+          lessonId: currentLesson.id,
+          watch_time_seconds: 30,
+          completed: true,
+        });
+      }, 30000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isExternalVideo, currentLesson, progressList, lessonId]);
 
   const togglePlayPause = () => {
     const video = videoRef.current;
@@ -372,54 +404,66 @@ export default function VideoPlayer() {
             {/* Video Player */}
             <ErrorBoundary>
               <Card className="overflow-hidden" data-testid="video-player">
-                <div className="relative bg-black aspect-video">
-                  {isVideoLoading && currentLesson.video_url && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                    </div>
-                  )}
-                  {videoError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-                      <div className="text-center text-white p-4">
-                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                        <p className="text-red-400 mb-4">{videoError}</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setVideoError(null);
-                            setIsVideoLoading(true);
-                            // Force video reload
-                            const video = videoRef.current;
-                            if (video) {
-                              video.load();
-                            }
-                          }}
-                        >
-                          <i className="fas fa-redo mr-2"></i>
-                          Retry
-                        </Button>
+                {isExternalVideo ? (
+                  <VideoPlayerComponent
+                    videoUrl={(currentLesson as any)?.video_url}
+                    videoPlatform={(currentLesson as any)?.video_platform}
+                    videoId={(currentLesson as any)?.video_id}
+                    onError={(error: string) => {
+                      setVideoError(error);
+                      setIsVideoLoading(false);
+                    }}
+                  />
+                ) : (
+                  <div className="relative bg-black aspect-video">
+                    {isVideoLoading && currentLesson.video_url && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                       </div>
-                    </div>
-                  )}
-                  {currentLesson.video_url ? (
-                    <video
-                      ref={videoRef}
-                      className="w-full h-full"
-                      controls
-                      data-testid="video-element"
-                    >
-                      <source src={currentLesson.video_url} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white">
-                      <div className="text-center">
-                        <i className="fas fa-play-circle text-6xl mb-4 opacity-50"></i>
-                        <p>Video content coming soon</p>
+                    )}
+                    {videoError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+                        <div className="text-center text-white p-4">
+                          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                          <p className="text-red-400 mb-4">{videoError}</p>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setVideoError(null);
+                              setIsVideoLoading(true);
+                              // Force video reload
+                              const video = videoRef.current;
+                              if (video) {
+                                video.load();
+                              }
+                            }}
+                          >
+                            <i className="fas fa-redo mr-2"></i>
+                            Retry
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                    {currentLesson.video_url ? (
+                      <video
+                        ref={videoRef}
+                        className="w-full h-full"
+                        controls
+                        data-testid="video-element"
+                      >
+                        <source src={currentLesson.video_url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white">
+                        <div className="text-center">
+                          <i className="fas fa-play-circle text-6xl mb-4 opacity-50"></i>
+                          <p>Video content coming soon</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             </ErrorBoundary>
             <div className="space-y-4">
@@ -467,8 +511,8 @@ export default function VideoPlayer() {
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              {duration > 0 && (
+              {/* Progress Bar - only show for uploaded videos */}
+              {!isExternalVideo && duration > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Progress</span>
@@ -481,6 +525,11 @@ export default function VideoPlayer() {
                     className="h-2"
                     data-testid="progress-bar"
                   />
+                </div>
+              )}
+              {isExternalVideo && (
+                <div className="text-sm text-muted-foreground">
+                  External video - progress tracking not available
                 </div>
               )}
 

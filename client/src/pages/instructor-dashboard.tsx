@@ -12,7 +12,7 @@ import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
 import {
   BookOpen, Users, DollarSign, Star, Plus, Edit, Eye,
-  TrendingUp, BarChart3, Target
+  TrendingUp, BarChart3, Target, MessageSquare, CheckCircle, Shield
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -63,7 +63,7 @@ export default function InstructorDashboard() {
       const { data: cData } = await supabase.from('courses').select('id, enrollment_count').eq('instructor_id', user.id);
       const courseIds = cData?.map(c => c.id) || [];
       const totalStudents = cData?.reduce((acc, c) => acc + Number(c.enrollment_count || 0), 0) || 0;
-      
+
       let totalRevenue = 0;
       if (courseIds.length > 0) {
         const { data: orders } = await supabase.from('orders').select('amount').in('course_id', courseIds);
@@ -71,6 +71,25 @@ export default function InstructorDashboard() {
       }
 
       return { totalCourses: totalCourses || 0, totalStudents, totalRevenue, averageRating: 0 };
+    }
+  });
+
+  // Fetch instructor's board assignments
+  const { data: boardAssignments = [] } = useQuery({
+    queryKey: ['instructor-board-assignments', user?.id],
+    enabled: !!user && isInstructor(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('instructor_assignments')
+        .select(`
+          *,
+          board:forum_boards(id, name, slug, description),
+          course_edition:course_editions(id, name, course:courses(id, title))
+        `)
+        .eq('instructor_id', user!.id);
+
+      if (error) throw error;
+      return data || [];
     }
   });
 
@@ -110,9 +129,10 @@ export default function InstructorDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="community">Community</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -291,6 +311,93 @@ export default function InstructorDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="community" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Assigned Boards</CardTitle>
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{boardAssignments.length}</div>
+                  <p className="text-xs text-muted-foreground">Boards you moderate</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Official Answers</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">0</div>
+                  <p className="text-xs text-muted-foreground">Marked as official</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Moderation Actions</CardTitle>
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">0</div>
+                  <p className="text-xs text-muted-foreground">Actions taken</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Assigned Forum Boards</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {boardAssignments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No board assignments yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {boardAssignments.map((assignment: any) => (
+                      <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">{assignment.board?.name || 'Unnamed Board'}</h4>
+                          {assignment.course_edition?.course && (
+                            <p className="text-sm text-muted-foreground">
+                              Course: {assignment.course_edition.course.title}
+                            </p>
+                          )}
+                        </div>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/community/forums/${assignment.board?.slug}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-4 border-t">
+                  <h3 className="font-semibold mb-3">Community Management</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button asChild variant="outline" className="h-auto flex-col py-6">
+                      <Link href="/community">
+                        <MessageSquare className="h-8 w-8 mb-2" />
+                        <span>View Community</span>
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="h-auto flex-col py-6">
+                      <Link href="/community/forums/general/new">
+                        <Plus className="h-8 w-8 mb-2" />
+                        <span>Post Announcement</span>
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

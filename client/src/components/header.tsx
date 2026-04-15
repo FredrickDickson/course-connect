@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import NotificationBell from "@/components/notification-bell";
 import cimaLogo from "@/assets/cima-logo.png";
 
 export default function Header() {
@@ -148,7 +149,10 @@ export default function Header() {
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-3">
               {isAuthenticated ? (
-                <UserMenu />
+                <>
+                  <NotificationBell />
+                  <UserMenu />
+                </> 
               ) : (
                 <div className="flex items-center space-x-2">
                   <Link href="/login">

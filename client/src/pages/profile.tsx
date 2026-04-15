@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AvatarUpload from "@/components/avatar-upload";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -254,12 +255,14 @@ export default function Profile() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start gap-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user.profileImageUrl || undefined} alt={`${user.firstName} ${user.lastName}`} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  {user.firstName?.[0]}{user.lastName?.[0]}
-                </AvatarFallback>
-              </Avatar>
+              <AvatarUpload
+                currentAvatarUrl={profile?.avatar_url}
+                userId={user.id}
+                userName={`${user.firstName} ${user.lastName}`}
+                onAvatarChange={(url) => {
+                  qc.invalidateQueries({ queryKey: ["my-profile"] });
+                }}
+              />
               <div className="flex-1">
                 <div className="flex items-start justify-between">
                   <div>
