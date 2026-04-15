@@ -35,6 +35,12 @@ import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
 import VideoPlayer from "@/pages/video-player";
 import Community from "@/pages/community";
+import CommunityForumCategory from "@/pages/community-forum-category";
+import CommunityCreatePost from "@/pages/community-create-post";
+import CommunityPost from "@/pages/community-post";
+import CommunityMyBoards from "@/pages/community-my-boards";
+import CommunityMyPosts from "@/pages/community-my-posts";
+import CommunityNotifications from "@/pages/community-notifications";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import CookiePolicy from "@/pages/cookie-policy";
@@ -170,6 +176,12 @@ function Router() {
       />
       <ProtectedRoute path="/quiz/:quizId" component={QuizPage} />
       <ProtectedRoute path="/community" component={Community} />
+      <ProtectedRoute path="/community/forums/:slug" component={CommunityForumCategory} />
+      <ProtectedRoute path="/community/forums/:slug/new" component={CommunityCreatePost} />
+      <ProtectedRoute path="/community/posts/:slug" component={CommunityPost} />
+      <ProtectedRoute path="/community/my-boards" component={CommunityMyBoards} />
+      <ProtectedRoute path="/community/my-posts" component={CommunityMyPosts} />
+      <ProtectedRoute path="/community/notifications" component={CommunityNotifications} />
       <ProtectedRoute path="/checkout/:courseId" component={Checkout} />
       <Route path="/payment-success" component={PaymentSuccess} />
 

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { VideoPlayer } from './VideoPlayer';
 import {
   Video,
   FileText,
@@ -101,7 +102,8 @@ export function LecturePreview({
   });
 
   const renderVideoPreview = () => {
-    if (!lessonData?.video_url) {
+    const lessonDataAny = lessonData as any;
+    if (!lessonDataAny?.video_url && !lessonDataAny?.video_id) {
       return (
         <div className="text-center py-12">
           <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -112,16 +114,16 @@ export function LecturePreview({
 
     return (
       <div className="space-y-4">
-        <div className="bg-black rounded-lg overflow-hidden">
-          <video src={lessonData.video_url} controls className="w-full">
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        {lessonData.duration_seconds && (
+        <VideoPlayer
+          videoUrl={lessonDataAny?.video_url || undefined}
+          videoPlatform={lessonDataAny?.video_platform as 'youtube' | 'vimeo' | undefined}
+          videoId={lessonDataAny?.video_id || undefined}
+        />
+        {lessonDataAny.duration_seconds && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span>
-              {Math.floor(lessonData.duration_seconds / 60)}:{String(lessonData.duration_seconds % 60).padStart(2, '0')}
+              {Math.floor(lessonDataAny.duration_seconds / 60)}:{String(lessonDataAny.duration_seconds % 60).padStart(2, '0')}
             </span>
           </div>
         )}
