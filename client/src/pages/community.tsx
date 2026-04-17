@@ -747,7 +747,7 @@ export default function Community() {
       
       {/* Mobile FAB */}
       <Button
-        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-red-600 hover:bg-red-700"
+        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-red-600 hover:bg-red-700 z-50"
         size="icon"
         onClick={() => setShowNewPostModal(true)}
       >
