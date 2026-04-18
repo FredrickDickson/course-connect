@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import cimaLogo from "@/assets/cima-logo.png";
 
 export default function Landing() {
   useEffect(() => {
@@ -22,29 +23,46 @@ export default function Landing() {
 
   return (
     <div className="bg-landing-background text-landing-on-surface font-body selection:bg-[#ffdad4] selection:text-[#410000] min-h-screen">
-      {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 border-b border-[#e3beb8]/15 bg-[#fbfaee]/80 backdrop-blur-xl shadow-[0px_20px_40px_rgba(27,28,21,0.06)]">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-4 sm:py-6">
-          <Link href="/" className="font-['Noto_Serif'] font-bold text-xl sm:text-2xl tracking-tighter text-[#610000]">CIMA LEARN</Link>
-          <div className="hidden md:flex space-x-6 lg:space-x-10">
-            {/* <Link href="/qualification-pathway" className="text-[#610000] font-bold border-b-2 border-[#610000] font-['Noto_Serif'] text-lg tracking-tight">Pathways</Link> */}
-            <a href="https://thecima.org/cima-qualification-pathways/" className="text-[#610000] font-bold border-b-2 border-[#610000] font-['Noto_Serif'] text-lg tracking-tight" target="_blank" rel="noopener noreferrer">Pathways</a>
-            {/* <Link href="/courses" className="text-[#5a403c] font-medium hover:text-[#8b0000] transition-colors duration-300 font-['Noto_Serif'] text-lg tracking-tight">Courses</Link>
-            <Link href="/community" className="text-[#5a403c] font-medium hover:text-[#8b0000] transition-colors duration-300 font-['Noto_Serif'] text-lg tracking-tight">Community</Link>
-            <Link href="/dashboard" className="text-[#5a403c] font-medium hover:text-[#8b0000] transition-colors duration-300 font-['Noto_Serif'] text-lg tracking-tight">Dashboard</Link> */}
-          </div>
-          <div className="flex items-center space-x-3 sm:space-x-6">
-            <Link href="/login">
-              <button className="text-[#5a403c] font-['Work_Sans'] text-xs sm:text-sm uppercase tracking-widest hover:text-landing-primary transition-colors">Member Portal</button>
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
+              <img 
+                src={cimaLogo} 
+                alt="CIMA Logo" 
+                className="h-12 w-auto"
+              />
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold text-primary">CIMA Learn</h1>
+                <p className="text-xs text-muted-foreground -mt-1">Professional ADR Education</p>
+              </div>
             </Link>
-            <Link href="/register">
-              <button className="bg-landing-primary text-landing-on-primary px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-DEFAULT text-xs sm:text-sm font-['Work_Sans'] uppercase tracking-widest hover:bg-landing-primary-container transition-all active:scale-95">Enroll Now</button>
-            </Link>
+            
+            {/* Navigation - Mobile Only */}
+            <div className="flex items-center space-x-4">
+              {/* Removed Resources and Contact for mobile responsiveness */}
+            </div>
+            
+            {/* CTA Buttons */}
+            <div className="flex items-center space-x-4">
+              <Link href="/login">
+                <button className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                  Member Portal
+                </button>
+              </Link>
+              <Link href="/register">
+                <button className="bg-landing-primary text-landing-on-primary px-4 py-2 text-sm font-medium hover:bg-landing-primary/90 transition-colors">
+                  Enroll Now
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="pt-24">
+      <main className="pt-16">
         {/* Hero Section: The Definitive Standard */}
         <section className="relative min-h-[600px] sm:min-h-[700px] lg:min-h-[921px] flex items-center px-4 sm:px-6 lg:px-12 overflow-hidden">
           <div className="max-w-7xl mx-auto w-full grid grid-cols-12 items-center gap-6 lg:gap-12">
@@ -99,7 +117,43 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <Footer />
+      <footer className="bg-[#efeee3] dark:bg-stone-950 w-full py-12 sm:py-16 px-4 sm:px-6 lg:px-12 border-t border-[#e3beb8]/15">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="flex items-center space-x-3">
+              <img 
+                src={cimaLogo} 
+                alt="CIMA Logo" 
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-[#610000]">CIMA Learn</h1>
+                <p className="text-xs text-[#5a403c]/70 -mt-1">Professional ADR Education</p>
+              </div>
+            </div>
+            <p className="font-['Inter'] text-sm tracking-wide text-[#5a403c]/70 max-w-sm">
+              Center for International Mediators and Arbitrators - Leading global alternative dispute resolution education and certification.
+            </p>
+            <p className="font-['Inter'] text-sm tracking-wide uppercase text-[#1b1c15]">© {new Date().getFullYear()} CIMA LEARN. All rights reserved.</p>
+          </div>
+          <div className="flex flex-col md:items-end justify-between">
+            <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase">
+              <Link href="/privacy-policy" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Privacy Policy</Link>
+              <Link href="/terms-of-service" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Terms of Service</Link>
+              <Link href="/contact" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity underline decoration-[#8b0000]">Contact Us</Link>
+            </div>
+            <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase mt-4">
+              <Link href="/help-center" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Help Center</Link>
+              <Link href="/become-instructor" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Become an Instructor</Link>
+            </div>
+            <div className="mt-8 sm:mt-12 flex gap-4 sm:gap-6 text-landing-on-surface-variant/40">
+              <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">gavel</span>
+              <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">account_balance</span>
+              <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">public</span>
+            </div>
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
@@ -280,33 +334,3 @@ function FinalCTASection() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="bg-[#efeee3] dark:bg-stone-950 w-full py-12 sm:py-16 px-4 sm:px-6 lg:px-12 border-t border-[#e3beb8]/15">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
-        <div className="space-y-6 sm:space-y-8">
-          <div className="font-['Noto_Serif'] italic text-xl sm:text-2xl text-[#610000]">CIMA LEARN</div>
-          <p className="font-['Inter'] text-sm tracking-wide text-[#5a403c]/70 max-w-sm">Dedicated to the preservation and advancement of international legal scholarship and high-stakes dispute resolution.</p>
-          <p className="font-['Inter'] text-sm tracking-wide uppercase text-[#1b1c15]">© {new Date().getFullYear()} CIMA LEARN. All rights reserved.</p>
-        </div>
-        <div className="flex flex-col md:items-end justify-between">
-          <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase">
-            {/* <Link href="/resources" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Resources</Link> */}
-            <Link href="/privacy-policy" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Privacy Policy</Link>
-            <Link href="/terms-of-service" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Terms of Service</Link>
-            <Link href="/contact" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity underline decoration-[#8b0000]">Contact Us</Link>
-          </div>
-          <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase mt-4">
-            <Link href="/help-center" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Help Center</Link>
-            <Link href="/become-instructor" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Become an Instructor</Link>
-          </div>
-          <div className="mt-8 sm:mt-12 flex gap-4 sm:gap-6 text-landing-on-surface-variant/40">
-            <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">gavel</span>
-            <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">account_balance</span>
-            <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">public</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
