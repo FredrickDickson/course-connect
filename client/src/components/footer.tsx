@@ -72,13 +72,13 @@ export default function Footer() {
                   </span>
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/resources">
                   <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Resources
                   </span>
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/become-instructor">
                   <span className="text-sm text-primary font-medium hover:text-primary/80 transition-colors">
@@ -100,13 +100,13 @@ export default function Footer() {
                   </span>
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/community-forum">
                   <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Community Forum
                   </span>
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/technical-support">
                   <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
