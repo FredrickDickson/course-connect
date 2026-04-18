@@ -1,0 +1,1606 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "CIMA Learn Modern Prestige Landing",
+      "clip": true,
+      "width": 1440,
+      "height": 600,
+      "fill": "$base",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "LqFev",
+          "name": "hero",
+          "width": "fill_container",
+          "gap": 80,
+          "padding": [
+            160,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "NL49C",
+              "name": "heroLeft",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 40,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "2O9Je",
+                  "name": "heroTextGrp",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "paVu6",
+                      "name": "h1",
+                      "fill": "$primary",
+                      "content": "Master Global ADR.\nEarn Recognised Excellence.",
+                      "lineHeight": 1.1,
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 90,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "5GZeC",
+                      "name": "hSub",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": 600,
+                      "content": "Professional training and certification by the Center for International Mediators and Arbitrators (Oxford, UK) — Empowering practitioners in Africa, Asia, and beyond.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 22,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mqnJX",
+                  "name": "ctaGrp",
+                  "gap": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "uG2kI",
+                      "name": "ctaPrimary",
+                      "fill": "$accent",
+                      "cornerRadius": 12,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "#F59E0B66",
+                        "offset": {
+                          "x": 0,
+                          "y": 8
+                        },
+                        "blur": 24
+                      },
+                      "padding": [
+                        20,
+                        40
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "sHbxh",
+                          "name": "ctaPrimText",
+                          "fill": "#FFFFFF",
+                          "content": "Browse Courses",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 18,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Y5dFF",
+                      "name": "ctaSecondary",
+                      "cornerRadius": 12,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "$primary"
+                      },
+                      "padding": [
+                        20,
+                        40
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "I8Y2Q",
+                          "name": "ctaSecText",
+                          "fill": "$primary",
+                          "content": "Explore Qualification Pathway",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 18,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UCyPE",
+              "name": "heroRight",
+              "width": 500,
+              "height": 600,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jdlsO",
+                  "layoutPosition": "absolute",
+                  "x": 50,
+                  "y": 50,
+                  "name": "vCard1",
+                  "width": 350,
+                  "height": 450,
+                  "fill": "#F9DADA80",
+                  "cornerRadius": 32,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#A61C1C33"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 40
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000001A",
+                      "offset": {
+                        "x": 0,
+                        "y": 20
+                      },
+                      "blur": 40
+                    }
+                  ],
+                  "layout": "vertical",
+                  "padding": 40,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "1WPYx",
+                      "name": "vc1Tag",
+                      "fill": "$accent",
+                      "cornerRadius": 100,
+                      "padding": [
+                        8,
+                        16
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "a7pfJ",
+                          "name": "vc1TagText",
+                          "fill": "#FFFFFF",
+                          "content": "Global Recognition",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "OHrtd",
+                      "name": "vc1Title",
+                      "fill": "$primary",
+                      "content": "Oxford Heritage",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 32,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eUP6W",
+                  "layoutPosition": "absolute",
+                  "x": 200,
+                  "y": 200,
+                  "name": "vCard2",
+                  "width": 300,
+                  "height": 400,
+                  "fill": "#FFFFFFB3",
+                  "cornerRadius": 32,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF80"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 40
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000001A",
+                      "offset": {
+                        "x": 0,
+                        "y": 20
+                      },
+                      "blur": 40
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 20,
+                  "padding": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ky1t7",
+                      "name": "vc2Icon",
+                      "width": 64,
+                      "height": 64,
+                      "fill": "$primary",
+                      "cornerRadius": 32,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "pX4Ym",
+                          "name": "vc2IconInner",
+                          "width": 32,
+                          "height": 32,
+                          "iconFontName": "scale",
+                          "iconFontFamily": "lucide",
+                          "fill": "#FFFFFF"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "gN8br",
+                      "name": "vc2Text",
+                      "fill": "$primary",
+                      "textGrowth": "fixed-width",
+                      "width": 220,
+                      "content": "Excellence in Arbitration",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 28,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "pmD2W",
+          "name": "coursesSec",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            140,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "4Eo5K",
+              "name": "coursesTitle",
+              "fill": "$primary",
+              "content": "Upcoming Elite Courses",
+              "fontFamily": "Playfair Display",
+              "fontSize": 48,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "frame",
+              "id": "YUZ9V",
+              "name": "coursesGrid",
+              "width": "fill_container",
+              "gap": 40,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "o7Ugv",
+                  "name": "col1",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MjsQL",
+                      "name": "c1",
+                      "width": 380,
+                      "fill": "#FFFFFFB3",
+                      "cornerRadius": 24,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#FFFFFF"
+                      },
+                      "effect": [
+                        {
+                          "type": "background_blur",
+                          "radius": 20
+                        },
+                        {
+                          "type": "shadow",
+                          "shadowType": "outer",
+                          "color": "#0000000D",
+                          "offset": {
+                            "x": 0,
+                            "y": 12
+                          },
+                          "blur": 24
+                        }
+                      ],
+                      "layout": "vertical",
+                      "gap": 24,
+                      "padding": 40,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "t2sxm",
+                          "name": "c1Date",
+                          "fill": "$accent",
+                          "cornerRadius": 100,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "oX9qj",
+                              "name": "c1DateText",
+                              "fill": "#FFFFFF",
+                              "content": "Oct 15 - Nov 20, 2026",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "I8KY8",
+                          "name": "c1Title",
+                          "fill": "$primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "International Commercial Arbitration",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 28,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "eABxc",
+                          "name": "c1Desc",
+                          "opacity": 0.8,
+                          "fill": "$text_dark",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Master the complexities of cross-border dispute resolution in commercial sectors.",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CcuX3",
+                          "name": "c1Tag",
+                          "fill": "$secondary",
+                          "cornerRadius": 8,
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mmyaO",
+                              "name": "c1TagText",
+                              "fill": "$primary",
+                              "content": "MCIMArb Level",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "5Es1X",
+                          "name": "c1Btn",
+                          "fill": "$accent",
+                          "cornerRadius": 12,
+                          "padding": [
+                            16,
+                            24
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AOjo9",
+                              "name": "c1BtnText",
+                              "fill": "#FFFFFF",
+                              "content": "Register Now",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 16,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zNwjI",
+                  "name": "col2",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "padding": [
+                    80,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DoPVA",
+                      "name": "c2",
+                      "width": 380,
+                      "fill": "#FFFFFFB3",
+                      "cornerRadius": 24,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#FFFFFF"
+                      },
+                      "effect": [
+                        {
+                          "type": "background_blur",
+                          "radius": 20
+                        },
+                        {
+                          "type": "shadow",
+                          "shadowType": "outer",
+                          "color": "#0000000D",
+                          "offset": {
+                            "x": 0,
+                            "y": 12
+                          },
+                          "blur": 24
+                        }
+                      ],
+                      "layout": "vertical",
+                      "gap": 24,
+                      "padding": 40,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "OMvJD",
+                          "name": "c2Date",
+                          "fill": "$accent",
+                          "cornerRadius": 100,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WqlEd",
+                              "name": "c2DateText",
+                              "fill": "#FFFFFF",
+                              "content": "Nov 05 - Dec 10, 2026",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvd7O",
+                          "name": "c2Title",
+                          "fill": "$primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Advanced Mediation Strategies",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 28,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Q5D2r",
+                          "name": "c2Desc",
+                          "opacity": 0.8,
+                          "fill": "$text_dark",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Develop elite negotiation and mediation skills for complex multi-party conflicts.",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "0t32O",
+                          "name": "c2Tag",
+                          "fill": "$secondary",
+                          "cornerRadius": 8,
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wC8hR",
+                              "name": "c2TagText",
+                              "fill": "$primary",
+                              "content": "FCIMArb Level",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "0Hfps",
+                          "name": "c2Btn",
+                          "fill": "$accent",
+                          "cornerRadius": 12,
+                          "padding": [
+                            16,
+                            24
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "8Tzm5",
+                              "name": "c2BtnText",
+                              "fill": "#FFFFFF",
+                              "content": "Register Now",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 16,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zZaxU",
+                  "name": "col3",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "BNcp9",
+                      "name": "c3",
+                      "width": 380,
+                      "fill": "#FFFFFFB3",
+                      "cornerRadius": 24,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#FFFFFF"
+                      },
+                      "effect": [
+                        {
+                          "type": "background_blur",
+                          "radius": 20
+                        },
+                        {
+                          "type": "shadow",
+                          "shadowType": "outer",
+                          "color": "#0000000D",
+                          "offset": {
+                            "x": 0,
+                            "y": 12
+                          },
+                          "blur": 24
+                        }
+                      ],
+                      "layout": "vertical",
+                      "gap": 24,
+                      "padding": 40,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Di9gL",
+                          "name": "c3Date",
+                          "fill": "$accent",
+                          "cornerRadius": 100,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ilyRo",
+                              "name": "c3DateText",
+                              "fill": "#FFFFFF",
+                              "content": "Jan 12 - Feb 18, 2027",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "VsxCV",
+                          "name": "c3Title",
+                          "fill": "$primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Foundations of ADR",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 28,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "eP7RN",
+                          "name": "c3Desc",
+                          "opacity": 0.8,
+                          "fill": "$text_dark",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "The essential starting point for your journey into international dispute resolution.",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "pEJ5Q",
+                          "name": "c3Tag",
+                          "fill": "$secondary",
+                          "cornerRadius": 8,
+                          "padding": [
+                            6,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "I1bIW",
+                              "name": "c3TagText",
+                              "fill": "$primary",
+                              "content": "ACIMArb Level",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YB2ae",
+                          "name": "c3Btn",
+                          "fill": "$accent",
+                          "cornerRadius": 12,
+                          "padding": [
+                            16,
+                            24
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yDGC8",
+                              "name": "c3BtnText",
+                              "fill": "#FFFFFF",
+                              "content": "Register Now",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 16,
+                              "fontWeight": "bold"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yB4uX",
+          "name": "pathwaySec",
+          "width": "fill_container",
+          "fill": "$secondary",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            140,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "V4ktZ",
+              "name": "pathTitle",
+              "fill": "$primary",
+              "content": "Your Journey to Global Recognition",
+              "fontFamily": "Playfair Display",
+              "fontSize": 48,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "frame",
+              "id": "JAs8p",
+              "name": "pathContainer",
+              "width": 1000,
+              "height": 600,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "path",
+                  "id": "8nIfU",
+                  "x": 100,
+                  "y": 100,
+                  "name": "line",
+                  "geometry": "M0 0l400 200 400 200",
+                  "width": 800,
+                  "height": 400,
+                  "stroke": {
+                    "thickness": 4,
+                    "fill": "$primary"
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "i99KG",
+                  "x": 0,
+                  "y": 0,
+                  "name": "p1",
+                  "width": 350,
+                  "fill": "#F8F7F7E6",
+                  "cornerRadius": 24,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "$primary"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 20
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000001A",
+                      "offset": {
+                        "x": 0,
+                        "y": 12
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 40,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xaQXU",
+                      "name": "p1Title",
+                      "fill": "$primary",
+                      "content": "Associate (ACIMArb)",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QRnT8",
+                      "name": "p1Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "The foundation of your ADR career. Open to professionals with basic dispute resolution training.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "ellipse",
+                  "id": "aS7eT",
+                  "x": 88,
+                  "y": 88,
+                  "name": "p1Dot",
+                  "fill": "$accent",
+                  "width": 24,
+                  "height": 24,
+                  "stroke": {
+                    "thickness": 4,
+                    "fill": "#FFFFFF"
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "L4KSp",
+                  "x": 325,
+                  "y": 200,
+                  "name": "p2",
+                  "width": 350,
+                  "fill": "#F8F7F7E6",
+                  "cornerRadius": 24,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "$primary"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 20
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000001A",
+                      "offset": {
+                        "x": 0,
+                        "y": 12
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 40,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tWOQH",
+                      "name": "p2Title",
+                      "fill": "$primary",
+                      "content": "Member (MCIMArb)",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wS0ug",
+                      "name": "p2Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Advanced modules in mediation and international arbitration law. Requires extensive experience.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "ellipse",
+                  "id": "o2KXZ",
+                  "x": 488,
+                  "y": 288,
+                  "name": "p2Dot",
+                  "fill": "$accent",
+                  "width": 24,
+                  "height": 24,
+                  "stroke": {
+                    "thickness": 4,
+                    "fill": "#FFFFFF"
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "O7u9d",
+                  "x": 650,
+                  "y": 400,
+                  "name": "p3",
+                  "width": 350,
+                  "fill": "#F8F7F7E6",
+                  "cornerRadius": 24,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "$primary"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 20
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000001A",
+                      "offset": {
+                        "x": 0,
+                        "y": 12
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 40,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Bh7lJ",
+                      "name": "p3Title",
+                      "fill": "$primary",
+                      "content": "Fellow (FCIMArb)",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "68wif",
+                      "name": "p3Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "The highest grade of membership. Mastery in award writing and elite international practice.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "ellipse",
+                  "id": "NNGZz",
+                  "x": 888,
+                  "y": 488,
+                  "name": "p3Dot",
+                  "fill": "$accent",
+                  "width": 24,
+                  "height": 24,
+                  "stroke": {
+                    "thickness": 4,
+                    "fill": "#FFFFFF"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Ps12C",
+          "name": "whySec",
+          "width": "fill_container",
+          "fill": "$base",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            140,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "rsRNu",
+              "name": "whyTitleGrp",
+              "layout": "vertical",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "931gA",
+                  "name": "whyTitle",
+                  "fill": "$primary",
+                  "content": "Why Choose CIMA Learn",
+                  "fontFamily": "Playfair Display",
+                  "fontSize": 48,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "6JqaC",
+                  "name": "whySub",
+                  "opacity": 0.8,
+                  "fill": "$text_dark",
+                  "textGrowth": "fixed-width",
+                  "width": 600,
+                  "content": "A heritage of excellence meeting the demands of modern international law.",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jtVqN",
+              "name": "whyGrid",
+              "width": "fill_container",
+              "gap": 40,
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "I1lNz",
+                  "name": "w1",
+                  "width": 350,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "hP7an",
+                      "name": "w1IconGrp",
+                      "width": 64,
+                      "height": 64,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "Xy2cs",
+                          "x": 8,
+                          "y": 8,
+                          "name": "w1IconBg",
+                          "fill": "$secondary",
+                          "width": 48,
+                          "height": 48
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "AzIA7",
+                          "x": 0,
+                          "y": 0,
+                          "name": "w1Icon",
+                          "width": 48,
+                          "height": 48,
+                          "iconFontName": "globe",
+                          "iconFontFamily": "lucide",
+                          "fill": "$primary"
+                        },
+                        {
+                          "type": "ellipse",
+                          "id": "KIKjh",
+                          "x": 40,
+                          "y": 0,
+                          "name": "w1Dot",
+                          "fill": "$accent",
+                          "width": 16,
+                          "height": 16
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "v9l4i",
+                      "name": "w1Title",
+                      "fill": "$primary",
+                      "content": "Global Reach",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EFoW0",
+                      "name": "w1Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Connect with a worldwide network of elite practitioners and international organizations.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lmcZf",
+                  "name": "w2",
+                  "width": 350,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "zaczf",
+                      "name": "w2IconGrp",
+                      "width": 64,
+                      "height": 64,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "f135X",
+                          "x": 8,
+                          "y": 8,
+                          "name": "w2IconBg",
+                          "fill": "$secondary",
+                          "width": 48,
+                          "height": 48
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "RetTu",
+                          "x": 0,
+                          "y": 0,
+                          "name": "w2Icon",
+                          "width": 48,
+                          "height": 48,
+                          "iconFontName": "award",
+                          "iconFontFamily": "lucide",
+                          "fill": "$primary"
+                        },
+                        {
+                          "type": "ellipse",
+                          "id": "DDUYx",
+                          "x": 40,
+                          "y": 0,
+                          "name": "w2Dot",
+                          "fill": "$accent",
+                          "width": 16,
+                          "height": 16
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "QWQfu",
+                      "name": "w2Title",
+                      "fill": "$primary",
+                      "content": "Oxford Heritage",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wSPti",
+                      "name": "w2Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Benefit from rigorous academic standards rooted in the traditions of Oxford.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vDrkH",
+                  "name": "w3",
+                  "width": 350,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "05jXS",
+                      "name": "w3IconGrp",
+                      "width": 64,
+                      "height": 64,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "V8cpk",
+                          "x": 8,
+                          "y": 8,
+                          "name": "w3IconBg",
+                          "fill": "$secondary",
+                          "width": 48,
+                          "height": 48
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "F3ErJ",
+                          "x": 0,
+                          "y": 0,
+                          "name": "w3Icon",
+                          "width": 48,
+                          "height": 48,
+                          "iconFontName": "scale",
+                          "iconFontFamily": "lucide",
+                          "fill": "$primary"
+                        },
+                        {
+                          "type": "ellipse",
+                          "id": "uh4xt",
+                          "x": 40,
+                          "y": 0,
+                          "name": "w3Dot",
+                          "fill": "$accent",
+                          "width": 16,
+                          "height": 16
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "dGK0X",
+                      "name": "w3Title",
+                      "fill": "$primary",
+                      "content": "Practical Mastery",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "2Rdqw",
+                      "name": "w3Desc",
+                      "opacity": 0.8,
+                      "fill": "$text_dark",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Bridge the gap between theory and high-stakes practice through immersive simulations.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "3zCJX",
+          "name": "ctaSec",
+          "width": "fill_container",
+          "fill": "$base",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            160,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "95r7Q",
+              "name": "ctaTitle",
+              "fill": "$primary",
+              "content": "Ready to Master Global ADR?",
+              "textAlign": "center",
+              "fontFamily": "Playfair Display",
+              "fontSize": 64,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "text",
+              "id": "Ldrk5",
+              "name": "ctaSub",
+              "opacity": 0.8,
+              "fill": "$text_dark",
+              "content": "Join the premier global institution and earn your elite international certification.",
+              "textAlign": "center",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 22,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Z7QOd",
+              "name": "ctaBtn",
+              "fill": "$accent",
+              "cornerRadius": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#F59E0B66",
+                "offset": {
+                  "x": 0,
+                  "y": 12
+                },
+                "blur": 32
+              },
+              "padding": [
+                24,
+                48
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "n47eb",
+                  "name": "ctaBtnText",
+                  "fill": "#FFFFFF",
+                  "content": "Get Started Now",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 20,
+                  "fontWeight": "bold"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "g6OOw",
+          "name": "footer",
+          "width": "fill_container",
+          "fill": "#1F1414",
+          "layout": "vertical",
+          "gap": 60,
+          "padding": [
+            80,
+            120
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "CZ361",
+              "name": "footTop",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "nBeUb",
+                  "name": "footBrand",
+                  "width": 400,
+                  "layout": "vertical",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "1S8fN",
+                      "name": "footLogo",
+                      "fill": "#FFFFFF",
+                      "content": "CIMA LEARN",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 32,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hHNod",
+                      "name": "footDesc",
+                      "opacity": 0.7,
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Professional training and certification by the Center for International Mediators and Arbitrators (Oxford, UK).",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "X4SqB",
+                  "name": "footLinks",
+                  "gap": 120,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gNt0M",
+                      "name": "fCol1",
+                      "layout": "vertical",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HYmhZ",
+                          "name": "fC1Title",
+                          "fill": "$primary",
+                          "content": "Pathways",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 20,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "9zgAD",
+                          "name": "fC1L1",
+                          "opacity": 0.8,
+                          "fill": "#FFFFFF",
+                          "content": "Associate (ACIMArb)",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "44ltJ",
+                          "name": "fC1L2",
+                          "opacity": 0.8,
+                          "fill": "#FFFFFF",
+                          "content": "Member (MCIMArb)",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "S5Xai",
+                          "name": "fC1L3",
+                          "opacity": 0.8,
+                          "fill": "#FFFFFF",
+                          "content": "Fellow (FCIMArb)",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZngBO",
+                      "name": "fCol2",
+                      "layout": "vertical",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "6JGWk",
+                          "name": "fC2Title",
+                          "fill": "$primary",
+                          "content": "Contact",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 20,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VIk4U",
+                          "name": "fC2Email",
+                          "fill": "$accent",
+                          "content": "admissions@cimalearn.com",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ant8H",
+                          "name": "fC2Phone",
+                          "opacity": 0.8,
+                          "fill": "#FFFFFF",
+                          "content": "+44 (0) 1865 000 000",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "tmyKa",
+                          "name": "fC2Loc",
+                          "opacity": 0.8,
+                          "fill": "#FFFFFF",
+                          "content": "Oxford, United Kingdom",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "mpii8",
+              "name": "footDiv",
+              "fill": "#FFFFFF33",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "fFvEK",
+              "name": "footBot",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "QhbDy",
+                  "name": "copyText",
+                  "opacity": 0.5,
+                  "fill": "#FFFFFF",
+                  "content": "© 2026 CIMA Learn. All rights reserved.",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "h1Er9",
+                  "name": "legalText",
+                  "opacity": 0.5,
+                  "fill": "#FFFFFF",
+                  "content": "Terms & Conditions • Privacy Policy",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "accent": {
+      "type": "color",
+      "value": "#F59E0B"
+    },
+    "base": {
+      "type": "color",
+      "value": "#F8F7F7"
+    },
+    "primary": {
+      "type": "color",
+      "value": "#A61C1C"
+    },
+    "secondary": {
+      "type": "color",
+      "value": "#F9DADA"
+    },
+    "text_dark": {
+      "type": "color",
+      "value": "#1F1414"
+    }
+  }
+}
