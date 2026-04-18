@@ -326,10 +326,10 @@ function FinalCTASection() {
         </Link>
       </div>
       {/* Accent lines */}
-      {/* <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-10">
+       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-10">
         <div className="absolute top-0 left-1/4 w-[1px] h-full bg-landing-on-primary"></div>
         <div className="absolute top-0 right-1/4 w-[1px] h-full bg-landing-on-primary"></div>
-      </div> */}
+      </div> 
     </section>
   );
 }
