@@ -146,11 +146,11 @@ export default function Landing() {
               <Link href="/help-center" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Help Center</Link>
               <Link href="/become-instructor" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Become an Instructor</Link>
             </div>
-            <div className="mt-8 sm:mt-12 flex gap-4 sm:gap-6 text-landing-on-surface-variant/40">
+            {/* <div className="mt-8 sm:mt-12 flex gap-4 sm:gap-6 text-landing-on-surface-variant/40">
               <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">gavel</span>
               <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">account_balance</span>
               <span className="material-symbols-outlined cursor-pointer hover:text-landing-primary transition-colors">public</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>
