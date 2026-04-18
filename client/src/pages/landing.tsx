@@ -97,7 +97,7 @@ export default function Landing() {
             </div>
           </div>
           {/* Decorative Elements */}
-          <div className="absolute top-1/4 -right-20 w-96 h-96 bg-landing-primary/5 rounded-full blur-[100px]"></div>
+          {/* <div className="absolute top-1/4 -right-20 w-96 h-96 bg-landing-primary/5 rounded-full blur-[100px]"></div> */}
         </section>
 
         {/* Trust Signals: Logo Ticker */}
