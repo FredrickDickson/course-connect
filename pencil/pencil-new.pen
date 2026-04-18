@@ -1,0 +1,1428 @@
+{
+  "version": "2.11",
+  "children": [
+    {
+      "type": "frame",
+      "id": "DpxzH",
+      "x": 0,
+      "y": 0,
+      "name": "Cima Learn Landing",
+      "width": 1440,
+      "fill": "$background",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "iQIFk",
+          "name": "Navbar",
+          "width": "fill_container",
+          "height": 100,
+          "fill": "#FFFFFF80",
+          "effect": {
+            "type": "background_blur",
+            "radius": 20
+          },
+          "padding": [
+            0,
+            160
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "d447b",
+              "name": "logo",
+              "fill": "$primary",
+              "content": "CIMA LEARN",
+              "fontFamily": "Playfair Display",
+              "fontSize": 28,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "frame",
+              "id": "sLopY",
+              "name": "navLinks",
+              "gap": 40,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RndCs",
+                  "opacity": 0.7,
+                  "fill": "$foreground",
+                  "content": "Courses",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "0UkDH",
+                  "opacity": 0.7,
+                  "fill": "$foreground",
+                  "content": "Pathways",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "3FxDt",
+                  "opacity": 0.7,
+                  "fill": "$foreground",
+                  "content": "About",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ejegb",
+              "name": "loginBtn",
+              "fill": "$primary",
+              "cornerRadius": 12,
+              "stroke": {
+                "thickness": 1,
+                "fill": "$primary"
+              },
+              "padding": [
+                8,
+                24
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "pvrsA",
+                  "fill": "#FFFFFF",
+                  "content": "Login",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "semibold"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yLINm",
+          "name": "Hero Section",
+          "width": "fill_container",
+          "height": 900,
+          "fill": "$background",
+          "padding": [
+            120,
+            160
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "fETwz",
+              "name": "heroContent",
+              "width": 600,
+              "layout": "vertical",
+              "gap": 48,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x5mCC",
+                  "name": "badge",
+                  "opacity": 0.1,
+                  "fill": "$foreground",
+                  "cornerRadius": 100,
+                  "padding": [
+                    6,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XDXAM",
+                      "opacity": 10,
+                      "fill": "$foreground",
+                      "content": "ELITE LEGAL TRAINING",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "bold",
+                      "letterSpacing": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "NePeJ",
+                  "fill": "$primary",
+                  "textGrowth": "fixed-width",
+                  "width": 700,
+                  "content": "Empowering Global Excellence",
+                  "lineHeight": 1.1,
+                  "fontFamily": "$text_heading",
+                  "fontSize": 80,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "qk9C6",
+                  "opacity": 0.8,
+                  "fill": "#1F1414",
+                  "textGrowth": "fixed-width",
+                  "width": 500,
+                  "content": "Advance your professional journey with world-class international law training and elite certifications.",
+                  "fontFamily": "$text_body",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "ra885",
+                  "name": "ctaGroup",
+                  "gap": 32,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HZUu0",
+                      "name": "ctaBtn",
+                      "fill": "$success",
+                      "cornerRadius": 12,
+                      "padding": [
+                        16,
+                        32
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "3VYSY",
+                          "name": "ctaText",
+                          "fill": "#FFFFFF",
+                          "content": "Explore Pathways",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 18,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jaz3v",
+              "name": "heroCard",
+              "width": 500,
+              "height": 600,
+              "fill": "#FFFFFF80",
+              "cornerRadius": 32,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#FFFFFF40"
+              },
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 40
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#00000010",
+                  "offset": {
+                    "x": 0,
+                    "y": 20
+                  },
+                  "blur": 40
+                }
+              ],
+              "layout": "vertical",
+              "gap": 32,
+              "padding": 40,
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 4,
+                  "id": "SjbiE",
+                  "name": "cardAccent",
+                  "fill": "$primary",
+                  "width": 80,
+                  "height": 8
+                },
+                {
+                  "type": "text",
+                  "id": "Tk9o4",
+                  "name": "cardTitle",
+                  "fill": "$primary",
+                  "content": "Career Progression",
+                  "fontFamily": "$text_heading",
+                  "fontSize": 32,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "frame",
+                  "id": "C3p9q",
+                  "name": "cardContent",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mefcs",
+                      "name": "item1",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 12,
+                          "id": "0TEeE",
+                          "name": "icon1",
+                          "fill": "$secondary",
+                          "width": 40,
+                          "height": 40
+                        },
+                        {
+                          "type": "text",
+                          "id": "CJZbE",
+                          "name": "text1",
+                          "fill": "#1F1414",
+                          "content": "International Arbitration",
+                          "fontFamily": "$text_body",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XtDYg",
+                      "name": "item2",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 12,
+                          "id": "OSWW8",
+                          "name": "icon2",
+                          "fill": "$secondary",
+                          "width": 40,
+                          "height": 40
+                        },
+                        {
+                          "type": "text",
+                          "id": "i8ntE",
+                          "name": "text2",
+                          "fill": "#1F1414",
+                          "content": "Global Mediation",
+                          "fontFamily": "$text_body",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "lnNrm",
+          "name": "Qualification Pathway",
+          "width": "fill_container",
+          "height": 1000,
+          "fill": "$secondary",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            120,
+            160
+          ],
+          "children": [
+            {
+              "type": "path",
+              "id": "DDpHn",
+              "layoutPosition": "absolute",
+              "x": 100,
+              "y": 100,
+              "name": "p1",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "nh50c",
+              "layoutPosition": "absolute",
+              "x": 300,
+              "y": 200,
+              "name": "p2",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "q0IYS",
+              "layoutPosition": "absolute",
+              "x": 500,
+              "y": 100,
+              "name": "p3",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "dQKF9",
+              "layoutPosition": "absolute",
+              "x": 700,
+              "y": 250,
+              "name": "p4",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "0xD0m",
+              "layoutPosition": "absolute",
+              "x": 900,
+              "y": 150,
+              "name": "p5",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "YQ4bm",
+              "layoutPosition": "absolute",
+              "x": 1100,
+              "y": 300,
+              "name": "p6",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "TXfli",
+              "layoutPosition": "absolute",
+              "x": 200,
+              "y": 400,
+              "name": "p7",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "DQX8I",
+              "layoutPosition": "absolute",
+              "x": 400,
+              "y": 500,
+              "name": "p8",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "kD4Mg",
+              "layoutPosition": "absolute",
+              "x": 600,
+              "y": 450,
+              "name": "p9",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "KCBU9",
+              "layoutPosition": "absolute",
+              "x": 800,
+              "y": 600,
+              "name": "p10",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "TlJqh",
+              "layoutPosition": "absolute",
+              "x": 1000,
+              "y": 550,
+              "name": "p11",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "path",
+              "id": "qSZJo",
+              "layoutPosition": "absolute",
+              "x": 1200,
+              "y": 700,
+              "name": "p12",
+              "opacity": 0.05,
+              "geometry": "M10 0l0 20m-10-10l20 0",
+              "width": 20,
+              "height": 20,
+              "stroke": {
+                "thickness": 2,
+                "fill": "$primary"
+              }
+            },
+            {
+              "type": "text",
+              "id": "5WwMA",
+              "fill": "$primary",
+              "content": "Qualification Pathway",
+              "fontFamily": "Playfair Display",
+              "fontSize": 56,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "text",
+              "id": "P8Zu1",
+              "opacity": 0.8,
+              "fill": "#1F1414",
+              "textGrowth": "fixed-width",
+              "width": 700,
+              "content": "A journey of mastery from foundational principles to elite international certification.",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "PufR5",
+              "name": "nodesContainer",
+              "width": "fill_container",
+              "height": 600,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uoGtR",
+                  "x": 0,
+                  "y": 0,
+                  "name": "node1",
+                  "width": 380,
+                  "fill": "#FFFFFF80",
+                  "cornerRadius": 32,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF60"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 30
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000000D",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 48
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 48,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Vp70H",
+                      "fill": "$primary",
+                      "content": "01",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 40,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CCb30",
+                      "fill": "$primary",
+                      "content": "Associate",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 28,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "7TS1D",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": 300,
+                      "content": "ACIMArb - The foundation of your ADR career. Open to all professionals.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z0Hrt",
+                  "x": 420,
+                  "y": 80,
+                  "name": "node2",
+                  "width": 380,
+                  "fill": "#FFFFFF80",
+                  "cornerRadius": 32,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF60"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 30
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000000D",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 48
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 48,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p1iwC",
+                      "fill": "$primary",
+                      "content": "02",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 40,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Tompr",
+                      "fill": "$primary",
+                      "content": "Member",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 28,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "7W6Ju",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": 300,
+                      "content": "MCIMArb - Advanced modules in mediation and international arbitration law.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rvGLg",
+                  "x": 840,
+                  "y": 160,
+                  "name": "node3",
+                  "width": 380,
+                  "fill": "#FFFFFF80",
+                  "cornerRadius": 32,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF60"
+                  },
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 30
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#0000000D",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 48
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 24,
+                  "padding": 48,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DObjc",
+                      "fill": "$primary",
+                      "content": "03",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 40,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "5X6HG",
+                      "fill": "$primary",
+                      "content": "Fellow",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 28,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Pe1qo",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": 300,
+                      "content": "FCIMArb - The highest grade of membership. Mastery in award writing.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "MO3DF",
+          "name": "benefits",
+          "width": "fill_container",
+          "fill": "$background",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            120,
+            160
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "5hnc3",
+              "name": "benHeader",
+              "layout": "vertical",
+              "gap": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Ecsg1",
+                  "name": "benTitle",
+                  "fill": "$primary",
+                  "content": "The CIMA Advantage",
+                  "fontFamily": "Playfair Display",
+                  "fontSize": 48,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "SMxCo",
+                  "name": "benSub",
+                  "opacity": 0.7,
+                  "fill": "#1F1414",
+                  "textGrowth": "fixed-width",
+                  "width": 600,
+                  "content": "Unparalleled expertise and global recognition in alternative dispute resolution.",
+                  "textAlign": "center",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "IyJYw",
+              "name": "benGrid",
+              "width": "fill_container",
+              "gap": 40,
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "b2EPd",
+                  "name": "b1",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "gMTNx",
+                      "name": "b1Icon",
+                      "width": 48,
+                      "height": 48,
+                      "iconFontName": "globe",
+                      "iconFontFamily": "lucide",
+                      "fill": "$success"
+                    },
+                    {
+                      "type": "text",
+                      "id": "0CsrH",
+                      "name": "b1Title",
+                      "fill": "$primary",
+                      "content": "Global Network",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mnrGr",
+                      "name": "b1Desc",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Connect with elite professionals and practitioners across international jurisdictions.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "APysT",
+                  "name": "b2",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "J0nak",
+                      "name": "b2Icon",
+                      "width": 48,
+                      "height": 48,
+                      "iconFontName": "award",
+                      "iconFontFamily": "lucide",
+                      "fill": "$success"
+                    },
+                    {
+                      "type": "text",
+                      "id": "GSEn9",
+                      "name": "b2Title",
+                      "fill": "$primary",
+                      "content": "Prestigious Certification",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q21GM",
+                      "name": "b2Desc",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Earn qualifications recognized by top law firms and arbitral institutions worldwide.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "P50vg",
+                  "name": "b3",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "gkKcq",
+                      "name": "b3Icon",
+                      "width": 48,
+                      "height": 48,
+                      "iconFontName": "scale",
+                      "iconFontFamily": "lucide",
+                      "fill": "$success"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wecaf",
+                      "name": "b3Title",
+                      "fill": "$primary",
+                      "content": "Expert Faculty",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "6jjoN",
+                      "name": "b3Desc",
+                      "opacity": 0.8,
+                      "fill": "#1F1414",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Learn directly from distinguished arbitrators, mediators, and legal scholars.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UK4zm",
+          "name": "testimonials",
+          "width": "fill_container",
+          "fill": "$primary",
+          "layout": "vertical",
+          "gap": 80,
+          "padding": [
+            120,
+            160
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "sApS9",
+              "name": "testHeader",
+              "layout": "vertical",
+              "gap": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "1zsyM",
+                  "name": "testTitle",
+                  "fill": "#FFFFFF",
+                  "content": "Excellence Recognized",
+                  "fontFamily": "Playfair Display",
+                  "fontSize": 48,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "52rYw",
+                  "name": "testSub",
+                  "opacity": 0.8,
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": 600,
+                  "content": "Hear from our distinguished alumni who have shaped the future of international law.",
+                  "textAlign": "center",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "y7MBK",
+              "name": "testGrid",
+              "width": "fill_container",
+              "gap": 40,
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bAgI5",
+                  "name": "t1",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF1A",
+                  "cornerRadius": 24,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF40"
+                  },
+                  "effect": {
+                    "type": "background_blur",
+                    "radius": 20
+                  },
+                  "layout": "vertical",
+                  "gap": 32,
+                  "padding": 48,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "YPhfj",
+                      "name": "t1Quote",
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "\"The CIMA curriculum provides an unparalleled depth of knowledge. It was instrumental in my appointment to the international arbitral tribunal.\"",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lKSri",
+                      "name": "t1AuthGrp",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "7AGbW",
+                          "name": "t1Avatar",
+                          "fill": "$secondary",
+                          "width": 48,
+                          "height": 48
+                        },
+                        {
+                          "type": "frame",
+                          "id": "x6aVp",
+                          "name": "t1Info",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "z6lxB",
+                              "name": "t1Name",
+                              "fill": "#FFFFFF",
+                              "content": "Dr. Elena Rostova",
+                              "fontFamily": "Playfair Display",
+                              "fontSize": 18,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "rCkAt",
+                              "name": "t1Role",
+                              "opacity": 0.7,
+                              "fill": "#FFFFFF",
+                              "content": "Senior Arbitrator, Geneva",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b1O5I",
+                  "name": "t2",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF1A",
+                  "cornerRadius": 24,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#FFFFFF40"
+                  },
+                  "effect": {
+                    "type": "background_blur",
+                    "radius": 20
+                  },
+                  "layout": "vertical",
+                  "gap": 32,
+                  "padding": 48,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rUUAP",
+                      "name": "t2Quote",
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "\"An elite program that bridges the gap between theoretical law and high-stakes practical application. Truly world-class.\"",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XaYld",
+                      "name": "t2AuthGrp",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "hpLT7",
+                          "name": "t2Avatar",
+                          "fill": "$secondary",
+                          "width": 48,
+                          "height": 48
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vXQ7Z",
+                          "name": "t2Info",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nMHeT",
+                              "name": "t2Name",
+                              "fill": "#FFFFFF",
+                              "content": "James Sterling, Esq.",
+                              "fontFamily": "Playfair Display",
+                              "fontSize": 18,
+                              "fontWeight": "bold"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Kobn6",
+                              "name": "t2Role",
+                              "opacity": 0.7,
+                              "fill": "#FFFFFF",
+                              "content": "Partner, International Dispute Resolution",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yoWiX",
+          "name": "footer",
+          "width": "fill_container",
+          "fill": "#1F1414",
+          "layout": "vertical",
+          "gap": 60,
+          "padding": [
+            80,
+            160
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "YhTTF",
+              "name": "footTop",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jO5EG",
+                  "name": "footBrand",
+                  "width": 300,
+                  "layout": "vertical",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "aE5ug",
+                      "name": "footLogo",
+                      "fill": "#FFFFFF",
+                      "content": "CIMA LEARN",
+                      "fontFamily": "Playfair Display",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cjR5M",
+                      "name": "footDesc",
+                      "opacity": 0.6,
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "The premier global institution for alternative dispute resolution education and certification.",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DVAju",
+                  "name": "footLinksGrp",
+                  "gap": 80,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mphtB",
+                      "name": "col1",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "La7ld",
+                          "name": "col1Title",
+                          "fill": "#FFFFFF",
+                          "content": "Pathways",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 18,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Pq2ch",
+                          "name": "col1L1",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Associate",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "axIDl",
+                          "name": "col1L2",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Member",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "xdspd",
+                          "name": "col1L3",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Fellow",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wKEkW",
+                      "name": "col2",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "1hmfc",
+                          "name": "col2Title",
+                          "fill": "#FFFFFF",
+                          "content": "Resources",
+                          "fontFamily": "Playfair Display",
+                          "fontSize": 18,
+                          "fontWeight": "bold"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jKcKT",
+                          "name": "col2L1",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Articles",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "bwvUD",
+                          "name": "col2L2",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Events",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lWqMe",
+                          "name": "col2L3",
+                          "opacity": 0.7,
+                          "fill": "#FFFFFF",
+                          "content": "Contact",
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "lKAg7",
+              "name": "footDivider",
+              "fill": "#FFFFFF1A",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "2bH3W",
+              "name": "footBottom",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Emtq8",
+                  "name": "copyRight",
+                  "opacity": 0.5,
+                  "fill": "#FFFFFF",
+                  "content": "© 2026 CIMA Learn. All rights reserved.",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "RrqUu",
+                  "name": "terms",
+                  "opacity": 0.5,
+                  "fill": "#FFFFFF",
+                  "content": "Terms of Service • Privacy Policy",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "accent": {
+      "type": "color",
+      "value": "#FBBF24"
+    },
+    "background": {
+      "type": "color",
+      "value": "#F8F7F7"
+    },
+    "card": {
+      "type": "color",
+      "value": "#FFFFFF0D"
+    },
+    "foreground": {
+      "type": "color",
+      "value": "#F8FAFC"
+    },
+    "primary": {
+      "type": "color",
+      "value": "#A61C1C"
+    },
+    "secondary": {
+      "type": "color",
+      "value": "#F9DADA"
+    },
+    "success": {
+      "type": "color",
+      "value": "#F59E0B"
+    },
+    "text_body": {
+      "type": "string",
+      "value": "Source Sans 3"
+    },
+    "text_heading": {
+      "type": "string",
+      "value": "Playfair Display"
+    }
+  }
+}
