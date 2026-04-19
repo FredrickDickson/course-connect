@@ -52,11 +52,15 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider">Learning</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/qualification-pathway">
-                  <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Qualification Pathway
-                  </span>
-                </Link>
+                <a 
+                  href="https://thecima.org/cima-qualification-pathways/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="footer-qualification-pathway"
+                >
+                  Qualification Pathway
+                </a>
               </li>
               <li>
                 <Link href="/fcrimarb-fellowship">
