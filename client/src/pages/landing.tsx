@@ -68,7 +68,7 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto w-full grid grid-cols-12 items-center gap-6 lg:gap-12">
             <div className="col-span-12 md:col-span-6 z-10">
               <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl lg:text-7xl leading-[1.1] text-landing-primary mb-6 sm:mb-8 tracking-tight">
-                The Definitive Standard in <span className="italic">International Jurisdiction</span>
+                The Definitive Standard in <span className="italic">Self-Paced Learning</span>
               </h1>
               <p className="font-body text-base sm:text-lg md:text-xl text-landing-on-surface-variant leading-relaxed max-w-lg mb-8 sm:mb-12">
                 Join a global cadre of legal elite. Elevate your practice through rigorous ADR training and certifications recognized by the world's leading arbitral institutions.
@@ -108,6 +108,15 @@ export default function Landing() {
 
         {/* The CIMA Advantage: Unparalleled Pedigree */}
         <CIMAAdvantageSection />
+
+        {/* NEW SECTION 1: Editorial Intro */}
+        <EditorialIntroSection />
+
+        {/* NEW SECTION 2: Feature List */}
+        <FeatureListSection />
+
+        {/* NEW SECTION 3: Institutional Network */}
+        <InstitutionalNetworkSection />
 
         {/* Excellence Recognized (Testimonials) */}
         <TestimonialsSection />
@@ -300,6 +309,192 @@ function TestimonialsSection() {
                 <span className="block font-label text-landing-on-surface-variant text-xs">Partner, Hill Dickinson | FCIArb, FCIMArb</span>
               </cite>
             </blockquote>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// NEW SECTION 1: Editorial Intro
+function EditorialIntroSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-background border-b border-[#e3beb8]/10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-4xl mx-auto text-center">
+        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-8 sm:mb-10 leading-tight">Learning designed for a digital world.</h2>
+        <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed mb-8 sm:mb-10">
+          CIMA collaborates with leading universities, industry associations, and forward-thinking organisations to deliver high-quality CLE/CPD education in dispute resolution. Together, we create flexible learning pathways that equip professionals with the skills, credentials, and expertise needed to thrive in a changing world.
+        </p>
+        {/*<a 
+          href="#" 
+          className="inline-flex items-center text-landing-primary font-label uppercase tracking-widest text-sm font-bold group hover:text-landing-secondary transition-colors"
+        >
+          Meet our Partners
+          <span className="material-symbols-outlined ml-2 transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </a>*/}
+      </div>
+    </section>
+  );
+}
+
+// NEW SECTION 2: Feature List
+function FeatureListSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container-low transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="col-span-12 md:col-span-6">
+            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 sm:mb-8">How we help our partners succeed.</h2>
+            <p className="font-body text-base sm:text-lg text-landing-on-surface-variant mb-8 sm:mb-10">Bar Associations, Engineering, Finance and ADR practitioners choose CIMA to help them:</p>
+            <ul className="space-y-4 sm:space-y-6">
+              <li className="flex items-start gap-3 sm:gap-4">
+                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base">Develop and deliver high-quality programs online</span>
+              </li>
+              <li className="flex items-start gap-3 sm:gap-4">
+                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base">Reach more learners globally</span>
+              </li>
+              <li className="flex items-start gap-3 sm:gap-4">
+                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base">Build offerings aligned with workforce needs</span>
+              </li>
+              <li className="flex items-start gap-3 sm:gap-4">
+                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base">Create CLE/CPD courses to meet statutory requirements in a changing world</span>
+              </li>
+            </ul>
+            <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-landing-outline-variant/20">
+              <p className="font-label text-xs uppercase tracking-widest text-landing-on-surface-variant/60">Powered by CyberX</p>
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-6 bg-landing-primary/10 p-[1px] rounded-lg shadow-sm">
+            <div className="bg-landing-surface-container p-8 sm:p-12 lg:p-16 rounded-DEFAULT h-full flex flex-col justify-center items-start border border-landing-primary/5 shadow-[0_4px_20px_-12px_rgba(97,0,0,0.15)]">
+              <span className="material-symbols-outlined text-4xl sm:text-5xl text-landing-secondary mb-8 sm:mb-10">hub</span>
+              <h4 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-4 sm:mb-6 italic tracking-tight font-medium">Collaborative Intelligence</h4>
+              <p className="font-body text-landing-on-surface-variant leading-relaxed text-base sm:text-lg max-w-md">
+                Our platform integrates seamlessly with institutional standards to deliver excellence at scale.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const PARTNER_LOGOS = [
+  {
+    name: "Law Society of Kenya",
+    url: "/images/partners/lsk.png",
+    alt: "Law Society of Kenya Logo"
+  },
+  {
+    name: "Bank of Ghana",
+    url: "/images/partners/bog.png",
+    alt: "Bank of Ghana Logo"
+  },
+  {
+    name: "Ghana Bar Association",
+    url: "/images/partners/ghana-bar.jpg",
+    alt: "Ghana Bar Association Logo"
+  },
+  {
+    name: "African Bar Association",
+    url: "/images/partners/afribar.jpg",
+    alt: "African Bar Association Logo"
+  },
+  {
+    name: "International Chamber of Commerce (ICC)",
+    url: "https://getlogo.net/wp-content/uploads/2020/03/international-chamber-of-commerce-icc-logo-vector.png",
+    alt: "International Chamber of Commerce Logo"
+  },
+  {
+    name: "London Court of International Arbitration (LCIA)",
+    url: "/images/partners/lcia.jpg",
+    alt: "LCIA Logo"
+  },
+  {
+    name: "Chartered Institute of Arbitrators (CIArb)",
+    url: "/images/partners/ciarb.jpg",
+    alt: "CIArb Logo"
+  },
+  {
+    name: "HM Revenue & Customs (HMRC)",
+    url: "/images/partners/HMRC_Logo.png",
+    alt: "HM Revenue & Customs Logo"
+  },
+  {
+    name: "Pinsent Masons",
+    url: "https://www.pinsentmasons.com/-/media/project/pinsent-masons/pm-logo.png",
+    alt: "Pinsent Masons Logo"
+  }
+];
+
+
+// NEW SECTION 3: Institutional Network
+function InstitutionalNetworkSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  // Create duplicate array for infinite scroll effect
+  const duplicatedLogos = [...PARTNER_LOGOS, ...PARTNER_LOGOS];
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12">Who are our partners?</h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-balance">
+              Our partners are those who place their trust in us. Institutions that entrust us with their people, their standards, and their future. They are not merely collaborators; they are co-architects of capability—organisations whose professionals we train, whose ambitions we refine, and whose excellence we help to sustain.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
+          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
+            <h5 className="font-headline text-lg text-landing-primary mb-4">African Authorities</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">Including the Law Society of Kenya, the Bank of Ghana, the Ghana Bar Association, and the Africa Bar Association.</p>
+          </div>
+          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
+            <h5 className="font-headline text-lg text-landing-primary mb-4">Asian & Global Institutes</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">The Maldives Moot Court Society in Malé, Legal Vidhiya in India, and international legal scholarship circles.</p>
+          </div>
+          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
+            <h5 className="font-headline text-lg text-landing-primary mb-4">Private Legal Sector</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">Over 100 distinguished law firms and forward-looking enterprises committed to growth, integrity, and enduring impact.</p>
+          </div>
+        </div>
+        <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10 text-center">
+          <div className="relative overflow-hidden w-full">
+            <div className="flex animate-scroll whitespace-nowrap gap-16 sm:gap-20 md:gap-24 items-center">
+              {duplicatedLogos.map((partner, index) => (
+                <div key={`${partner.name}-${index}`} className="flex flex-col items-center gap-2">
+                  <img 
+                    alt={`${partner.name} Logo`} 
+                    className="h-10 sm:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain" 
+                    src={partner.url}
+                  />
+                  <span className="text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden sm:block">
+                    {partner.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="absolute inset-y-0 left-0 w-24 sm:w-32 bg-gradient-to-r from-landing-surface to-transparent z-10"></div>
+            <div className="absolute inset-y-0 right-0 w-24 sm:w-32 bg-gradient-to-l from-landing-surface to-transparent z-10"></div>
           </div>
         </div>
       </div>

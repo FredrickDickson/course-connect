@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 
+/* eslint-disable */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* eslint-enable */
 
 /* RTL support for Arabic language */
 [dir="rtl"] {
@@ -133,9 +135,11 @@
 
 @layer base {
   * {
+    /* eslint-disable-next-line tailwindcss/no-custom-classname */
     @apply border-border;
   }
   body {
+    /* eslint-disable-next-line tailwindcss/no-custom-classname */
     @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4 {
@@ -154,5 +158,23 @@
   .card-elevated:hover {
     box-shadow: var(--card-hover-shadow);
     transform: translateY(-2px);
+  }
+
+  /* Logo animations and hover effects */
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-scroll {
+    animation: scroll 40s linear infinite;
+  }
+  .logo-tint {
+    filter: grayscale(100%) sepia(20%) brightness(0.9) contrast(1.1);
+    opacity: 0.6;
+    transition: all 0.5s ease;
+  }
+  .logo-tint:hover {
+    filter: grayscale(0%) sepia(0%) brightness(1) contrast(1);
+    opacity: 1;
   }
 }
