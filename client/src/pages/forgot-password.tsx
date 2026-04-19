@@ -5,14 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, AlertCircle, CheckCircle2, ArrowLeft, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ForgotPassword() {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
+  const [isDisabled, setIsDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +28,31 @@ export default function ForgotPassword() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (resetError) throw resetError;
-
+      // Always show success message for security (prevents user enumeration)
       setSuccess(true);
+      
+      // Rate limiting: disable button for 10 seconds
+      setIsDisabled(true);
+      setCountdown(10);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Only log actual errors, don't show them to user
+      if (resetError) {
+        console.error('Password reset error:', resetError);
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to send reset link");
+      // Still show success message for security
+      setSuccess(true);
+      console.error('Password reset error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -39,9 +63,12 @@ export default function ForgotPassword() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="text-center">
-            <CardTitle className="text-2xl font-display">Reset Password</CardTitle>
-            <CardDescription>
-              Enter your email and we'll send you a link to reset your password
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-display text-primary">Forgot Password?</CardTitle>
+            <CardDescription className="text-foreground/70">
+              No worries! Enter your email and we'll send you a secure link to reset your password
             </CardDescription>
           </div>
         </CardHeader>
@@ -52,10 +79,15 @@ export default function ForgotPassword() {
               <Alert className="border-primary/20 bg-primary/5">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
                 <AlertDescription className="text-foreground">
-                  Check your email! We've sent a password reset link to <strong>{email}</strong>. 
-                  It may take a few minutes to arrive.
+                  <strong>Check your email!</strong> If an account exists for <strong>{email}</strong>, 
+                  we've sent a password reset link. It may take a few minutes to arrive.
                 </AlertDescription>
               </Alert>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>• The link will expire in 24 hours for your security</p>
+                <p>• If you don't receive the email, check your spam folder</p>
+                <p>• Make sure to use the same email you registered with</p>
+              </div>
               <Button
                 variant="outline"
                 className="w-full"
@@ -63,8 +95,9 @@ export default function ForgotPassword() {
                   setSuccess(false);
                   setEmail("");
                 }}
+                disabled={isDisabled}
               >
-                Send another link
+                {isDisabled ? `Try again in ${countdown}s` : "Send another link"}
               </Button>
             </div>
           ) : (
@@ -94,11 +127,15 @@ export default function ForgotPassword() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90" 
+                  disabled={isLoading || isDisabled || !email}
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
+                      Sending reset link...
                     </>
                   ) : (
                     "Send Reset Link"
