@@ -26,7 +26,7 @@ export default function Header() {
 
   const navigation = [
     { name: t('nav.home'), href: "/", icon: BookOpen },
-    { name: "Pathways", href: "/qualification-pathway", icon: GraduationCap },
+    { name: "Pathways", href: "https://thecima.org/cima-qualification-pathways/", icon: GraduationCap, external: true },
     { name: t('nav.courses'), href: "/courses", icon: GraduationCap, authRequired: true },
     { name: t('nav.dashboard'), href: "/dashboard", icon: User, authRequired: true },
     { name: "Instructor", href: "/instructor", icon: Presentation, authRequired: true, instructorOnly: true },
@@ -125,6 +125,21 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-1">
             {filteredNavigation.map((item) => {
               const Icon = item.icon;
+              if (item.external) {
+                return (
+                  <Button
+                    key={item.name}
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center space-x-2"
+                    onClick={() => window.open(item.href, '_blank', 'noopener,noreferrer')}
+                    data-testid={`nav-${item.name.toLowerCase()}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Button>
+                );
+              }
               return (
                 <Link key={item.name} href={item.href}>
                   <Button
@@ -205,6 +220,23 @@ export default function Header() {
                     <div className="space-y-1">
                       {filteredNavigation.map((item) => {
                         const Icon = item.icon;
+                        if (item.external) {
+                          return (
+                            <Button
+                              key={item.name}
+                              variant="ghost"
+                              className="w-full justify-start"
+                              onClick={() => {
+                                window.open(item.href, '_blank', 'noopener,noreferrer');
+                                setIsMobileMenuOpen(false);
+                              }}
+                              data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                            >
+                              <Icon className="mr-3 h-4 w-4" />
+                              {item.name}
+                            </Button>
+                          );
+                        }
                         return (
                           <Link
                             key={item.name}
