@@ -174,24 +174,34 @@
       transparent 0%, 
       black 5%, 
       black 95%, 
-      transparent 100%);
+      transparent 100%
+    );
     -webkit-mask-image: linear-gradient(to right, 
       transparent 0%, 
       black 5%, 
       black 95%, 
-      transparent 100%);
+      transparent 100%
+    );
   }
   
   .carousel-track {
     display: flex;
-    animation: horizontal-crawl 25s linear infinite;
+    animation: horizontal-crawl 30s linear infinite;
     will-change: transform;
     backface-visibility: hidden;
     perspective: 1000px;
+    width: fit-content;
   }
   
   .carousel-track:hover {
     animation-play-state: running; /* Never pause on hover */
+  }
+  
+  /* Ensure smooth infinite loop */
+  .carousel-track::before,
+  .carousel-track::after {
+    content: '';
+    flex-shrink: 0;
   }
   
   /* Performance optimized animation */
@@ -210,12 +220,12 @@
   
   /* Faster variant for high-energy sections */
   .carousel-track.fast {
-    animation-duration: 18s;
+    animation-duration: 25s;
   }
   
   /* Slower variant for reading sections */
   .carousel-track.slow {
-    animation-duration: 35s;
+    animation-duration: 40s;
   }
   .logo-tint {
     filter: grayscale(100%) sepia(20%) brightness(0.9) contrast(1.1);

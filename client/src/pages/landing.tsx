@@ -439,7 +439,7 @@ const PARTNER_LOGOS = [
   },
   {
     name: "Pinsent Masons",
-    url: "https://www.pinsentmasons.com/-/media/project/pinsent-masons/pm-logo.png",
+    url: "https://getlogo.net/wp-content/uploads/2019/11/pinsent-masons-logo-vector.png",
     alt: "Pinsent Masons Logo"
   }
 ];
@@ -480,31 +480,43 @@ function InstitutionalNetworkSection() {
             <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">Over 100 distinguished law firms and forward-looking enterprises committed to growth, integrity, and enduring impact.</p>
           </div>
         </div>
-        <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10 text-center">
+        <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10">
           <div className="carousel-container">
-            <div className="carousel-track whitespace-nowrap gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 items-center">
+            <div className="carousel-track flex items-center gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24">
               {/* First set of logos */}
               {PARTNER_LOGOS.map((partner, index) => (
-                <div key={`original-${partner.name}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
+                <div key={`original-${partner.name}`} className="flex flex-col items-center gap-2 xs:gap-3 min-w-fit flex-shrink-0">
                   <img 
                     alt={`${partner.name} Logo`} 
-                    className="h-8 xs:h-10 sm:h-10 md:h-12 lg:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[120px]" 
+                    className="h-12 xs:h-14 sm:h-16 md:h-18 lg:h-20 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[180px]" 
                     src={partner.url}
+                    onError={(e) => {
+                      console.log(`Failed to load logo for ${partner.name}:`, partner.url);
+                      const target = e.target as HTMLImageElement;
+                      target.style.border = '2px solid red';
+                      target.alt = `FAILED: ${partner.name}`;
+                    }}
                   />
-                  <span className="text-[10px] xs:text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs">
+                  <span className="text-xs xs:text-sm text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs text-center max-w-[160px]">
                     {partner.name}
                   </span>
                 </div>
               ))}
               {/* Duplicate set for seamless loop */}
               {PARTNER_LOGOS.map((partner, index) => (
-                <div key={`duplicate-${partner.name}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
+                <div key={`duplicate-${partner.name}`} className="flex flex-col items-center gap-2 xs:gap-3 min-w-fit flex-shrink-0">
                   <img 
                     alt={`${partner.name} Logo`} 
-                    className="h-8 xs:h-10 sm:h-10 md:h-12 lg:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[120px]" 
+                    className="h-12 xs:h-14 sm:h-16 md:h-18 lg:h-20 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[180px]" 
                     src={partner.url}
+                    onError={(e) => {
+                      console.log(`Failed to load duplicate logo for ${partner.name}:`, partner.url);
+                      const target = e.target as HTMLImageElement;
+                      target.style.border = '2px solid red';
+                      target.alt = `FAILED: ${partner.name}`;
+                    }}
                   />
-                  <span className="text-[10px] xs:text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs">
+                  <span className="text-xs xs:text-sm text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs text-center max-w-[160px]">
                     {partner.name}
                   </span>
                 </div>
