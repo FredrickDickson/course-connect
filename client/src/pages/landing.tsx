@@ -66,11 +66,11 @@ export default function Landing() {
         {/* Hero Section: The Definitive Standard */}
         <section className="relative min-h-[600px] sm:min-h-[700px] lg:min-h-[921px] flex items-center px-4 sm:px-6 lg:px-12 overflow-hidden">
           <div className="max-w-7xl mx-auto w-full grid grid-cols-12 items-center gap-6 lg:gap-12">
-            <div className="col-span-12 md:col-span-6 z-10">
-              <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl lg:text-7xl leading-[1.1] text-landing-primary mb-6 sm:mb-8 tracking-tight">
+            <div className="col-span-12 md:col-span-6 z-10 text-left">
+              <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl lg:text-7xl leading-[1.1] text-landing-primary mb-6 sm:mb-8 tracking-tight text-left">
                 The Definitive Standard in <span className="italic">Self-Paced Learning</span>
               </h1>
-              <p className="font-body text-base sm:text-lg md:text-xl text-landing-on-surface-variant leading-relaxed max-w-lg mb-8 sm:mb-12">
+              <p className="font-body text-base sm:text-lg md:text-xl text-landing-on-surface-variant leading-relaxed max-w-lg mb-8 sm:mb-12 text-left">
                 Join a global cadre of legal elite. Elevate your practice through rigorous ADR training and certifications recognized by the world's leading arbitral institutions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
@@ -117,6 +117,9 @@ export default function Landing() {
 
         {/* NEW SECTION 3: Institutional Network */}
         <InstitutionalNetworkSection />
+
+        {/* NEW SECTION: RIAC Partnership */}
+        <RIACPartnershipSection />
 
         {/* NEW SECTION 4: Global Institutional Engagement */}
         <GlobalInstitutionalEngagementSection />
@@ -204,29 +207,29 @@ function QualificationPathwaySection() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-6 lg:gap-8 mb-16 lg:mb-24">
-          <div className="col-span-12 md:col-span-5 lg:col-span-4">
-            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6">A journey of mastery from foundational principles to elite international certification.</h2>
+          <div className="col-span-12 md:col-span-5 lg:col-span-4 text-left">
+            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 text-left">A journey of mastery from foundational principles to elite international certification.</h2>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-landing-outline-variant/10">
           {/* Card 1 */}
           <div className="bg-landing-surface p-6 sm:p-8 lg:p-12 hover:bg-landing-surface-container transition-all duration-300 group">
             <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level I</div>
-            <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform">The Gateway to Distinction (Associate)</h3>
-            <p className="font-body text-landing-on-surface-variant leading-relaxed">Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.</p>
+            <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Gateway to Distinction (Associate)</h3>
+            <p className="font-body text-landing-on-surface-variant leading-relaxed text-left">Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.</p>
           </div>
           {/* Card 2 */}
           <div className="bg-landing-surface p-6 sm:p-8 lg:p-12 hover:bg-landing-surface-container transition-all duration-300 group">
             <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level II</div>
-            <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform">Strategic Mastery (Member)</h3>
-            <p className="font-body text-landing-on-surface-variant leading-relaxed">Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.</p>
+            <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">Strategic Mastery (Member)</h3>
+            <p className="font-body text-landing-on-surface-variant leading-relaxed text-left">Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.</p>
           </div>
           {/* Card 3 */}
           <div className="bg-landing-surface-container-highest p-6 sm:p-8 lg:p-12 relative overflow-hidden group">
             <div className="absolute top-0 right-0 bg-landing-primary text-landing-on-primary px-4 sm:px-6 py-2 text-[10px] font-label uppercase tracking-widest font-bold">Most Prestigious</div>
             <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level III</div>
-            <h3 className="font-headline text-xl sm:text-2xl text-landing-primary mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform">The Pinnacle of Practice (Fellow)</h3>
-            <p className="font-body text-landing-on-surface leading-relaxed mb-8">Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.</p>
+            <h3 className="font-headline text-xl sm:text-2xl text-landing-primary mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Pinnacle of Practice (Fellow)</h3>
+            <p className="font-body text-landing-on-surface leading-relaxed mb-8 text-left">Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.</p>
             <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-primary/30">workspace_premium</span>
           </div>
         </div>
@@ -245,9 +248,9 @@ function CIMAAdvantageSection() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-8 lg:gap-12">
-          <div className="col-span-12 md:col-span-4">
+          <div className="col-span-12 md:col-span-4 text-left">
             <div className="sticky top-40">
-              <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary leading-tight mb-6 sm:mb-8">The CIMA Advantage: Unparalleled Pedigree</h2>
+              <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary leading-tight mb-6 sm:mb-8 text-left">The CIMA Advantage: Unparalleled Pedigree</h2>
               <div className="w-12 sm:w-16 h-[2px] bg-landing-secondary"></div>
             </div>
           </div>
@@ -255,18 +258,18 @@ function CIMAAdvantageSection() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-12">
               <div className="space-y-4 sm:space-y-6">
                 <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">language</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface">Elite Jurisdictional Network</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed">Connect with a curated circle of top-tier practitioners and influential decision-makers across every major legal jurisdiction.</p>
+                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Elite Jurisdictional Network</h4>
+                <p className="text-landing-on-surface-variant leading-relaxed text-left">Connect with a curated circle of top-tier practitioners and influential decision-makers across every major legal jurisdiction.</p>
               </div>
               <div className="space-y-4 sm:space-y-6">
                 <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">verified</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface">Tier-1 Accreditation</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed">Secure qualifications that carry weight in the world's most respected law firms and international arbitral tribunals.</p>
+                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Tier-1 Accreditation</h4>
+                <p className="text-landing-on-surface-variant leading-relaxed text-left">Secure qualifications that carry weight in the world's most respected law firms and international arbitral tribunals.</p>
               </div>
               <div className="space-y-4 sm:space-y-6">
                 <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">school</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface">Distinguished Scholar-Practitioners</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed">Learn under the guidance of world-renowned arbitrators and legal luminaries who are actively shaping the future of international law.</p>
+                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Distinguished Scholar-Practitioners</h4>
+                <p className="text-landing-on-surface-variant leading-relaxed text-left">Learn under the guidance of world-renowned arbitrators and legal luminaries who are actively shaping the future of international law.</p>
               </div>
               <div className="relative overflow-hidden rounded-lg aspect-square bg-landing-surface">
                 <img className="w-full h-full object-cover mix-blend-multiply opacity-80" alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag" />
@@ -287,7 +290,7 @@ function TestimonialsSection() {
       ref={ref}
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-background border-y border-[#e3beb8]/10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto text-left">
         <div className="flex items-center space-x-4 mb-12 sm:mb-16">
           <span className="w-6 sm:w-8 h-[1px] bg-landing-outline"></span>
           <span className="font-label text-xs uppercase tracking-[0.5em] text-landing-outline">Excellence Recognized</span>
@@ -296,7 +299,7 @@ function TestimonialsSection() {
           <div className="relative">
             <span className="text-6xl sm:text-8xl font-headline text-landing-secondary/20 absolute -top-8 sm:-top-10 -left-4 sm:-left-6">"</span>
             <blockquote className="relative">
-              <p className="font-headline italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug">The CIMA curriculum offers a depth of intellectual rigor that is simply unparalleled. It was the catalyst for my elevation to the international arbitral tribunal.</p>
+              <p className="font-headline italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug text-left">The CIMA curriculum offers a depth of intellectual rigor that is simply unparalleled. It was the catalyst for my elevation to the international arbitral tribunal.</p>
               <cite className="not-italic">
                 <span className="block font-bold text-landing-primary uppercase tracking-widest text-xs mb-1">Mohammed Talib</span>
                 <span className="block font-label text-landing-on-surface-variant text-xs">Partner, Pinsent Masons, Hong Kong | FCIArb, FCIMArb</span>
@@ -306,7 +309,7 @@ function TestimonialsSection() {
           <div className="relative">
             <span className="text-6xl sm:text-8xl font-headline text-landing-secondary/20 absolute -top-8 sm:-top-10 -left-4 sm:-left-6">"</span>
             <blockquote className="relative">
-              <p className="font-headline italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug">A sophisticated program that masterfully bridges the gap between theoretical jurisprudence and high-stakes practical application. Truly world-class.</p>
+              <p className="font-headline italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug text-left">A sophisticated program that masterfully bridges the gap between theoretical jurisprudence and high-stakes practical application. Truly world-class.</p>
               <cite className="not-italic">
                 <span className="block font-bold text-landing-primary uppercase tracking-widest text-xs mb-1">Iain Sharp</span>
                 <span className="block font-label text-landing-on-surface-variant text-xs">Partner, Hill Dickinson | FCIArb, FCIMArb</span>
@@ -328,9 +331,9 @@ function EditorialIntroSection() {
       ref={ref}
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-background border-b border-[#e3beb8]/10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-8 sm:mb-10 leading-tight">Learning designed for a digital world.</h2>
-        <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed mb-8 sm:mb-10">
+      <div className="max-w-4xl mx-auto text-left">
+        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-8 sm:mb-10 leading-tight text-left">Learning designed for a digital world.</h2>
+        <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed mb-8 sm:mb-10 text-left">
           CIMA collaborates with leading universities, industry associations, and forward-thinking organisations to deliver high-quality CLE/CPD education in dispute resolution. Together, we create flexible learning pathways that equip professionals with the skills, credentials, and expertise needed to thrive in a changing world.
         </p>
         {/*<a 
@@ -356,36 +359,43 @@ function FeatureListSection() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-8 lg:gap-12 items-center">
-          <div className="col-span-12 md:col-span-6">
-            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 sm:mb-8">How we help our partners succeed.</h2>
-            <p className="font-body text-base sm:text-lg text-landing-on-surface-variant mb-8 sm:mb-10">Bar Associations, Engineering, Finance and ADR practitioners choose CIMA to help them:</p>
+          <div className="col-span-12 md:col-span-6 text-left">
+            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 sm:mb-8 text-left">How we help our partners succeed.</h2>
+            <p className="font-body text-base sm:text-lg text-landing-on-surface-variant mb-8 sm:mb-10 text-left">Bar Associations, Engineering, Finance and ADR practitioners choose CIMA to help them:</p>
             <ul className="space-y-4 sm:space-y-6">
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base">Develop and deliver high-quality programs online</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Develop and deliver high-quality programs online</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base">Reach more learners globally</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Reach more learners globally</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base">Build offerings aligned with workforce needs</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Build offerings aligned with workforce needs</span>
               </li>
               <li className="flex items-start gap-3 sm:gap-4">
                 <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base">Create CLE/CPD courses to meet statutory requirements in a changing world</span>
+                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Create CLE/CPD courses to meet statutory requirements in a changing world</span>
               </li>
             </ul>
             <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-landing-outline-variant/20">
-              <p className="font-label text-xs uppercase tracking-widest text-landing-on-surface-variant/60">Powered by CyberX</p>
+              <div className="flex items-center gap-2">
+              <p className="font-label text-xs uppercase tracking-widest text-landing-on-surface-variant/60">Powered by</p>
+              <img 
+                src="/images/institutions/cyberxlogo.jpg"
+                alt="CyberX Logo"
+                className="h-20 w-auto object-contain"
+              />
+            </div>
             </div>
           </div>
           <div className="col-span-12 md:col-span-6 bg-landing-primary/10 p-[1px] rounded-lg shadow-sm">
             <div className="bg-landing-surface-container p-8 sm:p-12 lg:p-16 rounded-DEFAULT h-full flex flex-col justify-center items-start border border-landing-primary/5 shadow-[0_4px_20px_-12px_rgba(97,0,0,0.15)]">
               <span className="material-symbols-outlined text-4xl sm:text-5xl text-landing-secondary mb-8 sm:mb-10">hub</span>
-              <h4 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-4 sm:mb-6 italic tracking-tight font-medium">Collaborative Intelligence</h4>
-              <p className="font-body text-landing-on-surface-variant leading-relaxed text-base sm:text-lg max-w-md">
+              <h4 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-4 sm:mb-6 italic tracking-tight font-medium text-left">Collaborative Intelligence</h4>
+              <p className="font-body text-landing-on-surface-variant leading-relaxed text-base sm:text-lg max-w-md text-left">
                 Our platform integrates seamlessly with institutional standards to deliver excellence at scale.
               </p>
             </div>
@@ -458,26 +468,26 @@ function InstitutionalNetworkSection() {
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12">Who are our partners?</h2>
+        <div className="text-left mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 text-center">Who are our partners?</h2>
           <div className="max-w-4xl mx-auto">
-            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-balance">
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
               Our partners are those who place their trust in us. Institutions that entrust us with their people, their standards, and their future. They are not merely collaborators; they are co-architects of capability—organisations whose professionals we train, whose ambitions we refine, and whose excellence we help to sustain.
             </p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
           <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4">African Authorities</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">Including the Law Society of Kenya, the Bank of Ghana, the Ghana Bar Association, and the Africa Bar Association.</p>
+            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">African Authorities</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Including the Law Society of Kenya, the Bank of Ghana, the Ghana Bar Association, and the Africa Bar Association.</p>
           </div>
           <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4">Asian & Global Institutes</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">The Maldives Moot Court Society in Malé, Legal Vidhiya in India, and international legal scholarship circles.</p>
+            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">Asian & Global Institutes</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">The Maldives Moot Court Society in Malé, Legal Vidhiya in India, and international legal scholarship circles.</p>
           </div>
           <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4">Private Legal Sector</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed">Over 100 distinguished law firms and forward-looking enterprises committed to growth, integrity, and enduring impact.</p>
+            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">Private Legal Sector</h5>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Over 100 distinguished law firms and forward-looking enterprises committed to growth, integrity, and enduring impact.</p>
           </div>
         </div>
         <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10">
@@ -568,9 +578,9 @@ function GlobalInstitutionalEngagementSection() {
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-4xl mx-auto mb-16 sm:mb-20">
-          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 sm:mb-8 leading-tight">Global Institutional Engagement</h2>
-          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed">
+        <div className="text-left max-w-4xl mx-auto mb-16 sm:mb-20">
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 sm:mb-8 leading-tight text-left">Global Institutional Engagement</h2>
+          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed text-left">
             Our Mediators and Arbitrators maintain active professional engagements with leading arbitral and mediation institutions across the world. Through these affiliations, CIMA members operate at the forefront of international dispute resolution.
           </p>
         </div>
@@ -594,7 +604,7 @@ function GlobalInstitutionalEngagementSection() {
           </div>
           {/* Specialised & Regional ADR Institutions */}
           <div>
-            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-center">Specialised & Regional ADR Institutions</h3>
+            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-left">Specialised & Regional ADR Institutions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {INSTITUTION_LOGOS.slice(10, 18).map((institution, index) => (
                 <div key={`regional-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-landing-surface hover:bg-landing-surface-container-low transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
@@ -612,7 +622,7 @@ function GlobalInstitutionalEngagementSection() {
           </div>
           {/* Mediation & Hybrid Dispute Resolution Bodies */}
           <div>
-            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-center">Mediation & Hybrid Dispute Resolution Bodies</h3>
+            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-left">Mediation & Hybrid Dispute Resolution Bodies</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
               {INSTITUTION_LOGOS.slice(18, 20).map((institution, index) => (
                 <div key={`mediation-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-landing-surface hover:bg-landing-surface-container-low transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
@@ -634,6 +644,38 @@ function GlobalInstitutionalEngagementSection() {
   );
 }
 
+// NEW SECTION: RIAC Partnership
+function RIACPartnershipSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with Russian International Arbitration Center (RIAC)</h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
+              CIMA is pleased to support Russian International Arbitration Congress 2026, a leading global forum for arbitration practitioners.
+This underscores our commitment to advancing best practice in Eastern Europe. 
+            </p>
+          </div>
+          {/* RIAC Logo */}
+          <div className="mt-8 sm:mt-12 flex justify-center">
+            <img 
+              src="/images/institutions/riac-logo.png"
+              alt="Russian International Arbitration Centre Logo"
+              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTASection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
@@ -643,9 +685,9 @@ function FinalCTASection() {
       className={`py-20 sm:py-32 lg:py-40 px-4 sm:px-6 lg:px-12 relative overflow-hidden bg-landing-primary text-landing-on-primary transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#8b0000] to-landing-primary"></div>
-      <div className="max-w-4xl mx-auto text-center relative z-10">
-        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl md:text-7xl mb-8 sm:mb-10 tracking-tight">Enter the Global Circle</h2>
-        <p className="font-body text-lg sm:text-xl text-landing-on-primary-container mb-12 sm:mb-16 leading-relaxed">Applications for {new Date().getFullYear()} Fellowship cohort are now being reviewed. Secure your place among the leaders of international law.</p>
+      <div className="max-w-4xl mx-auto text-left relative z-10">
+        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl md:text-7xl mb-8 sm:mb-10 tracking-tight text-left">Enter the Global Circle</h2>
+        <p className="font-body text-lg sm:text-xl text-landing-on-primary-container mb-12 sm:mb-16 leading-relaxed text-left">Applications for {new Date().getFullYear()} Fellowship cohort are now being reviewed. Secure your place among the leaders of international law.</p>
         <Link href="/register">
           <button className="bg-landing-surface text-landing-primary px-8 sm:px-12 lg:px-14 py-4 sm:py-6 rounded-DEFAULT font-label uppercase tracking-[0.3em] text-sm hover:bg-landing-background transition-all shadow-xl active:scale-95">
             Begin Your Ascension
