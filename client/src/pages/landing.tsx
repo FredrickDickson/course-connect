@@ -479,15 +479,15 @@ function InstitutionalNetworkSection() {
         </div>
         <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10 text-center">
           <div className="relative overflow-hidden w-full">
-            <div className="flex animate-scroll whitespace-nowrap gap-16 sm:gap-20 md:gap-24 items-center">
+            <div className="flex animate-scroll whitespace-nowrap gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 items-center px-4 xs:px-6">
               {duplicatedLogos.map((partner, index) => (
-                <div key={`${partner.name}-${index}`} className="flex flex-col items-center gap-2">
+                <div key={`${partner.name}-${index}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
                   <img 
                     alt={`${partner.name} Logo`} 
-                    className="h-10 sm:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain" 
+                    className="h-8 xs:h-10 sm:h-10 md:h-12 lg:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[120px]" 
                     src={partner.url}
                   />
-                  <span className="text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden sm:block">
+                  <span className="text-[10px] xs:text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs">
                     {partner.name}
                   </span>
                 </div>
