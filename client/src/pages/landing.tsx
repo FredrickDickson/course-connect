@@ -481,10 +481,24 @@ function InstitutionalNetworkSection() {
           </div>
         </div>
         <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10 text-center">
-          <div className="relative overflow-hidden w-full">
-            <div className="flex animate-scroll whitespace-nowrap gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 items-center px-4 xs:px-6">
-              {duplicatedLogos.map((partner, index) => (
-                <div key={`${partner.name}-${index}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
+          <div className="carousel-container">
+            <div className="carousel-track whitespace-nowrap gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 items-center">
+              {/* First set of logos */}
+              {PARTNER_LOGOS.map((partner, index) => (
+                <div key={`original-${partner.name}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
+                  <img 
+                    alt={`${partner.name} Logo`} 
+                    className="h-8 xs:h-10 sm:h-10 md:h-12 lg:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[120px]" 
+                    src={partner.url}
+                  />
+                  <span className="text-[10px] xs:text-xs text-landing-on-surface-variant/70 font-label uppercase tracking-wider hidden xs:block sm:text-xs">
+                    {partner.name}
+                  </span>
+                </div>
+              ))}
+              {/* Duplicate set for seamless loop */}
+              {PARTNER_LOGOS.map((partner, index) => (
+                <div key={`duplicate-${partner.name}`} className="flex flex-col items-center gap-1 xs:gap-2 min-w-fit flex-shrink-0">
                   <img 
                     alt={`${partner.name} Logo`} 
                     className="h-8 xs:h-10 sm:h-10 md:h-12 lg:h-12 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[120px]" 
@@ -496,8 +510,6 @@ function InstitutionalNetworkSection() {
                 </div>
               ))}
             </div>
-            <div className="absolute inset-y-0 left-0 w-24 sm:w-32 bg-gradient-to-r from-landing-surface to-transparent z-10"></div>
-            <div className="absolute inset-y-0 right-0 w-24 sm:w-32 bg-gradient-to-l from-landing-surface to-transparent z-10"></div>
           </div>
         </div>
       </div>
