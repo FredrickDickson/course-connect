@@ -118,6 +118,9 @@ export default function Landing() {
         {/* NEW SECTION 3: Institutional Network */}
         <InstitutionalNetworkSection />
 
+        {/* NEW SECTION 4: Global Institutional Engagement */}
+        <GlobalInstitutionalEngagementSection />
+
         {/* Excellence Recognized (Testimonials) */}
         <TestimonialsSection />
 
@@ -495,6 +498,111 @@ function InstitutionalNetworkSection() {
             </div>
             <div className="absolute inset-y-0 left-0 w-24 sm:w-32 bg-gradient-to-r from-landing-surface to-transparent z-10"></div>
             <div className="absolute inset-y-0 right-0 w-24 sm:w-32 bg-gradient-to-l from-landing-surface to-transparent z-10"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Institutional logos data
+const INSTITUTION_LOGOS = [
+  // Primary Institutions
+  { name: "International Chamber of Commerce (ICC) International Court of Arbitration", acronym: "ICC", logo: "/images/institutions/icc-logo.png" },
+  { name: "London Court of International Arbitration (LCIA)", acronym: "LCIA", logo: "/images/institutions/lcia-logo.jpg" },
+  { name: "Singapore International Arbitration Centre (SIAC)", acronym: "SIAC", logo: "/images/institutions/siac-logo.png" },
+  { name: "Hong Kong International Arbitration Centre (HKIAC)", acronym: "HKIAC", logo: "/images/institutions/hkiac-logo.png" },
+  { name: "American Arbitration Association (AAA)", acronym: "AAA", logo: "/images/institutions/aaa-logo.jpg" },
+  { name: "International Centre for Dispute Resolution (ICDR)", acronym: "ICDR", logo: "/images/institutions/icdr-logo.jpg" },
+  { name: "International Centre for Settlement of Investment Disputes (ICSID)", acronym: "ICSID", logo: "/images/institutions/icsid-logo.png" },
+  { name: "Permanent Court of Arbitration (PCA)", acronym: "PCA", logo: "/images/institutions/pca-logo.png" },
+  { name: "Stockholm Chamber of Commerce (SCC) Arbitration Institute", acronym: "SCC", logo: "/images/institutions/scc-logo.png" },
+  { name: "Swiss Arbitration Centre", acronym: "SAC", logo: "/images/institutions/sac-logo.png" },
+  
+  // Specialised & Regional ADR Institutions
+  { name: "Dubai International Arbitration Centre (DIAC)", acronym: "DIAC", logo: "/images/institutions/diac-logo.png" },
+  { name: "Abu Dhabi Global Market Arbitration Centre (ADGMAC)", acronym: "ADGMAC", logo: "/images/institutions/adgmac-log.png" },
+  { name: "China International Economic and Trade Arbitration Commission (CIETAC)", acronym: "CIETAC", logo: "/images/institutions/cietac-logo.jpg" },
+  { name: "Japan Commercial Arbitration Association (JCAA)", acronym: "JCAA", logo: "/images/institutions/jcaa-logo.png" },
+  { name: "Asian International Arbitration Centre (AIAC)", acronym: "AIAC", logo: "/images/institutions/aiac-logo.png" },
+  { name: "Cairo Regional Centre for International Commercial Arbitration (CRCICA)", acronym: "CRCICA", logo: "/images/institutions/crcica-logo.png" },
+  { name: "Lagos Court of Arbitration (LCA)", acronym: "LCA", logo: "/images/institutions/lca-logo.jpg" },
+  { name: "Arbitration Foundation of Southern Africa (AFSA)", acronym: "AFSA", logo: "/images/institutions/afsa-logo.jpg" },
+  
+  // Mediation & Hybrid Dispute Resolution Bodies
+  { name: "Centre for Effective Dispute Resolution (CEDR)", acronym: "CEDR", logo: "/images/institutions/cedr-logo.jpg" },
+  { name: "World Intellectual Property Organization (WIPO) Arbitration and Mediation Center", acronym: "WIPO", logo: "/images/institutions/wipo-logo.png" }
+];
+
+// NEW SECTION 4: Global Institutional Engagement
+function GlobalInstitutionalEngagementSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center max-w-4xl mx-auto mb-16 sm:mb-20">
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 sm:mb-8 leading-tight">Global Institutional Engagement</h2>
+          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed">
+            Our Mediators and Arbitrators maintain active professional engagements with leading arbitral and mediation institutions across the world. Through these affiliations, CIMA members operate at the forefront of international dispute resolution.
+          </p>
+        </div>
+        <div className="space-y-16 sm:space-y-20 lg:space-y-24">
+          {/* Primary Institutions */}
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              {INSTITUTION_LOGOS.slice(0, 10).map((institution, index) => (
+                <div key={`primary-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-landing-surface hover:bg-landing-surface-container-low transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                    <img 
+                      src={institution.logo} 
+                      alt={`${institution.acronym} Logo`}
+                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                                          />
+                  </div>
+                  <p className="font-body text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Specialised & Regional ADR Institutions */}
+          <div>
+            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-center">Specialised & Regional ADR Institutions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+              {INSTITUTION_LOGOS.slice(10, 18).map((institution, index) => (
+                <div key={`regional-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-landing-surface hover:bg-landing-surface-container-low transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                    <img 
+                      src={institution.logo} 
+                      alt={`${institution.acronym} Logo`}
+                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                                          />
+                  </div>
+                  <p className="font-body text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Mediation & Hybrid Dispute Resolution Bodies */}
+          <div>
+            <h3 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-center">Mediation & Hybrid Dispute Resolution Bodies</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+              {INSTITUTION_LOGOS.slice(18, 20).map((institution, index) => (
+                <div key={`mediation-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-landing-surface hover:bg-landing-surface-container-low transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                    <img 
+                      src={institution.logo} 
+                      alt={`${institution.acronym} Logo`}
+                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                                          />
+                  </div>
+                  <p className="font-body text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
