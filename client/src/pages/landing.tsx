@@ -100,8 +100,14 @@ export default function Landing() {
           {/* <div className="absolute top-1/4 -right-20 w-96 h-96 bg-landing-primary/5 rounded-full blur-[100px]"></div> */}
         </section>
 
-        {/* Trust Signals: Logo Ticker */}
-        <TrustSignalsSection />
+        {/* NEW SECTION: RIAC Partnership */}
+        <RIACPartnershipSection />
+
+        {/* NEW SECTION: Ghana Bar Association Partnership */}
+        <GBAPartnershipSection />
+
+        {/* NEW SECTION: Architects Registration Council Partnership */}
+        <ARCPartnershipSection />
 
         {/* Qualification Pathway: Ladder of Mastery */}
         <QualificationPathwaySection />
@@ -118,8 +124,8 @@ export default function Landing() {
         {/* NEW SECTION 3: Institutional Network */}
         <InstitutionalNetworkSection />
 
-        {/* NEW SECTION: RIAC Partnership */}
-        <RIACPartnershipSection />
+        {/* Trust Signals: Logo Ticker */}
+        <TrustSignalsSection />
 
         {/* NEW SECTION 4: Global Institutional Engagement */}
         <GlobalInstitutionalEngagementSection />
@@ -214,20 +220,20 @@ function QualificationPathwaySection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-landing-outline-variant/10">
           {/* Card 1 */}
           <div className="bg-landing-surface p-6 sm:p-8 lg:p-12 hover:bg-landing-surface-container transition-all duration-300 group">
-            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level I</div>
+            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part I</div>
             <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Gateway to Distinction (Associate)</h3>
             <p className="font-body text-landing-on-surface-variant leading-relaxed text-left">Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.</p>
           </div>
           {/* Card 2 */}
           <div className="bg-landing-surface p-6 sm:p-8 lg:p-12 hover:bg-landing-surface-container transition-all duration-300 group">
-            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level II</div>
+            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part II</div>
             <h3 className="font-headline text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">Strategic Mastery (Member)</h3>
             <p className="font-body text-landing-on-surface-variant leading-relaxed text-left">Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.</p>
           </div>
           {/* Card 3 */}
           <div className="bg-landing-surface-container-highest p-6 sm:p-8 lg:p-12 relative overflow-hidden group">
             <div className="absolute top-0 right-0 bg-landing-primary text-landing-on-primary px-4 sm:px-6 py-2 text-[10px] font-label uppercase tracking-widest font-bold">Most Prestigious</div>
-            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Level III</div>
+            <div className="mb-8 sm:mb-12 font-label text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part III</div>
             <h3 className="font-headline text-xl sm:text-2xl text-landing-primary mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Pinnacle of Practice (Fellow)</h3>
             <p className="font-body text-landing-on-surface leading-relaxed mb-8 text-left">Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.</p>
             <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-primary/30">workspace_premium</span>
@@ -334,7 +340,8 @@ function EditorialIntroSection() {
       <div className="max-w-4xl mx-auto text-left">
         <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-8 sm:mb-10 leading-tight text-left">Learning designed for a digital world.</h2>
         <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed mb-8 sm:mb-10 text-left">
-          CIMA collaborates with leading universities, industry associations, and forward-thinking organisations to deliver high-quality CLE/CPD education in dispute resolution. Together, we create flexible learning pathways that equip professionals with the skills, credentials, and expertise needed to thrive in a changing world.
+         
+CIMA partners with bar associations, leading universities, professional bodies, and forward-looking institutions to deliver high-quality, practice-driven CLE/CPD programmes. Together, we create flexible learning pathways that equip professionals with the skills, credentials, and expertise needed to thrive in a changing world.
         </p>
         {/*<a 
           href="#" 
@@ -418,11 +425,6 @@ const PARTNER_LOGOS = [
     alt: "Bank of Ghana Logo"
   },
   {
-    name: "Ghana Bar Association",
-    url: "/images/partners/ghana-bar.jpg",
-    alt: "Ghana Bar Association Logo"
-  },
-  {
     name: "African Bar Association",
     url: "/images/partners/afribar.jpg",
     alt: "African Bar Association Logo"
@@ -479,7 +481,7 @@ function InstitutionalNetworkSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
           <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
             <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">African Authorities</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Including the Law Society of Kenya, the Bank of Ghana, the Ghana Bar Association, and the African Bar Association.</p>
+            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Including the Law Society of Kenya, the Bank of Ghana, and the African Bar Association.</p>
           </div>
           <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
             <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">Asian & Global Institutes</h5>
@@ -655,7 +657,7 @@ function RIACPartnershipSection() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with Russian International Arbitration Center (RIAC)</h2>
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with Russian International Arbitration Congress (RIAC)</h2>
           <div className="max-w-4xl mx-auto">
             <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
               CIMA is pleased to support Russian International Arbitration Congress 2026, a leading global forum for arbitration practitioners.
@@ -667,6 +669,68 @@ This underscores our commitment to advancing best practice in Eastern Europe.
             <img 
               src="/images/institutions/riac-logo.png"
               alt="Russian International Arbitration Centre Logo"
+              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// NEW SECTION: Ghana Bar Association Partnership
+function GBAPartnershipSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with the Ghana Bar Association (GBA)</h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
+              CIMA is pleased to collaborate with Regional Bars of the Ghana Bar Association to advance arbitration and mediation practice and strengthen professional standards in Ghana.
+            </p>
+          </div>
+          {/* GBA Logo */}
+          <div className="mt-8 sm:mt-12 flex justify-center">
+            <img 
+              src="/images/partners/ghana-bar.jpg"
+              alt="Ghana Bar Association Logo"
+              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// NEW SECTION: Architects Registration Council Partnership
+function ARCPartnershipSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with the Architects Registration Council</h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
+              CIMA is pleased to collaborate with the Architects Registration Council to advance dispute resolution standards and strengthen professional practice within the built environment sector.
+            </p>
+          </div>
+          {/* ARC Logo */}
+          <div className="mt-8 sm:mt-12 flex justify-center">
+            <img 
+              src="/images/partners/arc-logo.png"
+              alt="Architects Registration Council Logo"
               className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
             />
           </div>
