@@ -67,14 +67,14 @@ export default function Login() {
       });
 
       // Check if onboarding is completed
-      const { data: profileData } = await supabase
+      const { data: profileData } = await (supabase as any)
         .from("profiles")
         .select("profile_completed")
         .eq("user_id", data.user.id)
         .maybeSingle();
 
       // If no profile exists or profile is not completed, go to onboarding
-      const profileComplete = profileData?.profile_completed ?? false;
+      const profileComplete = (profileData as any)?.profile_completed ?? false;
 
       if (!profileData || !profileComplete) {
         setLocation("/onboarding");
