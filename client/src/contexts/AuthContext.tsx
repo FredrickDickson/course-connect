@@ -1,5 +1,4 @@
-// @refresh reload
-import { useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,7 +15,21 @@ interface UserProfile {
   createdAt?: string;
 }
 
-export function useAuth() {
+interface AuthContextType {
+  user: UserProfile | null;
+  authUser: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  hasRole: (role: string) => boolean;
+  isInstructor: () => boolean;
+  isAdmin: () => boolean;
+  isStudent: () => boolean;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -39,7 +52,7 @@ export function useAuth() {
       firstName: profile?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
       lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profile?.role || "student", // Strictly use DB role or default to student
+      role: profile?.role || "student",
       bio: profile?.bio || "",
       country: profile?.country || "",
       timezone: profile?.timezone || "",
@@ -49,10 +62,9 @@ export function useAuth() {
 
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
+    let refreshInterval: NodeJS.Timeout | null = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
       if (!isMounted) return;
 
       console.log("Auth state change:", { event: _event, userId: session?.user?.id, email: session?.user?.email });
@@ -64,14 +76,6 @@ export function useAuth() {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (error && error.message?.includes('429') && retryCount < maxRetries) {
-          retryCount++;
-          // Exponential backoff: 10s, 20s, 40s (very long delays to stop rate limiting)
-          const delay = Math.pow(2, retryCount + 2) * 1000;
-          setTimeout(getSessionWithRetry, delay);
-          return;
-        }
-
         if (!isMounted) return;
         setAuthUser(session?.user ?? null);
         setIsAuthReady(true);
@@ -85,8 +89,30 @@ export function useAuth() {
 
     getSessionWithRetry();
 
+    // Manual token refresh with longer interval (30 minutes) to avoid rate limiting
+    const startManualRefresh = () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+      
+      refreshInterval = setInterval(async () => {
+        if (!isMounted) return;
+        
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // Only refresh if we have a session
+            await supabase.auth.refreshSession();
+          }
+        } catch (err) {
+          console.error('Manual refresh error:', err);
+        }
+      }, 30 * 60 * 1000); // 30 minutes
+    };
+
+    startManualRefresh();
+
     return () => {
       isMounted = false;
+      if (refreshInterval) clearInterval(refreshInterval);
       subscription.unsubscribe();
     };
   }, []);
@@ -140,14 +166,29 @@ export function useAuth() {
   const isAdmin = () => hasRole("admin");
   const isStudent = () => hasRole("student");
 
-  return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    hasRole,
-    isInstructor,
-    isAdmin,
-    isStudent,
-    signOut,
-  };
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        authUser,
+        isLoading,
+        isAuthenticated: !!user,
+        hasRole,
+        isInstructor,
+        isAdmin,
+        isStudent,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "./use-toast";
 import { useLocation } from "wouter";
 

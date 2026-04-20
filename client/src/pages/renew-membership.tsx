@@ -3,7 +3,7 @@
  * Shows renewal summary, payment options, and confirmation
  */
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
