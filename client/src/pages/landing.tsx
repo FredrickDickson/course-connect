@@ -74,21 +74,21 @@ export default function Landing() {
                 Join a global cadre of legal elite. Elevate your practice through rigorous ADR training and certifications recognized by the world's leading arbitral institutions.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <Link href="/courses">
+                  <button className="bg-landing-primary text-landing-on-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-primary-container transition-all">
+                    Browse Courses
+                  </button>
+                </Link>
                 {/* <Link href="/qualification-pathway">
-                  <button className="bg-landing-primary text-landing-on-primary px-10 py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-sm hover:bg-landing-primary-container transition-all">
+                  <button className="border border-landing-outline/20 text-landing-primary px-10 py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-sm hover:bg-landing-surface-container transition-all">
                     Explore Pathways
                   </button>
                 </Link> */}
                 <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-                  <button className="bg-landing-primary text-landing-on-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-primary-container transition-all">
+                  <button className="border border-landing-outline/20 text-landing-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-surface-container transition-all">
                     Explore Pathways
                   </button>
                 </a>
-                <Link href="/courses">
-                  <button className="border border-landing-outline/20 text-landing-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-label uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-surface-container transition-all">
-                    Browse Courses
-                  </button>
-                </Link>
               </div>
             </div>
             <div className="col-span-12 md:col-span-6 relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] mt-8 md:mt-0">

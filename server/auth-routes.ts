@@ -114,8 +114,8 @@ export function registerAuthRoutes(app: Express) {
       const user = await storage.upsertUser({
         id: authData.user.id,
         email: email.toLowerCase().trim(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         role: 'student',
       });
 
@@ -124,8 +124,8 @@ export function registerAuthRoutes(app: Express) {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.first_name,
+          lastName: user.last_name,
           role: user.role,
         }
       });
@@ -187,8 +187,8 @@ export function registerAuthRoutes(app: Express) {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.first_name,
+          lastName: user.last_name,
           role: user.role,
         }
       });

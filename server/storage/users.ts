@@ -1,7 +1,6 @@
 /**
  * Storage module: Users
  * Uses Supabase client (service role) for all database operations.
- * All results are transformed to camelCase before returning.
  *
  * @module storage/users
  * @description Handles database operations for users
@@ -23,7 +22,7 @@ export async function getUser(id: string): Promise<User | undefined> {
     .single();
 
   if (error || !data) return undefined;
-  return data;
+  return data as User;
 }
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
@@ -34,7 +33,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     .single();
 
   if (error || !data) return undefined;
-  return data;
+  return data as User;
 }
 
 export async function upsertUser(userData: UpsertUser): Promise<User> {
@@ -49,7 +48,7 @@ export async function upsertUser(userData: UpsertUser): Promise<User> {
     .single();
 
   if (error) throw error;
-  return data;
+  return data as User;
 }
 
 export async function updateUser(
@@ -60,6 +59,7 @@ export async function updateUser(
     .from("users")
     .update({
       ...data,
+      email: data.email?.toLowerCase(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -67,7 +67,7 @@ export async function updateUser(
     .single();
 
   if (error) throw error;
-  return updatedUser;
+  return updatedUser as User;
 }
 
 export async function updateUserPaystackInfo(

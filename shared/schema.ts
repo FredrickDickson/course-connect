@@ -18,16 +18,16 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   password: z.string().nullable().optional(),
-  firstName: z.string().nullable().optional(),
-  lastName: z.string().nullable().optional(),
-  profileImageUrl: z.string().nullable().optional(),
+  first_name: z.string().nullable().optional(),
+  last_name: z.string().nullable().optional(),
+  profile_image_url: z.string().nullable().optional(),
   role: z.enum(["student", "instructor", "admin"]).default("student"),
   bio: z.string().nullable().optional(),
   country: z.string().nullable().optional(),
   timezone: z.string().nullable().optional(),
-  paystackCustomerCode: z.string().nullable().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+  paystack_customer_code: z.string().nullable().optional(),
+  created_at: z.date().optional(),
+  updated_at: z.date().optional(),
 });
 
 // Category schema
