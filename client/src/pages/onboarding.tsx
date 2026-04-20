@@ -317,7 +317,7 @@ export default function Onboarding() {
                           "flex-1 min-h-[44px] transition-all duration-200 cursor-pointer",
                           form.gender === g.value
                             ? "bg-primary text-primary-foreground shadow-sm"
-                            : "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                            : "border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                         )}
                         onClick={() => updateField("gender", g.value)}
                         aria-pressed={form.gender === g.value}
