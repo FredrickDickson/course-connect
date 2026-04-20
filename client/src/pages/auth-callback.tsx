@@ -10,11 +10,11 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Handle the OAuth callback
-        const { data, error } = await supabase.auth.getSession();
+        // Handle the OAuth callback - get session after redirect
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Auth callback error:", error);
+        if (sessionError) {
+          console.error("Auth callback error:", sessionError);
           toast({
             title: "Authentication Error",
             description: "There was an error signing you in. Please try again.",
@@ -24,12 +24,12 @@ export default function AuthCallback() {
           return;
         }
 
-        if (data.session) {
+        if (sessionData.session) {
           // Check if onboarding is completed
           const { data: profileData } = await supabase
             .from("profiles")
             .select("bio_data_completed")
-            .eq("id", data.session.user.id)
+            .eq("user_id", sessionData.session.user.id)
             .single();
 
           const bioComplete = (profileData as any)?.bio_data_completed ?? false;
