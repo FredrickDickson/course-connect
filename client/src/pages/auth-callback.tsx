@@ -10,8 +10,13 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log("Auth callback: Starting...");
+        
         // Handle the OAuth callback - get session after redirect
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log("Auth callback: Session data:", sessionData);
+        console.log("Auth callback: Session error:", sessionError);
         
         if (sessionError) {
           console.error("Auth callback error:", sessionError);
@@ -25,18 +30,28 @@ export default function AuthCallback() {
         }
 
         if (sessionData.session) {
+          console.log("Auth callback: User authenticated:", sessionData.session.user.id);
+          
           // Check if onboarding is completed
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from("profiles")
-            .select("bio_data_completed")
+            .select("profile_completed")
             .eq("user_id", sessionData.session.user.id)
-            .single();
+            .maybeSingle();
 
-          const bioComplete = (profileData as any)?.bio_data_completed ?? false;
+          console.log("Auth callback: Profile data:", profileData);
+          console.log("Auth callback: Profile error:", profileError);
 
-          if (!bioComplete) {
+          // If no profile exists or profile is not completed, go to onboarding
+          const profileComplete = profileData?.profile_completed ?? false;
+
+          console.log("Auth callback: Profile complete:", profileComplete);
+
+          if (!profileData || !profileComplete) {
+            console.log("Auth callback: Redirecting to onboarding");
             setLocation("/onboarding");
           } else {
+            console.log("Auth callback: Redirecting to dashboard");
             setLocation("/dashboard");
           }
         } else {

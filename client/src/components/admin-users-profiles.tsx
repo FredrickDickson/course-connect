@@ -49,7 +49,6 @@ interface ProfileRow {
   education_level: string | null;
   adr_experience: string | null;
   profile_completed: boolean;
-  bio_data_completed: boolean;
   membership_level: string | null;
   created_at: string;
   updated_at: string;
