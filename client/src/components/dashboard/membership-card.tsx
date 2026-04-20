@@ -76,9 +76,9 @@ export default function MembershipCard() {
           <Award className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="font-semibold text-lg mb-1">No Active Membership</h3>
           <p className="text-sm text-muted-foreground mb-4">Join the CIMA community and earn your professional designation.</p>
-          <Link href="/qualification-pathway">
+          <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
             <Button>View Qualification Pathways <ArrowRight className="h-4 w-4 ml-2" /></Button>
-          </Link>
+          </a>
         </CardContent>
       </Card>
     );
