@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { registerAuthRoutes } from "./auth-routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -39,6 +40,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register auth routes (register, login, etc.)
+  registerAuthRoutes(app);
+
   // Register API routes
   const server = await registerRoutes(app);
 
