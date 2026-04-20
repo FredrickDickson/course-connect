@@ -33,7 +33,7 @@ import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
 

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCard from "@/components/course-card";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
   ArrowRight,
