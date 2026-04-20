@@ -1032,7 +1032,6 @@ export type Database = {
         Row: {
           address: string | null
           adr_experience: string | null
-          bio_data_completed: boolean
           city: string | null
           country: string | null
           created_at: string
@@ -1068,7 +1067,6 @@ export type Database = {
         Insert: {
           address?: string | null
           adr_experience?: string | null
-          bio_data_completed?: boolean
           city?: string | null
           country?: string | null
           created_at?: string
@@ -1104,7 +1102,6 @@ export type Database = {
         Update: {
           address?: string | null
           adr_experience?: string | null
-          bio_data_completed?: boolean
           city?: string | null
           country?: string | null
           created_at?: string

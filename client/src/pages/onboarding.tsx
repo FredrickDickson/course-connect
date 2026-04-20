@@ -87,7 +87,7 @@ export default function Onboarding() {
     linkedin_url: "",
     referral_source: "",
     referral_code: "",
-    bio_data_completed: false,
+    profile_completed: false,
   });
 
   // Country codes with dialing codes
@@ -241,46 +241,57 @@ export default function Onboarding() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      const d = data as any;
-      if (d) {
-        setForm(prev => ({
-          ...prev,
-          full_name: d.full_name || `${user.firstName} ${user.lastName}`.trim(),
-          email: user.email || "",
-          date_of_birth: d.date_of_birth || "",
-          gender: d.gender || "",
-          nationality: d.nationality || "",
-          country: d.country || "",
-          city: d.city || "",
-          phone: d.phone || "",
-          whatsapp: d.whatsapp || "",
-          address: d.address || "",
-          profile_photo_url: d.profile_photo_url || "",
-          job_title: d.job_title || "",
-          organisation: d.organisation || d.institution || "",
-          professional_background: d.professional_background || "",
-          highest_qualification: d.highest_qualification || d.education_level || "",
-          years_experience: d.years_experience || "",
-          linkedin_url: d.linkedin_url || "",
-          referral_source: d.referral_source || "",
-        }));
-        if (d.phone && d.country && !d.bio_data_completed) {
-          setStep(2);
+        if (error) {
+          console.error("Error loading profile:", error);
+          setIsLoading(false);
+          return;
         }
-      } else {
-        setForm(prev => ({
-          ...prev,
-          full_name: `${user.firstName} ${user.lastName}`.trim(),
-          email: user.email || "",
-        }));
+
+        const d = data as any;
+        if (d) {
+          setForm(prev => ({
+            ...prev,
+            full_name: d.full_name || `${user.firstName} ${user.lastName}`.trim(),
+            email: user.email || "",
+            date_of_birth: d.date_of_birth || "",
+            gender: d.gender || "",
+            nationality: d.nationality || "",
+            country: d.country || "",
+            city: d.city || "",
+            phone: d.phone || "",
+            whatsapp: d.whatsapp || "",
+            address: d.address || "",
+            profile_photo_url: d.profile_photo_url || "",
+            job_title: d.job_title || "",
+            organisation: d.organisation || d.institution || "",
+            professional_background: d.professional_background || "",
+            highest_qualification: d.highest_qualification || d.education_level || "",
+            years_experience: d.years_experience || "",
+            linkedin_url: d.linkedin_url || "",
+            referral_source: d.referral_source || "",
+          }));
+          if (d.phone && d.country && !d.profile_completed) {
+            setStep(2);
+          }
+        } else {
+          setForm(prev => ({
+            ...prev,
+            full_name: `${user.firstName} ${user.lastName}`.trim(),
+            email: user.email || "",
+          }));
+        }
+      } catch (err) {
+        console.error("Unexpected error loading profile:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     load();
   }, [user]);
@@ -326,7 +337,7 @@ export default function Onboarding() {
     }
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any).from("profiles").upsert({
+      const { error } = await supabase.from("profiles").upsert({
         user_id: user.id,
         full_name: form.full_name,
         date_of_birth: form.date_of_birth,
@@ -358,7 +369,7 @@ export default function Onboarding() {
     }
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any).from("profiles").upsert({
+      const { error } = await supabase.from("profiles").upsert({
         user_id: user.id,
         job_title: form.job_title,
         organisation: form.organisation,
@@ -369,18 +380,13 @@ export default function Onboarding() {
         years_experience: form.years_experience,
         linkedin_url: form.linkedin_url,
         referral_source: form.referral_source,
-        bio_data_completed: true,
-        membership_level: "associate",
-        level_assigned_by: "system",
-        level_assigned_at: new Date().toISOString(),
-        level_assignment_reason: "New user — default Associate level",
         profile_completed: true,
       }, { onConflict: "user_id" });
 
       if (error) throw error;
 
       // Log activity
-      await (supabase as any).from("activity_log").insert({
+      await supabase.from("activity_log").insert({
         user_id: user.id,
         event_type: "profile_completed",
         description: "Profile onboarding completed",
@@ -473,9 +479,11 @@ export default function Onboarding() {
                       <Button
                         key={g.value}
                         type="button"
-                        variant={form.gender === g.value ? "default" : "outline"}
-                        size="sm"
-                        className="flex-1"
+                        className={`flex-1 h-9 rounded-md px-3 ${
+                          form.gender === g.value 
+                            ? "bg-primary text-primary-foreground" 
+                            : "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                        }`}
                         onClick={() => updateField("gender", g.value)}
                       >
                         {g.label}
@@ -488,7 +496,7 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nationality *</Label>
-                  <Select value={form.nationality} onValueChange={v => updateField("nationality", v)}>
+                  <Select value={form.nationality} onValueChange={(v: string) => updateField("nationality", v)}>
                     <SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger>
                     <SelectContent className="max-h-60">
                       {COUNTRIES.map(c => (
@@ -499,7 +507,7 @@ export default function Onboarding() {
                 </div>
                 <div className="space-y-2">
                   <Label>Country of Residence *</Label>
-                  <Select value={form.country} onValueChange={v => updateField("country", v)}>
+                  <Select value={form.country} onValueChange={(v: string) => updateField("country", v)}>
                     <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
                     <SelectContent className="max-h-60">
                       {COUNTRIES.map(c => (
@@ -523,7 +531,7 @@ export default function Onboarding() {
                 <div className="space-y-2">
                   <Label>Phone Number *</Label>
                   <div className="flex gap-2">
-                    <Select value={form.phoneCountryCode} onValueChange={v => updateField("phoneCountryCode", v)}>
+                    <Select value={form.phoneCountryCode} onValueChange={(v: string) => updateField("phoneCountryCode", v)}>
                       <SelectTrigger className="w-24">
                         <SelectValue placeholder="Code" />
                       </SelectTrigger>
@@ -550,7 +558,7 @@ export default function Onboarding() {
                     <div className="flex gap-2">
                       <Select 
                         value={form.whatsappCountryCode || form.phoneCountryCode} 
-                        onValueChange={v => updateField("whatsappCountryCode", v)}
+                        onValueChange={(v: string) => updateField("whatsappCountryCode", v)}
                         disabled={whatsappSameAsPhone}
                       >
                         <SelectTrigger className="w-24">
@@ -580,7 +588,7 @@ export default function Onboarding() {
                       <Checkbox
                         id="sameAsPhone"
                         checked={whatsappSameAsPhone}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={(checked: boolean) => {
                           setWhatsappSameAsPhone(!!checked);
                           if (checked) {
                             setForm(prev => ({ 
@@ -653,7 +661,7 @@ export default function Onboarding() {
 
               <div className="space-y-2">
                 <Label>Professional Background *</Label>
-                <Select value={form.professional_background} onValueChange={v => updateField("professional_background", v)}>
+                <Select value={form.professional_background} onValueChange={(v: string) => updateField("professional_background", v)}>
                   <SelectTrigger><SelectValue placeholder="Select background" /></SelectTrigger>
                   <SelectContent>
                     {PROFESSIONAL_BACKGROUNDS.map(bg => (
@@ -666,7 +674,7 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Highest Qualification *</Label>
-                  <Select value={form.highest_qualification} onValueChange={v => updateField("highest_qualification", v)}>
+                  <Select value={form.highest_qualification} onValueChange={(v: string) => updateField("highest_qualification", v)}>
                     <SelectTrigger><SelectValue placeholder="Select qualification" /></SelectTrigger>
                     <SelectContent>
                       {QUALIFICATIONS.map(q => (
@@ -677,7 +685,7 @@ export default function Onboarding() {
                 </div>
                 <div className="space-y-2">
                   <Label>Years of Legal / ADR Experience *</Label>
-                  <Select value={form.years_experience} onValueChange={v => updateField("years_experience", v)}>
+                  <Select value={form.years_experience} onValueChange={(v: string) => updateField("years_experience", v)}>
                     <SelectTrigger><SelectValue placeholder="Select experience" /></SelectTrigger>
                     <SelectContent>
                       {EXPERIENCE_OPTIONS.map(exp => (
@@ -699,7 +707,7 @@ export default function Onboarding() {
 
               <div className="space-y-2">
                 <Label>How did you hear about CIMA? *</Label>
-                <Select value={form.referral_source} onValueChange={v => updateField("referral_source", v)}>
+                <Select value={form.referral_source} onValueChange={(v: string) => updateField("referral_source", v)}>
                   <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
                   <SelectContent>
                     {REFERRAL_SOURCES.map(src => (
@@ -710,7 +718,10 @@ export default function Onboarding() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                <Button 
+                  className="flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground" 
+                  onClick={() => setStep(1)}
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>

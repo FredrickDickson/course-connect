@@ -49,20 +49,41 @@ export function useAuth() {
 
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
 
+      console.log("Auth state change:", { event: _event, userId: session?.user?.id, email: session?.user?.email });
       setAuthUser(session?.user ?? null);
       setIsAuthReady(true);
     });
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
+    const getSessionWithRetry = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error && error.message?.includes('429') && retryCount < maxRetries) {
+          retryCount++;
+          // Exponential backoff: 10s, 20s, 40s (very long delays to stop rate limiting)
+          const delay = Math.pow(2, retryCount + 2) * 1000;
+          setTimeout(getSessionWithRetry, delay);
+          return;
+        }
 
-      setAuthUser(session?.user ?? null);
-      setIsAuthReady(true);
-    });
+        if (!isMounted) return;
+        setAuthUser(session?.user ?? null);
+        setIsAuthReady(true);
+      } catch (err) {
+        console.error('Session retrieval error:', err);
+        if (!isMounted) return;
+        setAuthUser(null);
+        setIsAuthReady(true);
+      }
+    };
+
+    getSessionWithRetry();
 
     return () => {
       isMounted = false;

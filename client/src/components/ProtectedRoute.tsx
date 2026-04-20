@@ -1,6 +1,7 @@
 import { Route, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type ProtectedRouteProps = {
     path: string;
@@ -15,6 +16,14 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
     const { user, isLoading, isAuthenticated, hasRole } = useAuth();
     const [, setLocation] = useLocation();
+    const [shouldRedirect, setShouldRedirect] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (shouldRedirect) {
+            setLocation(shouldRedirect);
+            setShouldRedirect(null);
+        }
+    }, [shouldRedirect, setLocation]);
 
     return (
         <Route path={path}>
@@ -28,7 +37,7 @@ export function ProtectedRoute({
                 }
 
                 if (!isAuthenticated) {
-                    setLocation("/login");
+                    setShouldRedirect("/login");
                     return null;
                 }
 
@@ -37,7 +46,7 @@ export function ProtectedRoute({
                     // Redirect to their respective dashboards or home
                     if (user?.role === "admin") return <Component params={params} />;
                     if (requiredRole === "admin" || (requiredRole === "instructor" && user?.role === "student")) {
-                        setLocation("/");
+                        setShouldRedirect("/");
                         return null;
                     }
                 }

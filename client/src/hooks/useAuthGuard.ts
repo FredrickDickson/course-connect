@@ -29,13 +29,13 @@ export function useAuthGuard() {
     }
 
     const checkProfile = async () => {
-      const { data: profile } = await (supabase as any)
+      const { data: profile } = await supabase
         .from("profiles")
-        .select("bio_data_completed")
+        .select("profile_completed")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const completed = (profile as any)?.bio_data_completed ?? false;
+      const completed = profile?.profile_completed ?? false;
       setBioDataCompleted(completed);
 
       if (!completed && location !== "/onboarding") {
