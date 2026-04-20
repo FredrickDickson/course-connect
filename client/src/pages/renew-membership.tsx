@@ -125,7 +125,9 @@ export default function RenewMembership() {
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">No Active Membership</h1>
           <p className="text-muted-foreground mb-6">You don't have a CIMA membership to renew.</p>
-          <Button onClick={() => setLocation("/qualification-pathway")}>View Qualification Pathways</Button>
+          <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
+          <Button>View Qualification Pathways</Button>
+        </a>
         </div>
         <Footer />
       </div>

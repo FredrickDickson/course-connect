@@ -68,6 +68,7 @@ import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 import VerifyEmail from "@/pages/verify-email";
 import Onboarding from "@/pages/onboarding";
+import AuthCallback from "@/pages/auth-callback";
 
 // Lazy loaded components - heavy/role-gated pages
 const InstructorDashboard = lazy(() => import("@/pages/instructor-dashboard"));
@@ -153,6 +154,7 @@ function Router() {
       <Route path="/professional-standards" component={ProfessionalStandards} />
       <Route path="/qualification-pathway" component={QualificationPathway} />
       <Route path="/verify/:memberId" component={VerifyMember} />
+      <Route path="/auth/callback" component={AuthCallback} />
 
       {/* Protected membership routes */}
       <ProtectedRoute path="/renew-membership" component={RenewMembership} />

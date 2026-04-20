@@ -106,11 +106,11 @@ export default function MembershipDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Join the CIMA community and earn your professional designation.
           </p>
-          <Link href="/qualification-pathway">
+          <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
             <Button variant="default">
               View Qualification Pathways <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-          </Link>
+          </a>
         </CardContent>
       </Card>
     );
