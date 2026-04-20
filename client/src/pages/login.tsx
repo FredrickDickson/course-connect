@@ -36,22 +36,30 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword(
-        {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-        },
-      );
+        }),
+      });
 
-      if (authError) {
-        throw authError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
       }
 
-      const { data: profile } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", data.user.id)
-        .maybeSingle();
+      // Set the session in Supabase client
+      if (data.session?.accessToken) {
+        await supabase.auth.setSession({
+          access_token: data.session.accessToken,
+          refresh_token: data.session.refreshToken,
+        });
+      }
 
       toast({
         title: t("auth.welcomeBack"),
@@ -80,7 +88,7 @@ export default function Login() {
       if (redirect) {
         window.location.assign(redirect);
       } else {
-        const role = profile?.role || data.user.user_metadata?.role || "student";
+        const role = data.user.role || "student";
         const destination =
           role === "admin"
             ? "/admin"

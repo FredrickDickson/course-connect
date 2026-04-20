@@ -70,30 +70,31 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Sign up with Supabase Auth
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-          },
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+        }),
       });
 
-      if (authError) throw authError;
+      const data = await response.json();
 
-      // Check if email confirmation is required
-      if (data.session) {
-        toast({
-          title: "Account created successfully!",
-          description: "Welcome to CIMA Learn. Let's get started.",
-        });
-        setLocation("/onboarding");
-      } else {
-        setLocation(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
       }
+
+      toast({
+        title: "Account created successfully!",
+        description: "Welcome to CIMA Learn. Let's get started.",
+      });
+      setLocation("/onboarding");
     } catch (err: any) {
       setError(err.message || "An error occurred during registration");
     } finally {

@@ -49,7 +49,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/supabase-js": "^2.101.1",
-    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query": "^5.99.2",
     "@tiptap/extension-code-block-lowlight": "^3.7.2",
     "@tiptap/extension-image": "^3.22.1",
     "@tiptap/extension-link": "^3.22.1",
