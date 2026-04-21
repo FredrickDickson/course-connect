@@ -46,36 +46,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Profile fetch error:", error);
     }
 
+    const profileData = profile as any;
+
     return {
       id: currentAuthUser.id,
       email: currentAuthUser.email || "",
-      firstName: profile?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
-      lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
-      profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profile?.role || "student",
-      bio: profile?.bio || "",
-      country: profile?.country || "",
-      timezone: profile?.timezone || "",
-      createdAt: profile?.created_at || "",
+      firstName: profileData?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      lastName: profileData?.last_name || currentAuthUser.user_metadata?.last_name || "",
+      profileImageUrl: profileData?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
+      role: profileData?.role || "student",
+      bio: profileData?.bio || "",
+      country: profileData?.country || "",
+      timezone: profileData?.timezone || "",
+      createdAt: profileData?.created_at || "",
     };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
+    let authInitialized = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
-
+      
+      console.log("Auth event:", event, "User:", session?.user?.id);
       setAuthUser(session?.user ?? null);
       setIsAuthReady(true);
+      authInitialized = true;
     });
 
-    const getSessionWithRetry = async () => {
+    const getInitialSession = async () => {
       try {
+        // If onAuthStateChange already fired, we don't need to manually get session
+        if (authInitialized) return;
+
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (!isMounted) return;
-        setAuthUser(session?.user ?? null);
+        if (error) throw error;
+
+        if (session) {
+          setAuthUser(session.user);
+        }
         setIsAuthReady(true);
       } catch (err) {
         if (!isMounted) return;
@@ -84,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    getSessionWithRetry();
+    getInitialSession();
 
     return () => {
       isMounted = false;
