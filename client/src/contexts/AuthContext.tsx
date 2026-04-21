@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    let refreshInterval: NodeJS.Timeout | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
       if (!isMounted) return;
@@ -75,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getSessionWithRetry = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (!isMounted) return;
         setAuthUser(session?.user ?? null);
         setIsAuthReady(true);
@@ -89,30 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSessionWithRetry();
 
-    // Manual token refresh with longer interval (30 minutes) to avoid rate limiting
-    const startManualRefresh = () => {
-      if (refreshInterval) clearInterval(refreshInterval);
-      
-      refreshInterval = setInterval(async () => {
-        if (!isMounted) return;
-        
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            // Only refresh if we have a session
-            await supabase.auth.refreshSession();
-          }
-        } catch (err) {
-          console.error('Manual refresh error:', err);
-        }
-      }, 30 * 60 * 1000); // 30 minutes
-    };
-
-    startManualRefresh();
-
     return () => {
       isMounted = false;
-      if (refreshInterval) clearInterval(refreshInterval);
       subscription.unsubscribe();
     };
   }, []);
