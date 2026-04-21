@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -34,8 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const profileFetchedRef = useRef<string | null>(null);
 
   const fetchUserProfile = useCallback(async (currentAuthUser: User): Promise<UserProfile> => {
+    // Avoid redundant fetches for the same user if we already have data
+    if (user && user.id === currentAuthUser.id) return user;
+    
+    console.log("Fetching profile for user:", currentAuthUser.id);
     const { data: profile, error } = await supabase
       .from("users")
       .select("role, first_name, last_name, profile_image_url, bio, country, timezone, created_at")
@@ -60,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,14 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!isMounted) return;
       
       console.log("Auth event:", event, "User:", session?.user?.id);
-      setAuthUser(session?.user ?? null);
+      
+      // Only update authUser if it actually changed to avoid downstream re-renders
+      setAuthUser(prev => {
+        if (prev?.id === session?.user?.id) return prev;
+        return session?.user ?? null;
+      });
+      
       setIsAuthReady(true);
       authInitialized = true;
     });
 
     const getInitialSession = async () => {
       try {
-        // If onAuthStateChange already fired, we don't need to manually get session
         if (authInitialized) return;
 
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -107,31 +117,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    if (!isAuthReady) {
-      return () => {
-        isMounted = false;
-      };
+    if (!isAuthReady || !authUser) {
+      if (!authUser) {
+        setUser(null);
+        profileFetchedRef.current = null;
+      }
+      return;
     }
 
-    if (!authUser) {
-      setUser(null);
-      setIsProfileLoading(false);
-      return () => {
-        isMounted = false;
-      };
+    // Prevent redundant fetches for the same user ID within this session
+    if (profileFetchedRef.current === authUser.id) {
+      return;
     }
 
-    setIsProfileLoading(true);
+    const loadProfile = async () => {
+      setIsProfileLoading(true);
+      try {
+        const nextUser = await fetchUserProfile(authUser);
+        if (isMounted) {
+          setUser(nextUser);
+          profileFetchedRef.current = authUser.id;
+        }
+      } finally {
+        if (isMounted) {
+          setIsProfileLoading(false);
+        }
+      }
+    };
 
-    void fetchUserProfile(authUser)
-      .then((nextUser) => {
-        if (!isMounted) return;
-        setUser(nextUser);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsProfileLoading(false);
-      });
+    loadProfile();
 
     return () => {
       isMounted = false;
