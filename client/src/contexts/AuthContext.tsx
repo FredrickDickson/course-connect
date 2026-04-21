@@ -66,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
       if (!isMounted) return;
 
-      console.log("Auth state change:", { event: _event, userId: session?.user?.id, email: session?.user?.email });
       setAuthUser(session?.user ?? null);
       setIsAuthReady(true);
     });
@@ -79,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthUser(session?.user ?? null);
         setIsAuthReady(true);
       } catch (err) {
-        console.error('Session retrieval error:', err);
         if (!isMounted) return;
         setAuthUser(null);
         setIsAuthReady(true);
