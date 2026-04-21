@@ -9,6 +9,7 @@ interface UserProfile {
   lastName: string;
   profileImageUrl: string;
   role: string;
+  membershipLevel: string | null;
   bio?: string;
   country?: string;
   timezone?: string;
@@ -42,9 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     console.log("Fetching profile for user:", currentAuthUser.id);
     const { data: profile, error } = await supabase
-      .from("users")
-      .select("role, first_name, last_name, profile_image_url, bio, country, timezone, created_at")
-      .eq("id", currentAuthUser.id)
+      .from("profiles")
+      .select("status, full_name, part, avatar_url, country, timezone, created_at")
+      .eq("user_id", currentAuthUser.id)
       .maybeSingle();
 
     if (error) {
@@ -52,15 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const profileData = profile as any;
+    const nameParts = (profileData?.full_name || "").split(" ");
 
     return {
       id: currentAuthUser.id,
       email: currentAuthUser.email || "",
-      firstName: profileData?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
-      lastName: profileData?.last_name || currentAuthUser.user_metadata?.last_name || "",
-      profileImageUrl: profileData?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profileData?.role || "student",
-      bio: profileData?.bio || "",
+      firstName: nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      lastName: nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
+      profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
+      role: profileData?.status || "active",
+      membershipLevel: profileData?.part || null,
       country: profileData?.country || "",
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",
