@@ -1,0 +1,418 @@
+{
+  "name": "WF01: Payment confirmed -> full enrollment flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "paystack-payment",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Paystack Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "paystack-payment"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify Paystack webhook signature\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.PAYSTACK_WEBHOOK_SECRET;\nconst signature = $headers['x-paystack-signature'];\nconst body = JSON.stringify($json.body);\n\nconst expectedSignature = crypto\n  .createHmac('sha512', webhookSecret)\n  .update(body)\n  .digest('hex');\n\nif (signature !== expectedSignature) {\n  throw new Error('Invalid webhook signature');\n}\n\nreturn {\n  json: {\n    event: $json.body.event,\n    data: $json.body.data\n  }\n};"
+      },
+      "id": "code-verify-hmac",
+      "name": "Verify HMAC Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "charge-success",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "charge.success",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-event-check",
+      "name": "Is charge.success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "amount-check",
+              "leftValue": "={{ $json.data.amount }}",
+              "rightValue": "={{ $json.data.metadata.expected_amount }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-amount-check",
+      "name": "Amount Correct?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "enrollments",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.data.metadata.user_id }}"
+            },
+            {
+              "column": "course_edition_id",
+              "value": "={{ $json.data.metadata.course_edition_id }}"
+            },
+            {
+              "column": "payment_method",
+              "value": "={{ $json.data.metadata.payment_method }}"
+            },
+            {
+              "column": "payment_status",
+              "value": "confirmed"
+            },
+            {
+              "column": "amount_paid",
+              "value": "={{ $json.data.amount / 100 }}"
+            },
+            {
+              "column": "paystack_reference",
+              "value": "={{ $json.data.reference }}"
+            },
+            {
+              "column": "enrolled_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-insert-enrollment",
+      "name": "Create Enrollment",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate booking reference CIMA-YYYY-NNNNN\nconst year = new Date().getFullYear();\n\n// Get current enrollment count for this year\nconst currentCount = $input.first().json.count || 0;\nconst sequence = String(currentCount + 1).padStart(5, '0');\n\nconst bookingRef = `CIMA-${year}-${sequence}`;\n\nreturn [{\n  json: {\n    booking_reference: bookingRef,\n    enrollment_id: $input.first().json.id\n  }\n}];"
+      },
+      "id": "code-generate-ref",
+      "name": "Generate Booking Reference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "enrollments",
+        "column": "booking_reference",
+        "value": "={{ $json.booking_reference }}",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-update-booking",
+      "name": "Update Booking Reference",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.data.metadata.user_email }}",
+        "subject": "Enrollment Confirmed - {{ $json.booking_reference }}",
+        "html": "<h2>Enrollment Confirmed!</h2><p>Dear {{ $json.data.metadata.user_name }},</p><p>Your enrollment has been confirmed for <strong>{{ $json.data.metadata.course_name }}</strong>.</p><p><strong>Booking Reference:</strong> {{ $json.booking_reference }}</p><p><strong>Amount Paid:</strong> GHS {{ $json.data.amount / 100 }}</p><p><strong>Payment Method:</strong> {{ $json.data.metadata.payment_method }}</p><p>You will receive joining instructions 7 days before the course starts.</p><p>Thank you for choosing CIMA!</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-confirmation",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1780, 200],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "New enrollment confirmed! {{ $json.booking_reference }} - {{ $json.data.metadata.user_name }} enrolled in {{ $json.data.metadata.course_name }} (GHS {{ $json.data.amount / 100 }})",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-alert",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2000, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "paystack-failed",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-failed",
+      "name": "Paystack Failed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "webhookId": "paystack-failed"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle failed payment\nreturn {\n  json: {\n    event: $json.body.event,\n    data: $json.body.data,\n    user_email: $json.body.data.metadata.user_email,\n    user_name: $json.body.data.metadata.user_name,\n    course_name: $json.body.data.metadata.course_name,\n    amount: $json.body.data.amount / 100,\n    reference: $json.body.data.reference\n  }\n};"
+      },
+      "id": "code-handle-failed",
+      "name": "Process Failed Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.user_email }}",
+        "subject": "Payment Failed - Try Again",
+        "html": "<h2>Payment Failed</h2><p>Dear {{ $json.user_name }},</p><p>Your payment for <strong>{{ $json.course_name }}</strong> failed.</p><p><strong>Amount:</strong> GHS {{ $json.amount }}</p><p><strong>Reference:</strong> {{ $json.reference }}</p><p>You can try again using the link below or choose bank transfer as an alternative.</p><p><a href='https://cima.learn/courses/{{ $json.data.metadata.course_edition_id }}'>Try Payment Again</a></p><p>If you continue to experience issues, please contact us at 0536735535 or 0241022964.</p><p>Thank you for your patience.</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-failed-email",
+      "name": "Send Failed Payment Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1340, 400],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Payment failed: {{ $json.user_name }} - {{ $json.course_name }} (GHS {{ $json.amount }}) - Ref: {{ $json.reference }}",
+        "otherOptions": {}
+      },
+      "id": "slack-failed-alert",
+      "name": "Notify Failed Payment",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1560, 400],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Paystack Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify HMAC Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify HMAC Signature": {
+      "main": [
+        [
+          {
+            "node": "Is charge.success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is charge.success?": {
+      "main": [
+        [
+          {
+            "node": "Amount Correct?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Failed Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amount Correct?": {
+      "main": [
+        [
+          {
+            "node": "Create Enrollment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Enrollment": {
+      "main": [
+        [
+          {
+            "node": "Generate Booking Reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Booking Reference": {
+      "main": [
+        [
+          {
+            "node": "Update Booking Reference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Booking Reference": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Failed Payment": {
+      "main": [
+        [
+          {
+            "node": "Send Failed Payment Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Failed Payment Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Failed Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf01-payment-enrollment",
+  "tags": [
+    {
+      "id": "tag:payment",
+      "name": "Payment"
+    },
+    {
+      "id": "tag:enrollment",
+      "name": "Enrollment"
+    },
+    {
+      "id": "tag:critical",
+      "name": "Critical"
+    }
+  ]
+}

@@ -1,0 +1,471 @@
+{
+  "name": "WF14: User @mentioned in post -> in-app + email notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "forum-reply-created",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-forum-reply",
+      "name": "Forum Reply Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "forum-reply-created"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process forum reply webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new forum_reply insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'forum_replies') {\n  return []; // Not a new forum reply\n}\n\nreturn [{\n  json: {\n    reply_id: record.id,\n    post_id: record.post_id,\n    body: record.body,\n    author_id: record.user_id,\n    created_at: record.created_at\n  }\n}];"
+      },
+      "id": "code-process-forum-reply",
+      "name": "Process Forum Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract @mentions from reply body\nconst reply = $json;\n\n// Extract mentions using regex\nconst mentionRegex = /@([a-zA-Z0-9_]+)/g;\nconst mentions = [];\nlet match;\n\nwhile ((match = mentionRegex.exec(reply.body)) !== null) {\n  mentions.push(match[1]); // Get the username without @\n}\n\n// Remove duplicates\nconst uniqueMentions = [...new Set(mentions)];\n\nif (uniqueMentions.length === 0) {\n  return []; // No mentions found\n}\n\nreturn [{\n  json: {\n    ...reply,\n    mentions: uniqueMentions,\n    mention_count: uniqueMentions.length\n  }\n}];"
+      },
+      "id": "code-extract-mentions",
+      "name": "Extract @Mentions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-mentions",
+              "leftValue": "={{ $json.mention_count }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-mentions",
+      "name": "Has Mentions?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles p",
+        "columns": "p.id, p.full_name, p.email, p.username, p.notification_preferences",
+        "where": {
+          "conditions": [
+            {
+              "column": "p.username",
+              "condition": "in",
+              "value": "={{ JSON.stringify($json.mentions) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-lookup-mentioned-users",
+      "name": "Lookup Mentioned Users",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "found-users",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-found-mentioned-users",
+      "name": "Found Mentioned Users?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "split-in-batches-users",
+      "name": "Split in Batches (Users)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "forum_posts fp",
+        "columns": "fp.title, fp.category",
+        "where": {
+          "conditions": [
+            {
+              "column": "fp.id",
+              "condition": "equal",
+              "value": "={{ $json.post_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-post-details",
+      "name": "Get Post Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.author_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-author-profile",
+      "name": "Get Author Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_notifications",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "column": "type",
+              "value": "mention"
+            },
+            {
+              "column": "title",
+              "value": "You were mentioned in a discussion"
+            },
+            {
+              "column": "content",
+              "value": "@{{ $('Get Author Profile').first().json.username }} mentioned you in a reply to \"{{ $('Get Post Details').first().json.title }}\""
+            },
+            {
+              "column": "entity_type",
+              "value": "forum_reply"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.reply_id }}"
+            },
+            {
+              "column": "post_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "status",
+              "value": "unread"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-create-notification",
+      "name": "Create In-App Notification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if user has email notifications enabled for mentions\nconst user = $json;\nconst author = $('Get Author Profile').first().json;\nconst post = $('Get Post Details').first().json;\n\n// Check notification preferences\nconst notifications = user.notification_preferences || {};\nconst emailEnabled = notifications.mentions !== false;\n\nif (!emailEnabled) {\n  return [{ json: { skip_email: true, user_name: user.full_name } }];\n}\n\n// Generate notification email\nconst postUrl = `https://cima.learn/community/posts/${$json.post_id}#reply-${$json.reply_id}`;\n\n// Clean up the reply body for email (remove HTML, limit length)\nconst cleanBody = $json.body\n  .replace(/<[^>]*>/g, '') // Remove HTML tags\n  .replace(/@([a-zA-Z0-9_]+)/g, '@$1') // Keep mentions\n  .substring(0, 200) + ($json.body.length > 200 ? '...' : '');\n\nconst emailHtml = `\n  <h2>You Were Mentioned!</h2>\n  <p>Dear ${user.full_name},</p>\n  <p>@${author.username} mentioned you in a discussion on CIMA Community.</p>\n  \n  <h3>Discussion: ${post.title}</h3>\n  <p><strong>Category:</strong> ${post.category}</p>\n  \n  <h4>Reply Preview:</h4>\n  <blockquote>${cleanBody}</blockquote>\n  \n  <p><a href='${postUrl}'><strong>View Full Discussion</strong></a></p>\n  \n  <p>This is an automated notification. You can manage your notification preferences in your profile settings.</p>\n  \n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    user_email: user.email,\n    user_name: user.full_name,\n    author_name: author.full_name,\n    author_username: author.username,\n    post_title: post.title,\n    post_category: post.category,\n    post_url: postUrl,\n    subject: `@${author.username} mentioned you in \"${post.title}\"`,\n    html: emailHtml,\n    skip_email: false\n  }\n}];"
+      },
+      "id": "code-generate-email-notification",
+      "name": "Generate Email Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "send-email",
+              "leftValue": "={{ $json.skip_email }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-send-email",
+      "name": "Send Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "from": "notifications@thecima.org",
+        "to": "={{ $json.user_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-mention-email",
+      "name": "Send Mention Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Forum Reply Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Forum Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Forum Reply": {
+      "main": [
+        [
+          {
+            "node": "Extract @Mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract @Mentions": {
+      "main": [
+        [
+          {
+            "node": "Has Mentions?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Mentions?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Mentioned Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Mentioned Users": {
+      "main": [
+        [
+          {
+            "node": "Found Mentioned Users?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found Mentioned Users?": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Users)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Users)": {
+      "main": [
+        [
+          {
+            "node": "Get Post Details",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get Post Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post Details": {
+      "main": [
+        [
+          {
+            "node": "Get Author Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Author Profile": {
+      "main": [
+        [
+          {
+            "node": "Create In-App Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create In-App Notification": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email?": {
+      "main": [
+        [
+          {
+            "node": "Send Mention Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf14-mention-notifications",
+  "tags": [
+    {
+      "id": "tag:community",
+      "name": "Community"
+    },
+    {
+      "id": "tag:notifications",
+      "name": "Notifications"
+    },
+    {
+      "id": "tag:mentions",
+      "name": "Mentions"
+    }
+  ]
+}

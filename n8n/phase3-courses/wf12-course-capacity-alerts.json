@@ -1,0 +1,475 @@
+{
+  "name": "WF12: Course 90% full -> alert admin to act",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enrollment-updated",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-enrollment-updated",
+      "name": "Enrollment Updated Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "enrollment-updated"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process enrollment update webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if enrolled_count was updated\nconst oldRecord = $json.body.old_record;\nconst newRecord = $json.body.record;\n\n// Check if this is a course_edition update with enrolled_count change\nif (!newRecord || newRecord.table !== 'course_editions' || !newRecord.enrolled_count) {\n  return []; // Not an enrollment count update\n}\n\nreturn [{\n  json: {\n    course_edition_id: newRecord.id,\n    old_enrolled_count: oldRecord?.enrolled_count || 0,\n    new_enrolled_count: newRecord.enrolled_count,\n    capacity: newRecord.capacity,\n    updated_at: newRecord.updated_at\n  }\n}];"
+      },
+      "id": "code-process-enrollment-update",
+      "name": "Process Enrollment Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "course_editions ce",
+        "columns": "ce.*, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "ce.id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-course-details",
+      "name": "Get Course Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate fill percentage and determine alert level\nconst course = $json;\nconst enrollmentData = $('Process Enrollment Update').first().json;\n\nconst fillPercentage = (course.enrolled_count / course.capacity) * 100;\nconst isNewEnrollment = enrollmentData.new_enrolled_count > enrollmentData.old_enrolled_count;\n\n// Determine alert conditions\nconst is90PercentFull = fillPercentage >= 90 && fillPercentage < 100;\nconst is100PercentFull = fillPercentage >= 100;\nconst shouldAlert90 = is90PercentFull && isNewEnrollment;\nconst shouldAlert100 = is100PercentFull;\n\n// Check if alert already sent for this course and threshold\nconst alertKey = `${course.course_edition_id}_${is100PercentFull ? '100' : '90'}`;\n\nreturn [{\n  json: {\n    ...course,\n    fill_percentage: Math.round(fillPercentage),\n    spots_remaining: course.capacity - course.enrolled_count,\n    is_90_percent_full: is90PercentFull,\n    is_100_percent_full: is100PercentFull,\n    should_alert_90: shouldAlert90,\n    should_alert_100: shouldAlert100,\n    alert_key: alertKey,\n    is_new_enrollment: isNewEnrollment\n  }\n}];"
+      },
+      "id": "code-calculate-fill-percentage",
+      "name": "Calculate Fill Percentage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "should-alert",
+              "leftValue": "={{ $json.should_alert_90 }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "if-should-alert",
+      "name": "Should Send Alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "capacity_alerts",
+        "where": {
+          "conditions": [
+            {
+              "column": "alert_key",
+              "condition": "equal",
+              "value": "={{ $json.alert_key }}",
+              "combinator": "and"
+            },
+            {
+              "column": "sent_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "supabase-check-alert-sent",
+      "name": "Check Alert Already Sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "no-recent-alert",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-no-recent-alert",
+      "name": "No Recent Alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist",
+        "columns": "COUNT(*) as waitlist_count",
+        "where": {
+          "conditions": [
+            {
+              "column": "course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-waitlist-count",
+      "name": "Get Waitlist Count",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate alert message based on fill percentage\nconst course = $json;\nconst waitlistCount = $('Get Waitlist Count').first().json.waitlist_count || 0;\n\nlet alertEmoji, alertTitle, alertMessage, slackMessage, whatsappMessage;\n\nif (course.is_100_percent_full) {\n  alertEmoji = 'ð';\n  alertTitle = 'COURSE SOLD OUT';\n  alertMessage = `${course.course_name} is now sold out! ${course.enrolled_count}/${course.capacity} spots filled. ${waitlistCount} people on waitlist. Consider opening a new cohort or increasing capacity.`;\n  slackMessage = `ð ${course.course_name} is SOLD OUT (${course.enrolled_count}/${course.capacity}). Waitlist has ${waitlistCount} people. Open new cohort?`;\n  whatsappMessage = `ALERT: ${course.course_name} SOLD OUT (${course.enrolled_count}/${course.capacity}). Waitlist: ${waitlistCount} people.`;\n} else {\n  alertEmoji = 'â¡';\n  alertTitle = 'COURSE 90% FULL';\n  alertMessage = `${course.course_name} is 90% full (${course.enrolled_count}/${course.capacity} spots taken). Only ${course.spots_remaining} spots remaining. ${waitlistCount} people on waitlist. Consider opening a new cohort or increasing capacity.`;\n  slackMessage = `â¡ ${course.course_name} is 90% full (${course.enrolled_count}/${course.capacity}). ${course.spots_remaining} spots remaining. Waitlist: ${waitlistCount} people.`;\n  whatsappMessage = `${course.course_name} 90% full (${course.enrolled_count}/${course.capacity}). ${course.spots_remaining} spots left. Waitlist: ${waitlistCount}.`;\n}\n\n// Add course URL\nconst courseUrl = `https://cima.learn/admin/courses/${course.course_edition_id}`;\n\nreturn [{\n  json: {\n    ...course,\n    waitlist_count: waitlistCount,\n    alert_emoji: alertEmoji,\n    alert_title: alertTitle,\n    alert_message: alertMessage,\n    slack_message: slackMessage,\n    whatsapp_message: whatsappMessage,\n    course_url: courseUrl\n  }\n}];"
+      },
+      "id": "code-generate-alert-messages",
+      "name": "Generate Alert Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-alert",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2220, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v18.0/your-whatsapp-phone-number/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsappBusinessApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.whatsappBusinessApi.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.whatsapp_message }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "http-whatsapp-alert",
+      "name": "Send WhatsApp Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2440, 300],
+      "credentials": {
+        "whatsappBusinessApi": {
+          "id": "whatsapp-business-api",
+          "name": "WhatsApp Business API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "admin@thecima.org",
+        "subject": "{{ $json.alert_emoji }} {{ $json.alert_title }} - {{ $json.course_name }}",
+        "html": "<h2>{{ $json.alert_emoji }} {{ $json.alert_title }}</h2><p>{{ $json.alert_message }}</p><h3>Course Details:</h3><ul><li><strong>Course:</strong> {{ $json.course_name }}</li><li><strong>Enrolled:</strong> {{ $json.enrolled_count }}/{{ $json.capacity }}</li><li><strong>Fill Rate:</strong> {{ $json.fill_percentage }}%</li><li><strong>Spots Remaining:</strong> {{ $json.spots_remaining }}</li><li><strong>Waitlist:</strong> {{ $json.waitlist_count }} people</li></ul><h3>Recommended Actions:</h3><ul><li><a href='{{ $json.course_url }}'>View Course Details</a></li><li><a href='https://cima.learn/admin/courses/new'>Create New Cohort</a></li><li><a href='https://cima.learn/admin/courses/{{ $json.course_edition_id }}/edit'>Increase Capacity</a></li></ul><p>This alert helps you maximize course enrollment and revenue potential.</p><p>Generated at {{ $now }}</p>",
+        "options": {}
+      },
+      "id": "resend-admin-email",
+      "name": "Send Admin Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "capacity_alerts",
+        "columns": {
+          "assignment": [
+            {
+              "column": "alert_key",
+              "value": "={{ $json.alert_key }}"
+            },
+            {
+              "column": "course_edition_id",
+              "value": "={{ $json.course_edition_id }}"
+            },
+            {
+              "column": "alert_type",
+              "value": "={{ $json.is_100_percent_full ? 'sold_out' : '90_percent' }}"
+            },
+            {
+              "column": "fill_percentage",
+              "value": "={{ $json.fill_percentage }}"
+            },
+            {
+              "column": "enrolled_count",
+              "value": "={{ $json.enrolled_count }}"
+            },
+            {
+              "column": "capacity",
+              "value": "={{ $json.capacity }}"
+            },
+            {
+              "column": "waitlist_count",
+              "value": "={{ $json.waitlist_count }}"
+            },
+            {
+              "column": "sent_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-alert-sent",
+      "name": "Log Alert Sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Enrollment Updated Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Enrollment Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Enrollment Update": {
+      "main": [
+        [
+          {
+            "node": "Get Course Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Course Details": {
+      "main": [
+        [
+          {
+            "node": "Calculate Fill Percentage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Fill Percentage": {
+      "main": [
+        [
+          {
+            "node": "Should Send Alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Alert?": {
+      "main": [
+        [
+          {
+            "node": "Check Alert Already Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Alert Already Sent": {
+      "main": [
+        [
+          {
+            "node": "No Recent Alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Recent Alert?": {
+      "main": [
+        [
+          {
+            "node": "Get Waitlist Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Waitlist Count": {
+      "main": [
+        [
+          {
+            "node": "Generate Alert Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Alert Messages": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send WhatsApp Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Admin Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Alert Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf12-course-capacity-alerts",
+  "tags": [
+    {
+      "id": "tag:courses",
+      "name": "Courses"
+    },
+    {
+      "id": "tag:alerts",
+      "name": "Alerts"
+    },
+    {
+      "id": "tag:capacity",
+      "name": "Capacity"
+    }
+  ]
+}

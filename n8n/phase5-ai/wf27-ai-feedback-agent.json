@@ -1,0 +1,461 @@
+{
+  "name": "WF27: AI assignment feedback agent -> detailed analysis + suggestions",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assignment-submitted",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-assignment-submitted",
+      "name": "Assignment Submitted Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "assignment-submitted"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process assignment submission webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new assignment_submission insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'assignment_submissions') {\n  return []; // Not a new assignment submission\n}\n\nreturn [{\n  json: {\n    submission_id: record.id,\n    user_id: record.user_id,\n    assignment_id: record.assignment_id,\n    submission_content: record.submission_content,\n    file_attachments: record.file_attachments,\n    submitted_at: record.created_at\n  }\n}];"
+      },
+      "id": "process-assignment-submission",
+      "name": "Process Assignment Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "assignments a",
+        "columns": "a.*, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "a.course_edition_id = ce.id"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "a.id",
+              "condition": "equal",
+              "value": "={{ $json.assignment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-assignment-details",
+      "name": "Get Assignment Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-student-profile",
+      "name": "Get Student Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert instructor for international mediation and arbitration courses. Provide comprehensive, constructive feedback on student assignments. Analyze: 1) Content understanding and accuracy, 2) Critical thinking and analysis, 3) Structure and organization, 4) Writing quality, 5) Practical application. Provide specific examples, suggestions for improvement, and encouragement. Include a score out of 100 with detailed breakdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Course: {{ $('Get Assignment Details').first().json.course_name }}\\n\\nAssignment: {{ $('Get Assignment Details').first().json.title }}\\n\\nAssignment Description: {{ $('Get Assignment Details').first().json.description }}\\n\\nStudent Submission:\\n{{ $json.submission_content }}\\n\\n{{ $json.file_attachments ? 'File attachments: ' + $json.file_attachments : '' }}\\n\\nPlease provide detailed feedback including: 1) Overall score (0-100), 2) Strengths, 3) Areas for improvement, 4) Specific suggestions, 5) Learning recommendations. Be thorough yet encouraging.\"\n    }\n  ],\n  \"max_tokens\": 1500,\n  \"temperature\": 0.3\n}",
+        "options": {}
+      },
+      "id": "openai-generate-feedback",
+      "name": "Generate AI Feedback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process AI feedback and extract score\nconst aiResponse = $json;\nconst submission = $('Process Assignment Submission').first().json;\nconst assignment = $('Get Assignment Details').first().json;\nconst student = $('Get Student Profile').first().json;\n\n// Extract the AI feedback content\nconst feedbackContent = aiResponse.choices[0].message.content;\n\n// Try to extract score from the response\nconst scoreMatch = feedbackContent.match(/(?:score|grade)[:\\s]*(\\d+)\\s*(?:\\/\\s*100|out of 100)?/i);\nconst score = scoreMatch ? parseInt(scoreMatch[1]) : 75; // Default to 75 if not found\n\n// Determine grade level\nlet grade = 'F';\nif (score >= 90) grade = 'A';\nelse if (score >= 80) grade = 'B';\nelse if (score >= 70) grade = 'C';\nelse if (score >= 60) grade = 'D';\n\n// Determine if passed (60% threshold)\nconst passed = score >= 60;\n\n// Generate feedback summary\nconst feedbackSummary = feedbackContent.substring(0, 300) + (feedbackContent.length > 300 ? '...' : '');\n\nreturn [{\n  json: {\n    submission_id: submission.submission_id,\n    user_id: submission.user_id,\n    assignment_id: submission.assignment_id,\n    assignment_title: assignment.title,\n    course_name: assignment.course_name,\n    student_name: student.full_name,\n    student_email: student.email,\n    score: score,\n    grade: grade,\n    passed: passed,\n    ai_feedback: feedbackContent,\n    feedback_summary: feedbackSummary,\n    submitted_at: submission.submitted_at\n  }\n}];"
+      },
+      "id": "process-ai-feedback",
+      "name": "Process AI Feedback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "assignment_submissions",
+        "columns": {
+          "assignment": [
+            {
+              "column": "score",
+              "value": "={{ $json.score }}"
+            },
+            {
+              "column": "grade",
+              "value": "={{ $json.grade }}"
+            },
+            {
+              "column": "passed",
+              "value": "={{ $json.passed }}"
+            },
+            {
+              "column": "ai_feedback",
+              "value": "={{ $json.ai_feedback }}"
+            },
+            {
+              "column": "graded_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "grading_method",
+              "value": "ai"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.submission_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "update-submission-record",
+      "name": "Update Submission Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "assignments@thecima.org",
+        "to": "={{ $json.student_email }}",
+        "subject": "Assignment Feedback - {{ $json.assignment_title }} - Grade {{ $json.grade }}",
+        "html": "<h2>Assignment Feedback - {{ $json.assignment_title }}</h2><p>Dear {{ $json.student_name }},</p><p>Your assignment has been reviewed by our AI feedback system. Here are your results:</p><div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\"><h3 style=\"margin: 0 0 10px 0; color: {{ $json.passed ? '#28a745' : '#dc3545' }};\">{{ $json.grade }} - {{ $json.passed ? 'PASSED' : 'FAILED' }}</h3><div style=\"font-size: 36px; font-weight: bold; margin: 10px 0;\">{{ $json.score }}/100</div><div style=\"color: #666;\">AI-graded assignment</div></div><h3>Course: {{ $json.course_name }}</h3><h3>Assignment: {{ $json.assignment_title }}</h3><h3>Detailed AI Feedback</h3><div style=\"background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #17a2b8;\"><pre style=\"white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 14px; margin: 0;\">{{ $json.ai_feedback }}</pre></div><h3>Important Notes</h3><ul><li>This assignment was graded using AI technology</li><li>The AI evaluates based on standard criteria for {{ $json.course_name }}</li><li>If you believe there's an error in the grading, you can request a manual review</li><li>Manual reviews are available within 7 days of submission</li></ul><h3>Next Steps</h3>{{ $json.passed ? '<p>Congratulations on passing! You can proceed to the next module.</p>' : '<p>Please review the feedback carefully and consider resubmitting. Focus on the areas identified for improvement.</p>' }}<p><a href=\"https://cima.learn/assignments/{{ $json.assignment_id }}/feedback\" style=\"background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;\">View Full Feedback</a></p><p><a href=\"https://cima.learn/assignments/{{ $json.assignment_id }}/request-review\" style=\"background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-left: 10px;\">Request Manual Review</a></p><p>If you have any questions about your feedback or the AI grading process, please contact your instructor or the CIMA team.</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "send-feedback-email",
+      "name": "Send Feedback Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_notifications",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "column": "type",
+              "value": "assignment_feedback"
+            },
+            {
+              "column": "title",
+              "value": "Assignment feedback available"
+            },
+            {
+              "column": "content",
+              "value": "Your assignment \"{{ $json.assignment_title }}\" has been graded. Score: {{ $json.score }}/100 ({{ $json.grade }})"
+            },
+            {
+              "column": "entity_type",
+              "value": "assignment_submission"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.submission_id }}"
+            },
+            {
+              "column": "status",
+              "value": "unread"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-notification",
+      "name": "Create In-App Notification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "assignment_graded"
+            },
+            {
+              "column": "entity_type",
+              "value": "assignment_submission"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.submission_id }}"
+            },
+            {
+              "column": "description",
+              "value": "AI-graded assignment: {{ $json.assignment_title }} - {{ $json.grade }} ({{ $json.score }}/100)"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { score: $json.score, grade: $json.grade, passed: $json.passed, grading_method: 'ai', course: $json.course_name } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "log-grading-activity",
+      "name": "Log Grading Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#assignments",
+        "text": "AI-graded assignment: {{ $json.student_name }} - {{ $json.assignment_title }} ({{ $json.course_name }}) - {{ $json.grade }} ({{ $json.score }}/100)",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Assignment Submitted Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Assignment Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Assignment Submission": {
+      "main": [
+        [
+          {
+            "node": "Get Assignment Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Assignment Details": {
+      "main": [
+        [
+          {
+            "node": "Get Student Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Student Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Feedback": {
+      "main": [
+        [
+          {
+            "node": "Process AI Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process AI Feedback": {
+      "main": [
+        [
+          {
+            "node": "Update Submission Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Submission Record": {
+      "main": [
+        [
+          {
+            "node": "Send Feedback Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Feedback Email": {
+      "main": [
+        [
+          {
+            "node": "Create In-App Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Grading Activity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf27-ai-feedback-agent",
+  "tags": [
+    {
+      "id": "tag:assignment",
+      "name": "Assignment"
+    },
+    {
+      "id": "tag:ai",
+      "name": "AI"
+    },
+    {
+      "id": "tag:feedback",
+      "name": "Feedback"
+    }
+  ]
+}

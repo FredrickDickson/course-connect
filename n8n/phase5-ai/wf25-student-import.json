@@ -1,0 +1,775 @@
+{
+  "name": "WF25: Old student database import -> member creation + notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-import-started",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-import-started",
+      "name": "Student Import Started",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "student-import-started"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process student import webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a student_import_request insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'student_import_requests') {\n  return []; // Not a student import request\n}\n\nreturn [{\n  json: {\n    import_id: record.id,\n    file_path: record.file_path,\n    import_type: record.import_type,\n    started_by: record.started_by,\n    created_at: record.created_at\n  }\n}];"
+      },
+      "id": "process-import-request",
+      "name": "Process Import Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "student_import_requests",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.import_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-import-details",
+      "name": "Get Import Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.started_by }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-admin-profile",
+      "name": "Get Admin Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "student_import_requests",
+        "columns": {
+          "assignment": [
+            {
+              "column": "status",
+              "value": "processing"
+            },
+            {
+              "column": "started_processing_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.import_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "update-status-processing",
+      "name": "Update Status to Processing",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read and parse the student data file\n// This example assumes CSV format, adjust as needed for your actual file format\nconst fs = require('fs');\nconst path = require('path');\nconst csv = require('csv-parser');\n\nconst importRequest = $('Get Import Details').first().json;\nconst adminProfile = $('Get Admin Profile').first().json;\n\n// For this example, we'll simulate reading a CSV file\n// In reality, you'd read from the actual file path\nconst simulatedStudentData = [\n  {\n    full_name: 'John Doe',\n    email: 'john.doe@example.com',\n    phone: '0551234567',\n    membership_level: 'basic',\n    original_member_id: 'OLD001',\n    enrollment_date: '2022-01-15',\n    courses_completed: 'Introduction to Mediation,Advanced Arbitration',\n    expiry_date: '2023-12-31'\n  },\n  {\n    full_name: 'Jane Smith',\n    email: 'jane.smith@example.com',\n    phone: '0559876543',\n    membership_level: 'advanced',\n    original_member_id: 'OLD002',\n    enrollment_date: '2021-06-20',\n    courses_completed: 'Commercial Arbitration,Investment Treaty Arbitration',\n    expiry_date: '2024-03-15'\n  }\n  // Add more student records as needed\n];\n\nreturn simulatedStudentData.map(student => ({\n  json: {\n    ...student,\n    import_id: importRequest.id,\n    imported_by: adminProfile.id\n  }\n}));"
+      },
+      "id": "read-student-data",
+      "name": "Read Student Data File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "split-in-batches-students",
+      "name": "Split in Batches (Students)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "email",
+              "condition": "equal",
+              "value": "={{ $json.email }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "check-existing-user",
+      "name": "Check Existing User",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "user-exists",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-user-does-not-exist",
+      "name": "User Does Not Exist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "profiles",
+        "columns": {
+          "assignment": [
+            {
+              "column": "full_name",
+              "value": "={{ $json.full_name }}"
+            },
+            {
+              "column": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "column": "phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "column": "membership_level",
+              "value": "={{ $json.membership_level }}"
+            },
+            {
+              "column": "status",
+              "value": "active"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "updated_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-user-profile",
+      "name": "Create User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "members",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "column": "membership_level",
+              "value": "={{ $json.membership_level }}"
+            },
+            {
+              "column": "issue_date",
+              "value": "={{ $json.enrollment_date }}"
+            },
+            {
+              "column": "expiry_date",
+              "value": "={{ $json.expiry_date }}"
+            },
+            {
+              "column": "status",
+              "value": "active"
+            },
+            {
+              "column": "renewal_count",
+              "value": "0"
+            },
+            {
+              "column": "import_source",
+              "value": "legacy_database"
+            },
+            {
+              "column": "original_member_id",
+              "value": "={{ $json.original_member_id }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-member-record",
+      "name": "Create Member Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "imported_student_records",
+        "columns": {
+          "assignment": [
+            {
+              "column": "import_id",
+              "value": "={{ $json.import_id }}"
+            },
+            {
+              "column": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "column": "original_member_id",
+              "value": "={{ $json.original_member_id }}"
+            },
+            {
+              "column": "full_name",
+              "value": "={{ $json.full_name }}"
+            },
+            {
+              "column": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "column": "membership_level",
+              "value": "={{ $json.membership_level }}"
+            },
+            {
+              "column": "original_enrollment_date",
+              "value": "={{ $json.enrollment_date }}"
+            },
+            {
+              "column": "courses_completed",
+              "value": "={{ $json.courses_completed }}"
+            },
+            {
+              "column": "status",
+              "value": "imported"
+            },
+            {
+              "column": "imported_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-import-record",
+      "name": "Create Import Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_notifications",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "column": "type",
+              "value": "welcome_import"
+            },
+            {
+              "column": "title",
+              "value": "Welcome to CIMA Community!"
+            },
+            {
+              "column": "content",
+              "value": "Your account has been imported from our previous system. Welcome to the new CIMA platform!"
+            },
+            {
+              "column": "status",
+              "value": "unread"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-welcome-notification",
+      "name": "Create Welcome Notification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "welcome@thecima.org",
+        "to": "={{ $json.email }}",
+        "subject": "Welcome to the New CIMA Platform!",
+        "html": "<h2>Welcome to CIMA!</h2><p>Dear {{ $json.full_name }},</p><p>We're excited to welcome you to the new Center for International Mediators and Arbitrators platform! Your account has been successfully imported from our previous system.</p><h3>What's New for You:</h3><ul><li><strong>Modern Dashboard:</strong> Track your courses, certificates, and membership status</li><li><strong>Community Forum:</strong> Connect with fellow mediators and arbitrators</li><li><strong>Online Learning:</strong> Access course materials and assessments online</li><li><strong>Mobile Friendly:</strong> Access everything from your phone or tablet</li></ul><h3>Your Account Details:</h3><ul><li><strong>Membership Level:</strong> {{ $json.membership_level }}</li><li><strong>Current Status:</strong> Active</li><li><strong>Member Since:</strong> {{ $json.enrollment_date }}</li></ul><h3>Next Steps:</h3><ol><li><a href=\"https://cima.learn/login\"><strong>Log In</strong></a> to your account</li><li>Update your profile information</li><li>Explore the community forum</li><li>Check out upcoming courses</li></ol><h3>Need Help?</h3><p>If you have any questions about the new platform or need assistance accessing your account, please don't hesitate to contact us:</p><p><strong>Phone:</strong> 0536735535 | 0241022964<br><strong>Email:</strong> info@thecima.org</p><p>We're thrilled to have you as part of our continued community and look forward to supporting your professional journey in international mediation and arbitration.</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "send-welcome-email",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [3100, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "imported_student_records",
+        "columns": {
+          "assignment": [
+            {
+              "column": "import_id",
+              "value": "={{ $json.import_id }}"
+            },
+            {
+              "column": "original_member_id",
+              "value": "={{ $json.original_member_id }}"
+            },
+            {
+              "column": "full_name",
+              "value": "={{ $json.full_name }}"
+            },
+            {
+              "column": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "column": "status",
+              "value": "already_exists"
+            },
+            {
+              "column": "notes",
+              "value": "User already exists in system"
+            },
+            {
+              "column": "imported_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "create-duplicate-record",
+      "name": "Create Duplicate Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 500],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "student_import_requests",
+        "columns": {
+          "assignment": [
+            {
+              "column": "status",
+              "value": "completed"
+            },
+            {
+              "column": "completed_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "total_records",
+              "value": "={{ $('Read Student Data').all().length }}"
+            },
+            {
+              "column": "imported_records",
+              "value": "={{ $('Create User Profile').all().length }}"
+            },
+            {
+              "column": "duplicate_records",
+              "value": "={{ $('Create Duplicate Record').all().length }}"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.import_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "update-import-completed",
+      "name": "Update Import Completed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3320, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "admin@thecima.org",
+        "to": "={{ $('Get Admin Profile').first().json.email }}",
+        "subject": "Student Import Completed - Summary",
+        "html": "<h2>Student Import Completed</h2><p>Dear {{ $('Get Admin Profile').first().json.full_name }},</p><p>The student database import has been completed successfully. Here's the summary:</p><h3>Import Summary:</h3><ul><li><strong>Total Records:</strong> {{ $('Read Student Data').all().length }}</li><li><strong>Successfully Imported:</strong> {{ $('Create User Profile').all().length }}</li><li><strong>Duplicates Skipped:</strong> {{ $('Create Duplicate Record').all().length }}</li><li><strong>Import ID:</strong> {{ $json.import_id }}</li></ul><h3>Next Steps:</h3><ul><li>Review the imported records in the database</li><li>Monitor for any login issues from imported users</li><li>Consider sending a follow-up announcement to the community</li></ul><p><a href=\"https://cima.learn/admin/imports/{{ $json.import_id }}\"><strong>View Import Details</strong></a></p><p>If you need to make any corrections or have questions about the import, please contact the technical team.</p><p>Best regards,<br>The CIMA System</p>",
+        "options": {}
+      },
+      "id": "send-admin-summary",
+      "name": "Send Admin Summary",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [3540, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#admin",
+        "text": "Student import completed: {{ $('Create User Profile').all().length }} imported, {{ $('Create Duplicate Record').all().length }} duplicates skipped. Import ID: {{ $json.import_id }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [3760, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Student Import Started": {
+      "main": [
+        [
+          {
+            "node": "Process Import Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Import Request": {
+      "main": [
+        [
+          {
+            "node": "Get Import Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Import Details": {
+      "main": [
+        [
+          {
+            "node": "Get Admin Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Admin Profile": {
+      "main": [
+        [
+          {
+            "node": "Update Status to Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Processing": {
+      "main": [
+        [
+          {
+            "node": "Read Student Data File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Student Data File": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Students)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Students)": {
+      "main": [
+        [
+          {
+            "node": "Check Existing User",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Check Existing User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing User": {
+      "main": [
+        [
+          {
+            "node": "User Does Not Exist?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Does Not Exist?": {
+      "main": [
+        [
+          {
+            "node": "Create User Profile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Duplicate Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create User Profile": {
+      "main": [
+        [
+          {
+            "node": "Create Member Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Member Record": {
+      "main": [
+        [
+          {
+            "node": "Create Import Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Import Record": {
+      "main": [
+        [
+          {
+            "node": "Create Welcome Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Welcome Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Import Completed": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf25-student-import",
+  "tags": [
+    {
+      "id": "tag:import",
+      "name": "Import"
+    },
+    {
+      "id": "tag:migration",
+      "name": "Migration"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

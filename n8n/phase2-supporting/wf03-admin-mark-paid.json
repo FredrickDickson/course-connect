@@ -1,0 +1,285 @@
+{
+  "name": "WF03: Admin marks as paid -> instant confirmation email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-mark-paid",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-admin-mark-paid",
+      "name": "Admin Mark Paid Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "admin-mark-paid"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process admin mark-as-paid webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if payment status changed from pending to confirmed\nconst oldRecord = $json.body.old_record;\nconst newRecord = $json.body.record;\n\nconst pendingStatuses = ['pending_bank', 'pending_invoice'];\nconst wasPending = oldRecord && pendingStatuses.includes(oldRecord.payment_status);\nconst isNowConfirmed = newRecord.payment_status === 'confirmed';\n\nif (!wasPending || !isNowConfirmed) {\n  return []; // Not a payment confirmation change\n}\n\nreturn [{\n  json: {\n    enrollment_id: newRecord.id,\n    user_id: newRecord.user_id,\n    course_edition_id: newRecord.course_edition_id,\n    user_email: newRecord.user_email,\n    user_name: newRecord.user_name,\n    course_name: newRecord.course_name,\n    amount_paid: newRecord.amount_paid,\n    payment_method: newRecord.payment_method,\n    booking_reference: newRecord.booking_reference,\n    confirmed_at: newRecord.confirmed_at || $now\n  }\n}];"
+      },
+      "id": "code-process-payment-change",
+      "name": "Process Payment Change",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments e",
+        "columns": "e.*, u.full_name, u.email, u.phone, c.name as course_name, ce.start_date, ce.end_date, ce.format, ce.location",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "e.user_id = u.id"
+          },
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "e.course_edition_id = ce.id"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "e.id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-fetch-full-enrollment",
+      "name": "Fetch Full Enrollment + Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.email }}",
+        "subject": "Enrollment Confirmed - {{ $json.booking_reference }}",
+        "html": "<h2>Enrollment Confirmed!</h2><p>Dear {{ $json.full_name }},</p><p>Your payment for <strong>{{ $json.course_name }}</strong> has been confirmed and your enrollment is now complete!</p><p><strong>Enrollment Details:</strong></p><ul><li><strong>Booking Reference:</strong> {{ $json.booking_reference }}</li><li><strong>Course:</strong> {{ $json.course_name }}</li><li><strong>Dates:</strong> {{ $json.start_date }} - {{ $json.end_date }}</li><li><strong>Format:</strong> {{ $json.format }}</li><li><strong>Location:</strong> {{ $json.location }}</li><li><strong>Amount Paid:</strong> GHS {{ $json.amount_paid }}</li><li><strong>Payment Method:</strong> {{ $json.payment_method }}</li></ul><h3>What's Next?</h3><p>You will receive joining instructions 7 days before the course starts, including:</p><ul><li>Zoom link (if online)</li><li>Venue details (if in-person)</li><li>Course materials</li><li>Pre-course preparation</li></ul><p>If you have any questions, please contact us:</p><p><strong>Phone:</strong> 0536735535 | 0241022964<br><strong>Email:</strong> info@thecima.org</p><p>We look forward to seeing you in the course!</p><p>Thank you for choosing CIMA!</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-confirmation-email",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "course_editions",
+        "column": "enrolled_count",
+        "value": "enrolled_count + 1",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-increment-enrolled",
+      "name": "Increment Enrolled Count",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "payment_confirmed"
+            },
+            {
+              "column": "entity_type",
+              "value": "enrollment"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.enrollment_id }}"
+            },
+            {
+              "column": "description",
+              "value": "Admin confirmed payment for {{ $json.course_name }} - {{ $json.booking_reference }}"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { payment_method: $json.payment_method, amount: $json.amount_paid, confirmed_by: 'admin' } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-activity",
+      "name": "Log Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Payment confirmed by admin: {{ $json.full_name }} - {{ $json.course_name }} (GHS {{ $json.amount_paid }}) - Ref: {{ $json.booking_reference }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-confirmation",
+      "name": "Notify Admin Confirmation",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1560, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Admin Mark Paid Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Payment Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Payment Change": {
+      "main": [
+        [
+          {
+            "node": "Fetch Full Enrollment + Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Full Enrollment + Profile": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Increment Enrolled Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Increment Enrolled Count": {
+      "main": [
+        [
+          {
+            "node": "Log Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Activity": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf03-admin-mark-paid",
+  "tags": [
+    {
+      "id": "tag:payment",
+      "name": "Payment"
+    },
+    {
+      "id": "tag:admin",
+      "name": "Admin"
+    },
+    {
+      "id": "tag:enrollment",
+      "name": "Enrollment"
+    }
+  ]
+}

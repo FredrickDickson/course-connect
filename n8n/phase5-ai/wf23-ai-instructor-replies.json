@@ -1,0 +1,473 @@
+{
+  "name": "WF23: AI instructor auto-replies -> community forum questions",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "forum-question-posted",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-forum-question",
+      "name": "Forum Question Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "forum-question-posted"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process forum question webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new forum_post insertion with question category\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'forum_posts') {\n  return []; // Not a new forum post\n}\n\n// Only process posts in question categories\nconst questionCategories = ['questions', 'course-help', 'technical-support', 'general-discussion'];\nif (!questionCategories.includes(record.category)) {\n  return []; // Not a question category\n}\n\n// Check if this looks like a question (contains ? or question words)\nconst questionWords = ['how', 'what', 'when', 'where', 'why', 'which', 'who', 'can', 'could', 'would', 'should', 'is', 'are', 'do', 'does'];\nconst title = record.title.toLowerCase();\nconst body = record.body.toLowerCase();\nconst hasQuestionWord = questionWords.some(word => title.includes(word) || body.includes(word));\nconst hasQuestionMark = title.includes('?') || body.includes('?');\n\nif (!hasQuestionWord && !hasQuestionMark) {\n  return []; // Doesn't look like a question\n}\n\nreturn [{\n  json: {\n    post_id: record.id,\n    title: record.title,\n    body: record.body,\n    author_id: record.user_id,\n    category: record.category,\n    created_at: record.created_at\n  }\n}];"
+      },
+      "id": "code-process-forum-question",
+      "name": "Process Forum Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.author_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-author-profile",
+      "name": "Get Author Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "forum_replies",
+        "where": {
+          "conditions": [
+            {
+              "column": "post_id",
+              "condition": "equal",
+              "value": "={{ $json.post_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "supabase-check-existing-replies",
+      "name": "Check Existing Replies",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "no-replies-yet",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-no-replies-yet",
+      "name": "No Replies Yet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-3.5-turbo\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert instructor for the Center for International Mediators and Arbitrators (CIMA). Provide helpful, professional responses to student questions about international mediation, arbitration, and related topics. Be encouraging and educational. Keep responses concise but thorough. Always mention that this is an AI response and human instructors may provide additional insights.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Category: {{ $json.category }}\\n\\nQuestion: {{ $json.title }}\\n\\nDetails: {{ $json.body }}\\n\\nPlease provide a helpful response to this student's question. Include relevant concepts, practical advice, and suggest where they can learn more about this topic.\"\n    }\n  ],\n  \"max_tokens\": 800,\n  \"temperature\": 0.7\n}",
+        "options": {}
+      },
+      "id": "openai-generate-reply",
+      "name": "Generate AI Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1340, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process AI reply and prepare for posting\nconst aiResponse = $json;\nconst question = $('Process Forum Question').first().json;\nconst author = $('Get Author Profile').first().json;\n\n// Extract the AI response content\nconst aiReplyContent = aiResponse.choices[0].message.content;\n\n// Add AI disclaimer and signature\nconst finalReply = `${aiReplyContent}\\n\\n---\\n\\n*This is an AI-generated response from CIMA's automated instructor system. Human instructors may provide additional insights or follow up on this response. If you need more detailed assistance, please tag @instructor in your reply.*`;\n\nreturn [{\n  json: {\n    post_id: question.post_id,\n    ai_reply: finalReply,\n    author_name: author.full_name,\n    question_title: question.title,\n    question_category: question.category\n  }\n}];"
+      },
+      "id": "code-process-ai-reply",
+      "name": "Process AI Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "forum_replies",
+        "columns": {
+          "assignment": [
+            {
+              "column": "post_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "user_id",
+              "value": "system-ai-instructor"
+            },
+            {
+              "column": "body",
+              "value": "={{ $json.ai_reply }}"
+            },
+            {
+              "column": "is_ai_reply",
+              "value": "true"
+            },
+            {
+              "column": "status",
+              "value": "published"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-post-ai-reply",
+      "name": "Post AI Reply",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_notifications",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.author_id }}"
+            },
+            {
+              "column": "type",
+              "value": "ai_reply"
+            },
+            {
+              "column": "title",
+              "value": "AI instructor replied to your question"
+            },
+            {
+              "column": "content",
+              "value": "CIMA's AI instructor has responded to your question: \"{{ $json.question_title }}\""
+            },
+            {
+              "column": "entity_type",
+              "value": "forum_post"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "status",
+              "value": "unread"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-create-notification",
+      "name": "Create Notification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "community@thecima.org",
+        "to": "={{ $('Get Author Profile').first().json.email }}",
+        "subject": "AI instructor replied to your question",
+        "html": "<h2>AI Instructor Response</h2><p>Dear {{ $('Get Author Profile').first().json.full_name }},</p><p>CIMA's AI instructor has responded to your question in the community forum:</p><h3>{{ $json.question_title }}</h3><p><strong>Category:</strong> {{ $json.question_category }}</p><div style=\"background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007bff;\"><p>{{ $json.ai_reply.substring(0, 300) }}...</p></div><p><a href=\"https://cima.learn/community/posts/{{ $json.post_id }}\"><strong>View Full Response</strong></a></p><p>This is an automated response from our AI instructor system. Human instructors may also provide additional insights or follow up on your question.</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-notification-email",
+      "name": "Send Notification Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#community",
+        "text": "AI instructor replied to question: \"{{ $json.question_title }}\" by {{ $json.author_name }} in {{ $json.question_category }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "system-ai-instructor"
+            },
+            {
+              "column": "action_type",
+              "value": "ai_instructor_reply"
+            },
+            {
+              "column": "entity_type",
+              "value": "forum_post"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "description",
+              "value": "AI instructor replied to question: {{ $json.question_title }}"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { category: $json.question_category, author_name: $json.author_name, auto_reply: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-activity",
+      "name": "Log AI Reply Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Forum Question Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Forum Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Forum Question": {
+      "main": [
+        [
+          {
+            "node": "Get Author Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Author Profile": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Replies": {
+      "main": [
+        [
+          {
+            "node": "No Replies Yet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Replies Yet?": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Process AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Post AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Create Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Notification Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log AI Reply Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf23-ai-instructor-replies",
+  "tags": [
+    {
+      "id": "tag:community",
+      "name": "Community"
+    },
+    {
+      "id": "tag:ai",
+      "name": "AI"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

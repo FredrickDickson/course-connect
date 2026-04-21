@@ -1,0 +1,472 @@
+{
+  "name": "WF10: Course ends -> feedback survey + completion flag",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "value": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-daily-7am",
+      "name": "Daily at 7am UTC",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "course_editions ce",
+        "columns": "ce.id, ce.end_date, ce.status, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "ce.end_date",
+              "condition": "equal",
+              "value": "={{ $now.minus({ days: 1 }).substring(0, 10) }}",
+              "combinator": "and"
+            },
+            {
+              "column": "ce.status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-courses-ended-yesterday",
+      "name": "Courses Ended Yesterday",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-courses",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-courses-found",
+      "name": "Courses Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-in-batches-courses",
+      "name": "Split in Batches (Per Course)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments e",
+        "columns": "e.*, u.full_name, u.email",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "e.user_id = u.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "e.course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "e.payment_status",
+              "condition": "equal",
+              "value": "confirmed",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-enrollees",
+      "name": "Get Confirmed Enrollees",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "split-in-batches-enrollees",
+      "name": "Split in Batches (Per Enrollee)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate personalized feedback survey email\nconst course = $('Courses Ended Yesterday').first().json;\nconst enrollee = $json;\n\n// Generate survey URL with pre-filled data\nconst surveyUrl = `https://forms.typeform.com/to/cima-feedback?name=${encodeURIComponent(enrollee.full_name)}&email=${encodeURIComponent(enrollee.email)}&course=${encodeURIComponent(course.course_name)}&course_id=${course.id}`;\n\n// Alternative: Google Forms URL\nconst googleFormsUrl = `https://docs.google.com/forms/d/e/1FAIpQLSf123456789/viewform?usp=pp_url&entry.123456789=${encodeURIComponent(enrollee.full_name)}&entry.987654321=${encodeURIComponent(enrollee.email)}&entry.555666777=${encodeURIComponent(course.course_name)}`;\n\n// Choose survey platform (Typeform for better UX)\nconst chosenSurveyUrl = surveyUrl;\n\nconst emailHtml = `\n  <h2>Course Feedback - ${course.course_name}</h2>\n  <p>Dear ${enrollee.full_name},</p>\n  <p>Thank you for completing <strong>${course.course_name}</strong>! Your feedback is incredibly valuable to us and helps us improve future courses.</p>\n  \n  <h3>Share Your Experience</h3>\n  <p>Please take 5-10 minutes to complete our feedback survey:</p>\n  <p><a href='${chosenSurveyUrl}'><strong>Complete Feedback Survey</strong></a></p>\n  \n  <h3>What Your Feedback Helps Us Improve:</h3>\n  <ul>\n    <li>Course content and delivery</li>\n    <li>Instructor effectiveness</li>\n    <li>Learning materials and resources</li>\n    <li>Overall course experience</li>\n    <li>Future course planning</li>\n  </ul>\n  \n  <h3>Your Certificate</h3>\n  <p>Your course completion has been recorded. If you haven't received your certificate yet, it will be available in your dashboard within 48 hours.</p>\n  \n  <h3>Stay Connected</h3>\n  <p>Continue your learning journey with CIMA:</p>\n  <ul>\n    <li>Browse upcoming courses</li>\n    <li>Join the community forum</li>\n    <li>Access course materials</li>\n    <li>Network with fellow alumni</li>\n  </ul>\n  \n  <p>Thank you for being part of the CIMA community!</p>\n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    enrollee_email: enrollee.email,\n    enrollee_name: enrollee.full_name,\n    enrollee_id: enrollee.user_id,\n    course_name: course.course_name,\n    course_id: course.id,\n    subject: `Feedback Request - ${course.course_name}`,\n    html: emailHtml,\n    survey_url: chosenSurveyUrl\n  }\n}];"
+      },
+      "id": "code-generate-feedback-email",
+      "name": "Generate Feedback Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.enrollee_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-feedback-survey",
+      "name": "Send Feedback Survey",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "course_editions",
+        "column": "status",
+        "value": "completed",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.course_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-mark-course-completed",
+      "name": "Mark Course Completed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "columns": "COUNT(*) as enrollee_count",
+        "where": {
+          "conditions": [
+            {
+              "column": "course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "payment_status",
+              "condition": "equal",
+              "value": "confirmed",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-count-enrollees",
+      "name": "Count Enrollees",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Course completed: {{ $json.course_name }} - {{ $json.enrollee_count }} enrollees notified for feedback",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "action_type",
+              "value": "course_completed"
+            },
+            {
+              "column": "entity_type",
+              "value": "course_edition"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.course_id }}"
+            },
+            {
+              "column": "description",
+              "value": "Course {{ $json.course_name }} completed and feedback sent to {{ $json.enrollee_count }} enrollees"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { enrollee_count: $json.enrollee_count, survey_sent: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-completion",
+      "name": "Log Course Completion",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily at 7am UTC": {
+      "main": [
+        [
+          {
+            "node": "Courses Ended Yesterday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Courses Ended Yesterday": {
+      "main": [
+        [
+          {
+            "node": "Courses Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Courses Found?": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Per Course)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Per Course)": {
+      "main": [
+        [
+          {
+            "node": "Get Confirmed Enrollees",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get Confirmed Enrollees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Confirmed Enrollees": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Per Enrollee)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Per Enrollee)": {
+      "main": [
+        [
+          {
+            "node": "Generate Feedback Email",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Generate Feedback Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Feedback Email": {
+      "main": [
+        [
+          {
+            "node": "Send Feedback Survey",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Feedback Survey": {
+      "main": [
+        [
+          {
+            "node": "Mark Course Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Course Completed": {
+      "main": [
+        [
+          {
+            "node": "Count Enrollees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Enrollees": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Admin (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Log Course Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf10-course-feedback",
+  "tags": [
+    {
+      "id": "tag:courses",
+      "name": "Courses"
+    },
+    {
+      "id": "tag:feedback",
+      "name": "Feedback"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

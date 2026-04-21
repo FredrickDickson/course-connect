@@ -1,0 +1,484 @@
+{
+  "name": "WF11: New course published -> notify matching level members",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "course-published",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-course-published",
+      "name": "Course Published Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "course-published"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process course publication webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if course edition status changed to registration_open\nconst oldRecord = $json.body.old_record;\nconst newRecord = $json.body.record;\n\nconst wasNotOpen = !oldRecord || oldRecord.status !== 'registration_open';\nconst isNowOpen = newRecord.status === 'registration_open';\n\nif (!wasNotOpen || !isNowOpen) {\n  return []; // Not a new course publication\n}\n\nreturn [{\n  json: {\n    course_edition_id: newRecord.id,\n    course_id: newRecord.course_id,\n    start_date: newRecord.start_date,\n    end_date: newRecord.end_date,\n    format: newRecord.format,\n    location: newRecord.location,\n    price: newRecord.price,\n    capacity: newRecord.capacity,\n    zoom_url: newRecord.zoom_url,\n    published_at: newRecord.updated_at\n  }\n}];"
+      },
+      "id": "code-process-course-publication",
+      "name": "Process Course Publication",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "course_editions ce",
+        "columns": "ce.*, c.name as course_name, c.description as course_description, c.target_level",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "ce.id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-full-course-details",
+      "name": "Get Full Course Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-target-level",
+              "leftValue": "={{ $json.target_level }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-target-level",
+      "name": "Has Target Level?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "members m",
+        "columns": "m.full_name, m.email, m.membership_level, m.notification_preferences",
+        "where": {
+          "conditions": [
+            {
+              "column": "m.status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            },
+            {
+              "column": "m.membership_level",
+              "condition": "equal",
+              "value": "={{ $json.target_level }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-target-members",
+      "name": "Get Target Level Members",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-members",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-members",
+      "name": "Has Target Members?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "split-in-batches-members",
+      "name": "Split in Batches (Members)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate personalized course notification email\nconst course = $('Get Full Course Details').first().json;\nconst member = $json;\n\n// Check notification preferences\nconst notifications = member.notification_preferences || {};\nconst emailEnabled = notifications.new_courses !== false;\n\nif (!emailEnabled) {\n  return [{ json: { skip_email: true, member_name: member.full_name } }];\n}\n\n// Generate course URL\nconst courseUrl = `https://cima.learn/courses/${course.course_edition_id}`;\n\n// Format course details\nconst formatDetails = course.format === 'online' \n  ? `Online via Zoom` \n  : `In-person at ${course.location}`;\n\n// Format price\nconst formattedPrice = course.price ? `GHS ${course.price.toLocaleString()}` : 'Free';\n\n// Format dates\nconst startDate = new Date(course.start_date).toLocaleDateString('en-GH', {\n  weekday: 'long',\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\nconst endDate = new Date(course.end_date).toLocaleDateString('en-GH', {\n  weekday: 'long',\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\n// Generate email content\nconst emailHtml = `\n  <h2>New Course Available for You!</h2>\n  <p>Dear ${member.full_name},</p>\n  <p>We're excited to announce a new course that matches your ${member.membership_level} membership level!</p>\n  \n  <h3>${course.course_name}</h3>\n  <p><em>${course.course_description}</em></p>\n  \n  <h4>Course Details:</h4>\n  <ul>\n    <li><strong>Dates:</strong> ${startDate} - ${endDate}</li>\n    <li><strong>Format:</strong> ${formatDetails}</li>\n    <li><strong>Price:</strong> ${formattedPrice}</li>\n    <li><strong>Capacity:</strong> ${course.capacity} participants</li>\n  </ul>\n  \n  <h4>What You'll Learn:</h4>\n  <p>This course is specifically designed for ${member.membership_level} level members and covers advanced topics in international mediation and arbitration.</p>\n  \n  <h4>Early Registration Benefits:</h4>\n  <ul>\n    <li>Secure your spot before it fills up</li>\n    <li>Access to pre-course materials</li>\n    <li>Priority support from instructors</li>\n  </ul>\n  \n  <p><a href='${courseUrl}'><strong>Enroll Now</strong></a></p>\n  \n  <p>Spaces are limited, so we encourage early registration to avoid disappointment.</p>\n  \n  <p>Questions about this course? Contact us at 0536735535 or info@thecima.org.</p>\n  \n  <p>We look forward to seeing you in the course!</p>\n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    member_email: member.email,\n    member_name: member.full_name,\n    member_level: member.membership_level,\n    course_name: course.course_name,\n    course_id: course.course_edition_id,\n    subject: `New Course Available: ${course.course_name}`,\n    html: emailHtml,\n    skip_email: false\n  }\n}];"
+      },
+      "id": "code-generate-notification-email",
+      "name": "Generate Notification Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "send-email",
+              "leftValue": "={{ $json.skip_email }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-send-email",
+      "name": "Send Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.member_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-course-notification",
+      "name": "Send Course Notification",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_announcements",
+        "columns": {
+          "assignment": [
+            {
+              "column": "title",
+              "value": "New Course Available: {{ $json.course_name }}"
+            },
+            {
+              "column": "content",
+              "value": "{{ $json.course_name }} is now open for enrollment! This course is designed for {{ $json.member_level }} level members. Limited spots available. Learn more and enroll today!"
+            },
+            {
+              "column": "type",
+              "value": "course_announcement"
+            },
+            {
+              "column": "target_level",
+              "value": "={{ $json.member_level }}"
+            },
+            {
+              "column": "course_edition_id",
+              "value": "={{ $json.course_id }}"
+            },
+            {
+              "column": "status",
+              "value": "published"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-create-community-announcement",
+      "name": "Create Community Announcement",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "New course published: {{ $json.course_name }} - targeting {{ $json.member_level }} members",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2660, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "action_type",
+              "value": "course_published"
+            },
+            {
+              "column": "entity_type",
+              "value": "course_edition"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.course_id }}"
+            },
+            {
+              "column": "description",
+              "value": "New course {{ $json.course_name }} published and notifications sent to {{ $json.member_level }} members"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { target_level: $json.member_level, notifications_sent: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-activity",
+      "name": "Log Publication Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Course Published Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Course Publication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Course Publication": {
+      "main": [
+        [
+          {
+            "node": "Get Full Course Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Full Course Details": {
+      "main": [
+        [
+          {
+            "node": "Has Target Level?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Target Level?": {
+      "main": [
+        [
+          {
+            "node": "Get Target Level Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Target Level Members": {
+      "main": [
+        [
+          {
+            "node": "Has Target Members?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Target Members?": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Members)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Members)": {
+      "main": [
+        [
+          {
+            "node": "Generate Notification Email",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Generate Notification Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Notification Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email?": {
+      "main": [
+        [
+          {
+            "node": "Send Course Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Community Announcement",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Publication Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf11-new-course-notifications",
+  "tags": [
+    {
+      "id": "tag:courses",
+      "name": "Courses"
+    },
+    {
+      "id": "tag:notifications",
+      "name": "Notifications"
+    },
+    {
+      "id": "tag:marketing",
+      "name": "Marketing"
+    }
+  ]
+}

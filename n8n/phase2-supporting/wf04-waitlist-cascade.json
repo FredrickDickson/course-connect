@@ -1,0 +1,578 @@
+{
+  "name": "WF04: Course full -> automatic waitlist cascade",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enrollment-cancelled",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-enrollment-cancelled",
+      "name": "Enrollment Cancelled Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "enrollment-cancelled"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process enrollment cancellation webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if enrollment status changed to cancelled\nconst oldRecord = $json.body.old_record;\nconst newRecord = $json.body.record;\n\nconst wasNotCancelled = oldRecord && oldRecord.payment_status !== 'cancelled';\nconst isNowCancelled = newRecord.payment_status === 'cancelled';\n\nif (!wasNotCancelled || !isNowCancelled) {\n  return []; // Not a cancellation change\n}\n\nreturn [{\n  json: {\n    enrollment_id: newRecord.id,\n    course_edition_id: newRecord.course_edition_id,\n    cancelled_at: newRecord.updated_at || $now\n  }\n}];"
+      },
+      "id": "code-process-cancellation",
+      "name": "Process Cancellation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist",
+        "columns": "*",
+        "where": {
+          "conditions": [
+            {
+              "column": "course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "created_at",
+          "direction": "ASC"
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-query-waitlist",
+      "name": "Query Waitlist (Oldest First)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-waitlist",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-waitlist-exists",
+      "name": "Waitlist Has Entries?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist w",
+        "columns": "w.*, u.full_name, u.email, ce.start_date, ce.end_date, c.name as course_name, ce.price, ce.format",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "w.user_id = u.id"
+          },
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "w.course_edition_id = ce.id"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "w.course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "w.status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "w.created_at",
+          "direction": "ASC"
+        },
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "supabase-get-next-waitlist",
+      "name": "Get Next Waitlist Entry",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.email }}",
+        "subject": "Spot Available - {{ $json.course_name }} - 24 Hour Offer",
+        "html": "<h2>Spot Available - 24 Hour Offer!</h2><p>Dear {{ $json.full_name }},</p><p>Great news! A spot has opened up in <strong>{{ $json.course_name }}</strong> and you're next on the waitlist.</p><p><strong>Course Details:</strong></p><ul><li><strong>Dates:</strong> {{ $json.start_date }} - {{ $json.end_date }}</li><li><strong>Format:</strong> {{ $json.format }}</li><li><strong>Price:</strong> GHS {{ $json.price }}</li></ul><h3>24-Hour Offer Details:</h3><p>This offer expires in <strong>24 hours</strong> from the time of this email.</p><p><strong>Offer Expires:</strong> {{ $now.plus({ hours: 24 }) }}</p><h3>How to Secure Your Spot:</h3><p><a href='https://cima.learn/enroll/{{ $json.course_edition_id }}?waitlist_id={{ $json.id }}'><strong>Enroll Now</strong></a></p><p>When you enroll, your waitlist position will be automatically converted to a confirmed enrollment.</p><h3>Payment Options:</h3><ul><li><strong>Instant Payment:</strong> Paystack (card, MoMo, bank transfer)</li><li><strong>Bank Transfer:</strong> 5-day payment window available</li></ul><p>If you don't enroll within 24 hours, the spot will be offered to the next person on the waitlist.</p><p>Questions? Call us at 0536735535 or 0241022964.</p><p>We hope to see you in the course!</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-spot-offer",
+      "name": "Send 24hr Spot Offer",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "waitlist",
+        "column": "offer_expires_at",
+        "value": "={{ $now.plus({ hours: 24 }) }}",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-set-offer-expiry",
+      "name": "Set Offer Expires At",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "wait-24-hours",
+      "name": "Wait 24 Hours",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-check-waitlist-status",
+      "name": "Check Waitlist Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "enrolled-within-24h",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "enrolled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-enrolled-within-24h",
+      "name": "Enrolled Within 24h?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Waitlist offer expired: {{ $json.full_name }} - {{ $json.course_name }} (not enrolled within 24h)",
+        "otherOptions": {}
+      },
+      "id": "slack-offer-expired",
+      "name": "Notify Offer Expired",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "waitlist",
+        "column": "status",
+        "value": "expired",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-mark-expired",
+      "name": "Mark as Expired",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2660, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist",
+        "columns": "*",
+        "where": {
+          "conditions": [
+            {
+              "column": "course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_edition_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "created_at",
+          "direction": "ASC"
+        },
+        "additionalFields": {
+          "limit": 1
+        }
+      },
+      "id": "supabase-get-next-waitlist-2",
+      "name": "Get Next Waitlist Entry (After Expiry)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-next-waitlist",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-next-waitlist",
+      "name": "Has Next Waitlist?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop back to offer spot to next person\n// This will trigger the same workflow again for the next waitlist entry\nreturn [{\n  json: {\n    course_edition_id: $json[0].course_edition_id,\n    loop_again: true\n  }\n}];"
+      },
+      "id": "code-loop-to-next",
+      "name": "Loop to Next Person",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3320, 300]
+    }
+  ],
+  "connections": {
+    "Enrollment Cancelled Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Cancellation": {
+      "main": [
+        [
+          {
+            "node": "Query Waitlist (Oldest First)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Waitlist (Oldest First)": {
+      "main": [
+        [
+          {
+            "node": "Waitlist Has Entries?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waitlist Has Entries?": {
+      "main": [
+        [
+          {
+            "node": "Get Next Waitlist Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Waitlist Entry": {
+      "main": [
+        [
+          {
+            "node": "Send 24hr Spot Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send 24hr Spot Offer": {
+      "main": [
+        [
+          {
+            "node": "Set Offer Expires At",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Offer Expires At": {
+      "main": [
+        [
+          {
+            "node": "Wait 24 Hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 24 Hours": {
+      "main": [
+        [
+          {
+            "node": "Check Waitlist Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Waitlist Status": {
+      "main": [
+        [
+          {
+            "node": "Enrolled Within 24h?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrolled Within 24h?": {
+      "main": [
+        [
+          {
+            "node": "Notify Offer Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Offer Expired": {
+      "main": [
+        [
+          {
+            "node": "Mark as Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Expired": {
+      "main": [
+        [
+          {
+            "node": "Get Next Waitlist Entry (After Expiry)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Waitlist Entry (After Expiry)": {
+      "main": [
+        [
+          {
+            "node": "Has Next Waitlist?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Next Waitlist?": {
+      "main": [
+        [
+          {
+            "node": "Loop to Next Person",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf04-waitlist-cascade",
+  "tags": [
+    {
+      "id": "tag:waitlist",
+      "name": "Waitlist"
+    },
+    {
+      "id": "tag:enrollment",
+      "name": "Enrollment"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}
