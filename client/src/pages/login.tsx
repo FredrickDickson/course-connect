@@ -74,7 +74,7 @@ export default function Login() {
       sessionStorage.removeItem("redirectAfterLogin");
       
       if (redirect) {
-        window.location.assign(redirect);
+        window.location.href = redirect;
       } else {
         // Get user role from metadata or default to student
         const role = data.user.user_metadata?.role || "student";
@@ -84,7 +84,7 @@ export default function Login() {
             : role === "instructor"
               ? "/instructor"
               : "/dashboard";
-        window.location.assign(destination);
+        window.location.href = destination;
       }
     } catch (err: any) {
       setError(err.message || t("common.error"));
