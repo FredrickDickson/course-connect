@@ -12,13 +12,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     storage: localStorage,
     persistSession: true,
-    autoRefreshToken: false, // Disabled to prevent 429 rate limiting errors
+    autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    retry: {
-      retries: 3,
-      minDelay: 5000,
-      maxDelay: 30000,
-    },
   }
 });
