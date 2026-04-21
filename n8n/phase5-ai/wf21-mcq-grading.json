@@ -1,0 +1,453 @@
+{
+  "name": "WF21: MCQ auto-grading -> instant result + email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assessment-submitted",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-assessment-submitted",
+      "name": "Assessment Submitted Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "assessment-submitted"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process assessment submission webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new assessment_submission insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'assessment_submissions') {\n  return []; // Not a new assessment submission\n}\n\nreturn [{\n  json: {\n    submission_id: record.id,\n    user_id: record.user_id,\n    assessment_id: record.assessment_id,\n    answers: record.answers,\n    submitted_at: record.created_at\n  }\n}];"
+      },
+      "id": "code-process-assessment",
+      "name": "Process Assessment Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "assessments a",
+        "columns": "a.*, c.name as course_name, c.course_id",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "a.course_edition_id = ce.id"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "a.id",
+              "condition": "equal",
+              "value": "={{ $json.assessment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-assessment-details",
+      "name": "Get Assessment Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "assessment_questions",
+        "where": {
+          "conditions": [
+            {
+              "column": "assessment_id",
+              "condition": "equal",
+              "value": "={{ $json.assessment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "question_number",
+          "direction": "ASC"
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-questions",
+      "name": "Get Assessment Questions",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate MCQ score and generate detailed results\nconst submission = $('Process Assessment Submission').first().json;\nconst assessment = $('Get Assessment Details').first().json;\nconst questions = $('Get Assessment Questions').all() || [];\n\n// Parse student answers\nconst studentAnswers = JSON.parse(submission.answers || '{}');\n\n// Calculate score\nlet correctCount = 0;\nlet totalQuestions = questions.length;\nlet questionResults = [];\n\nquestions.forEach(question => {\n  const questionNumber = question.json.question_number;\n  const correctAnswer = question.json.correct_answer;\n  const studentAnswer = studentAnswers[questionNumber];\n  const isCorrect = studentAnswer === correctAnswer;\n  \n  if (isCorrect) {\n    correctCount++;\n  }\n  \n  questionResults.push({\n    question_number: questionNumber,\n    question_text: question.json.question_text,\n    student_answer: studentAnswer,\n    correct_answer: correctAnswer,\n    is_correct: isCorrect\n  });\n});\n\n// Calculate percentage score\nconst score = Math.round((correctCount / totalQuestions) * 100);\nconst passed = score >= 50; // 50% passing threshold\n\n// Generate feedback based on performance\nlet feedbackMessage = '';\nif (score >= 80) {\n  feedbackMessage = 'Excellent work! You have a strong understanding of the material.';\n} else if (score >= 60) {\n  feedbackMessage = 'Good job! You have a solid grasp of most concepts. Review the questions you missed to improve.';\n} else if (score >= 50) {\n  feedbackMessage = 'You passed! Focus on the areas where you struggled to strengthen your knowledge.';\n} else {\n  feedbackMessage = 'You did not pass this assessment. Please review the material thoroughly and consider retaking the assessment.';\n}\n\nreturn [{\n  json: {\n    submission_id: submission.submission_id,\n    user_id: submission.user_id,\n    assessment_id: submission.assessment_id,\n    assessment_title: assessment.title,\n    course_name: assessment.course_name,\n    total_questions: totalQuestions,\n    correct_answers: correctCount,\n    score: score,\n    passed: passed,\n    feedback_message: feedbackMessage,\n    question_results: questionResults,\n    submitted_at: submission.submitted_at\n  }\n}];"
+      },
+      "id": "code-calculate-score",
+      "name": "Calculate Score + Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "passed-assessment",
+              "leftValue": "={{ $json.passed }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-passed",
+      "name": "Passed Assessment?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "assessment_submissions",
+        "columns": {
+          "assignment": [
+            {
+              "column": "score",
+              "value": "={{ $json.score }}"
+            },
+            {
+              "column": "passed",
+              "value": "={{ $json.passed }}"
+            },
+            {
+              "column": "graded_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "feedback",
+              "value": "={{ $json.feedback_message }}"
+            },
+            {
+              "column": "question_results",
+              "value": "{{ JSON.stringify($json.question_results) }}"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.submission_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-update-submission",
+      "name": "Update Submission Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-student-profile",
+      "name": "Get Student Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate detailed result email\nconst results = $json;\nconst student = $('Get Student Profile').first().json;\n\n// Generate question breakdown HTML\nconst questionBreakdown = results.question_results.map(q => `\n  <tr style=\"border-bottom: 1px solid #dee2e6;\">\n    <td style=\"padding: 10px; text-align: center;\">${q.question_number}</td>\n    <td style=\"padding: 10px;\">${q.question_text.substring(0, 100)}${q.question_text.length > 100 ? '...' : ''}</td>\n    <td style=\"padding: 10px; text-align: center; font-weight: bold; color: ${q.is_correct ? '#28a745' : '#dc3545'};\">${q.student_answer || 'Not answered'}</td>\n    <td style=\"padding: 10px; text-align: center; font-weight: bold; color: #28a745;\">${q.correct_answer}</td>\n    <td style=\"padding: 10px; text-align: center;\">${q.is_correct ? 'â' : 'â'}</td>\n  </tr>\n`).join('');\n\n// Generate email HTML\nconst emailHtml = `\n  <h2>Assessment Results - ${results.assessment_title}</h2>\n  <p>Dear ${student.full_name},</p>\n  <p>Your assessment has been automatically graded. Here are your results:</p>\n  \n  <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\">\n    <h3 style=\"margin: 0 0 10px 0; color: ${results.passed ? '#28a745' : '#dc3545'};\">${results.passed ? 'â PASSED' : 'â FAILED'}</h3>\n    <div style=\"font-size: 24px; font-weight: bold; margin: 10px 0;\">${results.score}%</div>\n    <div style=\"color: #666;\">${results.correct_answers} out of ${results.total_questions} questions correct</div>\n  </div>\n  \n  <h3>Performance Feedback</h3>\n  <p>${results.feedback_message}</p>\n  \n  <h3>Question Breakdown</h3>\n  <table style=\"width: 100%; border-collapse: collapse; margin: 20px 0;\">\n    <thead>\n      <tr style=\"background: #007bff; color: white;\">\n        <th style=\"padding: 10px; text-align: center;\">#</th>\n        <th style=\"padding: 10px; text-align: left;\">Question</th>\n        <th style=\"padding: 10px; text-align: center;\">Your Answer</th>\n        <th style=\"padding: 10px; text-align: center;\">Correct Answer</th>\n        <th style=\"padding: 10px; text-align: center;\">Result</th>\n      </tr>\n    </thead>\n    <tbody>\n      ${questionBreakdown}\n    </tbody>\n  </table>\n  \n  <h3>Next Steps</h3>\n  ${results.passed \n    ? '<p>Congratulations on passing! You can now proceed to the next course module.</p>'\n    : '<p>Please review the material and consider retaking the assessment. You can retake it after reviewing the questions you missed.</p>'\n  }\n  \n  <p><a href=\"https://cima.learn/assessments/${results.assessment_id}/results\" style=\"background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;\">View Full Results</a></p>\n  \n  <p>If you have any questions about your results, please contact your instructor or the CIMA team.</p>\n  \n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    student_email: student.email,\n    student_name: student.full_name,\n    assessment_title: results.assessment_title,\n    course_name: results.course_name,\n    score: results.score,\n    passed: results.passed,\n    correct_answers: results.correct_answers,\n    total_questions: results.total_questions,\n    subject: `Assessment Results: ${results.assessment_title} - ${results.score}%`,\n    html: emailHtml\n  }\n}];"
+      },
+      "id": "code-generate-result-email",
+      "name": "Generate Result Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "from": "assessments@thecima.org",
+        "to": "={{ $json.student_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-result-email",
+      "name": "Send Result Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "recend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "assessment_graded"
+            },
+            {
+              "column": "entity_type",
+              "value": "assessment_submission"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.submission_id }}"
+            },
+            {
+              "column": "description",
+              "value": "MCQ assessment graded: {{ $json.assessment_title }} - {{ $json.score }}%"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { score: $json.score, passed: $json.passed, correct_answers: $json.correct_answers, total_questions: $json.total_questions, auto_graded: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-grading",
+      "name": "Log Grading Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#assessments",
+        "text": "MCQ assessment graded: {{ $json.student_name }} - {{ $json.assessment_title }} ({{ $json.score }}%) - {{ $json.passed ? 'PASSED' : 'FAILED' }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2660, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Assessment Submitted Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Assessment Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Assessment Submission": {
+      "main": [
+        [
+          {
+            "node": "Get Assessment Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Assessment Details": {
+      "main": [
+        [
+          {
+            "node": "Get Assessment Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Assessment Questions": {
+      "main": [
+        [
+          {
+            "node": "Calculate Score + Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Score + Results": {
+      "main": [
+        [
+          {
+            "node": "Passed Assessment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Passed Assessment?": {
+      "main": [
+        [
+          {
+            "node": "Update Submission Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Submission Record": {
+      "main": [
+        [
+          {
+            "node": "Get Student Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Student Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate Result Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Result Email": {
+      "main": [
+        [
+          {
+            "node": "Send Result Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Grading Activity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf21-mcq-grading",
+  "tags": [
+    {
+      "id": "tag:assessment",
+      "name": "Assessment"
+    },
+    {
+      "id": "tag:grading",
+      "name": "Grading"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

@@ -1,0 +1,413 @@
+{
+  "name": "WF22: AI written assessment grader -> OpenAI API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "written-assessment-submitted",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-written-assessment",
+      "name": "Written Assessment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "written-assessment-submitted"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process written assessment submission webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new written_assessment_submission insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'written_assessment_submissions') {\n  return []; // Not a new written assessment submission\n}\n\nreturn [{\n  json: {\n    submission_id: record.id,\n    user_id: record.user_id,\n    assessment_id: record.assessment_id,\n    written_response: record.written_response,\n    submitted_at: record.created_at\n  }\n}];"
+      },
+      "id": "code-process-written-assessment",
+      "name": "Process Written Assessment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "written_assessments wa",
+        "columns": "wa.*, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "wa.course_edition_id = ce.id"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "wa.id",
+              "condition": "equal",
+              "value": "={{ $json.assessment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-written-assessment",
+      "name": "Get Written Assessment Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert grader for international mediation and arbitration courses. Grade the following written response based on: 1) Understanding of concepts (40%), 2) Practical application (30%), 3) Critical thinking (20%), 4) Clarity and structure (10%). Provide a score out of 100 and detailed feedback.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Course: {{ $('Get Written Assessment Details').first().json.course_name }}\\n\\nQuestion: {{ $('Get Written Assessment Details').first().json.question }}\\n\\nStudent Response:\\n{{ $json.written_response }}\\n\\nPlease grade this response and provide: 1) Score (0-100), 2) Detailed feedback, 3) Strengths, 4) Areas for improvement, 5) Overall assessment.\"\n    }\n  ],\n  \"max_tokens\": 1000,\n  \"temperature\": 0.3\n}",
+        "options": {}
+      },
+      "id": "openai-grade-response",
+      "name": "OpenAI Grade Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI grading response\nconst openaiResponse = $json;\nconst submission = $('Process Written Assessment').first().json;\nconst assessment = $('Get Written Assessment Details').first().json;\n\n// Extract the grading content from OpenAI response\nconst gradingContent = openaiResponse.choices[0].message.content;\n\n// Try to extract score from the response (look for patterns like \"Score: 85\" or \"85/100\")\nconst scoreMatch = gradingContent.match(/(?:score|grade)[:\\s]*(\\d+)\\s*(?:\\/\\s*100|out of 100)?/i);\nconst score = scoreMatch ? parseInt(scoreMatch[1]) : 75; // Default to 75 if not found\n\n// Determine if passed (50% threshold)\nconst passed = score >= 50;\n\n// Generate feedback summary\nconst feedbackSummary = gradingContent.substring(0, 500) + (gradingContent.length > 500 ? '...' : '');\n\nreturn [{\n  json: {\n    submission_id: submission.submission_id,\n    user_id: submission.user_id,\n    assessment_id: submission.assessment_id,\n    assessment_title: assessment.title,\n    course_name: assessment.course_name,\n    question: assessment.question,\n    score: score,\n    passed: passed,\n    ai_feedback: gradingContent,\n    feedback_summary: feedbackSummary,\n    submitted_at: submission.submitted_at\n  }\n}];"
+      },
+      "id": "code-parse-grading",
+      "name": "Parse AI Grading",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "written_assessment_submissions",
+        "columns": {
+          "assignment": [
+            {
+              "column": "score",
+              "value": "={{ $json.score }}"
+            },
+            {
+              "column": "passed",
+              "value": "={{ $json.passed }}"
+            },
+            {
+              "column": "ai_feedback",
+              "value": "={{ $json.ai_feedback }}"
+            },
+            {
+              "column": "graded_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "grading_method",
+              "value": "ai"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.submission_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-update-submission",
+      "name": "Update Submission Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-student-profile",
+      "name": "Get Student Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate detailed AI grading result email\nconst results = $json;\nconst student = $('Get Student Profile').first().json;\n\n// Generate email HTML\nconst emailHtml = `\n  <h2>AI-Graded Assessment Results - ${results.assessment_title}</h2>\n  <p>Dear ${student.full_name},</p>\n  <p>Your written assessment has been graded by our AI system. Here are your results:</p>\n  \n  <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\">\n    <h3 style=\"margin: 0 0 10px 0; color: ${results.passed ? '#28a745' : '#dc3545'};\">${results.passed ? 'â PASSED' : 'â FAILED'}</h3>\n    <div style=\"font-size: 24px; font-weight: bold; margin: 10px 0;\">${results.score}%</div>\n    <div style=\"color: #666;\">AI-graded assessment</div>\n  </div>\n  \n  <h3>Assessment Question</h3>\n  <div style=\"background: #e9ecef; padding: 15px; border-radius: 5px; margin: 10px 0;\">\n    <p style=\"margin: 0;\">${results.question}</p>\n  </div>\n  \n  <h3>AI Feedback</h3>\n  <div style=\"background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #17a2b8;\">\n    <pre style=\"white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 14px; margin: 0;\">${results.ai_feedback}</pre>\n  </div>\n  \n  <h3>Important Notes</h3>\n  <ul>\n    <li>This assessment was graded using AI technology</li>\n    <li>The AI evaluates based on standard criteria for international mediation and arbitration</li>\n    <li>If you believe there's an error in the grading, you can request a manual review</li>\n    <li>Manual reviews are available within 7 days of submission</li>\n  </ul>\n  \n  <h3>Next Steps</h3>\n  ${results.passed \n    ? '<p>Congratulations on passing! You can now proceed to the next course module.</p>'\n    : '<p>Please review the AI feedback and consider retaking the assessment. Focus on the areas identified for improvement.</p>'\n  }\n  \n  <p><a href=\"https://cima.learn/assessments/${results.assessment_id}/results\" style=\"background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;\">View Full Results</a></p>\n  \n  <p><a href=\"https://cima.learn/assessments/${results.assessment_id}/request-review\" style=\"background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-left: 10px;\">Request Manual Review</a></p>\n  \n  <p>If you have any questions about your results or the AI grading process, please contact the CIMA team.</p>\n  \n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    student_email: student.email,\n    student_name: student.full_name,\n    assessment_title: results.assessment_title,\n    course_name: results.course_name,\n    score: results.score,\n    passed: results.passed,\n    ai_feedback: results.feedback_summary,\n    subject: `AI-Graded Assessment: ${results.assessment_title} - ${results.score}%`,\n    html: emailHtml\n  }\n}];"
+      },
+      "id": "code-generate-result-email",
+      "name": "Generate Result Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "from": "assessments@thecima.org",
+        "to": "={{ $json.student_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-result-email",
+      "name": "Send Result Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "written_assessment_graded"
+            },
+            {
+              "column": "entity_type",
+              "value": "written_assessment_submission"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.submission_id }}"
+            },
+            {
+              "column": "description",
+              "value": "AI-graded written assessment: {{ $json.assessment_title }} - {{ $json.score }}%"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { score: $json.score, passed: $json.passed, grading_method: 'ai', ai_feedback_provided: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-grading",
+      "name": "Log AI Grading Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#assessments",
+        "text": "AI-graded assessment: {{ $json.student_name }} - {{ $json.assessment_title }} ({{ $json.score }}%) - {{ $json.passed ? 'PASSED' : 'FAILED' }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Written Assessment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Written Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Written Assessment": {
+      "main": [
+        [
+          {
+            "node": "Get Written Assessment Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Written Assessment Details": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Grade Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Grade Response": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Grading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Grading": {
+      "main": [
+        [
+          {
+            "node": "Update Submission Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Submission Record": {
+      "main": [
+        [
+          {
+            "node": "Get Student Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Student Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate Result Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Result Email": {
+      "main": [
+        [
+          {
+            "node": "Send Result Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log AI Grading Activity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf22-ai-written-grading",
+  "tags": [
+    {
+      "id": "tag:assessment",
+      "name": "Assessment"
+    },
+    {
+      "id": "tag:ai",
+      "name": "AI"
+    },
+    {
+      "id": "tag:grading",
+      "name": "Grading"
+    }
+  ]
+}

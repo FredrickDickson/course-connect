@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIMA — n8n Workflow Library (All 27)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --crimson: #B91C1C;
+  --crimson-dark: #7F1D1D;
+  --crimson-mid: #991B1B;
+  --crimson-light: #FEF2F2;
+  --crimson-pale: #FFF5F5;
+  --gold: #D97706;
+  --gold-light: #FFFBEB;
+  --teal: #0F766E;
+  --teal-light: #F0FDFA;
+  --blue: #1D4ED8;
+  --blue-light: #EFF6FF;
+  --purple: #6D28D9;
+  --purple-light: #F5F3FF;
+  --green: #15803D;
+  --green-light: #F0FDF4;
+  --gray: #374151;
+  --gray-light: #F9FAFB;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --text: #111827;
+  --text-mid: #374151;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
+  --bg: #FAFAF9;
+  --white: #FFFFFF;
+  --new-bg: #ECFDF5;
+  --new-border: #6EE7B7;
+  --new-text: #065F46;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ─── HEADER ─────────────────────────────── */
+.site-header {
+  background: var(--crimson);
+  color: white;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 280px;
+}
+.header-left {
+  padding: 3rem 3rem 3rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+.header-right {
+  background: rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+.header-eyebrow {
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  opacity: .65;
+  margin-bottom: 12px;
+}
+.header-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1.05;
+  margin-bottom: 16px;
+  letter-spacing: -.5px;
+}
+.header-sub {
+  font-size: 13px;
+  opacity: .8;
+  max-width: 380px;
+  line-height: 1.7;
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+}
+.header-stats {
+  display: flex;
+  gap: 0;
+  margin-top: 2rem;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  overflow: hidden;
+  width: fit-content;
+}
+.stat {
+  padding: 14px 20px;
+  border-right: 1px solid rgba(255,255,255,0.15);
+  text-align: center;
+}
+.stat:last-child { border-right: none; }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  display: block;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label { font-size: 10px; opacity: .65; text-transform: uppercase; letter-spacing: .1em; }
+
+.header-diagram {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Decorative circle */
+.header-right::before {
+  content: '';
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  top: -80px; right: -80px;
+}
+.header-right::after {
+  content: '';
+  position: absolute;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  bottom: -40px; left: 20px;
+}
+
+/* ─── NAV ─────────────────────────────────── */
+.cat-nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cat-nav::-webkit-scrollbar { display: none; }
+.cat-nav-inner {
+  display: flex;
+  padding: 0 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  gap: 0;
+  white-space: nowrap;
+}
+.cat-btn {
+  padding: 14px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-btn:hover { color: var(--crimson); }
+.cat-btn.active { color: var(--crimson); border-bottom-color: var(--crimson); }
+.cat-btn .cnt {
+  background: var(--gray-light);
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.cat-btn.active .cnt { background: var(--crimson-light); color: var(--crimson); }
+.cat-btn .new-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+/* ─── MAIN ────────────────────────────────── */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+}
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* ─── PHASE HEADER ────────────────────────── */
+.phase {
+  margin-bottom: 2.5rem;
+}
+.phase-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.phase-name {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+.phase-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
+.phase-count {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* ─── WORKFLOW CARD ───────────────────────── */
+.workflow {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow .2s, transform .15s;
+}
+.workflow:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  transform: translateY(-1px);
+}
+.workflow.is-new {
+  border-color: var(--new-border);
+}
+.workflow.is-new .wf-num-bar {
+  background: var(--teal);
+}
+
+.wf-grid {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+}
+.wf-num-bar {
+  background: var(--crimson);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -.5px;
+  padding: 18px 0;
+  min-height: 60px;
+}
+.wf-header {
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wf-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+  min-width: 200px;
+  line-height: 1.4;
+}
+.wf-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.badge {
+  font-size: 10px;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.b-webhook { background: var(--blue-light); border-color: #93C5FD; color: #1E3A5F; }
+.b-cron    { background: var(--purple-light); border-color: #C4B5FD; color: #3B0764; }
+.b-db      { background: var(--green-light); border-color: #86EFAC; color: #14532D; }
+.b-manual  { background: var(--gold-light); border-color: #FCD34D; color: #78350F; }
+.b-new     { background: var(--new-bg); border-color: var(--new-border); color: var(--new-text); }
+.b-priority { background: var(--crimson-light); border-color: #FCA5A5; color: var(--crimson); }
+.b-ai      { background: #FDF4FF; border-color: #E9D5FF; color: #581C87; }
+
+.new-star {
+  font-size: 10px;
+  background: var(--new-bg);
+  color: var(--new-text);
+  border: 1px solid var(--new-border);
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: .05em;
+}
+
+/* ─── WORKFLOW BODY ───────────────────────── */
+.wf-body {
+  padding: 14px 18px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .wf-body { grid-template-columns: 1fr; }
+  .header-grid { grid-template-columns: 1fr; }
+  .header-right { display: none; }
+  .header-left { padding: 2rem; }
+}
+
+.wf-flow-section {}
+.wf-detail-section {}
+
+.section-micro-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.flow-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.node {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  border: 1px solid;
+  line-height: 1.3;
+}
+.n-trigger { background: #FFFBEB; border-color: #FCD34D; color: #78350F; }
+.n-action  { background: var(--blue-light); border-color: #93C5FD; color: #1E40AF; }
+.n-cond    { background: var(--purple-light); border-color: #C4B5FD; color: #5B21B6; }
+.n-output  { background: var(--green-light); border-color: #86EFAC; color: #166534; }
+.n-wait    { background: #FFF7ED; border-color: #FED7AA; color: #92400E; }
+.n-ai      { background: #FDF4FF; border-color: #E9D5FF; color: #6B21A8; }
+.flow-arr { color: var(--text-faint); font-size: 13px; flex-shrink: 0; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.detail-block {}
+.detail-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+.detail-val {
+  font-size: 11.5px;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+.detail-val ul { padding-left: 14px; }
+.detail-val li { margin-bottom: 2px; }
+
+.code-snippet {
+  background: #1A1A2E;
+  color: #E2E8F0;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 10.5px;
+  line-height: 1.7;
+  margin-top: 10px;
+  overflow-x: auto;
+  grid-column: 1 / -1;
+}
+.code-snippet .cm { color: #64748B; }
+.code-snippet .kw { color: #FCD34D; }
+.code-snippet .str { color: #34D399; }
+.code-snippet .fn  { color: #F9A8D4; }
+.code-snippet .var { color: #93C5FD; }
+
+.wf-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-mid);
+  line-height: 1.65;
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--border-light);
+  grid-column: 1 / -1;
+}
+
+.priority-bar {
+  height: 3px;
+  background: var(--crimson);
+}
+.priority-bar.teal { background: var(--teal); }
+.priority-bar.gold { background: var(--gold); }
+.priority-bar.blue { background: var(--blue); }
+
+/* ─── LEGEND ──────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.leg { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ─── FOOTER ──────────────────────────────── */
+footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-grid">
+    <div class="header-left">
+      <div class="header-eyebrow">CIMA Learn · Automation Infrastructure</div>
+      <h1 class="header-title">n8n Workflow<br>Library</h1>
+      <p class="header-sub">Complete automation reference for enrollment, membership, grading, AI agents, community, and admin operations.</p>
+      <div class="header-stats">
+        <div class="stat"><span class="stat-num">27</span><span class="stat-label">Workflows</span></div>
+        <div class="stat"><span class="stat-num">7</span><span class="stat-label">New</span></div>
+        <div class="stat"><span class="stat-num">6</span><span class="stat-label">Categories</span></div>
+        <div class="stat"><span class="stat-num">~$5</span><span class="stat-label">/ month</span></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <svg class="header-diagram" viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
+        <!-- Paystack -->
+        <rect x="10" y="80" width="80" height="32" rx="6" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>
+        <text x="50" y="96" text-anchor="middle" font-family="DM Mono" font-size="9" fill="rgba(255,255,255,0.85)" dominant-baseline="central">Paystack</text>
+        <text x="50" y="106" text-anchor="middle" font-family="DM Mono" font-size="7.5" fill="rgba(255,255,255,0.5)" dominant-baseline="central">webhook</text>
+        <!-- n8n center -->
+        <rect x="125" y="68" width="90" height="56" rx="8" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <text x="170" y="90" text-anchor="middle" font-family="Cormorant Garamond" font-size="18" font-weight="600" fill="white" dominant-baseline="central">n8n</text>
+        <text x="170" y="108" text-anchor="middle" font-family="DM Mono" font-size="8" fill="rgba(255,255,255,0.6)" dominant-baseline="central">automation engine</text>
+        <!-- Arrows in -->
+        <line x1="90" y1="96" x2="123" y2="96" stroke="rgba(255,255,255,0.4)" stroke-width="1" marker-end="url(#ah)"/>
+        <line x1="170" y1="30" x2="170" y2="66" stroke="rgba(255,255,255,0.4)" stroke-width="1" marker-end="url(#ah)"/>
+        <line x1="10" y1="150" x2="123" y2="118" stroke="rgba(255,255,255,0.3)" stroke-width="1" marker-end="url(#ah)"/>
+        <!-- Supabase top -->
+        <rect x="125" y="8" width="90" height="28" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="170" y="22" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Supabase</text>
+        <!-- Cron bottom-left -->
+        <rect x="10" y="138" width="80" height="28" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="50" y="152" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Cron jobs</text>
+        <!-- Outputs right -->
+        <rect x="250" y="28" width="80" height="26" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="290" y="41" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Resend</text>
+        <rect x="250" y="66" width="80" height="26" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="290" y="79" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Supabase</text>
+        <rect x="250" y="104" width="80" height="26" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="290" y="117" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Slack/WhatsApp</text>
+        <rect x="250" y="142" width="80" height="26" rx="5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <text x="290" y="155" text-anchor="middle" font-family="DM Mono" font-size="8.5" fill="rgba(255,255,255,0.8)" dominant-baseline="central">Claude / GPT</text>
+        <!-- Arrows out -->
+        <line x1="216" y1="82" x2="248" y2="41" stroke="rgba(255,255,255,0.35)" stroke-width="1" marker-end="url(#ah)"/>
+        <line x1="216" y1="90" x2="248" y2="79" stroke="rgba(255,255,255,0.35)" stroke-width="1" marker-end="url(#ah)"/>
+        <line x1="216" y1="96" x2="248" y2="117" stroke="rgba(255,255,255,0.35)" stroke-width="1" marker-end="url(#ah)"/>
+        <line x1="216" y1="108" x2="248" y2="155" stroke="rgba(255,255,255,0.35)" stroke-width="1" marker-end="url(#ah)"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="cat-nav">
+  <div class="cat-nav-inner">
+    <button class="cat-btn active" onclick="showCat('all')">All workflows <span class="cnt">27</span></button>
+    <button class="cat-btn" onclick="showCat('enrollment')">Enrollment <span class="cnt">6</span></button>
+    <button class="cat-btn" onclick="showCat('membership')">Membership <span class="cnt">7</span></button>
+    <button class="cat-btn" onclick="showCat('courses')">Courses <span class="cnt">4</span></button>
+    <button class="cat-btn" onclick="showCat('community')">Community <span class="cnt">3</span></button>
+    <button class="cat-btn" onclick="showCat('admin')">Admin <span class="cnt">5</span></button>
+    <button class="cat-btn" onclick="showCat('new')">New additions <span class="cnt">7</span> <span class="new-dot"></span></button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#FCD34D"></div>Trigger node</div>
+  <div class="leg"><div class="leg-dot" style="background:#93C5FD"></div>Action node</div>
+  <div class="leg"><div class="leg-dot" style="background:#C4B5FD"></div>Condition / IF</div>
+  <div class="leg"><div class="leg-dot" style="background:#86EFAC"></div>Output node</div>
+  <div class="leg"><div class="leg-dot" style="background:#FED7AA"></div>Wait node</div>
+  <div class="leg"><div class="leg-dot" style="background:#E9D5FF"></div>AI / LLM node</div>
+  <div class="leg"><div class="leg-dot" style="background:#6EE7B7"></div>New workflow</div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     ALL SECTION
+════════════════════════════════════════════ -->
+<div class="section active" id="sec-all">
+
+<!-- PHASE: ENROLLMENT -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 1 · Enrollment &amp; Payments</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 01–04, 17–18</span>
+  </div>
+
+  <!-- WF 01 -->
+  <div class="workflow"><div class="priority-bar"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">01</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Payment confirmed → full enrollment flow</span>
+          <div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span><span class="badge b-priority">Build first</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">charge.success</div><div class="flow-arr">→</div>
+              <div class="node n-action">Verify HMAC</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Amount OK?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Supabase: insert enrollment</div><div class="flow-arr">→</div>
+              <div class="node n-action">Generate CIMA-YYYY-NNNNN</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: confirmation</div><div class="flow-arr">→</div>
+              <div class="node n-output">Slack: admin alert</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Setup</div>
+            <div class="detail-grid">
+              <div class="detail-block">
+                <div class="detail-label">Paystack webhook URL</div>
+                <div class="detail-val">https://n8n.yourdomain.com<br>/webhook/paystack-payment</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Nodes required</div>
+                <div class="detail-val"><ul><li>Webhook (trigger)</li><li>Code (HMAC verify)</li><li>IF (amount check)</li><li>Supabase insert</li><li>Code (booking ref)</li><li>HTTP → Resend</li><li>Slack</li></ul></div>
+              </div>
+            </div>
+          </div>
+          <div class="code-snippet">
+<span class="cm">// Code node: Generate booking ref</span>
+<span class="kw">const</span> <span class="var">year</span> = <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">getFullYear</span>();
+<span class="kw">const</span> <span class="var">seq</span> = <span class="fn">String</span>(<span class="var">$input</span>.item.json.count + <span class="str">1</span>).<span class="fn">padStart</span>(<span class="str">5</span>, <span class="str">'0'</span>);
+<span class="kw">return</span> [{ json: { booking_ref: <span class="str">`CIMA-${year}-${seq}`</span> }}];
+          </div>
+          <div class="wf-desc">The single most critical workflow. Every successful Paystack payment triggers this. Verifies the webhook signature to prevent spoofing, creates the enrollment record, generates the booking reference, sends the branded confirmation email, and pings admin — all within 2–3 seconds.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 02 -->
+  <div class="workflow"><div class="priority-bar"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">02</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Bank transfer submitted → hold spot + 5-day chase sequence</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">enrollment (status=pending_bank)</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: bank details</div><div class="flow-arr">→</div>
+              <div class="node n-action">Slack: admin ping</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 2 days</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Still pending?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: day-2 reminder</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 3 days</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Still pending?</div><div class="flow-arr">→</div>
+              <div class="node n-output">Release spot + notify</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Email sequence</div>
+            <div class="detail-val"><ul><li>Immediate: bank details + booking ref</li><li>Day 2: "Have you transferred yet?"</li><li>Day 5: spot released notice</li></ul></div>
+          </div>
+          <div class="wf-desc">When bank transfer is selected, n8n takes over all follow-up. Sends details immediately, reminds on day 2, and auto-releases the spot on day 5 with a notification to the next person on the waitlist.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 03 -->
+  <div class="workflow"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">03</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Admin marks as paid → instant confirmation email</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">payment_status → 'confirmed'</div><div class="flow-arr">→</div>
+              <div class="node n-action">Fetch enrollment + profile</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: confirmation email</div><div class="flow-arr">→</div>
+              <div class="node n-action">Supabase: increment enrolled_count</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log activity_log</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Trigger condition</div>
+            <div class="detail-val">Only fires when status changes FROM pending_bank or pending_invoice TO confirmed. Not on initial insert.</div>
+          </div>
+          <div class="wf-desc">When admin clicks "Mark as paid" for a bank transfer or invoice, the student gets their confirmation email within seconds — identical experience to a Paystack payment, regardless of payment method.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 04 -->
+  <div class="workflow"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">04</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Course full → automatic waitlist cascade</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">enrollment → 'cancelled'</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query waitlist (oldest first)</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Entries exist?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: 24-hr spot offer</div><div class="flow-arr">→</div>
+              <div class="node n-action">Set offer_expires_at</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 24h</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Enrolled?</div><div class="flow-arr">→</div>
+              <div class="node n-output">No → next on list</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Offer email includes</div>
+            <div class="detail-val"><ul><li>Course name + dates</li><li>"Offer expires in 24 hours"</li><li>Direct payment link</li><li>Ticket type + price</li></ul></div>
+          </div>
+          <div class="wf-desc">Zero admin involvement. When someone cancels, n8n offers the spot to the next waitlisted person for 24 hours and cascades down the list automatically. Spots never sit empty.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 17 -->
+  <div class="workflow"><div class="priority-bar"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">17</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Failed payment → instant retry prompt to user</span>
+          <div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">charge.failed</div><div class="flow-arr">→</div>
+              <div class="node n-action">Log failed attempt</div><div class="flow-arr">→</div>
+              <div class="node n-action">Fetch profile + course</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: retry email</div><div class="flow-arr">→</div>
+              <div class="node n-output">Slack: admin alert</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Email includes</div>
+            <div class="detail-val"><ul><li>Course they tried to enroll in</li><li>[Try again →] direct link</li><li>Bank transfer alternative</li><li>Contact number</li></ul></div>
+          </div>
+          <div class="wf-desc">A failed MoMo timeout should not lose the enrollment. Immediate retry email with a direct payment link converts a significant portion of failed payments back into successful enrollments.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 18 -->
+  <div class="workflow"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">18</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Enrollment confirmed → WhatsApp course group invite</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">payment_status → confirmed</div><div class="flow-arr">→</div>
+              <div class="node n-action">Get WhatsApp from profile</div><div class="flow-arr">→</div>
+              <div class="node n-action">Get course group link</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Valid number?</div><div class="flow-arr">→</div>
+              <div class="node n-action">WhatsApp Business API</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log invite sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Requires</div>
+            <div class="detail-val">Meta Business account + WhatsApp Business API. Add whatsapp_group_url to course_editions table.</div>
+          </div>
+          <div class="wf-desc">Every confirmed enrollee gets an automatic WhatsApp group invitation. Particularly effective for CIMA's Ghana audience where WhatsApp is the primary communication channel.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: MEMBERSHIP -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 2 · Membership &amp; Renewals</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 05–08 + New 21–22, 25–27</span>
+  </div>
+
+  <!-- WF 05 -->
+  <div class="workflow"><div class="priority-bar"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">05</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Daily renewal reminder sequence (60 / 30 / 7 / 0 / −30 days)</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: 6am UTC daily</span><span class="badge b-priority">Build first</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">0 6 * * *</div><div class="flow-arr">→</div>
+              <div class="node n-action">Fetch ALL members</div><div class="flow-arr">→</div>
+              <div class="node n-action">Calc days_until_expiry</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Match threshold?</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Already emailed today?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: correct template</div><div class="flow-arr">→</div>
+              <div class="node n-action">Update member status</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log email_logs</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">5 Templates</div>
+            <div class="detail-val"><ul><li>60d: friendly heads-up</li><li>30d: what you'll lose</li><li>7d: urgent</li><li>0d: expired today</li><li>−30d: final reinstatement</li></ul></div>
+            <div class="detail-label" style="margin-top:8px">Covers old + new students</div>
+            <div class="detail-val">Once old students are imported (WF25), this cron handles them automatically — no separate workflow needed.</div>
+          </div>
+          <div class="code-snippet">
+<span class="cm">// Code: calculate days + match thresholds</span>
+<span class="kw">const</span> <span class="var">today</span> = <span class="kw">new</span> <span class="fn">Date</span>();
+<span class="kw">const</span> <span class="var">thresholds</span> = [<span class="str">60</span>, <span class="str">30</span>, <span class="str">7</span>, <span class="str">0</span>, <span class="str">-30</span>];
+<span class="kw">return</span> <span class="var">$input</span>.<span class="fn">all</span>().<span class="fn">flatMap</span>(m => {
+  <span class="kw">const</span> <span class="var">days</span> = <span class="fn">Math</span>.<span class="fn">round</span>((<span class="kw">new</span> <span class="fn">Date</span>(m.json.expiry_date) - <span class="var">today</span>) / <span class="str">86400000</span>);
+  <span class="kw">if</span> (!<span class="var">thresholds</span>.<span class="fn">includes</span>(<span class="var">days</span>)) <span class="kw">return</span> [];
+  <span class="kw">return</span> [{ json: { ...m.json, days_until_expiry: <span class="var">days</span> }}];
+});
+          </div>
+          <div class="wf-desc">Runs every morning and processes every member — old and new — in a single execution. Handles all 5 reminder stages, prevents duplicates via email_logs, and updates status fields automatically. More reliable and easier to debug than Supabase pg_cron.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 06 -->
+  <div class="workflow"><div class="priority-bar"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">06</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Renewal payment → extend expiry + generate new certificate</span>
+          <div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span><span class="badge b-priority">Build first</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">charge.success (renewal)</div><div class="flow-arr">→</div>
+              <div class="node n-action">Check metadata.type = renewal</div><div class="flow-arr">→</div>
+              <div class="node n-action">Update expiry +365 days</div><div class="flow-arr">→</div>
+              <div class="node n-action">Increment renewal_count</div><div class="flow-arr">→</div>
+              <div class="node n-action">HTTP: generate PDF</div><div class="flow-arr">→</div>
+              <div class="node n-action">Supabase Storage: save</div><div class="flow-arr">→</div>
+              <div class="node n-action">Update certificate_url</div><div class="flow-arr">→</div>
+              <div class="node n-output">Resend: cert email</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Paystack metadata</div>
+            <div class="detail-val">Pass on payment init:<br><code>metadata: { type: "renewal", member_id: "..." }</code></div>
+          </div>
+          <div class="wf-desc">On renewal payment, n8n updates the member's dates, generates the new PDF certificate with updated dates, stores it, and emails it — all without any admin action needed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 07 -->
+  <div class="workflow"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">07</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Level upgraded → notify member + log history</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">membership_level changed</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Level actually changed?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: congratulations email</div><div class="flow-arr">→</div>
+              <div class="node n-action">Create in-app notification</div><div class="flow-arr">→</div>
+              <div class="node n-action">Log to level_history</div><div class="flow-arr">→</div>
+              <div class="node n-output">Slack: admin confirm</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Upgrade paths</div>
+            <div class="detail-val"><ul><li>Associate → Member (MCIMArb)</li><li>Member → Fellow (FCIMArb)</li><li>Any → any (admin override)</li></ul></div>
+          </div>
+          <div class="wf-desc">Every level change — whether from the DB trigger or an admin override — sends a congratulations email and creates an in-app notification. The history log provides a full audit trail.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 08 -->
+  <div class="workflow"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">08</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">New signup → onboarding nudge sequence (1hr + 24hr)</span>
+          <div class="wf-meta"><span class="badge b-db">auth.users Insert</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">New user in auth</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 1hr</div><div class="flow-arr">→</div>
+              <div class="node n-cond">bio_data_completed?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Email nudge 1</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 24h</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Still incomplete?</div><div class="flow-arr">→</div>
+              <div class="node n-output">Final nudge</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Email 2 (25h after signup)</div>
+            <div class="detail-val">Slightly more urgent. Mentions upcoming course dates. Stops immediately if profile completed.</div>
+          </div>
+          <div class="wf-desc">Catches users who sign up but get distracted before finishing onboarding. Two gentle nudges. Stops the moment they complete their profile — never pesters someone who's already done it.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 21 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">21</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">MCQ auto-grading → instant result + email <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Insert</span><span class="badge b-new">Grading</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">assessment_submissions INSERT</div><div class="flow-arr">→</div>
+              <div class="node n-action">Fetch correct answers</div><div class="flow-arr">→</div>
+              <div class="node n-action">Calculate score</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Pass ≥ 50%?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Update submission record</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: result email</div><div class="flow-arr">→</div>
+              <div class="node n-output">Trigger level recalc if passed</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Score email includes</div>
+            <div class="detail-val"><ul><li>Percentage score</li><li>Pass / Fail status</li><li>Per-question breakdown</li><li>Next steps CTA</li></ul></div>
+          </div>
+          <div class="wf-desc">Instant scoring for Associate multiple-choice assessments. Score calculated in n8n, stored in Supabase, email sent with full breakdown. If passed, triggers the level recalculation function automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 22 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">22</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">AI written assessment grader — Member &amp; Fellow level <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-ai">Claude / GPT-4o</span><span class="badge b-new">AI Grading</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Written submission uploaded</div><div class="flow-arr">→</div>
+              <div class="node n-action">Download PDF from Storage</div><div class="flow-arr">→</div>
+              <div class="node n-action">Extract text content</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: grade vs rubric</div><div class="flow-arr">→</div>
+              <div class="node n-action">Parse score + feedback JSON</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Score &lt; 70?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Flag: admin review queue</div><div class="flow-arr">→</div>
+              <div class="node n-output">Store result + email student</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">LLM system prompt includes</div>
+            <div class="detail-val"><ul><li>Assessment rubric from DB</li><li>Marking criteria per category</li><li>Legal reasoning standards</li><li>Award writing structure</li></ul></div>
+            <div class="detail-label" style="margin-top:8px">Output format (JSON)</div>
+            <div class="detail-val">{ score, passed, feedback, strengths[], gaps[], improvements[] }</div>
+          </div>
+          <div class="code-snippet">
+<span class="cm">// LLM prompt template (stored in Supabase)</span>
+<span class="str">"You are a CIMA assessment marker. Grade this submission
+against the rubric below. Return ONLY valid JSON:
+{ score: number, passed: boolean, feedback: string,
+  strengths: string[], gaps: string[] }
+Rubric: {{rubric}}
+Submission: {{text}}"</span>
+          </div>
+          <div class="wf-desc">Sends written submissions to Claude with the course rubric. Returns structured score (0–100), detailed feedback, and improvement notes. Scores under 70 go to a human review queue in the admin dashboard before the student is notified.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 25 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">25</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Old student database import — one-time migration <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-manual">Manual / One-time</span><span class="badge b-new">Migration</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Manual trigger</div><div class="flow-arr">→</div>
+              <div class="node n-action">Read Google Sheets / CSV</div><div class="flow-arr">→</div>
+              <div class="node n-action">Map to profiles schema</div><div class="flow-arr">→</div>
+              <div class="node n-action">Validate + clean data</div><div class="flow-arr">→</div>
+              <div class="node n-action">Supabase: upsert members</div><div class="flow-arr">→</div>
+              <div class="node n-action">Set issue_date + expiry_date</div><div class="flow-arr">→</div>
+              <div class="node n-output">Flag is_old_student = true</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Field mapping</div>
+            <div class="detail-val"><ul><li>Name → full_name</li><li>Email → email</li><li>Level → membership_level</li><li>Issue date → issue_date</li><li>Expiry → expiry_date</li><li>Phone → phone</li></ul></div>
+          </div>
+          <div class="wf-desc">Critical first step. Once old students are in Supabase, WF05 automatically handles all their renewal reminders. Run this once, then WF05 takes over forever. Set is_old_student = true for reporting separation.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 26 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">26</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Old student renewals — handled by WF05 after import <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-cron">Via WF05</span><span class="badge b-new">Old DB</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">How it works</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">WF25 import complete</div><div class="flow-arr">→</div>
+              <div class="node n-output">WF05 cron picks them up automatically</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">No extra workflow needed</div>
+            <div class="detail-val">WF05 queries the ENTIRE members table regardless of is_old_student flag. Old students receive the same 60/30/7/0/−30 day reminder sequence as new members. Renewal payment flow (WF06) works identically for both groups.</div>
+          </div>
+          <div class="wf-desc">Good news: no separate automation needed for old students. Import them once via WF25, and WF05 + WF06 handle all their renewals, reminders, and certificate generation automatically from that point forward.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 27 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">27</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">AI assignment feedback agent — qualitative private feedback <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-ai">Claude / GPT-4o</span><span class="badge b-new">AI Agent</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Written work submitted</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: detailed feedback pass</div><div class="flow-arr">→</div>
+              <div class="node n-action">Structure response</div><div class="flow-arr">→</div>
+              <div class="node n-action">Post to student dashboard</div><div class="flow-arr">→</div>
+              <div class="node n-output">Resend: private feedback email</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Feedback structure</div>
+            <div class="detail-val"><ul><li>What you did well (strengths)</li><li>Where you fell short (gaps)</li><li>Suggested rewrites</li><li>Model answer excerpt</li></ul></div>
+          </div>
+          <div class="wf-desc">Separate from WF22's scoring. Focuses purely on qualitative improvement — what the student did well, where they fell short, and concrete suggested rewrites. Delivered privately to their dashboard and by email. Feels like a personal tutor.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: COURSES -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 3 · Course Management</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 09–12</span>
+  </div>
+
+  <div class="workflow"><div class="priority-bar"></div><div class="wf-grid"><div class="wf-num-bar">09</div><div><div class="wf-header"><span class="wf-name">7 days before course → send joining instructions to all enrollees</span><div class="wf-meta"><span class="badge b-cron">Cron: 7am daily</span><span class="badge b-priority">Build first</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">0 7 * * *</div><div class="flow-arr">→</div><div class="node n-action">Courses in 7 days</div><div class="flow-arr">→</div><div class="node n-action">Get confirmed enrollees</div><div class="flow-arr">→</div><div class="node n-action">Split in Batches</div><div class="flow-arr">→</div><div class="node n-action">Resend: joining email</div><div class="flow-arr">→</div><div class="node n-output">Log sent flag</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Email includes</div><div class="detail-val"><ul><li>Course name + dates + time</li><li>Zoom link (from course_editions)</li><li>Venue address if in-person</li><li>Contact: 0536735535 | 0241022964</li></ul></div></div><div class="wf-desc">Eliminates the biggest admin headache — manually emailing Zoom links before every course. Admin sets the link once in the course record; n8n sends it to everyone at exactly 7 days and again at 24 hours.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar gold"></div><div class="wf-grid"><div class="wf-num-bar">10</div><div><div class="wf-header"><span class="wf-name">Course ends → feedback survey + mark as completed</span><div class="wf-meta"><span class="badge b-cron">Cron: 7am daily</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">Courses ending yesterday</div><div class="flow-arr">→</div><div class="node n-action">Get enrollees</div><div class="flow-arr">→</div><div class="node n-action">Send survey email</div><div class="flow-arr">→</div><div class="node n-action">Set course status = completed</div><div class="flow-arr">→</div><div class="node n-output">Slack: X enrollees notified</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Survey options</div><div class="detail-val"><ul><li>Google Forms (free)</li><li>Typeform (better UX)</li><li>Custom Supabase form</li></ul></div></div><div class="wf-desc">The day after a course ends, every enrollee gets a feedback survey automatically. Responses can flow back into n8n via Typeform webhook and land straight in Supabase for admin reporting.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar gold"></div><div class="wf-grid"><div class="wf-num-bar">11</div><div><div class="wf-header"><span class="wf-name">New course published → notify matching level members</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">course_edition (status=registration_open)</div><div class="flow-arr">→</div><div class="node n-action">Get course level</div><div class="flow-arr">→</div><div class="node n-action">Members where level matches</div><div class="flow-arr">→</div><div class="node n-action">Bulk Resend email</div><div class="flow-arr">→</div><div class="node n-output">Community announcement</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Targeting logic</div><div class="detail-val">Associate course → ACIMArb members<br>Member course → MCIMArb members<br>Fellow course → FCIMArb members<br>Mixed → all levels</div></div><div class="wf-desc">When admin publishes a new course, only the relevant level gets notified — not everyone. More targeted means higher open rates and more enrollments.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar blue"></div><div class="wf-grid"><div class="wf-num-bar">12</div><div><div class="wf-header"><span class="wf-name">Course 90% full → alert admin to act</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">enrolled_count updated</div><div class="flow-arr">→</div><div class="node n-action">Fetch capacity</div><div class="flow-arr">→</div><div class="node n-cond">≥ 90% full?</div><div class="flow-arr">→</div><div class="node n-cond">Alert sent before?</div><div class="flow-arr">→</div><div class="node n-action">Slack alert</div><div class="flow-arr">→</div><div class="node n-output">WhatsApp alert</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Also alerts at 100%</div><div class="detail-val">"Course X is sold out. Waitlist has Y people. Open new cohort?"</div></div><div class="wf-desc">Admin gets an instant alert when demand is high so they can decide to open a new cohort, increase capacity, or start marketing the next session.</div></div></div></div></div>
+</div>
+
+<!-- PHASE: COMMUNITY -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 4 · Community &amp; AI Agents</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 13–15 + New 23–24</span>
+  </div>
+
+  <div class="workflow"><div class="priority-bar gold"></div><div class="wf-grid"><div class="wf-num-bar">13</div><div><div class="wf-header"><span class="wf-name">New community post → OpenAI moderation check</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">New forum_post</div><div class="flow-arr">→</div><div class="node n-ai">OpenAI moderation API (free)</div><div class="flow-arr">→</div><div class="node n-cond">flagged = true?</div><div class="flow-arr">→</div><div class="node n-action">Set status = flagged</div><div class="flow-arr">→</div><div class="node n-action">Create report record</div><div class="flow-arr">→</div><div class="node n-output">Slack: review alert</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Cost</div><div class="detail-val">OpenAI moderation API is FREE — no cost per call. Scale to thousands of posts at $0.</div></div><div class="wf-desc">Every post screened by OpenAI's free moderation API. Clean posts go live instantly. Flagged posts are held and a Slack alert fires for human review. Keeps the community professional without a full-time moderator.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar blue"></div><div class="wf-grid"><div class="wf-num-bar">14</div><div><div class="wf-header"><span class="wf-name">User @mentioned → in-app notification + email digest</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">New forum_reply</div><div class="flow-arr">→</div><div class="node n-action">Extract @mentions /@([a-zA-Z0-9_]+)/g</div><div class="flow-arr">→</div><div class="node n-cond">Mentions found?</div><div class="flow-arr">→</div><div class="node n-action">Lookup usernames</div><div class="flow-arr">→</div><div class="node n-action">Insert notifications</div><div class="flow-arr">→</div><div class="node n-output">Resend digest (if opted-in)</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Notification prefs</div><div class="detail-val">Check profiles.notification_preferences.mentions before emailing. Always create in-app notification regardless of preference.</div></div><div class="wf-desc">Parses @mentions from every reply, creates in-app notifications for each mentioned user, and optionally sends an email based on their notification preferences.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar blue"></div><div class="wf-grid"><div class="wf-num-bar">15</div><div><div class="wf-header"><span class="wf-name">Weekly community digest → trending posts + unanswered questions</span><div class="wf-meta"><span class="badge b-cron">Cron: Monday 8am</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">0 8 * * 1</div><div class="flow-arr">→</div><div class="node n-action">Top 5 posts (7 days)</div><div class="flow-arr">→</div><div class="node n-action">Unanswered questions</div><div class="flow-arr">→</div><div class="node n-action">Upcoming courses</div><div class="flow-arr">→</div><div class="node n-action">Build digest HTML</div><div class="flow-arr">→</div><div class="node n-output">Resend: bulk digest</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Digest sections</div><div class="detail-val"><ul><li>Top discussions this week</li><li>Questions needing answers</li><li>Upcoming courses</li><li>New community members</li></ul></div></div><div class="wf-desc">A curated Monday morning email keeps members coming back to the community. Trending posts, questions needing answers, and upcoming courses — sent to opted-in members only.</div></div></div></div></div>
+
+  <!-- WF 23 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">23</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">AI instructor auto-replies in course discussion boards <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-ai">Claude / GPT-4o</span><span class="badge b-new">AI Agent</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">New post in course board</div><div class="flow-arr">→</div>
+              <div class="node n-cond">No instructor reply yet?</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 30 mins</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Still unanswered?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Fetch course context + past posts</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: generate reply</div><div class="flow-arr">→</div>
+              <div class="node n-action">Post as "AI Instructor" badge</div><div class="flow-arr">→</div>
+              <div class="node n-output">Notify student</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Context fed to Claude</div>
+            <div class="detail-val"><ul><li>Course modules + materials</li><li>Previous thread messages</li><li>Student's membership level</li><li>CIMA tone + brand guidelines</li></ul></div>
+          </div>
+          <div class="code-snippet">
+<span class="cm">// System prompt stored in Supabase (editable)</span>
+<span class="str">"You are a CIMA Instructor — professional, precise,
+and encouraging. Answer the student's question based
+on the course materials below. Keep replies under 
+200 words. If unsure, say so and suggest contacting 
+the CIMA team at info@thecima.org.
+Course context: {{course_modules}}
+Previous thread: {{thread_history}}"</span>
+          </div>
+          <div class="wf-desc">When a student posts in a course board and no instructor replies within 30 minutes, the AI instructor agent generates a professional, context-aware response. Students get instant help 24/7. Real instructors can override or add to the AI reply at any time.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 24 NEW -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">24</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Mock arbitration simulator — AI plays opposing counsel <span class="new-star">NEW</span></span>
+          <div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span><span class="badge b-manual">Student triggered</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Student starts mock case</div><div class="flow-arr">→</div>
+              <div class="node n-action">Create case thread in Supabase</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: opposing counsel opening</div><div class="flow-arr">→</div>
+              <div class="node n-action">Student responds</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: counter-argument</div><div class="flow-arr">→</div>
+              <div class="node n-action">Continue 5–10 turns</div><div class="flow-arr">→</div>
+              <div class="node n-ai">Claude: final performance report</div><div class="flow-arr">→</div>
+              <div class="node n-output">Score + feedback to dashboard</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Case types available</div>
+            <div class="detail-val"><ul><li>Commercial arbitration</li><li>Construction dispute</li><li>International investor-state</li><li>Mediation scenario</li></ul></div>
+            <div class="detail-label" style="margin-top:8px">Final report includes</div>
+            <div class="detail-val">Advocacy score, argument quality, procedural knowledge, suggested improvements.</div>
+          </div>
+          <div class="wf-desc">Student initiates a mock case. Claude plays opposing counsel through multiple turns with realistic legal arguments. At the end, Claude switches to arbitrator mode and delivers a detailed performance report with scores across multiple competency areas.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: ADMIN -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 5 · Admin &amp; Operations</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 16, 19–20</span>
+  </div>
+
+  <div class="workflow"><div class="priority-bar"></div><div class="wf-grid"><div class="wf-num-bar">16</div><div><div class="wf-header"><span class="wf-name">Daily admin briefing — enrollments, revenue, expiries</span><div class="wf-meta"><span class="badge b-cron">Cron: 8am daily</span><span class="badge b-priority">Build first</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">0 8 * * *</div><div class="flow-arr">→</div><div class="node n-action">New enrollments yesterday</div><div class="flow-arr">→</div><div class="node n-action">Revenue yesterday (GHS)</div><div class="flow-arr">→</div><div class="node n-action">Pending bank transfers</div><div class="flow-arr">→</div><div class="node n-action">Members expiring 30d</div><div class="flow-arr">→</div><div class="node n-action">Build summary</div><div class="flow-arr">→</div><div class="node n-action">Resend: daily brief</div><div class="flow-arr">→</div><div class="node n-output">WhatsApp one-liner</div></div></div><div class="wf-detail-section"><div class="section-micro-label">WhatsApp message</div><div class="detail-val">"CIMA Daily: 3 enrollments (GHS 16,500) · 2 bank transfers pending · 8 renewals expiring this month"</div></div><div class="wf-desc">Admin wakes up to a clear briefing without logging in. Everything needing attention today is surfaced in one email and a one-line WhatsApp. The most practical workflow for day-to-day operations.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar blue"></div><div class="wf-grid"><div class="wf-num-bar">19</div><div><div class="wf-header"><span class="wf-name">Monthly enrollment report → auto-export to Google Sheets</span><div class="wf-meta"><span class="badge b-cron">Cron: 1st of month</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">0 0 1 * *</div><div class="flow-arr">→</div><div class="node n-action">All enrollments last 30 days</div><div class="flow-arr">→</div><div class="node n-action">Revenue by course</div><div class="flow-arr">→</div><div class="node n-action">New members count</div><div class="flow-arr">→</div><div class="node n-action">Google Sheets: append rows</div><div class="flow-arr">→</div><div class="node n-output">Resend: report ready email</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Sheet columns</div><div class="detail-val">Month | Course | Cohort | Enrollments | Associate | Fellow | Revenue (GHS) | Net</div></div><div class="wf-desc">On the 1st of every month, a full enrollment and revenue report lands in Google Sheets automatically. Useful for board reports, accountants, and anyone who prefers spreadsheets over the admin dashboard.</div></div></div></div></div>
+
+  <div class="workflow"><div class="priority-bar blue"></div><div class="wf-grid"><div class="wf-num-bar">20</div><div><div class="wf-header"><span class="wf-name">AI auto-draft replies to common enquiry emails at info@thecima.org</span><div class="wf-meta"><span class="badge b-ai">GPT-4o</span><span class="badge b-webhook">Gmail Trigger</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">New email to info@</div><div class="flow-arr">→</div><div class="node n-ai">OpenAI: classify enquiry</div><div class="flow-arr">→</div><div class="node n-cond">Fees / Dates / Eligibility / Other?</div><div class="flow-arr">→</div><div class="node n-ai">Draft reply from knowledge base</div><div class="flow-arr">→</div><div class="node n-cond">Confidence ≥ 0.8?</div><div class="flow-arr">→</div><div class="node n-action">High: auto-send reply</div><div class="flow-arr">→</div><div class="node n-output">Low: Slack draft for review</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Knowledge base (system prompt)</div><div class="detail-val">All course fees, dates, eligibility rules, membership levels, payment methods, both HQ addresses, contact numbers. Update in Supabase when courses change.</div></div><div class="code-snippet">
+<span class="cm">// Classification prompt</span>
+<span class="str">"Classify this email into: FEES, COURSE_DATES,
+ELIGIBILITY, MEMBERSHIP, CERTIFICATE,
+PAYMENT_ISSUE, or OTHER.
+Return JSON: { category: string, confidence: number }
+Email: {{body}}"</span>
+          </div><div class="wf-desc">The highest-ROI workflow. Common questions about fees, dates, and eligibility make up ~70% of admin email volume. n8n reads the email, classifies it with GPT-4o, drafts a reply, and either auto-sends or creates a Slack draft for human review. Saves hours per week.</div></div></div></div></div>
+</div>
+
+</div><!-- end #sec-all -->
+
+<!-- CATEGORY FILTER SECTIONS (simplified view) -->
+<div class="section" id="sec-enrollment">
+  <div class="phase"><div class="phase-label"><span class="phase-name">Enrollment & Payments</span><div class="phase-line"></div><span class="phase-count">WF 01, 02, 03, 04, 17, 18</span></div>
+  <p style="font-size:12px;color:#6B7280;margin-bottom:16px">Showing 6 enrollment workflows. Switch to "All workflows" to see full details.</p>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">01</div><div><div class="wf-header"><span class="wf-name">Payment confirmed → full enrollment flow</span><div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span><span class="badge b-priority">Build first</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Node flow</div><div class="flow-nodes"><div class="node n-trigger">charge.success</div><div class="flow-arr">→</div><div class="node n-action">Verify + Create enrollment</div><div class="flow-arr">→</div><div class="node n-action">Generate booking ref</div><div class="flow-arr">→</div><div class="node n-action">Resend: confirmation</div><div class="flow-arr">→</div><div class="node n-output">Admin Slack alert</div></div></div><div class="wf-detail-section"><div class="section-micro-label">Core purpose</div><div class="detail-val">Most critical workflow. Verify payment → create record → send confirmation → alert admin. All within 2–3 seconds of payment.</div></div></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">02</div><div><div class="wf-header"><span class="wf-name">Bank transfer → hold spot + 5-day chase</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">03</div><div><div class="wf-header"><span class="wf-name">Admin marks paid → instant confirmation email</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">04</div><div><div class="wf-header"><span class="wf-name">Course full → waitlist auto-cascade</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">17</div><div><div class="wf-header"><span class="wf-name">Failed payment → retry prompt</span><div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">18</div><div><div class="wf-header"><span class="wf-name">Enrollment confirmed → WhatsApp group invite</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div></div></div>
+  </div>
+</div>
+
+<div class="section" id="sec-membership">
+  <div class="phase"><div class="phase-label"><span class="phase-name">Membership & Renewals</span><div class="phase-line"></div><span class="phase-count">WF 05, 06, 07, 08 + New 21, 22, 25, 26, 27</span></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">05</div><div><div class="wf-header"><span class="wf-name">Daily renewal reminders (60/30/7/0/−30) — covers ALL members including old students</span><div class="wf-meta"><span class="badge b-cron">Cron: 6am daily</span><span class="badge b-priority">Build first</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">06</div><div><div class="wf-header"><span class="wf-name">Renewal payment → extend expiry + new certificate</span><div class="wf-meta"><span class="badge b-webhook">Paystack Webhook</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">07</div><div><div class="wf-header"><span class="wf-name">Level upgraded → notify member</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">08</div><div><div class="wf-header"><span class="wf-name">New signup → onboarding nudge sequence</span><div class="wf-meta"><span class="badge b-db">auth.users Insert</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">21</div><div><div class="wf-header"><span class="wf-name">MCQ auto-grading → instant result <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-new">Grading</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">22</div><div><div class="wf-header"><span class="wf-name">AI written assessment grader <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Grading</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">25</div><div><div class="wf-header"><span class="wf-name">Old student database import (one-time) <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-manual">Manual</span><span class="badge b-new">Migration</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">26</div><div><div class="wf-header"><span class="wf-name">Old student renewals — handled by WF05 after import <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-new">Old DB</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">27</div><div><div class="wf-header"><span class="wf-name">AI assignment feedback agent (private) <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div></div></div>
+  </div>
+</div>
+
+<div class="section" id="sec-courses">
+  <div class="phase"><div class="phase-label"><span class="phase-name">Course Management</span><div class="phase-line"></div><span class="phase-count">WF 09, 10, 11, 12</span></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">09</div><div><div class="wf-header"><span class="wf-name">7 days before → joining instructions to all enrollees</span><div class="wf-meta"><span class="badge b-cron">Cron: 7am daily</span><span class="badge b-priority">Build first</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">10</div><div><div class="wf-header"><span class="wf-name">Course ends → feedback survey + completion flag</span><div class="wf-meta"><span class="badge b-cron">Cron</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">11</div><div><div class="wf-header"><span class="wf-name">New course published → notify matching members</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">12</div><div><div class="wf-header"><span class="wf-name">Course 90% full → alert admin</span><div class="wf-meta"><span class="badge b-db">Supabase Update</span></div></div></div></div>
+  </div>
+</div>
+
+<div class="section" id="sec-community">
+  <div class="phase"><div class="phase-label"><span class="phase-name">Community & AI Agents</span><div class="phase-line"></div><span class="phase-count">WF 13, 14, 15 + New 23, 24</span></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">13</div><div><div class="wf-header"><span class="wf-name">New post → OpenAI moderation check (free API)</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">14</div><div><div class="wf-header"><span class="wf-name">@mention detected → notification</span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">15</div><div><div class="wf-header"><span class="wf-name">Weekly community digest email</span><div class="wf-meta"><span class="badge b-cron">Cron: Monday</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">23</div><div><div class="wf-header"><span class="wf-name">AI instructor auto-replies in course boards <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">24</div><div><div class="wf-header"><span class="wf-name">Mock arbitration simulator — AI opposing counsel <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div></div></div>
+  </div>
+</div>
+
+<div class="section" id="sec-admin">
+  <div class="phase"><div class="phase-label"><span class="phase-name">Admin & Operations</span><div class="phase-line"></div><span class="phase-count">WF 16, 19, 20</span></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">16</div><div><div class="wf-header"><span class="wf-name">Daily admin briefing — enrollments, revenue, expiries</span><div class="wf-meta"><span class="badge b-cron">Cron: 8am</span><span class="badge b-priority">Build first</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">19</div><div><div class="wf-header"><span class="wf-name">Monthly report → Google Sheets export</span><div class="wf-meta"><span class="badge b-cron">Cron: 1st of month</span></div></div></div></div>
+  <div class="workflow"><div class="wf-grid"><div class="wf-num-bar">20</div><div><div class="wf-header"><span class="wf-name">AI email auto-reply for info@thecima.org enquiries</span><div class="wf-meta"><span class="badge b-ai">GPT-4o</span><span class="badge b-webhook">Gmail</span></div></div></div></div>
+  </div>
+</div>
+
+<div class="section" id="sec-new">
+  <div class="phase"><div class="phase-label"><span class="phase-name">New Additions (7 workflows)</span><div class="phase-line"></div><span class="phase-count">WF 21–27</span></div>
+  <p style="font-size:12px;color:#065F46;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 14px;margin-bottom:16px">These 7 workflows were added to the original 20. They cover grading, AI instructors, and old student database migration. Switch to "All workflows" to see full details including code snippets.</p>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">21</div><div><div class="wf-header"><span class="wf-name">MCQ auto-grading → instant result + email <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-db">Supabase Insert</span><span class="badge b-new">Grading</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Instant scoring for Associate MCQ assessments. Calculates score, logs result, emails student, triggers level recalculation on pass.</div></div><div class="wf-detail-section"><div class="section-micro-label">Pass mark</div><div class="detail-val">≥ 50% → Pass. Fail → feedback email with encouragement to retry.</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">22</div><div><div class="wf-header"><span class="wf-name">AI written assessment grader (Member/Fellow) <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude / GPT-4o</span><span class="badge b-new">AI Grading</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">PDF submission → Claude grades against rubric → structured JSON output (score, feedback, strengths, gaps). Scores under 70 flagged for human review before student is notified.</div></div><div class="wf-detail-section"><div class="section-micro-label">Output format</div><div class="detail-val">{ score, passed, feedback, strengths[], gaps[], improvements[] }</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">23</div><div><div class="wf-header"><span class="wf-name">AI instructor auto-replies in course boards <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Waits 30 mins after a student post. If no human instructor replied, Claude generates a professional context-aware response using course materials. Real instructors can override at any time.</div></div><div class="wf-detail-section"><div class="section-micro-label">Context fed to Claude</div><div class="detail-val">Course modules, thread history, student level, CIMA tone guidelines.</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">24</div><div><div class="wf-header"><span class="wf-name">Mock arbitration simulator — AI opposing counsel <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Student starts a mock case. Claude plays opposing counsel through 5–10 turns with realistic legal arguments. Ends with an arbitrator performance report covering advocacy, argument quality, and procedural knowledge.</div></div><div class="wf-detail-section"><div class="section-micro-label">Case types</div><div class="detail-val">Commercial, construction, investor-state, mediation scenarios.</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">25</div><div><div class="wf-header"><span class="wf-name">Old student database import — one-time migration <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-manual">Manual / Once</span><span class="badge b-new">Migration</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Read existing Google Sheets / Excel database of old Associates, Members, and Fellows. Map fields to Supabase profiles schema. Upsert with correct level, issue_date, expiry_date, and is_old_student = true flag.</div></div><div class="wf-detail-section"><div class="section-micro-label">Run once, then done</div><div class="detail-val">After import, WF05 (daily cron) handles all renewal reminders for old students automatically — no further manual action needed.</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">26</div><div><div class="wf-header"><span class="wf-name">Old student renewals — handled by WF05 after import <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-cron">Via WF05</span><span class="badge b-new">Old DB</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">No separate workflow needed. WF05 queries the entire members table regardless of student source. Old students receive identical 60/30/7/0/−30 day reminder sequence automatically once imported via WF25.</div></div></div></div></div></div>
+  <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">27</div><div><div class="wf-header"><span class="wf-name">AI assignment feedback agent — private qualitative feedback <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Separate from WF22's scoring. Focuses on qualitative improvement — what the student did well, where they fell short, concrete suggested rewrites. Delivered privately to dashboard and by email. Feels like a personal tutor.</div></div><div class="wf-detail-section"><div class="section-micro-label">Feedback structure</div><div class="detail-val">Strengths · Gaps · Suggested rewrites · Model answer excerpt</div></div></div></div></div></div>
+</div>
+
+</main>
+
+<footer>
+  <span>CIMA Learn · n8n Workflow Library · 27 workflows · 6 categories</span>
+  <span>Stack: Supabase · Paystack · Resend · Claude / GPT-4o · Slack · WhatsApp Business API</span>
+  <span>Self-hosted n8n: ~$5–10/month · vs Zapier equivalent: ~$100+/month</span>
+</footer>
+
+<script>
+function showCat(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

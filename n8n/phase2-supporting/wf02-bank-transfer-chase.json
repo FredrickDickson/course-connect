@@ -1,0 +1,498 @@
+{
+  "name": "WF02: Bank transfer submitted -> hold spot + chase sequence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bank-transfer",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-bank-transfer",
+      "name": "Bank Transfer Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "bank-transfer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify webhook signature and extract enrollment data\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new enrollment with bank transfer\nconst record = $json.body.record;\nif (record.payment_method !== 'bank_transfer' || record.payment_status !== 'pending_bank') {\n  return [];\n}\n\nreturn [{\n  json: {\n    enrollment_id: record.id,\n    user_id: record.user_id,\n    course_edition_id: record.course_edition_id,\n    user_email: record.user_email,\n    user_name: record.user_name,\n    course_name: record.course_name,\n    amount: record.amount_paid,\n    enrolled_at: record.enrolled_at\n  }\n}];"
+      },
+      "id": "code-process-webhook",
+      "name": "Process Bank Transfer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "columns": "id, booking_reference",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-enrollment",
+      "name": "Get Enrollment Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.user_email }}",
+        "subject": "Bank Transfer Details - {{ $json.course_name }} - {{ $json.booking_reference }}",
+        "html": "<h2>Bank Transfer Payment Instructions</h2><p>Dear {{ $json.user_name }},</p><p>Thank you for enrolling in <strong>{{ $json.course_name }}</strong>.</p><p><strong>Booking Reference:</strong> {{ $json.booking_reference }}</p><p><strong>Amount:</strong> GHS {{ $json.amount }}</p><h3>Bank Details:</h3><p><strong>Bank:</strong> Ghana Commercial Bank<br><strong>Account Name:</strong> Center for International Mediators and Arbitrators<br><strong>Account Number:</strong> 1234567890<br><strong>Branch:</strong> Accra Main</p><h3>Important Notes:</h3><ul><li>Please include your booking reference ({{ $json.booking_reference }}) in the transfer description</li><li>Send payment confirmation to info@thecima.org with your transfer receipt</li><li>Your spot will be held for 5 days from enrollment date</li><li>If payment isn't received within 5 days, your spot may be released to waitlisted students</li></ul><p>After payment confirmation, you'll receive your joining instructions 7 days before the course starts.</p><p>Questions? Call us at 0536735535 or 0241022964.</p><p>Thank you for choosing CIMA!</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-bank-details",
+      "name": "Send Bank Details Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Bank transfer initiated: {{ $json.user_name }} - {{ $json.course_name }} (GHS {{ $json.amount }}) - Ref: {{ $json.booking_reference }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notify",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1120, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "days"
+      },
+      "id": "wait-2-days",
+      "name": "Wait 2 Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-check-status-2d",
+      "name": "Check Status (Day 2)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "still-pending",
+              "leftValue": "={{ $json.payment_status }}",
+              "rightValue": "pending_bank",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-still-pending-2d",
+      "name": "Still Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.user_email }}",
+        "subject": "Reminder: Complete Your Bank Transfer - {{ $json.booking_reference }}",
+        "html": "<h2>Payment Reminder</h2><p>Dear {{ $json.user_name }},</p><p>This is a friendly reminder about your bank transfer for <strong>{{ $json.course_name }}</strong>.</p><p><strong>Details:</strong></p><ul><li>Amount: GHS {{ $json.amount }}</li><li>Booking Reference: {{ $json.booking_reference }}</li><li>Due: 3 days remaining</li></ul><p>If you've already made the transfer, please forward your receipt to info@thecima.org with your booking reference.</p><p>If you haven't transferred yet, please use these details:</p><p><strong>Bank:</strong> Ghana Commercial Bank<br><strong>Account Name:</strong> Center for International Mediators and Arbitrators<br><strong>Account Number:</strong> 1234567890</p><p>Need help? Call 0536735535 or 0241022964.</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-day2-reminder",
+      "name": "Send Day 2 Reminder",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "id": "wait-3-more-days",
+      "name": "Wait 3 More Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-check-status-5d",
+      "name": "Check Status (Day 5)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "still-pending-5d",
+              "leftValue": "={{ $json.payment_status }}",
+              "rightValue": "pending_bank",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-still-pending-5d",
+      "name": "Still Pending? (Day 5)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "enrollments",
+        "column": "payment_status",
+        "value": "cancelled",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.enrollment_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-release-spot",
+      "name": "Release Spot",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.user_email }}",
+        "subject": "Spot Released - {{ $json.booking_reference }}",
+        "html": "<h2>Enrollment Spot Released</h2><p>Dear {{ $json.user_name }},</p><p>We haven't received your bank transfer for <strong>{{ $json.course_name }}</strong> within the 5-day window.</p><p>Your enrollment spot has been released to waitlisted students.</p><p>If you still wish to join this course, you can:</p><ul><li><a href='https://cima.learn/courses/{{ $json.course_edition_id }}'>Re-enroll and pay immediately</a></li><li>Contact us at 0536735535 to discuss payment options</li></ul><p>We hope to see you in a future CIMA course!</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-spot-released",
+      "name": "Send Spot Released Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [3100, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Spot released due to non-payment: {{ $json.user_name }} - {{ $json.course_name }} - Ref: {{ $json.booking_reference }}",
+        "otherOptions": {}
+      },
+      "id": "slack-spot-released",
+      "name": "Notify Spot Released",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [3320, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Bank Transfer Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Bank Transfer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Bank Transfer": {
+      "main": [
+        [
+          {
+            "node": "Get Enrollment Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Enrollment Details": {
+      "main": [
+        [
+          {
+            "node": "Send Bank Details Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bank Details Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Admin (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Days": {
+      "main": [
+        [
+          {
+            "node": "Check Status (Day 2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status (Day 2)": {
+      "main": [
+        [
+          {
+            "node": "Still Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still Pending?": {
+      "main": [
+        [
+          {
+            "node": "Send Day 2 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 2 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 More Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 More Days": {
+      "main": [
+        [
+          {
+            "node": "Check Status (Day 5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status (Day 5)": {
+      "main": [
+        [
+          {
+            "node": "Still Pending? (Day 5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still Pending? (Day 5)": {
+      "main": [
+        [
+          {
+            "node": "Release Spot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Spot": {
+      "main": [
+        [
+          {
+            "node": "Send Spot Released Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Spot Released Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Spot Released",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf02-bank-transfer-chase",
+  "tags": [
+    {
+      "id": "tag:payment",
+      "name": "Payment"
+    },
+    {
+      "id": "tag:enrollment",
+      "name": "Enrollment"
+    },
+    {
+      "id": "tag:chase",
+      "name": "Chase"
+    }
+  ]
+}

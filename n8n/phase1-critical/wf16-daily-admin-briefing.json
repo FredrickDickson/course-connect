@@ -1,0 +1,425 @@
+{
+  "name": "WF16: Daily admin briefing - enrollments, revenue, expiries",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "value": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-daily-8am",
+      "name": "Daily at 8am UTC",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "where": {
+          "conditions": [
+            {
+              "column": "enrolled_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 1 }).substring(0, 10) }}",
+              "combinator": "and"
+            },
+            {
+              "column": "enrolled_at",
+              "condition": "lessThan",
+              "value": "={{ $now.substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-yesterday-enrollments",
+      "name": "Yesterday's Enrollments",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "where": {
+          "conditions": [
+            {
+              "column": "enrolled_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 1 }).substring(0, 10) }}",
+              "combinator": "and"
+            },
+            {
+              "column": "enrolled_at",
+              "condition": "lessThan",
+              "value": "={{ $now.substring(0, 10) }}",
+              "combinator": "and"
+            },
+            {
+              "column": "payment_status",
+              "condition": "equal",
+              "value": "confirmed",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-yesterday-revenue",
+      "name": "Yesterday's Revenue",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 320],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments",
+        "where": {
+          "conditions": [
+            {
+              "column": "payment_status",
+              "condition": "equal",
+              "value": "pending_bank",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-pending-transfers",
+      "name": "Pending Bank Transfers",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 440],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "members",
+        "where": {
+          "conditions": [
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            },
+            {
+              "column": "expiry_date",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now }}",
+              "combinator": "and"
+            },
+            {
+              "column": "expiry_date",
+              "condition": "lessThanOrEqual",
+              "value": "={{ $now.plus({ days: 30 }) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-expiring-members",
+      "name": "Members Exiring in 30 Days",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 560],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "waitlist",
+        "where": {
+          "conditions": [
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-waitlist-count",
+      "name": "Waitlisted Students",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 680],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "community_reports",
+        "where": {
+          "conditions": [
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "pending",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-community-reports",
+      "name": "Pending Community Reports",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 800],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build daily briefing summary\nconst enrollments = $('Yesterday\\'s Enrollments').all() || [];\nconst revenueData = $('Yesterday\\'s Revenue').all() || [];\nconst pendingTransfers = $('Pending Bank Transfers').all() || [];\nconst expiringMembers = $('Members Exiring in 30 Days').all() || [];\nconst waitlist = $('Waitlisted Students').all() || [];\nconst reports = $('Pending Community Reports').all() || [];\n\n// Calculate metrics\nconst totalEnrollments = enrollments.length;\nconst confirmedEnrollments = revenueData.length;\nconst totalRevenue = revenueData.reduce((sum, item) => sum + (item.json.amount_paid || 0), 0);\nconst pendingCount = pendingTransfers.length;\nconst expiringCount = expiringMembers.length;\nconst waitlistCount = waitlist.length;\nconst reportsCount = reports.length;\n\n// Format revenue as GHS\nconst formattedRevenue = `GHS ${totalRevenue.toLocaleString()}`;\n\n// Build summary text\nconst summary = {\n  date: $now.substring(0, 10),\n  enrollments: totalEnrollments,\n  confirmedEnrollments: confirmedEnrollments,\n  revenue: formattedRevenue,\n  pendingTransfers: pendingCount,\n  expiringMembers: expiringCount,\n  waitlist: waitlistCount,\n  communityReports: reportsCount,\n  needsAction: pendingCount > 0 || reportsCount > 0\n};\n\n// Build detailed email content\nconst emailContent = `<h2>CIMA Daily Briefing - ${summary.date}</h2>\n  \n  <h3>Yesterday's Performance</h3>\n  <ul>\n    <li><strong>New enrollments:</strong> ${summary.enrollments}</li>\n    <li><strong>Confirmed enrollments:</strong> ${summary.confirmedEnrollments}</li>\n    <li><strong>Revenue:</strong> ${summary.revenue}</li>\n  </ul>\n  \n  <h3>Action Required</h3>\n  ${summary.pendingTransfers > 0 ? `<p><strong>Bank Transfers Pending:</strong> ${summary.pendingTransfers} transfers need verification</p>` : '<p>No pending bank transfers</p>'}\n  ${summary.communityReports > 0 ? `<p><strong>Community Reports:</strong> ${summary.communityReports} posts need review</p>` : '<p>No pending community reports</p>'}\n  \n  <h3>Upcoming</h3>\n  <ul>\n    <li><strong>Members expiring in 30 days:</strong> ${summary.expiringMembers}</li>\n    <li><strong>Waitlisted students:</strong> ${summary.waitlist}</li>\n  </ul>\n  \n  <p><a href='https://cima.learn/admin'>View Admin Dashboard</a></p>\n  \n  <p>Generated at ${$now}</p>`;\n\n// Build WhatsApp message (shorter)\nconst whatsappMessage = `CIMA Daily: ${summary.enrollments} enrollments (${summary.revenue}) · ${summary.pendingTransfers} bank transfers pending · ${summary.expiringMembers} renewals expiring this month`;\n\nreturn [{\n  json: {\n    ...summary,\n    email_html: emailContent,\n    whatsapp_message: whatsappMessage\n  }\n}];"
+      },
+      "id": "code-build-summary",
+      "name": "Build Daily Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "admin@thecima.org",
+        "subject": "CIMA Daily Briefing - {{ $json.date }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "resend-admin-email",
+      "name": "Send Admin Briefing",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v18.0/your-whatsapp-phone-number/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsappBusinessApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.whatsappBusinessApi.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $env.ADMIN_WHATSAPP_NUMBER }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.whatsapp_message }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "http-whatsapp-alert",
+      "name": "Send WhatsApp Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1120, 500],
+      "credentials": {
+        "whatsappBusinessApi": {
+          "id": "whatsapp-business-api",
+          "name": "WhatsApp Business API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily at 8am UTC": {
+      "main": [
+        [
+          {
+            "node": "Yesterday's Enrollments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Yesterday's Revenue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pending Bank Transfers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Members Exiring in 30 Days",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Waitlisted Students",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pending Community Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yesterday's Enrollments": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yesterday's Revenue": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending Bank Transfers": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Members Exiring in 30 Days": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waitlisted Students": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending Community Reports": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Briefing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send WhatsApp Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf16-daily-admin-briefing",
+  "tags": [
+    {
+      "id": "tag:admin",
+      "name": "Admin"
+    },
+    {
+      "id": "tag:reporting",
+      "name": "Reporting"
+    },
+    {
+      "id": "tag:critical",
+      "name": "Critical"
+    }
+  ]
+}

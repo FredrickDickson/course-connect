@@ -1,0 +1,466 @@
+{
+  "name": "WF06: Renewal payment -> extend expiry + generate new certificate",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "paystack-renewal",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-renewal-payment",
+      "name": "Renewal Payment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "paystack-renewal"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify Paystack webhook signature and process renewal payment\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.PAYSTACK_WEBHOOK_SECRET;\nconst signature = $headers['x-paystack-signature'];\nconst body = JSON.stringify($json.body);\n\nconst expectedSignature = crypto\n  .createHmac('sha512', webhookSecret)\n  .update(body)\n  .digest('hex');\n\nif (signature !== expectedSignature) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Process only charge.success events with renewal metadata\nif ($json.body.event !== 'charge.success') {\n  return [];\n}\n\nconst chargeData = $json.body.data;\nconst metadata = chargeData.metadata;\n\nif (metadata.type !== 'renewal' || !metadata.member_id) {\n  return []; // Not a renewal payment\n}\n\nreturn [{\n  json: {\n    event: $json.body.event,\n    charge_id: chargeData.id,\n    amount: chargeData.amount / 100,\n    reference: chargeData.reference,\n    member_id: metadata.member_id,\n    metadata: metadata,\n    paid_at: chargeData.paid_at\n  }\n}];"
+      },
+      "id": "code-process-renewal",
+      "name": "Process Renewal Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "members",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.member_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-member",
+      "name": "Get Member Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "members",
+        "columns": {
+          "assignment": [
+            {
+              "column": "issue_date",
+              "value": "={{ $now }}"
+            },
+            {
+              "column": "expiry_date",
+              "value": "={{ $now.plus({ years: 1 }) }}"
+            },
+            {
+              "column": "status",
+              "value": "active"
+            },
+            {
+              "column": "renewal_count",
+              "value": "renewal_count + 1"
+            },
+            {
+              "column": "last_renewal_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.member_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-update-member-dates",
+      "name": "Update Expiry + Increment Renewal",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "members",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.member_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-updated-member",
+      "name": "Get Updated Member Data",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://your-domain.com/api/generate-certificate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CERTIFICATE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"member_id\": \"{{ $json.member_id }}\",\n  \"full_name\": \"{{ $json.full_name }}\",\n  \"membership_level\": \"{{ $json.membership_level }}\",\n  \"issue_date\": \"{{ $json.issue_date }}\",\n  \"expiry_date\": \"{{ $json.expiry_date }}\",\n  \"renewal_count\": \"{{ $json.renewal_count }}\",\n  \"certificate_number\": \"CIMA-{{ $json.issue_date.substring(0, 4) }}-{{ $json.id }}\"\n}",
+        "options": {}
+      },
+      "id": "http-generate-certificate",
+      "name": "Generate Certificate PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "certificate-api-auth",
+          "name": "Certificate API Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "storage.objects",
+        "columns": {
+          "assignment": [
+            {
+              "column": "name",
+              "value": "certificates/{{ $json.member_id }}-{{ $now.substring(0, 10) }}.pdf"
+            },
+            {
+              "column": "bucket_id",
+              "value": "certificates"
+            },
+            {
+              "column": "content_type",
+              "value": "application/pdf"
+            },
+            {
+              "column": "data",
+              "value": "={{ $json.pdf_data }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-storage-save-pdf",
+      "name": "Save PDF to Storage",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "members",
+        "column": "certificate_url",
+        "value": "https://your-project.supabase.co/storage/v1/object/public/certificates/{{ $json.member_id }}-{{ $now.substring(0, 10) }}.pdf",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.member_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-update-certificate-url",
+      "name": "Update Certificate URL",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.email }}",
+        "subject": "Membership Renewed - Download Your New Certificate",
+        "html": "<h2>Membership Successfully Renewed!</h2><p>Dear {{ $json.full_name }},</p><p>Thank you for renewing your CIMA membership! Your membership has been successfully extended.</p><p><strong>Renewal Details:</strong></p><ul><li><strong>Membership Level:</strong> {{ $json.membership_level }}</li><li><strong>New Issue Date:</strong> {{ $json.issue_date }}</li><li><strong>New Expiry Date:</strong> {{ $json.expiry_date }}</li><li><strong>Renewal Count:</strong> {{ $json.renewal_count }}</li><li><strong>Amount Paid:</strong> GHS {{ $json.amount }}</li></ul><h3>Your New Certificate</h3><p>Your updated certificate is ready for download! This certificate reflects your renewed membership status and new validity period.</p><p><a href='{{ $json.certificate_url }}'><strong>Download Your Certificate</strong></a></p><h3>What's Included:</h3><ul><li>Access to all course materials</li><li>Community forum participation</li><li>Networking opportunities</li><li>Professional development resources</li><li>Member-exclusive events</li></ul><h3>Next Steps:</h3><ul><li>Download and save your certificate</li><li>Update your professional profiles with new dates</li><li>Continue enjoying member benefits</li></ul><p>If you have any questions about your renewal or need assistance with your certificate, please contact us:</p><p><strong>Phone:</strong> 0536735535 | 0241022964<br><strong>Email:</strong> info@thecima.org</p><p>We appreciate your continued membership in the CIMA community!</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {
+          "attachments": "{{ $json.certificate_url }}"
+        }
+      },
+      "id": "resend-certificate-email",
+      "name": "Send Certificate Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.member_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "membership_renewed"
+            },
+            {
+              "column": "entity_type",
+              "value": "member"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.member_id }}"
+            },
+            {
+              "column": "description",
+              "value": "Membership renewed - {{ $json.membership_level }} until {{ $json.expiry_date }}"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { amount: $json.amount, renewal_count: $json.renewal_count, certificate_url: $json.certificate_url } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-renewal",
+      "name": "Log Renewal Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Membership renewed: {{ $json.full_name }} - {{ $json.membership_level }} (GHS {{ $json.amount }}) - Certificate generated",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-confirmation",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2440, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Renewal Payment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Renewal Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Renewal Payment": {
+      "main": [
+        [
+          {
+            "node": "Get Member Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Member Details": {
+      "main": [
+        [
+          {
+            "node": "Update Expiry + Increment Renewal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Expiry + Increment Renewal": {
+      "main": [
+        [
+          {
+            "node": "Get Updated Member Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Updated Member Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Certificate PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Certificate PDF": {
+      "main": [
+        [
+          {
+            "node": "Save PDF to Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save PDF to Storage": {
+      "main": [
+        [
+          {
+            "node": "Update Certificate URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Certificate URL": {
+      "main": [
+        [
+          {
+            "node": "Send Certificate Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Certificate Email": {
+      "main": [
+        [
+          {
+            "node": "Log Renewal Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Renewal Activity": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf06-renewal-certificates",
+  "tags": [
+    {
+      "id": "tag:membership",
+      "name": "Membership"
+    },
+    {
+      "id": "tag:renewal",
+      "name": "Renewal"
+    },
+    {
+      "id": "tag:certificates",
+      "name": "Certificates"
+    }
+  ]
+}

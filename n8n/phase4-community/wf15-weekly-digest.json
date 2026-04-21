@@ -1,0 +1,467 @@
+{
+  "name": "WF15: Weekly community digest -> trending posts + unanswered questions",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "value": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "cron-monday-8am",
+      "name": "Monday 8am UTC",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "forum_posts fp",
+        "columns": "fp.*, u.full_name, u.username",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "fp.user_id = u.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "fp.status",
+              "condition": "equal",
+              "value": "published",
+              "combinator": "and"
+            },
+            {
+              "column": "fp.created_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "engagement_score",
+          "direction": "DESC"
+        },
+        "additionalFields": {
+          "limit": 5
+        }
+      },
+      "id": "supabase-trending-posts",
+      "name": "Top 5 Posts (7 days)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "forum_posts fp",
+        "columns": "fp.*, u.full_name, u.username",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "fp.user_id = u.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "fp.status",
+              "condition": "equal",
+              "value": "published",
+              "combinator": "and"
+            },
+            {
+              "column": "fp.created_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-all-posts",
+      "name": "All Posts (7 days)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Find posts with 0 replies from the last 7 days\nconst posts = $input.all();\nconst unansweredPosts = posts.filter(post => {\n  const replyCount = post.json.reply_count || 0;\n  return replyCount === 0;\n});\n\nreturn unansweredPosts.map(post => ({\n  json: post.json\n}));"
+      },
+      "id": "code-filter-unanswered",
+      "name": "Filter Unanswered Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "course_editions ce",
+        "columns": "ce.*, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "ce.start_date",
+              "condition": "greaterThan",
+              "value": "={{ $now }}",
+              "combinator": "and"
+            },
+            {
+              "column": "ce.status",
+              "condition": "equal",
+              "value": "registration_open",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "ce.start_date",
+          "direction": "ASC"
+        },
+        "additionalFields": {
+          "limit": 3
+        }
+      },
+      "id": "supabase-upcoming-courses",
+      "name": "Upcoming Courses (30 days)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 700],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            },
+            {
+              "column": "created_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "orderBy": {
+          "field": "created_at",
+          "direction": "DESC"
+        },
+        "additionalFields": {
+          "limit": 5
+        }
+      },
+      "id": "supabase-new-members",
+      "name": "New Members (7 days)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 900],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "active",
+              "combinator": "and"
+            },
+            {
+              "column": "notification_preferences",
+              "condition": "contains",
+              "value": "weekly_digest",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-opted-in-members",
+      "name": "Opted-in Members",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "split-in-batches-members",
+      "name": "Split in Batches (Members)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate weekly digest HTML\nconst trendingPosts = $('Top 5 Posts (7 days)').all() || [];\nconst unansweredPosts = $('Filter Unanswered Posts').all() || [];\nconst upcomingCourses = $('Upcoming Courses (30 days)').all() || [];\nconst newMembers = $('New Members (7 days)').all() || [];\nconst member = $json;\n\n// Format trending posts section\nlet trendingSection = '';\nif (trendingPosts.length > 0) {\n  trendingSection = `\n    <h3>ð¥ This Week's Top Discussions</h3>\n    <div style=\"background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;\">\n      ${trendingPosts.map((post, index) => `\n        <div style=\"margin-bottom: 15px; ${index < trendingPosts.length - 1 ? 'border-bottom: 1px solid #dee2e6; padding-bottom: 15px;' : ''}\">\n          <h4 style=\"margin: 0 0 5px 0; color: #0066cc;\">\n            <a href=\"https://cima.learn/community/posts/${post.json.id}\" style=\"text-decoration: none; color: inherit;\">\n              ${post.json.title}\n            </a>\n          </h4>\n          <p style=\"margin: 0 0 5px 0; font-size: 14px; color: #666;\">\n            by ${post.json.full_name} (@${post.json.username}) in ${post.json.category}\n          </p>\n          <p style=\"margin: 0; font-size: 13px;\">\n            ${post.json.reply_count || 0} replies \u2022 ${post.json.view_count || 0} views\n          </p>\n        </div>\n      `).join('')}\n    </div>\n  `;\n}\n\n// Format unanswered questions section\nlet unansweredSection = '';\nif (unansweredPosts.length > 0) {\n  unansweredSection = `\n    <h3>â½ï¸ Questions Needing Answers</h3>\n    <div style=\"background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;\">\n      <p style=\"margin: 0 0 15px 0; font-style: italic;\">Help your fellow members by answering these questions:</p>\n      ${unansweredPosts.slice(0, 3).map(post => `\n        <div style=\"margin-bottom: 10px;\">\n          <h4 style=\"margin: 0 0 5px 0; font-size: 15px;\">\n            <a href=\"https://cima.learn/community/posts/${post.json.id}\" style=\"text-decoration: none; color: #856404;\">\n              ${post.json.title}\n            </a>\n          </h4>\n          <p style=\"margin: 0; font-size: 13px; color: #856404;\">\n            by ${post.json.full_name} \u2022 ${post.json.category}\n          </p>\n        </div>\n      `).join('')}\n      ${unansweredPosts.length > 3 ? `<p style=\"margin: 10px 0 0 0; font-size: 13px;\"><a href=\"https://cima.learn/community?filter=unanswered\">View all ${unansweredPosts.length} unanswered questions</a></p>` : ''}\n    </div>\n  `;\n}\n\n// Format upcoming courses section\nlet coursesSection = '';\nif (upcomingCourses.length > 0) {\n  coursesSection = `\n    <h3>ð Upcoming Courses</h3>\n    <div style=\"background: #d1ecf1; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8;\">\n      ${upcomingCourses.map(course => `\n        <div style=\"margin-bottom: 15px;\">\n          <h4 style=\"margin: 0 0 5px 0; color: #0c5460;\">\n            <a href=\"https://cima.learn/courses/${course.id}\" style=\"text-decoration: none; color: inherit;\">\n              ${course.course_name}\n            </a>\n          </h4>\n          <p style=\"margin: 0; font-size: 14px; color: #0c5460;\">\n            ${new Date(course.start_date).toLocaleDateString('en-GH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n            ${course.format === 'online' ? ' \u2022 Online' : ` \u2022 ${course.location}`}\n          </p>\n        </div>\n      `).join('')}\n    </div>\n  `;\n}\n\n// Format new members section\nlet newMembersSection = '';\nif (newMembers.length > 0) {\n  newMembersSection = `\n    <h3>ð New Community Members</h3>\n    <div style=\"background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;\">\n      <p style=\"margin: 0 0 10px 0;\">Welcome our newest members:</p>\n      <p style=\"margin: 0; font-size: 14px;\">\n        ${newMembers.map(member => member.json.full_name).join(', ')}\n      </p>\n    </div>\n  `;\n}\n\nconst digestHtml = `\n  <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">\n    <h2 style=\"color: #0066cc; margin-bottom: 20px;\">CIMA Community Weekly Digest</h2>\n    <p style=\"color: #666; margin-bottom: 30px;\">${new Date().toLocaleDateString('en-GH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>\n    \n    ${trendingSection}\n    ${unansweredSection}\n    ${coursesSection}\n    ${newMembersSection}\n    \n    <div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin-top: 30px;\">\n      <h3 style=\"margin: 0 0 10px 0; color: #0066cc;\">Stay Connected</h3>\n      <p style=\"margin: 0 0 15px 0; color: #666;\">Join the conversation and share your expertise with the community.</p>\n      <a href=\"https://cima.learn/community\" style=\"background: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;\">Visit Community</a>\n    </div>\n    \n    <div style=\"text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6;\">\n      <p style=\"margin: 0; font-size: 12px; color: #666;\">\n        You're receiving this because you opted in for weekly community updates.\n        <br><a href=\"https://cima.learn/profile/notifications\" style=\"color: #666;\">Manage notification preferences</a>\n      </p>\n    </div>\n  </div>\n`;\n\nreturn [{\n  json: {\n    member_email: member.email,\n    member_name: member.full_name,\n    subject: `CIMA Community Weekly Digest - ${new Date().toLocaleDateString('en-GH', { month: 'long', day: 'numeric' })}`,\n    html: digestHtml\n  }\n}];"
+      },
+      "id": "code-generate-digest",
+      "name": "Generate Digest HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "from": "community@thecima.org",
+        "to": "={{ $json.member_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-weekly-digest",
+      "name": "Send Weekly Digest",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#community",
+        "text": "Weekly community digest sent to {{ $('Opted-in Members').all().length }} members. Top discussions: {{ $('Top 5 Posts (7 days)').all().length }}, Unanswered questions: {{ $('Filter Unanswered Posts').all().length }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-summary",
+      "name": "Notify Admin Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1780, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "action_type",
+              "value": "weekly_digest_sent"
+            },
+            {
+              "column": "entity_type",
+              "value": "community"
+            },
+            {
+              "column": "description",
+              "value": "Weekly community digest sent to members"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { member_count: $('Opted-in Members').all().length, trending_posts: $('Top 5 Posts (7 days)').all().length, unanswered_questions: $('Filter Unanswered Posts').all().length } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-digest-sent",
+      "name": "Log Digest Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monday 8am UTC": {
+      "main": [
+        [
+          {
+            "node": "Top 5 Posts (7 days)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "All Posts (7 days)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upcoming Courses (30 days)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "New Members (7 days)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Opted-in Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Posts (7 days)": {
+      "main": [
+        [
+          {
+            "node": "Filter Unanswered Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opted-in Members": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Members)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Members)": {
+      "main": [
+        [
+          {
+            "node": "Generate Digest HTML",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Generate Digest HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Digest HTML": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weekly Digest": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Digest Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf15-weekly-digest",
+  "tags": [
+    {
+      "id": "tag:community",
+      "name": "Community"
+    },
+    {
+      "id": "tag:digest",
+      "name": "Digest"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

@@ -1,0 +1,514 @@
+{
+  "name": "WF13: New community post -> OpenAI moderation check",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "forum-post-created",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-forum-post",
+      "name": "Forum Post Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "forum-post-created"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process forum post webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new forum_post insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'forum_posts') {\n  return []; // Not a new forum post\n}\n\nreturn [{\n  json: {\n    post_id: record.id,\n    title: record.title,\n    body: record.body,\n    author_id: record.user_id,\n    category: record.category,\n    created_at: record.created_at\n  }\n}];"
+      },
+      "id": "code-process-forum-post",
+      "name": "Process Forum Post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/moderations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"input\": \"{{ $json.title }} {{ $json.body }}\"\n}",
+        "options": {}
+      },
+      "id": "openai-moderation-check",
+      "name": "OpenAI Moderation API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-flagged",
+              "leftValue": "={{ $json.results[0].flagged }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-post-flagged",
+      "name": "Post Flagged?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "forum_posts",
+        "column": "status",
+        "value": "flagged",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.post_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-flag-post",
+      "name": "Flag Post in Database",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.author_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-author-profile",
+      "name": "Get Author Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "community_reports",
+        "columns": {
+          "assignment": [
+            {
+              "column": "post_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "reporter_id",
+              "value": "system-moderation"
+            },
+            {
+              "column": "reason",
+              "value": "AI moderation flagged content"
+            },
+            {
+              "column": "categories",
+              "value": "{{ $json.results[0].categories.map(c => c.category).join(', ') }}"
+            },
+            {
+              "column": "category_scores",
+              "value": "{{ JSON.stringify($json.results[0].category_scores) }}"
+            },
+            {
+              "column": "status",
+              "value": "pending"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-create-report",
+      "name": "Create Report Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate moderation alert message\nconst post = $json;\nconst author = $('Get Author Profile').first().json;\nconst moderation = $('OpenAI Moderation API').first().json.results[0];\n\n// Get flagged categories\nconst flaggedCategories = moderation.categories\n  .filter(cat => cat.flagged)\n  .map(cat => cat.category)\n  .join(', ');\n\n// Generate alert message\nconst alertMessage = `AI Moderation Alert\\n\\nPost ID: ${post.post_id}\\nAuthor: ${author.full_name} (@${author.username})\\nTitle: ${post.title}\\n\\nFlagged Categories: ${flaggedCategories}\\n\\nReview required: https://cima.learn/admin/community/posts/${post.post_id}`;\n\nconst slackMessage = `AI Moderation: Post \"${post.title}\" by @${author.username} flagged for ${flaggedCategories}. Review: https://cima.learn/admin/community/posts/${post.post_id}`;\n\nreturn [{\n  json: {\n    post_id: post.post_id,\n    author_name: author.full_name,\n    author_username: author.username,\n    post_title: post.title,\n    flagged_categories: flaggedCategories,\n    alert_message: alertMessage,\n    slack_message: slackMessage,\n    review_url: `https://cima.learn/admin/community/posts/${post.post_id}`\n  }\n}];"
+      },
+      "id": "code-generate-alert",
+      "name": "Generate Alert Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#moderation",
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {}
+      },
+      "id": "slack-moderation-alert",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2000, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "moderation@thecima.org",
+        "to": "admin@thecima.org",
+        "subject": "AI Moderation Alert - Post Flagged",
+        "html": "<h2>AI Moderation Alert</h2><p>A community post has been flagged by AI moderation and requires review.</p><h3>Post Details:</h3><ul><li><strong>Post ID:</strong> {{ $json.post_id }}</li><li><strong>Author:</strong> {{ $json.author_name }} (@{{ $json.author_username }})</li><li><strong>Title:</strong> {{ $json.post_title }}</li><li><strong>Flagged Categories:</strong> {{ $json.flagged_categories }}</li></ul><h3>Action Required:</h3><p>Please review the post and take appropriate action:</p><ul><li><a href='{{ $json.review_url }}'>Review Post</a></li><li>Approve if content is appropriate</li><li>Remove or edit if content violates community guidelines</li><li>Contact author if clarification needed</li></ul><p>This automated moderation helps maintain a professional community environment.</p><p>Generated at {{ $now }}</p>",
+        "options": {}
+      },
+      "id": "resend-admin-email",
+      "name": "Send Admin Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.author_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "content_flagged"
+            },
+            {
+              "column": "entity_type",
+              "value": "forum_post"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "description",
+              "value": "AI moderation flagged post: {{ $json.post_title }}"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { flagged_categories: $json.flagged_categories, moderation_type: 'ai' } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-moderation",
+      "name": "Log Moderation Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "forum_posts",
+        "column": "status",
+        "value": "published",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.post_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-approve-post",
+      "name": "Approve Clean Post",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 500],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "activity_log",
+        "columns": {
+          "assignment": [
+            {
+              "column": "user_id",
+              "value": "={{ $json.author_id }}"
+            },
+            {
+              "column": "action_type",
+              "value": "content_published"
+            },
+            {
+              "column": "entity_type",
+              "value": "forum_post"
+            },
+            {
+              "column": "entity_id",
+              "value": "={{ $json.post_id }}"
+            },
+            {
+              "column": "description",
+              "value": "Post approved by AI moderation: {{ $json.title }}"
+            },
+            {
+              "column": "metadata",
+              "value": "{{ { moderation_type: 'ai', auto_approved: true } }}"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-approval",
+      "name": "Log Approval Activity",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 500],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Forum Post Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Forum Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Forum Post": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Moderation API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Moderation API": {
+      "main": [
+        [
+          {
+            "node": "Post Flagged?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Flagged?": {
+      "main": [
+        [
+          {
+            "node": "Flag Post in Database",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Approve Clean Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag Post in Database": {
+      "main": [
+        [
+          {
+            "node": "Get Author Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Author Profile": {
+      "main": [
+        [
+          {
+            "node": "Create Report Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Report Record": {
+      "main": [
+        [
+          {
+            "node": "Generate Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Alert Message": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Admin Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Moderation Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approve Clean Post": {
+      "main": [
+        [
+          {
+            "node": "Log Approval Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf13-ai-moderation",
+  "tags": [
+    {
+      "id": "tag:community",
+      "name": "Community"
+    },
+    {
+      "id": "tag:moderation",
+      "name": "Moderation"
+    },
+    {
+      "id": "tag:ai",
+      "name": "AI"
+    }
+  ]
+}

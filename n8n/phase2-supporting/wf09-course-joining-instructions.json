@@ -1,0 +1,375 @@
+{
+  "name": "WF09: 7 days before course -> send joining instructions to all enrollees",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "value": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-daily-7am",
+      "name": "Daily at 7am UTC",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "course_editions ce",
+        "columns": "ce.id, ce.start_date, ce.zoom_url, ce.location, ce.format, ce.time_zone, ce.notes, c.name as course_name",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "ce.course_id = c.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "ce.start_date",
+              "condition": "equal",
+              "value": "={{ $now.plus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            },
+            {
+              "column": "ce.status",
+              "condition": "equal",
+              "value": "registration_open",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-courses-7-days",
+      "name": "Courses Starting in 7 Days",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-courses",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThan"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-courses-found",
+      "name": "Courses Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-in-batches-courses",
+      "name": "Split in Batches (Per Course)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "enrollments e",
+        "columns": "e.*, u.full_name, u.email, u.phone",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "profiles u",
+            "on": "e.user_id = u.id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "e.course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "e.payment_status",
+              "condition": "equal",
+              "value": "confirmed",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-get-enrollees",
+      "name": "Get Confirmed Enrollees",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "split-in-batches-enrollees",
+      "name": "Split in Batches (Per Enrollee)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate joining instructions email content\nconst course = $('Courses Starting in 7 Days').first().json;\nconst enrollee = $json;\n\n// Generate course details HTML\nlet courseDetails = '';\nif (course.format === 'online') {\n  courseDetails = `\n    <h3>Course Details (Online)</h3>\n    <ul>\n      <li><strong>Course:</strong> ${course.course_name}</li>\n      <li><strong>Dates:</strong> ${course.start_date}</li>\n      <li><strong>Time Zone:</strong> ${course.time_zone || 'GMT'}</li>\n      <li><strong>Zoom Link:</strong> <a href='${course.zoom_url}'>Join Meeting</a></li>\n      <li><strong>Meeting ID:</strong> ${course.zoom_url ? course.zoom_url.split('/').pop().split('?')[0] : 'Will be provided'}</li>\n    </ul>\n  `;\n} else {\n  courseDetails = `\n    <h3>Course Details (In-Person)</h3>\n    <ul>\n      <li><strong>Course:</strong> ${course.course_name}</li>\n      <li><strong>Dates:</strong> ${course.start_date}</li>\n      <li><strong>Location:</strong> ${course.location}</li>\n      <li><strong>Address:</strong> ${course.notes || 'Full address will be provided'}</li>\n    </ul>\n  `;\n}\n\n// Add preparation section\nconst preparationSection = `\n  <h3>What to Prepare</h3>\n  <ul>\n    <li>Bring a laptop or tablet for note-taking</li>\n    <li>Download course materials (will be sent 24 hours before)</li>\n    <li>Test your internet connection if attending online</li>\n    <li>Arrive 15 minutes early for in-person sessions</li>\n    <li>Bring government-issued ID for verification</li>\n  </ul>\n`;\n\n// Add contact section\nconst contactSection = `\n  <h3>Contact Information</h3>\n  <p><strong>For urgent matters:</strong></p>\n  <ul>\n    <li><strong>Phone:</strong> 0536735535 | 0241022964</li>\n    <li><strong>Email:</strong> info@thecima.org</li>\n    <li><strong>WhatsApp:</strong> Available for quick questions</li>\n  </ul>\n  <p>We're excited to have you join us!</p>\n`;\n\nconst fullHtml = `\n  <h2>Course Joining Instructions - ${course.course_name}</h2>\n  <p>Dear ${enrollee.full_name},</p>\n  <p>Your course starts in <strong>7 days</strong>! Here are your joining instructions:</p>\n  ${courseDetails}\n  ${preparationSection}\n  ${contactSection}\n  <p>Best regards,<br>The CIMA Team</p>\n`;\n\nreturn [{\n  json: {\n    enrollee_email: enrollee.email,\n    enrollee_name: enrollee.full_name,\n    course_name: course.course_name,\n    course_id: course.id,\n    subject: `Joining Instructions - ${course.course_name} (Starts in 7 days)`,\n    html: fullHtml\n  }\n}];"
+      },
+      "id": "code-generate-email-content",
+      "name": "Generate Email Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.enrollee_email }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "resend-joining-instructions",
+      "name": "Send Joining Instructions",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "enrollments",
+        "column": "joining_instructions_sent",
+        "value": "true",
+        "where": {
+          "conditions": [
+            {
+              "column": "user_id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            },
+            {
+              "column": "course_edition_id",
+              "condition": "equal",
+              "value": "={{ $json.course_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-sent-flag",
+      "name": "Log Instructions Sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Joining instructions sent for {{ $json.course_name }} - {{ $json.enrollee_name }} ({{ $json.enrollee_email }})",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-notification",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2220, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily at 7am UTC": {
+      "main": [
+        [
+          {
+            "node": "Courses Starting in 7 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Courses Starting in 7 Days": {
+      "main": [
+        [
+          {
+            "node": "Courses Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Courses Found?": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Per Course)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Per Course)": {
+      "main": [
+        [
+          {
+            "node": "Get Confirmed Enrollees",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get Confirmed Enrollees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Confirmed Enrollees": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches (Per Enrollee)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches (Per Enrollee)": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Joining Instructions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Joining Instructions": {
+      "main": [
+        [
+          {
+            "node": "Log Instructions Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Instructions Sent": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf09-course-joining-instructions",
+  "tags": [
+    {
+      "id": "tag:courses",
+      "name": "Courses"
+    },
+    {
+      "id": "tag:communication",
+      "name": "Communication"
+    },
+    {
+      "id": "tag:automation",
+      "name": "Automation"
+    }
+  ]
+}

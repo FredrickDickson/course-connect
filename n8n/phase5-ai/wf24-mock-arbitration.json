@@ -1,0 +1,596 @@
+{
+  "name": "WF24: Mock arbitration simulator -> AI opponent + scoring",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mock-arbitration-started",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-arbitration-started",
+      "name": "Mock Arbitration Started",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "mock-arbitration-started"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process mock arbitration start webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new mock_arbitration_session insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'mock_arbitration_sessions') {\n  return []; // Not a new mock arbitration session\n}\n\nreturn [{\n  json: {\n    session_id: record.id,\n    user_id: record.user_id,\n    case_type: record.case_type,\n    difficulty: record.difficulty,\n    started_at: record.created_at\n  }\n}];"
+      },
+      "id": "process-arbitration-session",
+      "name": "Process Arbitration Session",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-user-profile",
+      "name": "Get User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert international arbitrator acting as an AI opponent in a mock arbitration simulation. Your role is to provide realistic, challenging responses that test the user's arbitration skills. Be professional, knowledgeable, and maintain the persona of an experienced arbitrator. Adapt your responses based on the difficulty level: beginner (helpful guidance), intermediate (standard arbitration practice), advanced (complex scenarios and challenges).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate a challenging arbitration case scenario for a mock arbitration session. Case type: {{ $json.case_type }}. Difficulty: {{ $json.difficulty }}. Provide: 1) Case background, 2) Key issues to resolve, 3) Relevant legal framework, 4) Initial position statement. Make it realistic and educational.\"\n    }\n  ],\n  \"max_tokens\": 1200,\n  \"temperature\": 0.7\n}",
+        "options": {}
+      },
+      "id": "openai-generate-case",
+      "name": "Generate AI Case Scenario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "mock_arbitration_sessions",
+        "columns": {
+          "assignment": [
+            {
+              "column": "case_scenario",
+              "value": "={{ $json.choices[0].message.content }}"
+            },
+            {
+              "column": "status",
+              "value": "active"
+            },
+            {
+              "column": "ai_opponent_ready",
+              "value": "true"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.session_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "update-session-with-case",
+      "name": "Update Session with Case",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "arbitration@thecima.org",
+        "to": "={{ $('Get User Profile').first().json.email }}",
+        "subject": "Mock Arbitration Session Ready - {{ $json.case_type }}",
+        "html": "<h2>Mock Arbitration Session Ready</h2><p>Dear {{ $('Get User Profile').first().json.full_name }},</p><p>Your mock arbitration session has been set up and is ready to begin!</p><h3>Session Details:</h3><ul><li><strong>Case Type:</strong> {{ $json.case_type }}</li><li><strong>Difficulty:</strong> {{ $json.difficulty }}</li><li><strong>Session ID:</strong> {{ $json.session_id }}</li></ul><h3>What to Expect:</h3><p>You will be engaging in a realistic arbitration simulation with an AI opponent who will:</p><ul><li>Present challenging arbitration scenarios</li><li>Respond to your arguments and positions</li><li>Test your knowledge of arbitration procedures</li><li>Provide educational feedback based on your performance</li></ul><h3>Getting Started:</h3><p><a href=\"https://cima.learn/arbitration/{{ $json.session_id }}\"><strong>Start Mock Arbitration</strong></a></p><h3>Tips for Success:</h3><ul><li>Review relevant arbitration rules and procedures</li><li>Prepare your opening statement carefully</li><li>Listen actively to the AI opponent's arguments</li><li>Apply legal reasoning and precedents</li><li>Maintain professional arbitration conduct</li></ul><p>This session will help you practice and improve your arbitration skills in a risk-free environment.</p><p>Good luck with your mock arbitration!</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "send-session-ready-email",
+      "name": "Send Session Ready Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "arbitration-response",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-user-response",
+      "name": "User Response Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [1560, 300],
+      "webhookId": "arbitration-response"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process user arbitration response webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a new arbitration_response insertion\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'INSERT' || record.table !== 'arbitration_responses') {\n  return []; // Not a new arbitration response\n}\n\nreturn [{\n  json: {\n    response_id: record.id,\n    session_id: record.session_id,\n    user_response: record.user_response,\n    response_type: record.response_type,\n    created_at: record.created_at\n  }\n}];"
+      },
+      "id": "process-user-response",
+      "name": "Process User Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "mock_arbitration_sessions",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.session_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-session-details",
+      "name": "Get Session Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert international arbitrator acting as an AI opponent. Respond to the user's arbitration argument in a professional, challenging manner. Provide counterarguments that test their knowledge and skills. Be educational but maintain realistic arbitration practice. Adapt your response based on difficulty level: {{ $('Get Session Details').first().json.difficulty }}.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Case Context: {{ $('Get Session Details').first().json.case_scenario.substring(0, 500) }}...\\n\\nUser's Response: {{ $json.user_response }}\\n\\nResponse Type: {{ $json.response_type }}\\n\\nProvide a professional arbitration response that challenges the user's position while maintaining educational value. Include relevant legal references and procedural considerations.\"\n    }\n  ],\n  \"max_tokens\": 1000,\n  \"temperature\": 0.7\n}",
+        "options": {}
+      },
+      "id": "openai-generate-opponent-response",
+      "name": "Generate AI Opponent Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2220, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "arbitration_responses",
+        "columns": {
+          "assignment": [
+            {
+              "column": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "column": "user_id",
+              "value": "system-ai-opponent"
+            },
+            {
+              "column": "ai_response",
+              "value": "={{ $json.choices[0].message.content }}"
+            },
+            {
+              "column": "response_type",
+              "value": "ai_opponent"
+            },
+            {
+              "column": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "save-ai-response",
+      "name": "Save AI Response",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2440, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "arbitration-completed",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-arbitration-completed",
+      "name": "Arbitration Completed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [2660, 300],
+      "webhookId": "arbitration-completed"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process arbitration completion webhook\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.SUPABASE_WEBHOOK_SECRET;\nconst signature = $headers['x-webhook-secret'];\n\nif (signature !== webhookSecret) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Check if this is a mock_arbitration_sessions update to completed\nconst record = $json.body.record;\nif (!record || $json.body.type !== 'UPDATE' || record.table !== 'mock_arbitration_sessions') {\n  return []; // Not an arbitration completion\n}\n\nif (record.status !== 'completed') {\n  return []; // Not completed\n}\n\nreturn [{\n  json: {\n    session_id: record.id,\n    user_id: record.user_id,\n    final_score: record.final_score,\n    performance_feedback: record.performance_feedback,\n    completed_at: record.updated_at\n  }\n}];"
+      },
+      "id": "process-arbitration-completion",
+      "name": "Process Arbitration Completion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert arbitration instructor providing detailed feedback on mock arbitration performance. Analyze the session transcript and provide constructive feedback on: 1) Legal knowledge application, 2) Procedural compliance, 3) Argument quality, 4) Professional conduct, 5) Areas for improvement. Be encouraging but specific.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Provide detailed feedback for a completed mock arbitration session. Score: {{ $json.final_score }}/100. Current feedback: {{ $json.performance_feedback }}. Generate comprehensive feedback that includes strengths, areas for improvement, and specific recommendations for skill development.\"\n    }\n  ],\n  \"max_tokens\": 800,\n  \"temperature\": 0.3\n}",
+        "options": {}
+      },
+      "id": "openai-generate-final-feedback",
+      "name": "Generate Final Feedback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [3100, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "mock_arbitration_sessions",
+        "columns": {
+          "assignment": [
+            {
+              "column": "detailed_feedback",
+              "value": "={{ $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.session_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "update-final-feedback",
+      "name": "Update Final Feedback",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3320, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles",
+        "where": {
+          "conditions": [
+            {
+              "column": "id",
+              "condition": "equal",
+              "value": "={{ $json.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "get-user-profile-completion",
+      "name": "Get User Profile (Completion)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3540, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "arbitration@thecima.org",
+        "to": "={{ $('Get User Profile').first().json.email }}",
+        "subject": "Mock Arbitration Completed - Score: {{ $json.final_score }}/100",
+        "html": "<h2>Mock Arbitration Session Completed</h2><p>Dear {{ $('Get User Profile').first().json.full_name }},</p><p>Congratulations on completing your mock arbitration session! Here are your results:</p><div style=\"background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\"><h3 style=\"margin: 0 0 10px 0; color: #007bff;\">Final Score</h3><div style=\"font-size: 36px; font-weight: bold; margin: 10px 0;\">{{ $json.final_score }}/100</div></div><h3>Performance Feedback</h3><div style=\"background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #17a2b8;\"><pre style=\"white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 14px; margin: 0;\">{{ $('Generate Final Feedback').first().json.choices[0].message.content }}</pre></div><h3>Next Steps</h3><p>Based on your performance, we recommend:</p><ul><li>Review areas where you lost points</li><li>Practice specific arbitration skills</li><li>Consider taking advanced arbitration courses</li><li>Schedule a consultation with an instructor</li></ul><p><a href=\"https://cima.learn/arbitration/{{ $json.session_id }}/results\"><strong>View Detailed Results</strong></a></p><p><a href=\"https://cima.learn/arbitration/practice\"><strong>Practice More Scenarios</strong></a></p><p>Continue practicing to improve your arbitration skills. Each session helps you become more confident and competent in real arbitration proceedings.</p><p>Best regards,<br>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "send-completion-email",
+      "name": "Send Completion Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [3760, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Mock Arbitration Started": {
+      "main": [
+        [
+          {
+            "node": "Process Arbitration Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Arbitration Session": {
+      "main": [
+        [
+          {
+            "node": "Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Case Scenario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Case Scenario": {
+      "main": [
+        [
+          {
+            "node": "Update Session with Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Session with Case": {
+      "main": [
+        [
+          {
+            "node": "Send Session Ready Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Response Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process User Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process User Response": {
+      "main": [
+        [
+          {
+            "node": "Get Session Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Session Details": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Opponent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Opponent Response": {
+      "main": [
+        [
+          {
+            "node": "Save AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arbitration Completed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Arbitration Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Arbitration Completion": {
+      "main": [
+        [
+          {
+            "node": "Generate Final Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Final Feedback": {
+      "main": [
+        [
+          {
+            "node": "Update Final Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Final Feedback": {
+      "main": [
+        [
+          {
+            "node": "Get User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Profile (Completion)": {
+      "main": [
+        [
+          {
+            "node": "Send Completion Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf24-mock-arbitration",
+  "tags": [
+    {
+      "id": "tag:arbitration",
+      "name": "Arbitration"
+    },
+    {
+      "id": "tag:ai",
+      "name": "AI"
+    },
+    {
+      "id": "tag:simulation",
+      "name": "Simulation"
+    }
+  ]
+}

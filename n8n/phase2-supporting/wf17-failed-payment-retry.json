@@ -1,0 +1,367 @@
+{
+  "name": "WF17: Failed payment -> instant retry prompt to user",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "paystack-failed",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-paystack-failed",
+      "name": "Paystack Failed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "paystack-failed"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify Paystack webhook signature and process failed payment\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.PAYSTACK_WEBHOOK_SECRET;\nconst signature = $headers['x-paystack-signature'];\nconst body = JSON.stringify($json.body);\n\nconst expectedSignature = crypto\n  .createHmac('sha512', webhookSecret)\n  .update(body)\n  .digest('hex');\n\nif (signature !== expectedSignature) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Process only charge.failed events\nif ($json.body.event !== 'charge.failed') {\n  return [];\n}\n\nconst chargeData = $json.body.data;\nreturn [{\n  json: {\n    event: $json.body.event,\n    charge_id: chargeData.id,\n    amount: chargeData.amount / 100,\n    currency: chargeData.currency,\n    status: chargeData.status,\n    gateway_response: chargeData.gateway_response,\n    paid_at: chargeData.paid_at,\n    created_at: chargeData.created_at,\n    customer: chargeData.customer,\n    metadata: chargeData.metadata,\n    reference: chargeData.reference\n  }\n}];"
+      },
+      "id": "code-process-failed-payment",
+      "name": "Process Failed Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "payment_attempts",
+        "columns": {
+          "assignment": [
+            {
+              "column": "charge_id",
+              "value": "={{ $json.charge_id }}"
+            },
+            {
+              "column": "reference",
+              "value": "={{ $json.reference }}"
+            },
+            {
+              "column": "user_id",
+              "value": "={{ $json.metadata.user_id }}"
+            },
+            {
+              "column": "course_edition_id",
+              "value": "={{ $json.metadata.course_edition_id }}"
+            },
+            {
+              "column": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "column": "currency",
+              "value": "={{ $json.currency }}"
+            },
+            {
+              "column": "status",
+              "value": "failed"
+            },
+            {
+              "column": "gateway_response",
+              "value": "={{ $json.gateway_response }}"
+            },
+            {
+              "column": "attempted_at",
+              "value": "={{ $json.created_at }}"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-log-failed-attempt",
+      "name": "Log Failed Attempt",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "profiles p",
+        "columns": "p.full_name, p.email, p.phone",
+        "joins": [
+          {
+            "type": "inner",
+            "table": "course_editions ce",
+            "on": "ce.id = '{{ $json.metadata.course_edition_id }}'"
+          },
+          {
+            "type": "inner",
+            "table": "courses c",
+            "on": "c.id = ce.course_id"
+          }
+        ],
+        "where": {
+          "conditions": [
+            {
+              "column": "p.id",
+              "condition": "equal",
+              "value": "={{ $json.metadata.user_id }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-fetch-profile-course",
+      "name": "Fetch Profile + Course Details",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "info@thecima.org",
+        "to": "={{ $json.email }}",
+        "subject": "Payment Failed - Try Again - {{ $json.reference }}",
+        "html": "<h2>Payment Failed - Try Again</h2><p>Dear {{ $json.full_name }},</p><p>We're sorry, but your recent payment for <strong>{{ $json.course_name }}</strong> failed to process.</p><p><strong>Payment Details:</strong></p><ul><li><strong>Amount:</strong> GHS {{ $json.amount }}</li><li><strong>Reference:</strong> {{ $json.reference }}</li><li><strong>Status:</strong> {{ $json.gateway_response }}</li></ul><h3>Don't worry - you can try again!</h3><p>Most payment failures are temporary and can be resolved with a simple retry.</p><p><a href='https://cima.learn/enroll/{{ $json.course_edition_id }}?retry=true&reference={{ $json.reference }}'><strong>Try Payment Again</strong></a></p><h3>Alternative Payment Method</h3><p>If online payments continue to fail, you can choose bank transfer:</p><ul><li><strong>Bank:</strong> Ghana Commercial Bank</li><li><strong>Account Name:</strong> Center for International Mediators and Arbitrators</li><li><strong>Account Number:</strong> 1234567890</li><li><strong>Include Reference:</strong> {{ $json.reference }}</li></ul><h3>Common Reasons for Failure:</h3><ul><li>Insufficient funds</li><li>Card declined by bank</li><li>Mobile money timeout</li><li>Network connectivity issues</li></ul><h3>Need Help?</h3><p>If you continue to experience issues, please contact us:</p><p><strong>Phone:</strong> 0536735535 | 0241022964<br><strong>Email:</strong> info@thecima.org</p><p>We're here to help you complete your enrollment!</p><p>Thank you for your patience.</p><p>The CIMA Team</p>",
+        "options": {}
+      },
+      "id": "resend-retry-email",
+      "name": "Send Retry Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "resendApi": {
+          "id": "resend-api",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "Payment failed: {{ $json.full_name }} - {{ $json.course_name }} (GHS {{ $json.amount }}) - Reason: {{ $json.gateway_response }} - Ref: {{ $json.reference }}",
+        "otherOptions": {}
+      },
+      "id": "slack-admin-alert",
+      "name": "Notify Admin (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": "payment_attempts",
+        "columns": "COUNT(*) as attempt_count",
+        "where": {
+          "conditions": [
+            {
+              "column": "reference",
+              "condition": "equal",
+              "value": "={{ $json.reference }}",
+              "combinator": "and"
+            },
+            {
+              "column": "status",
+              "condition": "equal",
+              "value": "failed",
+              "combinator": "and"
+            },
+            {
+              "column": "attempted_at",
+              "condition": "greaterThanEqual",
+              "value": "={{ $now.minus({ days: 7 }).substring(0, 10) }}",
+              "combinator": "and"
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "supabase-check-failure-count",
+      "name": "Check Failure Count (7 days)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-service-role",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "multiple-failures",
+              "leftValue": "={{ $json.attempt_count }}",
+              "rightValue": "3",
+              "operator": {
+                "type": "number",
+                "operation": "greaterThanOrEqual"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-multiple-failures",
+      "name": "Multiple Failures (3+)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#general",
+        "text": "ALERT: {{ $json.full_name }} has {{ $json.attempt_count }} failed payments in 7 days for {{ $json.course_name }}. Manual intervention may be needed.",
+        "otherOptions": {}
+      },
+      "id": "slack-multiple-failures-alert",
+      "name": "Alert Multiple Failures",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2000, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-bot-token",
+          "name": "Slack Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Paystack Failed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Failed Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Failed Payment": {
+      "main": [
+        [
+          {
+            "node": "Log Failed Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Failed Attempt": {
+      "main": [
+        [
+          {
+            "node": "Fetch Profile + Course Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Profile + Course Details": {
+      "main": [
+        [
+          {
+            "node": "Send Retry Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Retry Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Admin (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Check Failure Count (7 days)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Failure Count (7 days)": {
+      "main": [
+        [
+          {
+            "node": "Multiple Failures (3+)?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Multiple Failures (3+)?": {
+      "main": [
+        [
+          {
+            "node": "Alert Multiple Failures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-instance-id"
+  },
+  "id": "wf17-failed-payment-retry",
+  "tags": [
+    {
+      "id": "tag:payment",
+      "name": "Payment"
+    },
+    {
+      "id": "tag:failure",
+      "name": "Failure"
+    },
+    {
+      "id": "tag:retry",
+      "name": "Retry"
+    }
+  ]
+}
