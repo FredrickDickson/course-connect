@@ -156,13 +156,8 @@ const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Apply security middleware in production only
-
-  if (process.env.NODE_ENV === "production") {
-
-    app.use(securityMiddleware);
-
-  }
+  // Apply security middleware (CORS, helmet, etc.)
+  app.use(securityMiddleware);
 
 
 
@@ -209,19 +204,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             exists: true,
 
             user: {
-
               id: user.id,
-
               email: user.email,
-
-              firstName: user.firstName,
-
-              lastName: user.lastName,
-
+              firstName: user.first_name,
+              lastName: user.last_name,
               role: user.role,
-
             },
-
           });
 
         } else {
@@ -372,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         ...user,
 
-        profileImageUrl: imageUrl,
+        profile_image_url: imageUrl,
 
       });
 

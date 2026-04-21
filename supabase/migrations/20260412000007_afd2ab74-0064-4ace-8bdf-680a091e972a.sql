@@ -14,7 +14,7 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS organisation text,
   ADD COLUMN IF NOT EXISTS professional_background text,
   ADD COLUMN IF NOT EXISTS highest_qualification text,
-  ADD COLUMN IF NOT EXISTS membership_level text NOT NULL DEFAULT 'associate',
+  ADD COLUMN IF NOT EXISTS membership_level text,
   ADD COLUMN IF NOT EXISTS level_assigned_by text DEFAULT 'system',
   ADD COLUMN IF NOT EXISTS level_assigned_at timestamptz DEFAULT now(),
   ADD COLUMN IF NOT EXISTS level_assignment_reason text,
@@ -118,10 +118,6 @@ BEGIN
   FROM public.profiles
   WHERE user_id = p_user_id;
 
-  IF v_current_level IS NULL THEN
-    RETURN 'associate';
-  END IF;
-
   -- Check for Fellow-level course completion
   IF EXISTS (
     SELECT 1 FROM public.course_enrollments ce
@@ -132,29 +128,40 @@ BEGIN
   ) THEN
     v_new_level := 'fellow';
     v_reason := 'Completed Fellow-level course';
-  -- Check for Member-level or Associate-level course completion
+  -- Check for Member-level course completion
   ELSIF EXISTS (
     SELECT 1 FROM public.course_enrollments ce
     JOIN public.courses c ON c.id = ce.course_id
     WHERE ce.user_id = p_user_id
       AND ce.payment_status = 'confirmed'
-      AND c.level IN ('member', 'associate')
+      AND c.level = 'member'
   ) THEN
     v_new_level := 'member';
-    v_reason := 'Completed Associate/Member-level course';
-  ELSE
+    v_reason := 'Completed Member-level course';
+  -- Check for Associate-level course completion
+  ELSIF EXISTS (
+    SELECT 1 FROM public.course_enrollments ce
+    JOIN public.courses c ON c.id = ce.course_id
+    WHERE ce.user_id = p_user_id
+      AND ce.payment_status = 'confirmed'
+      AND c.level = 'associate'
+  ) THEN
     v_new_level := 'associate';
-    v_reason := 'Default level';
+    v_reason := 'Completed Associate-level course';
+  ELSE
+    -- No courses completed - return current level (or NULL if never assigned)
+    RETURN v_current_level;
   END IF;
 
   -- Only update if level changed and is an upgrade
   IF v_new_level != v_current_level AND (
     (v_new_level = 'fellow') OR
-    (v_new_level = 'member' AND v_current_level = 'associate')
+    (v_new_level = 'member' AND (v_current_level IS NULL OR v_current_level = 'associate')) OR
+    (v_new_level = 'associate' AND v_current_level IS NULL)
   ) THEN
     -- Log the change
     INSERT INTO public.level_history (user_id, changed_from, changed_to, changed_by, reason)
-    VALUES (p_user_id, v_current_level, v_new_level, 'system', v_reason);
+    VALUES (p_user_id, COALESCE(v_current_level, 'none'), v_new_level, 'system', v_reason);
 
     -- Update profile
     UPDATE public.profiles
@@ -169,7 +176,7 @@ BEGIN
     VALUES (
       p_user_id,
       'level_upgrade',
-      'Level upgraded: ' || v_current_level || ' → ' || v_new_level,
+      'Level upgraded: ' || COALESCE(v_current_level, 'none') || ' → ' || v_new_level,
       jsonb_build_object('from', v_current_level, 'to', v_new_level, 'reason', v_reason)
     );
   END IF;

@@ -103,29 +103,33 @@ export default function Landing() {
         {/* NEW SECTION: RIAC Partnership */}
         <RIACPartnershipSection />
 
-        {/* NEW SECTION: Ghana Bar Association Partnership */}
-        <GBAPartnershipSection />
-
-        {/* NEW SECTION: Architects Registration Council Partnership */}
-        <ARCPartnershipSection />
-
+        
         {/* Qualification Pathway: Ladder of Mastery */}
         <QualificationPathwaySection />
 
         {/* The CIMA Advantage: Unparalleled Pedigree */}
         <CIMAAdvantageSection />
 
-        {/* NEW SECTION 1: Editorial Intro */}
-        <EditorialIntroSection />
-
-        {/* NEW SECTION 2: Feature List */}
-        <FeatureListSection />
-
         {/* NEW SECTION 3: Institutional Network */}
         <InstitutionalNetworkSection />
 
-        {/* Trust Signals: Logo Ticker */}
-        <TrustSignalsSection />
+        {/* NEW SECTION: Learning Paths */}
+        <LearningPathsSection />
+
+        {/* NEW SECTION: Featured Courses */}
+        <FeaturedCoursesSection />
+
+        {/* NEW SECTION: Why Choose Us */}
+        <WhyChooseUsSection />
+
+        {/* NEW SECTION: Meet the Faculty */}
+        <MeetTheFacultySection />
+
+        {/* NEW SECTION: Student Reviews */}
+        <StudentReviewsSection />
+
+        {/* NEW SECTION: Partners & Accrediting Institutions */}
+        <PartnersSection />
 
         {/* NEW SECTION 4: Global Institutional Engagement */}
         <GlobalInstitutionalEngagementSection />
@@ -180,28 +184,6 @@ export default function Landing() {
   );
 }
 
-// Animated section components
-function TrustSignalsSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-  
-  return (
-    <section 
-      ref={ref}
-      className={`py-12 sm:py-16 lg:py-20 bg-landing-surface-container-low overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <p className="text-center font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-8 sm:mb-12">In Partnership with Global Authorities</p>
-        <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 md:gap-16 lg:gap-32 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          <span className="font-headline text-xl sm:text-2xl font-bold tracking-tighter">ICC</span>
-          <span className="font-headline text-xl sm:text-2xl font-bold tracking-tighter">LCIA</span>
-          <span className="font-headline text-xl sm:text-2xl font-bold tracking-tighter">CIARB</span>
-          <span className="font-headline text-xl sm:text-2xl font-bold tracking-tighter">HMRC</span>
-          <span className="font-headline text-xl sm:text-2xl font-bold tracking-tighter">THE HAGUE</span>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function QualificationPathwaySection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
@@ -250,38 +232,11 @@ function CIMAAdvantageSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 px-12 bg-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-12 gap-8 lg:gap-12">
-          <div className="col-span-12 md:col-span-4 text-left">
-            <div className="sticky top-40">
-              <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary leading-tight mb-6 sm:mb-8 text-left">The CIMA Advantage: Unparalleled Pedigree</h2>
-              <div className="w-12 sm:w-16 h-[2px] bg-landing-secondary"></div>
-            </div>
-          </div>
-          <div className="col-span-12 md:col-span-8 space-y-16 sm:space-y-20 lg:space-y-24">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-12">
-              <div className="space-y-4 sm:space-y-6">
-                <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">language</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Elite Jurisdictional Network</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed text-left">Connect with a curated circle of top-tier practitioners and influential decision-makers across every major legal jurisdiction.</p>
-              </div>
-              <div className="space-y-4 sm:space-y-6">
-                <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">verified</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Tier-1 Accreditation</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed text-left">Secure qualifications that carry weight in the world's most respected law firms and international arbitral tribunals.</p>
-              </div>
-              <div className="space-y-4 sm:space-y-6">
-                <span className="material-symbols-outlined text-3xl sm:text-4xl text-landing-secondary">school</span>
-                <h4 className="font-headline text-xl sm:text-2xl text-landing-on-surface text-left">Distinguished Scholar-Practitioners</h4>
-                <p className="text-landing-on-surface-variant leading-relaxed text-left">Learn under the guidance of world-renowned arbitrators and legal luminaries who are actively shaping the future of international law.</p>
-              </div>
-              <div className="relative overflow-hidden rounded-lg aspect-square bg-landing-surface">
-                <img className="w-full h-full object-cover mix-blend-multiply opacity-80" alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag" />
-              </div>
-            </div>
-          </div>
+        <div className="relative w-full h-[600px] overflow-hidden rounded-lg">
+          <img className="w-full h-full object-cover object-bottom" data-alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag"/>
         </div>
       </div>
     </section>
@@ -328,90 +283,7 @@ function TestimonialsSection() {
   );
 }
 
-// NEW SECTION 1: Editorial Intro
-function EditorialIntroSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-  
-  return (
-    <section 
-      ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-background border-b border-[#e3beb8]/10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-    >
-      <div className="max-w-4xl mx-auto text-left">
-        <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-8 sm:mb-10 leading-tight text-left">Learning designed for a digital world.</h2>
-        <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed mb-8 sm:mb-10 text-left">
-         
-CIMA partners with bar associations, leading universities, professional bodies, and forward-looking institutions to deliver high-quality, practice-driven CLE/CPD programmes. Together, we create flexible learning pathways that equip professionals with the skills, credentials, and expertise needed to thrive in a changing world.
-        </p>
-        {/*<a 
-          href="#" 
-          className="inline-flex items-center text-landing-primary font-label uppercase tracking-widest text-sm font-bold group hover:text-landing-secondary transition-colors"
-        >
-          Meet our Partners
-          <span className="material-symbols-outlined ml-2 transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
-        </a>*/}
-      </div>
-    </section>
-  );
-}
 
-// NEW SECTION 2: Feature List
-function FeatureListSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-  
-  return (
-    <section 
-      ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container-low transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-12 gap-8 lg:gap-12 items-center">
-          <div className="col-span-12 md:col-span-6 text-left">
-            <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 sm:mb-8 text-left">How we help our partners succeed.</h2>
-            <p className="font-body text-base sm:text-lg text-landing-on-surface-variant mb-8 sm:mb-10 text-left">Bar Associations, Engineering, Finance and ADR practitioners choose CIMA to help them:</p>
-            <ul className="space-y-4 sm:space-y-6">
-              <li className="flex items-start gap-3 sm:gap-4">
-                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Develop and deliver high-quality programs online</span>
-              </li>
-              <li className="flex items-start gap-3 sm:gap-4">
-                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Reach more learners globally</span>
-              </li>
-              <li className="flex items-start gap-3 sm:gap-4">
-                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Build offerings aligned with workforce needs</span>
-              </li>
-              <li className="flex items-start gap-3 sm:gap-4">
-                <span className="material-symbols-outlined text-landing-secondary mt-0.5 sm:mt-1 text-xl sm:text-2xl">check_circle</span>
-                <span className="font-body text-landing-on-surface text-sm sm:text-base text-left">Create CLE/CPD courses to meet statutory requirements in a changing world</span>
-              </li>
-            </ul>
-            <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-landing-outline-variant/20">
-              <div className="flex items-center gap-2">
-              <p className="font-label text-xs uppercase tracking-widest text-landing-on-surface-variant/60">Powered by</p>
-              <img 
-                src="/images/institutions/cyberxlogo.jpg"
-                alt="CyberX Logo"
-                className="h-20 w-auto object-contain"
-              />
-            </div>
-            </div>
-          </div>
-          <div className="col-span-12 md:col-span-6 bg-landing-primary/10 p-[1px] rounded-lg shadow-sm">
-            <div className="bg-landing-surface-container p-8 sm:p-12 lg:p-16 rounded-DEFAULT h-full flex flex-col justify-center items-start border border-landing-primary/5 shadow-[0_4px_20px_-12px_rgba(97,0,0,0.15)]">
-              <span className="material-symbols-outlined text-4xl sm:text-5xl text-landing-secondary mb-8 sm:mb-10">hub</span>
-              <h4 className="font-headline text-2xl sm:text-3xl text-landing-primary mb-4 sm:mb-6 italic tracking-tight font-medium text-left">Collaborative Intelligence</h4>
-              <p className="font-body text-landing-on-surface-variant leading-relaxed text-base sm:text-lg max-w-md text-left">
-                Our platform integrates seamlessly with institutional standards to deliver excellence at scale.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 const PARTNER_LOGOS = [
   {
@@ -426,7 +298,7 @@ const PARTNER_LOGOS = [
   },
   {
     name: "African Bar Association",
-    url: "/images/partners/afribar.jpg",
+    url: "/images/partners/afribar.png",
     alt: "African Bar Association Logo"
   },
   {
@@ -436,12 +308,12 @@ const PARTNER_LOGOS = [
   },
   {
     name: "London Court of International Arbitration (LCIA)",
-    url: "/images/partners/lcia.jpg",
+    url: "/images/partners/lcia.png",
     alt: "LCIA Logo"
   },
   {
     name: "Chartered Institute of Arbitrators (CIArb)",
-    url: "/images/partners/ciarb.jpg",
+    url: "/images/partners/ciarb.png",
     alt: "CIArb Logo"
   },
   {
@@ -468,33 +340,41 @@ function InstitutionalNetworkSection() {
     <section 
       ref={ref}
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      style={{
+        animation: 'fadeIn 1s ease-out'
+      }}
     >
+      <style>
+        {`
+          @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-scroll {
+            animation: scroll 20s linear infinite;
+            display: flex;
+            align-items: center;
+          }
+          .animate-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}
+      </style>
       <div className="max-w-7xl mx-auto">
-        <div className="text-left mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 text-center">Who are our partners?</h2>
-          <div className="max-w-4xl mx-auto">
-            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
-              Our partners are those who place their trust in us. Institutions that entrust us with their people, their standards, and their future. They are not merely collaborators; they are co-architects of capability—organisations whose professionals we train, whose ambitions we refine, and whose excellence we help to sustain.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
-          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">African Authorities</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Including the Law Society of Kenya, the Bank of Ghana, and the African Bar Association.</p>
-          </div>
-          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">Asian & Global Institutes</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">The Maldives Moot Court Society in Malé, Legal Vidhiya in India, and international legal scholarship circles.</p>
-          </div>
-          <div className="p-6 sm:p-8 border border-landing-outline-variant/15 hover:bg-landing-surface-container-low transition-colors group">
-            <h5 className="font-headline text-lg text-landing-primary mb-4 text-left">Private Legal Sector</h5>
-            <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">Over 100 distinguished law firms and forward-looking enterprises committed to growth, integrity, and enduring impact.</p>
-          </div>
-        </div>
-        <div className="mt-16 sm:mt-20 pt-12 sm:pt-16 border-t border-landing-outline-variant/10">
-          <div className="carousel-container">
-            <div className="carousel-track flex items-center gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24">
+        <div className="text-center mb-16 sm:mb-20">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-12 text-center">Trusted by Leading Institutions</h2>
+          <div className="relative overflow-hidden p-8 sm:p-12">
+            <div 
+              className="flex items-center gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 animate-scroll"
+              style={{
+                animation: 'scroll 20s linear infinite',
+                width: 'max-content'
+              }}
+            >
               {/* First set of logos */}
               {PARTNER_LOGOS.map((partner, index) => (
                 <div key={`original-${partner.name}`} className="flex flex-col items-center gap-2 xs:gap-3 min-w-fit flex-shrink-0">
@@ -557,7 +437,7 @@ const INSTITUTION_LOGOS = [
   
   // Specialised & Regional ADR Institutions
   { name: "Dubai International Arbitration Centre (DIAC)", acronym: "DIAC", logo: "/images/institutions/diac-logo.png" },
-  { name: "Abu Dhabi Global Market Arbitration Centre (ADGMAC)", acronym: "ADGMAC", logo: "/images/institutions/adgmac-log.png" },
+  { name: "Abu Dhabi Global Market Arbitration Centre (ADGMAC)", acronym: "ADGMAC", logo: "/images/institutions/adgmac-logo.png" },
   { name: "China International Economic and Trade Arbitration Commission (CIETAC)", acronym: "CIETAC", logo: "/images/institutions/cietac-logo.jpg" },
   { name: "Japan Commercial Arbitration Association (JCAA)", acronym: "JCAA", logo: "/images/institutions/jcaa-logo.png" },
   { name: "Asian International Arbitration Centre (AIAC)", acronym: "AIAC", logo: "/images/institutions/aiac-logo.png" },
@@ -657,7 +537,7 @@ function RIACPartnershipSection() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with Russian International Arbitration Congress (RIAC)</h2>
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with Bar Associations and Arbitral Bodies</h2>
           <div className="max-w-4xl mx-auto">
             <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
               CIMA is pleased to support Russian International Arbitration Congress 2026, a leading global forum for arbitration practitioners.
@@ -678,9 +558,49 @@ This underscores our commitment to advancing best practice in Eastern Europe.
   );
 }
 
-// NEW SECTION: Ghana Bar Association Partnership
-function GBAPartnershipSection() {
+
+// Learning Paths Section
+function LearningPathsSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const learningPaths = [
+    {
+      name: "International Arbitration",
+      count: "12 courses",
+      icon: "gavel",
+      color: "bg-landing-primary/10 text-landing-primary"
+    },
+    {
+      name: "Mediation & Conciliation", 
+      count: "9 courses",
+      icon: "handshake",
+      color: "bg-landing-secondary/10 text-landing-secondary"
+    },
+    {
+      name: "Investor-State Disputes",
+      count: "10 courses", 
+      icon: "public",
+      color: "bg-landing-tertiary/10 text-landing-tertiary"
+    },
+    {
+      name: "ADR Certification Prep",
+      count: "8 courses",
+      icon: "verified",
+      color: "bg-green-100 text-green-700"
+    },
+    {
+      name: "Contract Drafting",
+      count: "7 courses",
+      icon: "description",
+      color: "bg-blue-100 text-blue-700"
+    },
+    {
+      name: "Emergency Proceedings",
+      count: "5 courses",
+      icon: "timer",
+      color: "bg-orange-100 text-orange-700"
+    }
+  ];
   
   return (
     <section 
@@ -688,52 +608,593 @@ function GBAPartnershipSection() {
       className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with the Ghana Bar Association (GBA)</h2>
-          <div className="max-w-4xl mx-auto">
-            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
-              CIMA is pleased to collaborate with Regional Bars of the Ghana Bar Association to advance arbitration and mediation practice and strengthen professional standards in Ghana.
-            </p>
-          </div>
-          {/* GBA Logo */}
-          <div className="mt-8 sm:mt-12 flex justify-center">
-            <img 
-              src="/images/partners/ghana-bar.jpg"
-              alt="Ghana Bar Association Logo"
-              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
-            />
-          </div>
+        <div className="text-left mb-16 sm:mb-20">
+          <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Browse by category</p>
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">Learning paths for learners</h2>
+          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed max-w-2xl text-left">Structured tracks built for every stage of your ADR career.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {learningPaths.map((path, index) => (
+            <div 
+              key={path.name}
+              className={`group bg-landing-surface-container p-6 sm:p-8 border border-landing-outline-variant/15 hover:border-landing-primary/30 hover:bg-landing-surface-container-high transition-all duration-300 cursor-pointer rounded-lg`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg ${path.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                <span className="material-symbols-outlined text-2xl sm:text-3xl">{path.icon}</span>
+              </div>
+              <h3 className="font-headline text-lg sm:text-xl text-landing-on-surface mb-3 group-hover:text-landing-primary transition-colors text-left">{path.name}</h3>
+              <p className="font-body text-sm text-landing-on-surface-variant text-left">{path.count}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-// NEW SECTION: Architects Registration Council Partnership
-function ARCPartnershipSection() {
+// Featured Courses Section
+function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const featuredCourses = [
+    {
+      title: "Mediation Skills & Practice: Facilitation to Closure",
+      category: "Mediation",
+      instructor: "Prof. Adaeze Nwosu, FCIArb",
+      rating: 4.9,
+      students: 1248,
+      modules: 6,
+      hours: 18,
+      level: "All levels",
+      cpd: 8,
+      badge: "Bestseller",
+      color: "bg-landing-primary/10 text-landing-primary"
+    },
+    {
+      title: "International Commercial Arbitration: End-to-End Practice",
+      category: "Arbitration",
+      instructor: "Dr. Ivan Petrov, RIAC Panel",
+      rating: 4.8,
+      students: 976,
+      modules: 8,
+      hours: 24,
+      level: "Intermediate",
+      cpd: 12,
+      badge: "Certificate",
+      color: "bg-landing-secondary/10 text-landing-secondary"
+    },
+    {
+      title: "ISDS: Treaty Claims, BITs & ICSID Practice",
+      category: "Investment Law",
+      instructor: "Prof. Kwame Asante, ICJ Consultant",
+      rating: 4.9,
+      students: 702,
+      modules: 10,
+      hours: 30,
+      level: "Advanced",
+      cpd: 18,
+      badge: "Diploma",
+      color: "bg-landing-tertiary/10 text-landing-tertiary"
+    },
+    {
+      title: "Drafting Enforceable Arbitration Clauses",
+      category: "Drafting",
+      instructor: "Ms. Sarah Okafor, Senior Counsel",
+      rating: 4.7,
+      students: 514,
+      modules: 3,
+      hours: 9,
+      level: "Intermediate",
+      cpd: 6,
+      badge: "Certificate",
+      color: "bg-green-100 text-green-700"
+    },
+    {
+      title: "Emergency Arbitration: Urgent Relief in Cross-Border Disputes",
+      category: "Emergency Proceedings",
+      instructor: "Dr. Elena Morozova, LCIA Arbitrator",
+      rating: 4.8,
+      students: 389,
+      modules: 4,
+      hours: 12,
+      level: "Advanced",
+      cpd: 8,
+      badge: "New",
+      color: "bg-orange-100 text-orange-700"
+    }
+  ];
+  
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<span key={i} className="text-yellow-500">{"\u2605"}</span>);
+    }
+    
+    if (hasHalfStar) {
+      stars.push(<span key="half" className="text-yellow-500">{"\u2606"}</span>);
+    }
+    
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<span key={`empty-${i}`} className="text-gray-300">{"\u2606"}</span>);
+    }
+    
+    return stars;
+  };
   
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container-low transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight">In Partnership with the Architects Registration Council</h2>
-          <div className="max-w-4xl mx-auto">
-            <p className="font-body text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
-              CIMA is pleased to collaborate with the Architects Registration Council to advance dispute resolution standards and strengthen professional practice within the built environment sector.
-            </p>
+        <div className="flex justify-between items-end mb-16 sm:mb-20 flex-wrap gap-4">
+          <div>
+            <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Top rated</p>
+            <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">Featured courses for Lawyers</h2>
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed max-w-2xl text-left">Curated by our academic board. Recognized by ICC, LCIA, SIAC, RIAC and CIArb.</p>
           </div>
-          {/* ARC Logo */}
-          <div className="mt-8 sm:mt-12 flex justify-center">
-            <img 
-              src="/images/partners/arc-logo.png"
-              alt="Architects Registration Council Logo"
-              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
-            />
+          <Link href="/courses" className="text-landing-primary font-label uppercase tracking-widest text-sm font-bold group hover:text-landing-secondary transition-colors flex items-center gap-2">
+            View all courses
+            <span className="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {featuredCourses.map((course, index) => (
+            <div 
+              key={course.title}
+              className="group bg-landing-surface border border-landing-outline-variant/15 hover:border-landing-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer rounded-lg overflow-hidden"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Course Header */}
+              <div className={`h-32 ${course.color} relative overflow-hidden`}>
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/20"></div>
+                </div>
+                <div className="relative z-10 h-full flex items-center justify-center p-4">
+                  <h3 className="font-headline text-lg sm:text-xl text-center font-bold">{course.category}</h3>
+                </div>
+              </div>
+              
+              {/* Course Body */}
+              <div className="p-6">
+                <div className="mb-3">
+                  <span className="font-label text-xs uppercase tracking-widest text-landing-on-surface-variant/60">{course.category}</span>
+                </div>
+                <h4 className="font-headline text-base sm:text-lg text-landing-on-surface mb-3 leading-tight line-clamp-2 group-hover:text-landing-primary transition-colors">
+                  {course.title}
+                </h4>
+                <p className="font-body text-sm text-landing-on-surface-variant mb-4">{course.instructor}</p>
+                
+                {/* Rating */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="font-body text-sm font-bold text-yellow-600">{course.rating}</span>
+                  <div className="flex text-sm">
+                    {renderStars(course.rating)}
+                  </div>
+                  <span className="font-body text-xs text-landing-on-surface-variant">({course.students})</span>
+                </div>
+                
+                {/* Course Meta */}
+                <div className="flex items-center gap-3 text-xs text-landing-on-surface-variant mb-4">
+                  <span>{course.modules} modules</span>
+                  <span className="w-1 h-1 bg-landing-outline-variant rounded-full"></span>
+                  <span>{course.hours} hrs</span>
+                  <span className="w-1 h-1 bg-landing-outline-variant rounded-full"></span>
+                  <span>{course.level}</span>
+                </div>
+              </div>
+              
+              {/* Course Footer */}
+              <div className="border-t border-landing-outline-variant/10 p-4 flex justify-between items-center">
+                <span className={`font-label text-xs px-2 py-1 rounded ${course.color}`}>
+                  {course.badge}
+                </span>
+                <span className="font-body text-xs text-landing-on-surface-variant">{course.cpd} CPD hrs</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Why Choose Us Section
+function WhyChooseUsSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const features = [
+    {
+      icon: "workspace_premium",
+      title: "Globally recognised certifications",
+      description: "CIMA certificates are accepted by ICC, LCIA, SIAC, ICSID and RIAC panels. Co-badged with your local bar association where applicable.",
+      color: "bg-landing-primary/10 text-landing-primary"
+    },
+    {
+      icon: "verified",
+      title: "CPD / CLE accredited",
+      description: "Every course carries verifiable continuing professional development hours recognised by bar associations in 38 jurisdictions worldwide.",
+      color: "bg-landing-secondary/10 text-landing-secondary"
+    },
+    {
+      icon: "school",
+      title: "Expert practitioners as instructors",
+      description: "Learn from sitting arbitrators, tribunal secretaries, RIAC panel members, and senior counsel with active international caseloads.",
+      color: "bg-landing-tertiary/10 text-landing-tertiary"
+    },
+    {
+      icon: "schedule",
+      title: "Self-paced with lifetime access",
+      description: "On-demand video, downloadable case studies, interactive assessments, and automatic course updates all at your pace on any device.",
+      color: "bg-green-100 text-green-700"
+    },
+    {
+      icon: "groups",
+      title: "Global professional community",
+      description: "Join a private network of 4,800+ ADR professionals. Access mentorship, peer discussion forums, and referral pathways.",
+      color: "bg-blue-100 text-blue-700"
+    },
+    {
+      icon: "shield",
+      title: "Bar association co-badging",
+      description: "Certificates issued in collaboration with 14 bar associations and professional bodies, carrying dual institutional authority.",
+      color: "bg-orange-100 text-orange-700"
+    }
+  ];
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-left mb-16 sm:mb-20">
+          <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Why choose us</p>
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">Built for the world's best legal minds</h2>
+          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed max-w-2xl text-left">Every feature on this platform exists to serve serious ADR practitioners.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {features.map((feature, index) => (
+            <div 
+              key={feature.title}
+              className="group bg-landing-surface-container p-6 sm:p-8 border border-landing-outline-variant/15 hover:border-landing-primary/30 hover:shadow-lg transition-all duration-300 rounded-lg"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                <span className="material-symbols-outlined text-2xl sm:text-3xl">{feature.icon}</span>
+              </div>
+              <h3 className="font-headline text-lg sm:text-xl text-landing-on-surface mb-4 group-hover:text-landing-primary transition-colors text-left">{feature.title}</h3>
+              <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed text-left">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Meet the Faculty Section
+function MeetTheFacultySection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const instructors = [
+    {
+      initials: "AN",
+      name: "Prof. Adaeze Nwosu",
+      title: "FCIArb · Senior Mediator, Lagos & London",
+      rating: 4.9,
+      students: 1248,
+      courses: 2,
+      color: "bg-landing-primary text-landing-on-primary"
+    },
+    {
+      initials: "IP",
+      name: "Dr. Ivan Petrov",
+      title: "RIAC Panel Member · Moscow & Geneva",
+      rating: 4.8,
+      students: 976,
+      courses: 3,
+      color: "bg-landing-secondary text-landing-on-secondary"
+    },
+    {
+      initials: "KA",
+      name: "Prof. Kwame Asante",
+      title: "ICJ Consultant · Ghana Bar Association",
+      rating: 4.9,
+      students: 702,
+      courses: 2,
+      color: "bg-landing-tertiary text-landing-on-tertiary"
+    },
+    {
+      initials: "EM",
+      name: "Dr. Elena Morozova",
+      title: "LCIA Arbitrator · Emergency Relief Specialist",
+      rating: 4.8,
+      students: 389,
+      courses: 2,
+      color: "bg-purple-600 text-white"
+    }
+  ];
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container-low transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-end mb-16 sm:mb-20 flex-wrap gap-4">
+          <div>
+            <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Meet the faculty</p>
+            <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">Learn from the best trainers</h2>
+            <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed max-w-2xl text-left">Our instructors are active practitioners not just academics.</p>
           </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {instructors.map((instructor, index) => (
+            <div 
+              key={instructor.name}
+              className="group bg-landing-surface border border-landing-outline-variant/15 hover:border-landing-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer rounded-lg text-center"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Avatar */}
+              <div className="p-6">
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full ${instructor.color} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
+                  <span className="font-headline text-2xl sm:text-3xl font-bold">{instructor.initials}</span>
+                </div>
+                
+                {/* Name and Title */}
+                <h3 className="font-headline text-lg text-landing-on-surface mb-2 group-hover:text-landing-primary transition-colors">{instructor.name}</h3>
+                <p className="font-body text-sm text-landing-on-surface-variant leading-relaxed mb-6 px-4">{instructor.title}</p>
+                
+                {/* Stats */}
+                <div className="flex justify-center gap-6 mb-6">
+                  <div className="text-center">
+                    <div className="font-headline text-lg font-bold text-landing-on-surface">{instructor.rating}{"\u2605"}</div>
+                    <div className="font-body text-xs text-landing-on-surface-variant">Rating</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-headline text-lg font-bold text-landing-on-surface">{instructor.students.toLocaleString()}</div>
+                    <div className="font-body text-xs text-landing-on-surface-variant">Students</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-headline text-lg font-bold text-landing-on-surface">{instructor.courses}</div>
+                    <div className="font-body text-xs text-landing-on-surface-variant">Courses</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Student Reviews Section
+function StudentReviewsSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const testimonials = [
+    {
+      quote: "The ISDS track is the most practically grounded course I have encountered far beyond what standard LLM programmes offer. I use the materials in active cases.",
+      author: "A. Mensah-Bonsu",
+      role: "Partner · Ghana Bar Association",
+      initials: "AM",
+      color: "bg-landing-primary text-landing-on-primary"
+    },
+    {
+      quote: "I passed my CIArb fellowship interview the month after completing the Commercial Arbitration track. The preparation was genuinely invaluable worth every hour.",
+      author: "S. Osei-Agyemang",
+      role: "Barrister · Nigerian Bar Association",
+      initials: "SO",
+      color: "bg-landing-secondary text-landing-on-secondary"
+    },
+    {
+      quote: "The RIAC co-certification gave me immediate credibility with Eastern European clients. The platform itself is beautifully structured I completed it during trial prep.",
+      author: "D. Volkov",
+      role: "Counsel · RIAC Arbitration Panel",
+      initials: "DV",
+      color: "bg-landing-tertiary text-landing-on-tertiary"
+    },
+    {
+      quote: "The cross-cultural mediation module alone transformed how I approach disputes. No other programme comes close for practitioners in East African jurisdictions.",
+      author: "N. Kariuki",
+      role: "Senior Associate · East Africa Law Society",
+      initials: "NK",
+      color: "bg-green-600 text-white"
+    }
+  ];
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-left mb-16 sm:mb-20">
+          <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Student reviews</p>
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">What our learners say</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {testimonials.map((testimonial, index) => (
+            <div 
+              key={testimonial.author}
+              className="group bg-landing-surface-container p-6 sm:p-8 border border-landing-outline-variant/15 hover:border-landing-primary/30 hover:shadow-lg transition-all duration-300 rounded-lg"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Stars */}
+              <div className="flex text-yellow-500 text-sm mb-6">
+                <span>{"\u2605"}</span>
+                <span>{"\u2605"}</span>
+                <span>{"\u2605"}</span>
+                <span>{"\u2605"}</span>
+                <span>{"\u2605"}</span>
+              </div>
+              
+              {/* Quote */}
+              <blockquote className="relative">
+                <div className="absolute -top-2 -left-2 text-6xl sm:text-8xl font-headline text-landing-primary/20 leading-none">"</div>
+                <p className="font-headline italic text-base sm:text-lg text-landing-on-surface-variant leading-relaxed mb-8 pl-8 relative">
+                  {testimonial.quote}
+                </p>
+              </blockquote>
+              
+              {/* Author */}
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full ${testimonial.color} flex items-center justify-center flex-shrink-0`}>
+                  <span className="font-headline text-sm font-bold">{testimonial.initials}</span>
+                </div>
+                <div>
+                  <div className="font-headline text-sm font-bold text-landing-on-surface">{testimonial.author}</div>
+                  <div className="font-body text-xs text-landing-on-surface-variant">{testimonial.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Partners & Accrediting Institutions Section
+function PartnersSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  
+  const partners = [
+    {
+      name: "Russian International Arbitration Congress (RIAC)",
+      type: "Featured partner",
+      url: "riac-arbitration.com",
+      website: "https://riac-arbitration.com",
+      featured: true
+    },
+    {
+      name: "ICC International Chamber of Commerce",
+      type: "Arbitral institution",
+      url: "iccwbo.org",
+      website: "https://iccwbo.org",
+      featured: false
+    },
+    {
+      name: "LCIA London Court of International Arbitration",
+      type: "Arbitral institution",
+      url: "lcia.org",
+      website: "https://www.lcia.org",
+      featured: false
+    },
+    {
+      name: "SIAC Singapore International Arbitration Centre",
+      type: "Arbitral institution",
+      url: "siac.org.sg",
+      website: "https://www.siac.org.sg",
+      featured: false
+    },
+    {
+      name: "ICSID World Bank Group",
+      type: "Arbitral institution",
+      url: "icsid.worldbank.org",
+      website: "https://icsid.worldbank.org",
+      featured: false
+    },
+    {
+      name: "Chartered Institute of Arbitrators (CIArb)",
+      type: "Professional body",
+      url: "ciarb.org",
+      website: "https://www.ciarb.org",
+      featured: false
+    },
+    {
+      name: "Ghana Bar Association",
+      type: "Bar association",
+      url: "ghanabar.org",
+      website: "https://ghanabar.org",
+      featured: false
+    },
+    {
+      name: "Nigerian Bar Association",
+      type: "Bar association",
+      url: "nigerianbar.org.ng",
+      website: "https://nigerianbar.org.ng",
+      featured: false
+    },
+    {
+      name: "East Africa Law Society",
+      type: "Bar association",
+      url: "ealawsociety.org",
+      website: "https://ealawsociety.org",
+      featured: false
+    }
+  ];
+  
+  return (
+    <section 
+      ref={ref}
+      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-landing-surface-container-low transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-left mb-16 sm:mb-20">
+          <p className="font-label text-xs uppercase tracking-[0.4em] text-landing-on-surface-variant/60 mb-4">Our network</p>
+          <h2 className="font-headline text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight text-left">Partners & accrediting institutions</h2>
+          <p className="font-body text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed max-w-2xl text-left">Every certification carries the weight of institutional recognition.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {partners.map((partner, index) => (
+            <a 
+              key={partner.name}
+              href={partner.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group bg-landing-surface border p-6 sm:p-8 border-landing-outline-variant/15 hover:border-landing-primary/30 hover:shadow-lg transition-all duration-300 cursor-pointer rounded-lg block ${
+                partner.featured ? 'bg-landing-tertiary/5 border-landing-tertiary/30' : ''
+              }`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Type Label */}
+              {partner.featured && (
+                <div className="mb-3">
+                  <span className="font-label text-xs uppercase tracking-widest text-landing-tertiary">
+                    {partner.type}
+                  </span>
+                </div>
+              )}
+              
+              {/* Partner Name */}
+              <h3 className={`font-headline text-base sm:text-lg leading-tight mb-3 group-hover:text-landing-primary transition-colors ${
+                partner.featured ? 'text-landing-tertiary' : 'text-landing-on-surface'
+              }`}>
+                {partner.name}
+              </h3>
+              
+              {/* Type for non-featured */}
+              {!partner.featured && (
+                <div className="mb-4">
+                  <span className="font-body text-xs text-landing-on-surface-variant uppercase tracking-widest">
+                    {partner.type}
+                  </span>
+                </div>
+              )}
+              
+              {/* URL */}
+              <div className={`font-body text-sm group-hover:text-landing-primary transition-colors flex items-center gap-1 ${
+                partner.featured ? 'text-landing-tertiary' : 'text-landing-primary'
+              }`}>
+                {partner.url}
+                <span className="text-xs">{"\u2197"}</span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>
