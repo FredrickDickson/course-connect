@@ -156,6 +156,9 @@
     },
     "@vitejs/plugin-react-swc": {
       "vite": "^8.0.9"
+    },
+    "lovable-tagger": {
+      "vite": "^8.0.9"
     }
   }
 }
