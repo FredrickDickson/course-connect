@@ -149,5 +149,10 @@
     "typescript-eslint": "^8.38.0",
     "vite": "^8.0.9",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@vitejs/plugin-react": {
+      "vite": "^8.0.9"
+    }
   }
 }
