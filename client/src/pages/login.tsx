@@ -36,29 +36,17 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Set the session in Supabase client
-      if (data.session?.accessToken) {
-        await supabase.auth.setSession({
-          access_token: data.session.accessToken,
-          refresh_token: data.session.refreshToken,
-        });
+      if (!data.user || !data.session) {
+        throw new Error('Login failed');
       }
 
       toast({
@@ -88,7 +76,8 @@ export default function Login() {
       if (redirect) {
         window.location.assign(redirect);
       } else {
-        const role = data.user.role || "student";
+        // Get user role from metadata or default to student
+        const role = data.user.user_metadata?.role || "student";
         const destination =
           role === "admin"
             ? "/admin"

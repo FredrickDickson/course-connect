@@ -70,31 +70,42 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-        }),
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        options: {
+          data: {
+            firstName: formData.firstName.trim(),
+            lastName: formData.lastName.trim(),
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to CIMA Learn. Let's get started.",
-      });
-      setLocation("/onboarding");
+      if (!data.user) {
+        throw new Error('Registration failed');
+      }
+
+      // Check if email confirmation is required
+      if (data.session === null) {
+        // Email confirmation required
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please click it to complete your registration.",
+        });
+        setLocation("/verify-email");
+      } else {
+        // Auto-confirmed (development mode or email confirmation disabled)
+        toast({
+          title: "Account created successfully!",
+          description: "Welcome to CIMA Learn. Let's get started.",
+        });
+        setLocation("/onboarding");
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred during registration");
     } finally {
