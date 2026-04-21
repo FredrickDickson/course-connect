@@ -95,34 +95,6 @@
     {
       "parameters": {
         "operation": "select",
-        "table": "enrollments",
-        "where": {
-          "conditions": [
-            {
-              "column": "payment_status",
-              "condition": "equal",
-              "value": "pending_bank",
-              "combinator": "and"
-            }
-          ]
-        },
-        "additionalFields": {}
-      },
-      "id": "supabase-pending-transfers",
-      "name": "Pending Bank Transfers",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [460, 440],
-      "credentials": {
-        "supabaseApi": {
-          "id": "supabase-service-role",
-          "name": "Supabase Service Role"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "select",
         "table": "members",
         "where": {
           "conditions": [
@@ -218,7 +190,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build daily briefing summary\nconst enrollments = $('Yesterday\\'s Enrollments').all() || [];\nconst revenueData = $('Yesterday\\'s Revenue').all() || [];\nconst pendingTransfers = $('Pending Bank Transfers').all() || [];\nconst expiringMembers = $('Members Exiring in 30 Days').all() || [];\nconst waitlist = $('Waitlisted Students').all() || [];\nconst reports = $('Pending Community Reports').all() || [];\n\n// Calculate metrics\nconst totalEnrollments = enrollments.length;\nconst confirmedEnrollments = revenueData.length;\nconst totalRevenue = revenueData.reduce((sum, item) => sum + (item.json.amount_paid || 0), 0);\nconst pendingCount = pendingTransfers.length;\nconst expiringCount = expiringMembers.length;\nconst waitlistCount = waitlist.length;\nconst reportsCount = reports.length;\n\n// Format revenue as GHS\nconst formattedRevenue = `GHS ${totalRevenue.toLocaleString()}`;\n\n// Build summary text\nconst summary = {\n  date: $now.substring(0, 10),\n  enrollments: totalEnrollments,\n  confirmedEnrollments: confirmedEnrollments,\n  revenue: formattedRevenue,\n  pendingTransfers: pendingCount,\n  expiringMembers: expiringCount,\n  waitlist: waitlistCount,\n  communityReports: reportsCount,\n  needsAction: pendingCount > 0 || reportsCount > 0\n};\n\n// Build detailed email content\nconst emailContent = `<h2>CIMA Daily Briefing - ${summary.date}</h2>\n  \n  <h3>Yesterday's Performance</h3>\n  <ul>\n    <li><strong>New enrollments:</strong> ${summary.enrollments}</li>\n    <li><strong>Confirmed enrollments:</strong> ${summary.confirmedEnrollments}</li>\n    <li><strong>Revenue:</strong> ${summary.revenue}</li>\n  </ul>\n  \n  <h3>Action Required</h3>\n  ${summary.pendingTransfers > 0 ? `<p><strong>Bank Transfers Pending:</strong> ${summary.pendingTransfers} transfers need verification</p>` : '<p>No pending bank transfers</p>'}\n  ${summary.communityReports > 0 ? `<p><strong>Community Reports:</strong> ${summary.communityReports} posts need review</p>` : '<p>No pending community reports</p>'}\n  \n  <h3>Upcoming</h3>\n  <ul>\n    <li><strong>Members expiring in 30 days:</strong> ${summary.expiringMembers}</li>\n    <li><strong>Waitlisted students:</strong> ${summary.waitlist}</li>\n  </ul>\n  \n  <p><a href='https://cima.learn/admin'>View Admin Dashboard</a></p>\n  \n  <p>Generated at ${$now}</p>`;\n\n// Build WhatsApp message (shorter)\nconst whatsappMessage = `CIMA Daily: ${summary.enrollments} enrollments (${summary.revenue}) · ${summary.pendingTransfers} bank transfers pending · ${summary.expiringMembers} renewals expiring this month`;\n\nreturn [{\n  json: {\n    ...summary,\n    email_html: emailContent,\n    whatsapp_message: whatsappMessage\n  }\n}];"
+        "jsCode": "// Build daily briefing summary\nconst enrollments = $('Yesterday\\'s Enrollments').all() || [];\nconst revenueData = $('Yesterday\\'s Revenue').all() || [];\nconst expiringMembers = $('Members Exiring in 30 Days').all() || [];\nconst waitlist = $('Waitlisted Students').all() || [];\nconst reports = $('Pending Community Reports').all() || [];\n\n// Calculate metrics\nconst totalEnrollments = enrollments.length;\nconst confirmedEnrollments = revenueData.length;\nconst totalRevenue = revenueData.reduce((sum, item) => sum + (item.json.amount_paid || 0), 0);\nconst expiringCount = expiringMembers.length;\nconst waitlistCount = waitlist.length;\nconst reportsCount = reports.length;\n\n// Format revenue as GHS\nconst formattedRevenue = `GHS ${totalRevenue.toLocaleString()}`;\n\n// Build summary text\nconst summary = {\n  date: $now.substring(0, 10),\n  enrollments: totalEnrollments,\n  confirmedEnrollments: confirmedEnrollments,\n  revenue: formattedRevenue,\n  expiringMembers: expiringCount,\n  waitlist: waitlistCount,\n  communityReports: reportsCount,\n  needsAction: reportsCount > 0\n};\n\n// Build detailed email content\nconst emailContent = `<h2>CIMA Daily Briefing - ${summary.date}</h2>\n  \n  <h3>Yesterday's Performance</h3>\n  <ul>\n    <li><strong>New enrollments:</strong> ${summary.enrollments}</li>\n    <li><strong>Confirmed enrollments:</strong> ${summary.confirmedEnrollments}</li>\n    <li><strong>Revenue:</strong> ${summary.revenue}</li>\n  </ul>\n  \n  <h3>Action Required</h3>\n  ${summary.communityReports > 0 ? `<p><strong>Community Reports:</strong> ${summary.communityReports} posts need review</p>` : '<p>No pending community reports</p>'}\n  \n  <h3>Upcoming</h3>\n  <ul>\n    <li><strong>Members expiring in 30 days:</strong> ${summary.expiringMembers}</li>\n    <li><strong>Waitlisted students:</strong> ${summary.waitlist}</li>\n  </ul>\n`;\n\n// Build WhatsApp message\nconst whatsappMessage = `*CIMA Daily Briefing - ${summary.date}*\n\n*Yesterday's Performance:*\n• New enrollments: ${summary.enrollments}\n• Confirmed enrollments: ${summary.confirmedEnrollments}\n• Revenue: ${summary.revenue}\n\n*Action Required:*\n${summary.communityReports > 0 ? `• ${summary.communityReports} community reports to review` : '• No pending community reports'}\n\n*Upcoming:*\n• Members expiring in 30 days: ${summary.expiringMembers}\n• Waitlisted students: ${summary.waitlist}`;\n\nreturn [{\n  json: {\n    date: summary.date,\n    email_html: emailContent,\n    whatsapp_message: whatsappMessage,\n    summary: summary\n  }\n}];"
       },
       "id": "code-build-summary",
       "name": "Build Daily Summary",
@@ -293,11 +265,6 @@
             "index": 0
           },
           {
-            "node": "Pending Bank Transfers",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Members Exiring in 30 Days",
             "type": "main",
             "index": 0
@@ -327,17 +294,6 @@
       ]
     },
     "Yesterday's Revenue": {
-      "main": [
-        [
-          {
-            "node": "Build Daily Summary",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Pending Bank Transfers": {
       "main": [
         [
           {

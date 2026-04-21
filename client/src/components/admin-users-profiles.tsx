@@ -337,7 +337,7 @@ export default function AdminUsersProfiles() {
                     <td className="p-3">
                       {/* @ts-expect-error - Badge variant prop exists in component definition */}
                       <Badge variant="outline" className="text-[10px] capitalize">
-                        {(profile as ProfileRow | undefined)?.membership_level || "associate"}
+                        {(profile as ProfileRow | undefined)?.membership_level || "No Level"}
                       </Badge>
                     </td>
                     <td className="p-3"><ProfileCompletionMeter profile={profile || null} /></td>
@@ -392,9 +392,9 @@ export default function AdminUsersProfiles() {
                         <Badge variant={selectedUser.role === "admin" ? "default" : selectedUser.role === "instructor" ? "secondary" : "outline"} className="text-[10px]">
                           {selectedUser.role || "student"}
                         </Badge>
-                        {/* @ts-expect-error - Badge variant prop exists in component definition */}
+                        {/* @ts-expect-error - Badge variant exists in component definition */}
                         <Badge variant="outline" className="text-[10px] capitalize">
-                          {(selectedProfile as ProfileRow | null)?.membership_level || "associate"}
+                          {(selectedProfile as ProfileRow | null)?.membership_level || "No Level"}
                         </Badge>
                         <ProfileCompletionMeter profile={selectedProfile} />
                       </div>

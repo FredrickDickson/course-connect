@@ -85,11 +85,12 @@ export default function MembershipCard() {
   }
 
   const daysLeft = membership.expiry_date ? getDaysUntilExpiry(membership.expiry_date) : null;
-  const nextLevel = NEXT_LEVEL[membership.membership_level];
+  const membershipLevel = membership.membership_level as "associate" | "member" | "fellow" | null;
+  const nextLevel = membershipLevel ? NEXT_LEVEL[membershipLevel] : null;
 
   const certData = {
     fullName: membership.full_name,
-    membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
+    membershipLevel: membershipLevel || "associate",
     memberId: membership.member_id,
     issueDate: membership.issue_date || new Date().toISOString(),
     expiryDate: membership.expiry_date || new Date().toISOString(),
@@ -115,10 +116,10 @@ export default function MembershipCard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Level</p>
-              <p className="text-lg font-semibold">{LEVEL_LABELS[membership.membership_level] || membership.membership_level}</p>
+              <p className="text-lg font-semibold">{membershipLevel ? LEVEL_LABELS[membershipLevel] : "No Level"}</p>
             </div>
             <Badge variant="outline" className="text-primary border-primary font-bold text-base px-3 py-1">
-              {POST_NOMINALS[membership.membership_level] || membership.post_nominal}
+              {membershipLevel ? POST_NOMINALS[membershipLevel] : membership.post_nominal || "—"}
             </Badge>
           </div>
 

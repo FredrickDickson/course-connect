@@ -4,7 +4,7 @@ Complete automation infrastructure for CIMA Learn platform enrollment, membershi
 
 ## Overview
 
-27 workflows organized into 5 implementation phases, covering all critical business operations for the CIMA course platform.
+39 workflows organized into 9 implementation phases, covering all critical business operations for the CIMA course platform.
 
 ## Implementation Phases
 
@@ -18,7 +18,6 @@ Core business operations - **build first**
 ### Phase 2: Supporting Workflows (Week 2)
 Essential supporting operations
 
-- **WF02**: Bank transfer chase sequence
 - **WF03**: Admin mark-as-paid confirmation
 - **WF04**: Course full -> waitlist cascade
 - **WF17**: Failed payment retry prompt
@@ -49,6 +48,34 @@ Advanced AI-powered features
 - **WF25**: Old student database import
 - **WF26**: Old student renewals (handled by WF05)
 - **WF27**: AI assignment feedback agent
+
+### Phase 6: Instructor & Revenue (Week 6)
+Instructor management and revenue operations
+
+- **WF28**: Instructor application notification workflow
+- **WF29**: Instructor payout calculation & processing
+- **WF30**: Assignment deadline & grading reminders
+
+### Phase 7: User Engagement (Week 7)
+User onboarding and engagement automation
+
+- **WF31**: User onboarding & welcome sequence
+- **WF32**: Email verification reminders
+- **WF33**: Certificate expiry reminders
+
+### Phase 8: Course Operations (Week 8)
+Course lifecycle automation
+
+- **WF34**: Course publishing notifications
+- **WF35**: Course content update alerts
+- **WF36**: Quiz deadline reminders
+
+### Phase 9: Community & Retention (Week 9)
+Community engagement and user retention
+
+- **WF37**: Inactive user re-engagement
+- **WF38**: Forum unanswered question reminders
+- **WF39**: Review collection automation
 
 ## Required Credentials
 
@@ -113,7 +140,6 @@ phase1-critical/
   wf05-daily-renewal-reminders.json
   wf16-daily-admin-briefing.json
 phase2-supporting/
-  wf02-bank-transfer-chase.json
   wf03-admin-mark-paid.json
   wf04-waitlist-cascade.json
   wf17-failed-payment-retry.json
@@ -135,6 +161,22 @@ phase5-ai/
   wf25-student-import.json
   wf26-old-renewals.json
   wf27-ai-feedback.json
+phase6-instructor-revenue/
+  wf28-instructor-application-notifications.json
+  wf29-instructor-payout-processing.json
+  wf30-assignment-reminders.json
+phase7-user-engagement/
+  wf31-user-onboarding.json
+  wf32-email-verification-reminders.json
+  wf33-certificate-expiry-reminders.json
+phase8-course-operations/
+  wf34-course-publishing-notifications.json
+  wf35-course-update-alerts.json
+  wf36-quiz-deadline-reminders.json
+phase9-community-retention/
+  wf37-inactive-user-re-engagement.json
+  wf38-forum-unanswered-reminders.json
+  wf39-review-collection.json
 ```
 
 ## Testing & Validation
@@ -184,9 +226,9 @@ For issues with:
 
 ## Cost Estimates
 
-**Monthly n8n Cloud (recommended)**: ~$5-10
-- 27 workflows x ~30 executions/day
-- ~800 executions/month
+**Monthly n8n Cloud (recommended)**: ~$8-15
+- 39 workflows x ~30 executions/day
+- ~1,200 executions/month
 - Well within free tier limits
 
 **Self-hosted**: Server costs only (~$5-15/month)

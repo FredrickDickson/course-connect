@@ -36,7 +36,29 @@ export default function ProgressionBanner() {
     enabled: !!user,
   });
 
-  const currentLevel = membership?.membership_level || "associate";
+  // If no membership level yet, show a "Start your journey" message
+  if (!membership?.membership_level) {
+    return (
+      <Card className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Start Your Journey</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            Complete your first course to earn your Associate designation and begin your progression.
+          </p>
+          <Link href="/courses">
+            <Button size="sm" variant="outline">
+              Browse Courses <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const currentLevel = membership.membership_level;
   const currentIdx = LEVELS.indexOf(currentLevel as any);
   const progressPct = ((currentIdx + 1) / LEVELS.length) * 100;
   const nextLevel = currentIdx < LEVELS.length - 1 ? LEVELS[currentIdx + 1] : null;
