@@ -153,6 +153,9 @@
   "overrides": {
     "@vitejs/plugin-react": {
       "vite": "^8.0.9"
+    },
+    "@vitejs/plugin-react-swc": {
+      "vite": "^8.0.9"
     }
   }
 }
