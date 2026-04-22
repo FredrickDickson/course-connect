@@ -189,7 +189,8 @@ export default function Checkout() {
     }
   };
 
-  const handleBankTransfer = async () => {
+  // TODO: Work on bank transfer later
+  /* const handleBankTransfer = async () => {
     if (!user || !course) return;
     setIsProcessing(true);
     try {
@@ -232,7 +233,7 @@ export default function Checkout() {
       toast.error("Registration failed: " + err.message);
     }
     setIsProcessing(false);
-  };
+  }; */
 
   const handleProceedToPayment = () => {
     setStep("pay");
@@ -242,7 +243,9 @@ export default function Checkout() {
     if (paymentMethod === "paystack") {
       handlePaystackPayment();
     } else {
-      handleBankTransfer();
+      // TODO: Work on bank transfer later
+      // handleBankTransfer();
+      toast.error("Bank transfer is currently unavailable.");
     }
   };
 
@@ -440,8 +443,8 @@ export default function Checkout() {
                   </CardContent>
                 </Card>
 
-                {/* Company Invoice Option */}
-                <Card>
+                {/* Company Invoice Option - TODO: Work on this later */}
+                {/* <Card>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-semibold">Invoice My Company</h4>
@@ -495,7 +498,7 @@ export default function Checkout() {
                       </div>
                     )}
                   </CardContent>
-                </Card>
+                </Card> */}
               </div>
 
               {/* Order summary sticky */}
@@ -574,8 +577,8 @@ export default function Checkout() {
                     </div>
                   </Label>
 
-                  {/* Bank transfer option */}
-                  <Label
+                  {/* Bank transfer option - TODO: Work on this later */}
+                  {/* <Label
                     htmlFor="method-bank"
                     className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
                       paymentMethod === "bank_transfer"
@@ -594,10 +597,11 @@ export default function Checkout() {
                       </p>
                       <Badge variant="outline" className="mt-2 text-xs">Manual · 1-3 days</Badge>
                     </div>
-                  </Label>
+                  </Label> */}
                 </RadioGroup>
 
-                {paymentMethod === "bank_transfer" && (
+                {/* Bank transfer details - TODO: Work on this later */}
+                {/* {paymentMethod === "bank_transfer" && (
                   <Card className="border-amber-200 bg-amber-50">
                     <CardContent className="p-4 text-sm text-amber-900 space-y-2">
                       <p className="font-semibold">Bank Transfer Details:</p>
@@ -607,7 +611,7 @@ export default function Checkout() {
                       <p className="mt-2 text-xs">Include your full name as the reference.</p>
                     </CardContent>
                   </Card>
-                )}
+                )} */}
               </div>
 
               {/* Price summary */}
@@ -725,7 +729,8 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {bookingResult.paymentMethod === "bank_transfer" && (
+            {/* TODO: Work on bank transfer later */}
+            {/* {bookingResult.paymentMethod === "bank_transfer" && (
               <Card className="text-left border-amber-200 bg-amber-50">
                 <CardContent className="p-4 text-sm text-amber-900 space-y-1">
                   <p className="font-semibold">Complete your payment:</p>
@@ -734,7 +739,7 @@ export default function Checkout() {
                   <p className="text-xs mt-2">Your spot is held for 5 business days.</p>
                 </CardContent>
               </Card>
-            )}
+            )} */}
 
             {/* What's Next */}
             <Card className="text-left border-primary/20">
