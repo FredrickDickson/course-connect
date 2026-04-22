@@ -71,6 +71,16 @@ export {
   getStudentDownloadableResources,
 } from "./enrollments";
 
+// Re-export new enrollment eligibility functions
+export {
+  checkEligibility,
+  createEnrollment,
+  createFellowshipApplication,
+  updateEnrollmentStatus,
+  type EligibilityResult,
+  type EligibilityStatus,
+} from "./enrollment";
+
 // Re-export all quiz operations
 export {
   createQuiz,
