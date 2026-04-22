@@ -8,25 +8,26 @@ export default function Certification() {
   const certificationLevels = [
     {
       title: "Foundation Certificate",
-      level: "Entry Level",
+      level: "Part I (Associate)",
       duration: "2-4 weeks",
-      price: "$850 - $1,500",
-      description: "Introduction to ADR principles and basic competencies",
+      price: "$1,250 - $1,800",
+      description: "Introductory knowledge in ADR principles and practice",
+      features: ["ACIMArb/ACIMed eligible", "Basic dispute analysis", "Intro to arbitration law"],
       requirements: ["Course completion", "Basic assessment", "Ethics training"],
       careers: ["ADR Assistant", "Dispute Resolution Coordinator", "Legal Support Specialist"]
     },
     {
-      title: "Professional Certificate", 
-      level: "Intermediate",
+      title: "Professional Certificate",
+      level: "Part II (Member)",
       duration: "4-8 weeks",
       price: "$2,200 - $3,500",
-      description: "Advanced skills in mediation or arbitration practice",
+      description: "Fellow-level skills in mediation or arbitration practice",
       requirements: ["Foundation completion", "Skills demonstration", "Case study portfolio"],
       careers: ["Certified Mediator", "Arbitration Specialist", "Corporate Dispute Manager"]
     },
     {
       title: "FCIMArb Fellowship",
-      level: "Advanced",
+      level: "Part III (Fellow)",
       duration: "12 weeks",
       price: "$4,750",
       description: "Premier qualification with international recognition",

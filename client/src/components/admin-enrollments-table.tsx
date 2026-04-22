@@ -353,7 +353,7 @@ export default function AdminEnrollmentsTable() {
                       <h3 className="text-lg font-bold">{selectedEnrollment.full_name}</h3>
                       {memberRecord && (
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">{memberRecord.post_nominal || memberRecord.membership_level}</Badge>
+                          <Badge variant="outline" className="text-xs">{memberRecord.post_nominal || memberRecord.part}</Badge>
                           <span className="text-xs text-muted-foreground">ID: {memberRecord.member_id}</span>
                         </div>
                       )}
@@ -550,7 +550,7 @@ export default function AdminEnrollmentsTable() {
                         <CardContent className="p-3 text-sm space-y-1">
                           {[
                             ["Member ID", memberRecord.member_id],
-                            ["Level", memberRecord.membership_level],
+                            ["Part", memberRecord.part],
                             ["Status", memberRecord.status],
                             ["Expires", memberRecord.expiry_date ? new Date(memberRecord.expiry_date).toLocaleDateString() : null],
                           ].filter(([, v]) => v).map(([l, v]) => (

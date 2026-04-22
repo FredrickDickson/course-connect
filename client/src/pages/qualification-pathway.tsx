@@ -237,7 +237,7 @@ export default function QualificationPathway() {
               iconColor="text-primary"
               borderColor="border-primary/15"
               bgColor="bg-primary/5"
-              title="Associate"
+              title="Part I (Associate)"
               postNominal="ACIMArb"
               badgeColor="bg-primary text-primary-foreground"
               subtitle="Foundation Level"
@@ -263,7 +263,7 @@ export default function QualificationPathway() {
               iconColor="text-amber-600"
               borderColor="border-amber-500/15"
               bgColor="bg-amber-500/5"
-              title="Member"
+              title="Part II (Member)"
               postNominal="MCIMArb"
               badgeColor="bg-amber-500 text-white"
               subtitle="Applied Practice"
@@ -287,7 +287,7 @@ export default function QualificationPathway() {
               iconColor="text-primary"
               borderColor="border-primary/20"
               bgColor="bg-gradient-to-r from-primary/5 to-amber-500/5"
-              title="Fellow"
+              title="Part III (Fellow)"
               postNominal="FCIMArb"
               badgeColor="bg-primary text-primary-foreground"
               subtitle="Mastery Level"
@@ -399,13 +399,13 @@ export default function QualificationPathway() {
                   <TableRow>
                     <TableCell className="font-medium">Member</TableCell>
                     <TableCell><span className="text-primary font-bold">MCIMArb</span></TableCell>
-                    <TableCell>Intermediate; can participate in arbitral process</TableCell>
+                    <TableCell>Member-level; can participate in arbitral process</TableCell>
                     <TableCell><span className="text-amber-600 font-semibold">Arbitration Practitioner</span></TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Fellow</TableCell>
                     <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
-                    <TableCell>Advanced; meets global standards to sit as arbitrator</TableCell>
+                    <TableCell>Fellow-level; meets global standards to sit as arbitrator</TableCell>
                     <TableCell><span className="text-amber-600 font-semibold">Certified International Arbitrator</span></TableCell>
                   </TableRow>
                 </TableBody>
@@ -479,7 +479,7 @@ export default function QualificationPathway() {
               iconColor="text-primary"
               borderColor="border-primary/20"
               bgColor="bg-gradient-to-r from-primary/5 to-amber-500/5"
-              title="Fellow"
+              title="Part III (Fellow)"
               postNominal="FCIMed"
               badgeColor="bg-primary text-primary-foreground"
               subtitle="Mastery Level"

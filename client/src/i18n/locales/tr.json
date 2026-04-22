@@ -54,9 +54,9 @@
     "no_courses_found": "Kurs bulunamadı",
     "try_different_filter": "Farklı bir kategori veya arama terimi deneyin",
     "level": {
-      "beginner": "Başlangıç",
-      "intermediate": "Orta",
-      "advanced": "İleri"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Süre",
     "lessons": "Dersler",

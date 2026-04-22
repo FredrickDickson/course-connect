@@ -890,7 +890,7 @@ export type Database = {
           issue_date: string | null
           last_reminder_sent: string | null
           member_id: string
-          membership_level: Database["public"]["Enums"]["membership_level"]
+          part: Database["public"]["Enums"]["membership_part"]
           payment_reference: string | null
           payment_status: string | null
           phone: string | null
@@ -911,7 +911,7 @@ export type Database = {
           issue_date?: string | null
           last_reminder_sent?: string | null
           member_id: string
-          membership_level?: Database["public"]["Enums"]["membership_level"]
+          part?: Database["public"]["Enums"]["membership_part"]
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
@@ -932,7 +932,7 @@ export type Database = {
           issue_date?: string | null
           last_reminder_sent?: string | null
           member_id?: string
-          membership_level?: Database["public"]["Enums"]["membership_level"]
+          part?: Database["public"]["Enums"]["membership_part"]
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
@@ -1048,7 +1048,7 @@ export type Database = {
           level_assigned_by: string | null
           level_assignment_reason: string | null
           linkedin_url: string | null
-          membership_level: string
+          part: string
           nationality: string | null
           organisation: string | null
           override_reason: string | null
@@ -1083,7 +1083,7 @@ export type Database = {
           level_assigned_by?: string | null
           level_assignment_reason?: string | null
           linkedin_url?: string | null
-          membership_level?: string
+          part?: string
           nationality?: string | null
           organisation?: string | null
           override_reason?: string | null
@@ -1118,7 +1118,7 @@ export type Database = {
           level_assigned_by?: string | null
           level_assignment_reason?: string | null
           linkedin_url?: string | null
-          membership_level?: string
+          part?: string
           nationality?: string | null
           organisation?: string | null
           override_reason?: string | null
@@ -1593,7 +1593,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      membership_level: "associate" | "member" | "fellow"
+      membership_part: "associate" | "member" | "fellow"
       membership_status: "pending" | "active" | "expiring" | "expired"
     }
     CompositeTypes: {
@@ -1722,7 +1722,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      membership_level: ["associate", "member", "fellow"],
+      membership_part: ["associate", "member", "fellow"],
       membership_status: ["pending", "active", "expiring", "expired"],
     },
   },

@@ -33,9 +33,9 @@ function formatDate(d: string) {
 }
 
 const LEVEL_LABELS: Record<string, string> = {
-  associate: "Associate",
-  member: "Member",
-  fellow: "Fellow",
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
 };
 
 export default function AdminRenewalManagement() {
@@ -216,7 +216,7 @@ export default function AdminRenewalManagement() {
                     return (
                       <TableRow key={m.id} className={getRowColor(m)}>
                         <TableCell className="font-medium">{m.full_name}</TableCell>
-                        <TableCell>{LEVEL_LABELS[m.membership_level] || m.membership_level}</TableCell>
+                        <TableCell>{LEVEL_LABELS[m.part] || m.part}</TableCell>
                         <TableCell className="font-mono">{m.member_id}</TableCell>
                         <TableCell>{m.expiry_date ? formatDate(m.expiry_date) : "—"}</TableCell>
                         <TableCell>
@@ -277,8 +277,8 @@ export default function AdminRenewalManagement() {
                   <p className="font-mono font-bold">{renewDialog.member_id}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Level</p>
-                  <p>{LEVEL_LABELS[renewDialog.membership_level]}</p>
+                  <p className="text-muted-foreground">Part</p>
+                  <p>{LEVEL_LABELS[renewDialog.part]}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Current Expiry</p>

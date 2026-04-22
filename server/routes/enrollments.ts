@@ -5,6 +5,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { storage } from "../storage";
+import { getQualificationStatus } from "../storage/qualification";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
@@ -50,6 +51,33 @@ router.post(
     );
     if (isEnrolled) {
       return res.status(400).json({ message: "Already enrolled in this course" });
+    }
+
+    // Check qualification eligibility
+    const course = await storage.getCourseById(enrollmentData.courseId || "");
+    if (course) {
+      const qualificationStatus = await getQualificationStatus(userId);
+      
+      if (qualificationStatus) {
+        const courseLevel = course.level; // 'associate', 'member', 'fellow'
+        const userLevel = qualificationStatus.currentLevel;
+
+        // Eligibility rules:
+        // - Associate level: Open to all
+        // - Member level: Requires Associate or higher
+        // - Fellow level: Requires Member or higher
+        if (courseLevel === "member" && userLevel === "NONE") {
+          return res.status(403).json({ 
+            message: "You must complete the Associate level before enrolling in Member courses" 
+          });
+        }
+        
+        if (courseLevel === "fellow" && userLevel !== "MEMBER" && userLevel !== "FELLOW") {
+          return res.status(403).json({ 
+            message: "You must complete the Member level before enrolling in Fellow courses" 
+          });
+        }
+      }
     }
 
     const enrollment = await storage.enrollUser(enrollmentData);

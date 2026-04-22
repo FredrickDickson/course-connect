@@ -660,7 +660,7 @@ function FeaturedCoursesSection() {
       students: 976,
       modules: 8,
       hours: 24,
-      level: "Intermediate",
+      level: "Part II (Member)",
       cpd: 12,
       badge: "Certificate",
       color: "bg-landing-secondary/10 text-landing-secondary"
@@ -673,7 +673,7 @@ function FeaturedCoursesSection() {
       students: 702,
       modules: 10,
       hours: 30,
-      level: "Advanced",
+      level: "Part III (Fellow)",
       cpd: 18,
       badge: "Diploma",
       color: "bg-landing-tertiary/10 text-landing-tertiary"
@@ -686,7 +686,7 @@ function FeaturedCoursesSection() {
       students: 514,
       modules: 3,
       hours: 9,
-      level: "Intermediate",
+      level: "Part I (Associate)",
       cpd: 6,
       badge: "Certificate",
       color: "bg-green-100 text-green-700"
@@ -699,7 +699,7 @@ function FeaturedCoursesSection() {
       students: 389,
       modules: 4,
       hours: 12,
-      level: "Advanced",
+      level: "Part III (Fellow)",
       cpd: 8,
       badge: "New",
       color: "bg-orange-100 text-orange-700"

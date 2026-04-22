@@ -140,8 +140,8 @@ export const courseValidation = [
     .isFloat({ min: 0 })
     .withMessage("Price must be a valid positive number"),
   body("level")
-    .isIn(["beginner", "intermediate", "advanced"])
-    .withMessage("Level must be beginner, intermediate, or advanced"),
+    .isIn(["associate", "member", "fellow"])
+    .withMessage("Level must be associate, member, or fellow"),
   body("categoryId")
     .optional()
     .isUUID()
@@ -199,8 +199,8 @@ export const searchValidation = [
     .withMessage("Category must be alphanumeric"),
   query("level")
     .optional()
-    .isIn(["beginner", "intermediate", "advanced"])
-    .withMessage("Level must be beginner, intermediate, or advanced"),
+    .isIn(["associate", "member", "fellow"])
+    .withMessage("Level must be associate, member, or fellow"),
 ];
 
 export const uuidValidation = [

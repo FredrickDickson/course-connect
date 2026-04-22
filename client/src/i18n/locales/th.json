@@ -54,9 +54,9 @@
     "no_courses_found": "ไม่พบหลักสูตร",
     "try_different_filter": "ลองหมวดหมู่หรือคำค้นหาอื่น",
     "level": {
-      "beginner": "ระดับเริ่มต้น",
-      "intermediate": "ระดับกลาง",
-      "advanced": "ระดับสูง"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "ระยะเวลา",
     "lessons": "บทเรียน",

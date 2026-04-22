@@ -299,5 +299,31 @@ export async function gradeQuizAttempt(
     .single();
 
   if (error) throw error;
+
+  // Integrate with progression system if quiz is required and passed
+  if (passed && quiz.is_required) {
+    try {
+      // Get the lesson to find the course
+      const { data: lesson } = await supabaseAdmin
+        .from("lessons")
+        .select("*, module:modules(*, course:courses(*))")
+        .eq("id", quiz.lesson_id)
+        .single();
+
+      if (lesson && lesson.module?.course) {
+        const course = lesson.module.course;
+        
+        // Import handleCourseCompletion dynamically to avoid circular dependency
+        const { handleCourseCompletion } = await import("./progression");
+        
+        // Trigger course completion logic
+        await handleCourseCompletion(userId, course.id, score, true);
+      }
+    } catch (progressionError) {
+      // Log error but don't fail the quiz grading
+      console.error("Failed to trigger progression:", progressionError);
+    }
+  }
+
   return attempt;
 }
