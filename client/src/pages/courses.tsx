@@ -323,7 +323,7 @@ export default function Courses() {
       </section>
 
       {/* Featured Courses Section */}
-      <section className="py-12 bg-muted/30">
+      <section className="hidden md:block py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
