@@ -43,6 +43,7 @@ const courseSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Category is required"),
   level: z.enum(["associate", "member", "fellow"]),
+  track: z.enum(["ARBITRATION", "MEDIATION"]),
   price: z.number().min(0, "Price must be non-negative"),
   currency: z.string().default("USD"),
   thumbnailUrl: z.string().url().optional().or(z.literal("")),
@@ -93,6 +94,7 @@ export default function CreateCourse() {
       description: "",
       categoryId: "",
       level: "associate",
+      track: "ARBITRATION",
       price: 0,
       currency: "USD",
       thumbnailUrl: "",
@@ -130,6 +132,7 @@ export default function CreateCourse() {
         description: data.description,
         categoryId: categoryId,
         level: data.level,
+        track: data.track,
         price: data.price,
         currency: data.currency,
         thumbnailUrl: data.thumbnailUrl || null,
@@ -322,6 +325,31 @@ export default function CreateCourse() {
                               <SelectItem value="associate">Part I (Associate)</SelectItem>
                               <SelectItem value="member">Part II (Member)</SelectItem>
                               <SelectItem value="fellow">Part III (Fellow)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="track"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Qualification Track *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select qualification track" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ARBITRATION">Arbitration (ACIMArb/MCIMArb/FCIMArb)</SelectItem>
+                              <SelectItem value="MEDIATION">Mediation (ACIMed/MCIMed/FCIMed)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
