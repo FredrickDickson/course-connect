@@ -14,21 +14,21 @@ import { Search, Calendar, MapPin, Users, ArrowRight, X } from "lucide-react";
 
 const LEVEL_STYLES: Record<string, { bg: string; text: string }> = {
   associate: { bg: "bg-[#888780]", text: "text-white" },
-  beginner: { bg: "bg-[#888780]", text: "text-white" },
   member: { bg: "bg-[#185FA5]", text: "text-white" },
-  intermediate: { bg: "bg-[#185FA5]", text: "text-white" },
   fellow: { bg: "bg-destructive", text: "text-white" },
-  advanced: { bg: "bg-destructive", text: "text-white" },
 };
 
+const LEVELS = ["associate", "member", "fellow"] as const;
+const PART_LABELS: Record<string, string> = {
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
+};
+const LEVEL_POST: Record<string, string> = { associate: "ACIMArb", member: "MCIMArb", fellow: "FCIMArb" };
+
 function getLevelLabel(level: string | null): string {
-  if (!level) return "Associate";
-  const map: Record<string, string> = {
-    beginner: "Associate", associate: "Associate",
-    intermediate: "Member", member: "Member",
-    advanced: "Fellow", fellow: "Fellow",
-  };
-  return map[level.toLowerCase()] || level;
+  if (!level) return "Part I (Associate)";
+  return PART_LABELS[level.toLowerCase()] || level;
 }
 
 export default function CourseBrowser() {
@@ -111,9 +111,9 @@ export default function CourseBrowser() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">Associate</SelectItem>
-                <SelectItem value="intermediate">Member</SelectItem>
-                <SelectItem value="advanced">Fellow</SelectItem>
+                <SelectItem value="associate">Part I (Associate)</SelectItem>
+                <SelectItem value="member">Part II (Member)</SelectItem>
+                <SelectItem value="fellow">Part III (Fellow)</SelectItem>
               </SelectContent>
             </Select>
             <Select value={formatFilter} onValueChange={setFormatFilter}>
@@ -165,7 +165,7 @@ export default function CourseBrowser() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {courses.map((course: any) => {
-                const levelKey = (course.level || "beginner").toLowerCase();
+                const levelKey = (course.level || "associate").toLowerCase();
                 const style = LEVEL_STYLES[levelKey] || LEVEL_STYLES.associate;
                 const enrolled = (enrollmentCounts as any)[course.id] || 0;
                 const capacity = course.total_capacity || 30;

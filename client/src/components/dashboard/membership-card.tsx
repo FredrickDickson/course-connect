@@ -20,9 +20,9 @@ const POST_NOMINALS: Record<string, string> = {
 };
 
 const LEVEL_LABELS: Record<string, string> = {
-  associate: "Associate",
-  member: "Member",
-  fellow: "Fellow",
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
 };
 
 const NEXT_LEVEL: Record<string, { level: string; label: string }> = {
@@ -85,12 +85,12 @@ export default function MembershipCard() {
   }
 
   const daysLeft = membership.expiry_date ? getDaysUntilExpiry(membership.expiry_date) : null;
-  const membershipLevel = membership.membership_level as "associate" | "member" | "fellow" | null;
-  const nextLevel = membershipLevel ? NEXT_LEVEL[membershipLevel] : null;
+  const membershipPart = membership.part as "associate" | "member" | "fellow" | null;
+  const nextLevel = membershipPart ? NEXT_LEVEL[membershipPart] : null;
 
   const certData = {
     fullName: membership.full_name,
-    membershipLevel: membershipLevel || "associate",
+    membershipLevel: membership.part as "associate" | "member" | "fellow",
     memberId: membership.member_id,
     issueDate: membership.issue_date || new Date().toISOString(),
     expiryDate: membership.expiry_date || new Date().toISOString(),
@@ -115,12 +115,14 @@ export default function MembershipCard() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Level</p>
-              <p className="text-lg font-semibold">{membershipLevel ? LEVEL_LABELS[membershipLevel] : "No Level"}</p>
+              <p className="text-xs text-muted-foreground">Membership Part</p>
+              <p className="font-bold text-gray-900 leading-tight">
+                {LEVEL_LABELS[membership.part] || membership.part}
+              </p>
             </div>
-            <Badge variant="outline" className="text-primary border-primary font-bold text-base px-3 py-1">
-              {membershipLevel ? POST_NOMINALS[membershipLevel] : membership.post_nominal || "—"}
-            </Badge>
+            <div className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded border border-primary/10">
+              {POST_NOMINALS[membership.part] || membership.post_nominal}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">

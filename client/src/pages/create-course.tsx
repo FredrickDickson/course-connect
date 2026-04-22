@@ -42,7 +42,7 @@ const courseSchema = z.object({
   subtitle: z.string().min(1, "Subtitle is required").max(200),
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Category is required"),
-  level: z.enum(["beginner", "intermediate", "advanced"]),
+  level: z.enum(["associate", "member", "fellow"]),
   price: z.number().min(0, "Price must be non-negative"),
   currency: z.string().default("USD"),
   thumbnailUrl: z.string().url().optional().or(z.literal("")),
@@ -92,7 +92,7 @@ export default function CreateCourse() {
       subtitle: "",
       description: "",
       categoryId: "",
-      level: "beginner",
+      level: "associate",
       price: 0,
       currency: "USD",
       thumbnailUrl: "",
@@ -319,11 +319,9 @@ export default function CreateCourse() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="beginner">Beginner</SelectItem>
-                              <SelectItem value="intermediate">
-                                Intermediate
-                              </SelectItem>
-                              <SelectItem value="advanced">Advanced</SelectItem>
+                              <SelectItem value="associate">Part I (Associate)</SelectItem>
+                              <SelectItem value="member">Part II (Member)</SelectItem>
+                              <SelectItem value="fellow">Part III (Fellow)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

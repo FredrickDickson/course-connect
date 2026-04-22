@@ -117,6 +117,19 @@ export {
   getAdminStats,
 } from "./payments";
 
+// Re-export all qualification operations
+export {
+  getQualificationStatus,
+  getAvailablePathways,
+  createExpeditedApplication,
+  getUserExpeditedApplications,
+  getExpeditedApplicationById,
+  hasPendingApplication,
+  uploadApplicationDocument,
+  submitQualificationAssessment,
+  updateUserQualificationLevel,
+} from "./qualification";
+
 // Re-export types
 export type { IStorage } from "./types";
 

@@ -54,9 +54,9 @@
     "no_courses_found": "لم يتم العثور على دورات",
     "try_different_filter": "جرب فئة أو مصطلح بحث مختلف",
     "level": {
-      "beginner": "مبتدئ",
-      "intermediate": "متوسط",
-      "advanced": "متقدم"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "المدة",
     "lessons": "الدروس",

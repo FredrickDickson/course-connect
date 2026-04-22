@@ -54,9 +54,9 @@
     "no_courses_found": "Nenhum curso encontrado",
     "try_different_filter": "Tente uma categoria ou termo de pesquisa diferente",
     "level": {
-      "beginner": "Iniciante",
-      "intermediate": "Intermediário",
-      "advanced": "Avançado"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Duração",
     "lessons": "Lições",

@@ -54,9 +54,9 @@
     "no_courses_found": "Geen cursussen gevonden",
     "try_different_filter": "Probeer een andere categorie of zoekterm",
     "level": {
-      "beginner": "Beginner",
-      "intermediate": "Gemiddeld",
-      "advanced": "Gevorderd"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Duur",
     "lessons": "Lessen",

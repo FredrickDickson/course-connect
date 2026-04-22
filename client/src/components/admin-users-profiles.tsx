@@ -49,7 +49,7 @@ interface ProfileRow {
   education_level: string | null;
   adr_experience: string | null;
   profile_completed: boolean;
-  membership_level: string | null;
+  part: string | null;
   created_at: string;
   updated_at: string;
   date_of_birth: string | null;
@@ -76,7 +76,6 @@ function getProfileCompletion(p: ProfileRow | null) {
 function ProfileCompletionMeter({ profile }: { profile: ProfileRow | null }) {
   const pct = getProfileCompletion(profile);
   if (!profile) return (
-    // @ts-expect-error - Badge variant prop exists in component definition
     <Badge variant="outline" className="text-muted-foreground">
       <AlertCircle className="w-3 h-3 mr-1" /> None
     </Badge>
@@ -126,7 +125,7 @@ export default function AdminUsersProfiles() {
   const { data: profiles = [] } = useQuery({
     queryKey: ["admin-all-profiles"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("profiles").select("*");
+      const { data, error } = await supabase.from("profiles").select("*");
       if (error) throw error;
       return (data || []) as ProfileRow[];
     },
@@ -246,7 +245,6 @@ export default function AdminUsersProfiles() {
           </p>
         </div>
         <div className="flex gap-2">
-          {/* @ts-expect-error - Button size/variant props exist in component definition */}
           <Button size="sm" variant="outline" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-1" /> Export
           </Button>
@@ -286,7 +284,6 @@ export default function AdminUsersProfiles() {
             <AlertCircle className="w-4 h-4 inline mr-1" />
             {filtered.length} user(s) with incomplete profiles
           </p>
-          {/* @ts-expect-error - Button size/variant props exist in component definition */}
           <Button size="sm" variant="outline" className="text-amber-800 border-amber-300 hover:bg-amber-100"
             onClick={() => toast({ title: "Reminder sent", description: `Bulk reminder queued for ${filtered.length} users.` })}>
             <Bell className="w-3.5 h-3.5 mr-1" /> Send Bulk Reminder
@@ -329,15 +326,13 @@ export default function AdminUsersProfiles() {
                     <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">{(profile as ProfileRow | undefined)?.institution || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground text-xs">{(profile as ProfileRow | undefined)?.country || u.country || "—"}</td>
                     <td className="p-3">
-                      {/* @ts-expect-error - Badge variant prop exists in component definition */}
                       <Badge variant={u.role === "admin" ? "default" : u.role === "instructor" ? "secondary" : "outline"} className="text-[10px]">
                         {u.role || "student"}
                       </Badge>
                     </td>
                     <td className="p-3">
-                      {/* @ts-expect-error - Badge variant prop exists in component definition */}
                       <Badge variant="outline" className="text-[10px] capitalize">
-                        {(profile as ProfileRow | undefined)?.membership_level || "No Level"}
+                        {(profile as ProfileRow | undefined)?.part || "No Part"}
                       </Badge>
                     </td>
                     <td className="p-3"><ProfileCompletionMeter profile={profile || null} /></td>
@@ -345,7 +340,6 @@ export default function AdminUsersProfiles() {
                       {u.created_at ? new Date(u.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" }) : "—"}
                     </td>
                     <td className="p-3">
-                      {/* @ts-expect-error - Button size/variant props exist in component definition */}
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedUser(u); }}>
                         <Eye className="w-3 h-3" />
                       </Button>
@@ -360,7 +354,6 @@ export default function AdminUsersProfiles() {
 
       {/* Detail Drawer */}
       <Sheet open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        {/* @ts-expect-error - SheetContent children prop exists in component definition */}
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader><SheetTitle>User Profile</SheetTitle></SheetHeader>
 
@@ -383,18 +376,16 @@ export default function AdminUsersProfiles() {
                       </h3>
                       {userMembership && (
                         <p className="text-sm text-primary font-medium">
-                          {userMembership.post_nominal || userMembership.membership_level}
+                          {userMembership.post_nominal || userMembership.part}
                           {userMembership.member_id && ` • ${userMembership.member_id}`}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {/* @ts-expect-error - Badge variant prop exists in component definition */}
                         <Badge variant={selectedUser.role === "admin" ? "default" : selectedUser.role === "instructor" ? "secondary" : "outline"} className="text-[10px]">
                           {selectedUser.role || "student"}
                         </Badge>
-                        {/* @ts-expect-error - Badge variant exists in component definition */}
                         <Badge variant="outline" className="text-[10px] capitalize">
-                          {(selectedProfile as ProfileRow | null)?.membership_level || "No Level"}
+                          {(selectedProfile as ProfileRow | null)?.part || "No Part"}
                         </Badge>
                         <ProfileCompletionMeter profile={selectedProfile} />
                       </div>
@@ -488,7 +479,6 @@ export default function AdminUsersProfiles() {
                                   Ref: {enr.booking_ref} • {new Date(enr.created_at).toLocaleDateString("en-GB")}
                                 </p>
                               </div>
-                              {/* @ts-expect-error - Badge variant prop exists in component definition */}
                               <Badge variant={enr.payment_status === "confirmed" ? "default" : "secondary"} className="text-xs">
                                 {enr.payment_status === "confirmed" ? "Confirmed" : enr.payment_status === "pending_invoice" ? "Invoice" : "Pending"}
                               </Badge>
@@ -513,7 +503,7 @@ export default function AdminUsersProfiles() {
                       <CardContent className="p-4 space-y-2">
                         {[
                           ["Member ID", userMembership.member_id, true],
-                          ["Level", userMembership.membership_level],
+                          ["Part", userMembership.part],
                           ["Status", userMembership.status],
                           ["Post-Nominal", userMembership.post_nominal],
                           ["Expires", userMembership.expiry_date ? new Date(userMembership.expiry_date).toLocaleDateString("en-GB") : null],

@@ -45,9 +45,9 @@ const STATUS_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 const LEVEL_LABELS: Record<string, string> = {
-  associate: "Associate",
-  member: "Member",
-  fellow: "Fellow",
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
 };
 
 const POST_NOMINALS: Record<string, string> = {
@@ -70,7 +70,7 @@ export default function AdminMembershipTable() {
   const { data: members = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-members"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("members").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -81,7 +81,7 @@ export default function AdminMembershipTable() {
     queryKey: ["admin-member-renewals", selectedMember?.id],
     enabled: !!selectedMember,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("renewal_history")
         .select("*")
         .eq("member_id", selectedMember!.id)
@@ -95,7 +95,7 @@ export default function AdminMembershipTable() {
     queryKey: ["admin-member-level-history", selectedMember?.user_id],
     enabled: !!selectedMember?.user_id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("level_history")
         .select("*")
         .eq("user_id", selectedMember!.user_id)
@@ -111,7 +111,7 @@ export default function AdminMembershipTable() {
       m.member_id?.includes(search) ||
       m.email?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || m.status === statusFilter;
-    const matchesLevel = levelFilter === "all" || m.membership_level === levelFilter;
+    const matchesLevel = levelFilter === "all" || m.part === levelFilter;
     return matchesSearch && matchesStatus && matchesLevel;
   });
 
@@ -124,16 +124,16 @@ export default function AdminMembershipTable() {
   };
 
   const levelStats = {
-    associate: members.filter((m: any) => m.membership_level === "associate").length,
-    member: members.filter((m: any) => m.membership_level === "member").length,
-    fellow: members.filter((m: any) => m.membership_level === "fellow").length,
+    associate: members.filter((m: any) => m.part === "associate").length,
+    member: members.filter((m: any) => m.part === "member").length,
+    fellow: members.filter((m: any) => m.part === "fellow").length,
   };
 
   const handleExportCSV = () => {
     const headers = ["Name", "Level", "Post-Nominal", "Member ID", "Email", "Phone", "Country", "Issue Date", "Expiry Date", "Status", "Renewals"];
     const rows = filtered.map((m: any) => [
-      m.full_name, LEVEL_LABELS[m.membership_level] || m.membership_level,
-      POST_NOMINALS[m.membership_level] || "", m.member_id, m.email,
+      m.full_name, LEVEL_LABELS[m.part] || m.part,
+      POST_NOMINALS[m.part] || "", m.member_id, m.email,
       m.phone || "", m.country || "", m.issue_date || "", m.expiry_date || "",
       m.status, m.renewal_count,
     ]);
@@ -188,12 +188,12 @@ export default function AdminMembershipTable() {
           </SelectContent>
         </Select>
         <Select value={levelFilter} onValueChange={setLevelFilter}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Level" /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Part" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Levels</SelectItem>
-            <SelectItem value="associate">Associate</SelectItem>
-            <SelectItem value="member">Member</SelectItem>
-            <SelectItem value="fellow">Fellow</SelectItem>
+            <SelectItem value="all">All Parts</SelectItem>
+            <SelectItem value="associate">Part I (Associate)</SelectItem>
+            <SelectItem value="member">Part II (Member)</SelectItem>
+            <SelectItem value="fellow">Part III (Fellow)</SelectItem>
           </SelectContent>
         </Select>
         <Button size="sm" variant="outline" onClick={() => refetch()}>
@@ -210,7 +210,7 @@ export default function AdminMembershipTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Level</TableHead>
+              <TableHead>Part</TableHead>
               <TableHead>Member ID</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>Issue</TableHead>
@@ -233,7 +233,7 @@ export default function AdminMembershipTable() {
                   <TableRow key={m.id} className="cursor-pointer hover:bg-muted/30" onClick={() => setSelectedMember(m)}>
                     <TableCell className="font-medium">{m.full_name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] capitalize">{m.membership_level}</Badge>
+                      <Badge variant="outline" className="text-[10px] capitalize">{m.part}</Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{m.member_id}</TableCell>
                     <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{m.email}</TableCell>
@@ -282,7 +282,7 @@ export default function AdminMembershipTable() {
                       <p className="text-sm font-mono text-muted-foreground">{selectedMember.member_id}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-primary border-primary font-bold">
-                          {POST_NOMINALS[selectedMember.membership_level] || selectedMember.membership_level}
+                          {POST_NOMINALS[selectedMember.part] || selectedMember.part}
                         </Badge>
                         <Badge className={STATUS_COLORS[selectedMember.status] || STATUS_COLORS.pending}>
                           {selectedMember.status}
@@ -308,8 +308,8 @@ export default function AdminMembershipTable() {
                         ["Email", selectedMember.email],
                         ["Phone", selectedMember.phone],
                         ["Country", selectedMember.country],
-                        ["Level", LEVEL_LABELS[selectedMember.membership_level]],
-                        ["Post-Nominal", selectedMember.post_nominal || POST_NOMINALS[selectedMember.membership_level]],
+                        ["Part", LEVEL_LABELS[selectedMember.part]],
+                        ["Post-Nominal", selectedMember.post_nominal || POST_NOMINALS[selectedMember.part]],
                         ["Issue Date", selectedMember.issue_date ? new Date(selectedMember.issue_date).toLocaleDateString("en-GB") : "—"],
                         ["Expiry Date", selectedMember.expiry_date ? new Date(selectedMember.expiry_date).toLocaleDateString("en-GB") : "—"],
                         ["Payment Status", selectedMember.payment_status],
@@ -334,24 +334,24 @@ export default function AdminMembershipTable() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Override Membership Level</DialogTitle>
+                        <DialogTitle>Override Membership Part</DialogTitle>
                         <DialogDescription>
-                          Manually change the membership level for this member.
+                          Manually change the membership part for this member.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label>Current Level</Label>
-                          <p className="text-sm font-medium capitalize mt-1">{selectedMember.membership_level}</p>
+                          <Label>Current Part</Label>
+                          <p className="text-sm font-medium capitalize mt-1">{selectedMember.part}</p>
                         </div>
                         <div>
-                          <Label>New Level</Label>
+                          <Label>New Part</Label>
                           <Select value={overrideLevel} onValueChange={setOverrideLevel}>
-                            <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Select part" /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="associate">Associate</SelectItem>
-                              <SelectItem value="member">Member</SelectItem>
-                              <SelectItem value="fellow">Fellow</SelectItem>
+                              <SelectItem value="associate">Part I (Associate)</SelectItem>
+                              <SelectItem value="member">Part II (Member)</SelectItem>
+                              <SelectItem value="fellow">Part III (Fellow)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -363,7 +363,7 @@ export default function AdminMembershipTable() {
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setShowOverride(false)}>Cancel</Button>
                         <Button
-                          disabled={!overrideLevel || !overrideReason || overrideLevel === selectedMember.membership_level}
+                          disabled={!overrideLevel || !overrideReason || overrideLevel === selectedMember.part}
                           onClick={() => {
                             toast({ title: "Level override applied", description: `${selectedMember.full_name} → ${LEVEL_LABELS[overrideLevel]}` });
                             setShowOverride(false);

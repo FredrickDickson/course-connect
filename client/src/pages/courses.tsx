@@ -45,7 +45,7 @@ export default function Courses() {
     queryFn: async () => {
       const { data, error } = await supabase.from("categories").select("*");
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
   });
 
@@ -80,7 +80,7 @@ export default function Courses() {
           .select("id")
           .eq("slug", category)
           .maybeSingle();
-        if (catData) query = query.eq("category_id", catData.id);
+        if (catData) query = query.eq("category_id", (catData as any).id);
       }
 
       if (level && level !== "all") {
@@ -198,9 +198,9 @@ export default function Courses() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="associate">Part I (Associate)</SelectItem>
+                  <SelectItem value="member">Part II (Member)</SelectItem>
+                  <SelectItem value="fellow">Part III (Fellow)</SelectItem>
                 </SelectContent>
               </Select>
 

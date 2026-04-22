@@ -100,9 +100,9 @@ const EXPERIENCE_LEVELS = [
 
 const ADR_EXPERIENCE_OPTIONS = [
   { value: "none", label: "None" },
-  { value: "beginner", label: "Beginner — Studied ADR or attended short courses" },
-  { value: "intermediate", label: "Intermediate — Participated in or observed proceedings" },
-  { value: "advanced", label: "Advanced — Served as arbitrator/mediator or counsel" },
+  { value: "associate", label: "Part I (Associate) — Studied ADR or attended short courses" },
+  { value: "member", label: "Part II (Member) — Participated in or observed proceedings" },
+  { value: "fellow", label: "Part III (Fellow) — Served as arbitrator/mediator or counsel" },
 ];
 
 const STORAGE_KEY = "cima-enrollment-form-v2";
