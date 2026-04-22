@@ -1,11 +1,18 @@
 /**
  * Enrollments Routes - /api/enrollments/* endpoints
+ * Implements eligibility-driven enrollment flow
  */
 
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { getQualificationStatus } from "../storage/qualification";
+import { 
+  checkEligibility, 
+  createEnrollment, 
+  createFellowshipApplication,
+  type EligibilityResult 
+} from "../storage/enrollment";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
@@ -34,53 +41,96 @@ interface CertEntry {
 
 const router = Router();
 
-// Enroll in a course
+// Check eligibility before enrollment
+router.post(
+  "/check-eligibility",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.claims.sub;
+    const { courseId, enrollmentLevel } = req.body;
+
+    if (!courseId || !enrollmentLevel) {
+      return res.status(400).json({ message: "courseId and enrollmentLevel are required" });
+    }
+
+    const course = await storage.getCourseById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const eligibility = await checkEligibility(user, course, enrollmentLevel);
+    res.json(eligibility);
+  }),
+);
+
+// Enroll in a course with eligibility check
 router.post(
   "/",
   requireSupabaseAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
-    const enrollmentData = insertEnrollmentSchema.parse({
-      ...req.body,
-      userId,
-    });
+    const { courseId, enrollmentLevel } = req.body;
 
-    const isEnrolled = await storage.isUserEnrolled(
-      userId,
-      enrollmentData.courseId || "",
-    );
-    if (isEnrolled) {
-      return res.status(400).json({ message: "Already enrolled in this course" });
+    if (!courseId || !enrollmentLevel) {
+      return res.status(400).json({ message: "courseId and enrollmentLevel are required" });
     }
 
-    // Check qualification eligibility
-    const course = await storage.getCourseById(enrollmentData.courseId || "");
-    if (course) {
-      const qualificationStatus = await getQualificationStatus(userId);
+    const course = await storage.getCourseById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check eligibility
+    const eligibility = await checkEligibility(user, course, enrollmentLevel);
+
+    if (eligibility.status === "BLOCKED") {
+      return res.status(403).json({
+        message: eligibility.reason,
+        nextCourseId: eligibility.nextCourseId,
+        nextCourseTitle: eligibility.nextCourseTitle,
+      });
+    }
+
+    if (eligibility.status === "REQUIRES_APPROVAL") {
+      // Create fellowship application
+      const application = await createFellowshipApplication(
+        userId,
+        course.track || "ARBITRATION",
+      );
       
-      if (qualificationStatus) {
-        const courseLevel = course.level; // 'associate', 'member', 'fellow'
-        const userLevel = qualificationStatus.currentLevel;
-
-        // Eligibility rules:
-        // - Associate level: Open to all
-        // - Member level: Requires Associate or higher
-        // - Fellow level: Requires Member or higher
-        if (courseLevel === "member" && userLevel === "NONE") {
-          return res.status(403).json({ 
-            message: "You must complete the Associate level before enrolling in Member courses" 
-          });
-        }
-        
-        if (courseLevel === "fellow" && userLevel !== "MEMBER" && userLevel !== "FELLOW") {
-          return res.status(403).json({ 
-            message: "You must complete the Member level before enrolling in Fellow courses" 
-          });
-        }
-      }
+      // Create enrollment with APPLICATION type
+      const enrollment = await createEnrollment(
+        userId,
+        courseId,
+        enrollmentLevel,
+        "APPLICATION",
+      );
+      
+      return res.json({
+        enrollment,
+        application,
+        message: "Application submitted for approval",
+      });
     }
 
-    const enrollment = await storage.enrollUser(enrollmentData);
+    // Direct enrollment
+    const enrollment = await createEnrollment(
+      userId,
+      courseId,
+      enrollmentLevel,
+      "COURSE",
+    );
+
     res.json(enrollment);
   }),
 );

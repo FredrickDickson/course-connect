@@ -53,8 +53,13 @@ export const courseSchema = z.object({
   instructorId: z.string().nullable().optional(),
   categoryId: z.string().uuid().nullable().optional(),
   level: z.enum(["associate", "member", "fellow"]).default("associate"),
+  track: z.enum(["ARBITRATION", "MEDIATION"]).default("ARBITRATION"),
   price: z.string(), // Decimal as string for precision
   currency: z.string().default("USD"),
+  associatePrice: z.string().nullable().optional(),
+  memberPrice: z.string().nullable().optional(),
+  fellowPrice: z.string().nullable().optional(),
+  requiresApproval: z.boolean().default(false),
   thumbnailUrl: z.string().nullable().optional(),
   promoVideoUrl: z.string().nullable().optional(),
   duration: z.number().nullable().optional(), // duration_hours
@@ -64,6 +69,7 @@ export const courseSchema = z.object({
   ratingCount: z.number().default(0),
   enrollmentCount: z.number().default(0),
   tags: z.array(z.string()).nullable().optional(),
+  ticketTypes: z.any().nullable().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -103,6 +109,10 @@ export const enrollmentSchema = z.object({
   enrolledAt: z.date().optional(),
   completedAt: z.date().nullable().optional(),
   progress: z.string().default("0"),
+  enrollmentType: z.enum(["COURSE", "APPLICATION", "ASSESSMENT"]).default("COURSE"),
+  status: z.enum(["PENDING_APPROVAL", "APPROVED", "REJECTED", "ACTIVE", "COMPLETED", "FAILED"]).default("ACTIVE"),
+  enrollmentLevel: z.enum(["ASSOCIATE", "MEMBER", "FELLOW"]).nullable().optional(),
+  applicationId: z.string().uuid().nullable().optional(),
 });
 
 // Progress schema
