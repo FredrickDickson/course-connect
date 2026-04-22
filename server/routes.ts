@@ -64,6 +64,8 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 import { ObjectPermission } from "./objectAcl";
 
+import enrollmentsRouter from "./routes/enrollments";
+
 import {
 
   insertCourseSchema,
@@ -164,6 +166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
 
   app.use("/uploads", express.static("uploads"));
+
+
+
+  // Mount enrollment routes with eligibility check
+
+  app.use("/api/enrollments", enrollmentsRouter);
 
 
 

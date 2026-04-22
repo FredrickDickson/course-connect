@@ -63,6 +63,10 @@ export default function Checkout() {
   const [bookingResult, setBookingResult] = useState<any>(null);
   const paystackLoaded = useRef(false);
   const [isPaystackReady, setIsPaystackReady] = useState(false);
+  const [isCompanyInvoice, setIsCompanyInvoice] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+  const [vatId, setVatId] = useState("");
 
   // Load course
   const { data: course, isLoading: courseLoading } = useQuery<any>({
@@ -141,77 +145,48 @@ export default function Checkout() {
   const currency = course?.currency || "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
 
-  const handlePaystackPayment = () => {
-    if (!window.PaystackPop) {
-      toast.error("Payment system is loading. Please wait a moment.");
-      return;
-    }
+  const handlePaystackPayment = async () => {
     if (!user || !course) return;
 
     setIsProcessing(true);
 
-    const handler = window.PaystackPop.setup({
-      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-      email: user.email || "",
-      amount: Math.round(coursePrice * 100),
-      currency,
-      metadata: {
-        courseId: course.id,
-        courseName: course.title,
-        userId: user.id,
-      },
-      callback: async (response: any) => {
-        try {
-          // Create enrollment
-          const { data: enrollment, error: enrollError } = await supabase
-            .from("enrollments")
-            .insert({
-              course_id: course.id,
-              user_id: user.id,
-              progress: 0,
-            })
-            .select()
-            .single();
+    try {
+      // Initialize transaction via Edge Function
+      const initResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-course-initialize`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: course.id,
+          userId: user.id,
+          enrollmentLevel: course.level?.toUpperCase() || 'ASSOCIATE',
+          paymentType: isCompanyInvoice ? "company_invoice" : "individual",
+          ...(isCompanyInvoice && {
+            companyName,
+            companyEmail,
+            vatId,
+          }),
+          amount: coursePrice,
+          currency,
+          email: user.email || "",
+        }),
+      });
 
-          if (enrollError) throw enrollError;
+      const initData = await initResponse.json();
 
-          // Log activity
-          await (supabase as any).from("activity_log").insert({
-            user_id: user.id,
-            event_type: "course_enrolled",
-            description: `Enrolled in ${course.title}`,
-            metadata: {
-              course_id: course.id,
-              payment_ref: response.reference,
-              amount: coursePrice,
-              currency,
-            },
-          });
+      if (!initResponse.ok || !initData.success) {
+        throw new Error(initData.error || "Failed to initialize payment");
+      }
 
-          // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ["enrollment-check", courseId, user.id] });
-          queryClient.invalidateQueries({ queryKey: ["enrollments"] });
-
-          setBookingResult({
-            reference: response.reference,
-            amount: coursePrice,
-            currency,
-            courseName: course.title,
-            enrolledAt: new Date().toISOString(),
-          });
-          setStep("confirm");
-        } catch (err: any) {
-          toast.error("Enrollment failed: " + err.message);
-        }
-        setIsProcessing(false);
-      },
-      onClose: () => {
-        setIsProcessing(false);
-        toast.info("Payment window closed. You can try again.");
-      },
-    });
-
-    handler.openIframe();
+      // Open Paystack popup with the authorization URL
+      window.location.href = initData.authorization_url;
+    } catch (error) {
+      console.error("Payment initialization error:", error);
+      toast.error("Failed to initialize payment. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   const handleBankTransfer = async () => {
@@ -461,6 +436,63 @@ export default function Checkout() {
                         <AlertCircle className="w-3 h-3" />
                         Complete your profile in settings for a better experience.
                       </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Company Invoice Option */}
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold">Invoice My Company</h4>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={isCompanyInvoice}
+                          onChange={(e) => setIsCompanyInvoice(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                    {isCompanyInvoice && (
+                      <div className="space-y-3 mt-4">
+                        <div>
+                          <Label htmlFor="companyName" className="text-sm">Company Name</Label>
+                          <input
+                            id="companyName"
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="ABC Corporation"
+                            required={isCompanyInvoice}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="companyEmail" className="text-sm">Billing Email</Label>
+                          <input
+                            id="companyEmail"
+                            type="email"
+                            value={companyEmail}
+                            onChange={(e) => setCompanyEmail(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="billing@company.com"
+                            required={isCompanyInvoice}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="vatId" className="text-sm">VAT/Tax ID (Optional)</Label>
+                          <input
+                            id="vatId"
+                            type="text"
+                            value={vatId}
+                            onChange={(e) => setVatId(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="VAT123456789"
+                          />
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
