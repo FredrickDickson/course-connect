@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Calendar } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 
 interface TicketType {
   name: string;
   price_ghs: number;
   price_gbp?: number;
   capacity?: number;
+  level: "ASSOCIATE" | "MEMBER" | "FELLOW";
 }
 
 interface TicketWidgetProps {
@@ -17,6 +18,7 @@ interface TicketWidgetProps {
   enrolledCount?: number;
   totalCapacity?: number;
   onRegister: (selections: Record<string, number>) => void;
+  course?: any; // Full course object with pricing
 }
 
 export default function TicketWidget({
@@ -26,14 +28,28 @@ export default function TicketWidget({
   enrolledCount = 0,
   totalCapacity,
   onRegister,
+  course,
 }: TicketWidgetProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-  const defaultTickets: TicketType[] = ticketTypes.length > 0 ? ticketTypes : [
-    { name: "Associate", price_ghs: 5500 },
-    { name: "Member", price_ghs: 7000 },
-    { name: "Fellow", price_ghs: 8500 },
-  ];
+  // Use course pricing if available, otherwise fall back to ticketTypes or defaults
+  const defaultTickets: TicketType[] = (() => {
+    if (course && course.associatePrice && course.memberPrice && course.fellowPrice) {
+      return [
+        { name: "Associate", price_ghs: parseFloat(course.associatePrice), level: "ASSOCIATE" },
+        { name: "Member", price_ghs: parseFloat(course.memberPrice), level: "MEMBER" },
+        { name: "Fellow", price_ghs: parseFloat(course.fellowPrice), level: "FELLOW" },
+      ];
+    }
+    if (ticketTypes.length > 0) {
+      return ticketTypes;
+    }
+    return [
+      { name: "Associate", price_ghs: 5500, level: "ASSOCIATE" },
+      { name: "Member", price_ghs: 7000, level: "MEMBER" },
+      { name: "Fellow", price_ghs: 8500, level: "FELLOW" },
+    ];
+  })();
 
   const updateQty = (name: string, delta: number) => {
     setQuantities((prev) => ({
@@ -50,18 +66,6 @@ export default function TicketWidget({
 
   const spotsRemaining = totalCapacity ? totalCapacity - enrolledCount : null;
   const isSoldOut = spotsRemaining !== null && spotsRemaining <= 0;
-
-  const addToCalendar = (type: string) => {
-    const url =
-      type === "google"
-        ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(courseTitle)}`
-        : type === "yahoo"
-          ? `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(courseTitle)}`
-          : type === "outlook"
-            ? `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(courseTitle)}`
-            : "#";
-    window.open(url, "_blank");
-  };
 
   return (
     <Card className="border-primary/20 shadow-lg sticky top-24">
@@ -148,25 +152,6 @@ export default function TicketWidget({
             </Button>
           </>
         )}
-
-        <div className="border-t pt-4">
-          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-            <Calendar className="h-3 w-3" /> Add to Calendar:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {["Google", "Yahoo", "Apple", "Outlook"].map((cal) => (
-              <Button
-                key={cal}
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => addToCalendar(cal.toLowerCase())}
-              >
-                {cal}
-              </Button>
-            ))}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

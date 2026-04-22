@@ -229,6 +229,7 @@ export default function CourseDetail() {
                   enrolledCount={enrollmentCount as number}
                   totalCapacity={course.total_capacity}
                   onRegister={handleRegister}
+                  course={course}
                 />
               )}
             </div>

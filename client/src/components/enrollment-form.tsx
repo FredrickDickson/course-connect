@@ -407,6 +407,50 @@ export default function EnrollmentForm({
       return;
     }
 
+    // Check eligibility before enrollment
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const eligibilityResponse = await fetch("/api/enrollments/check-eligibility", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          courseId: course.id,
+          enrollmentLevel: ticketName.toUpperCase() as "ASSOCIATE" | "MEMBER" | "FELLOW",
+        }),
+      });
+      const eligibility = await eligibilityResponse.json();
+
+      if (eligibility.status === "BLOCKED") {
+        toast({ 
+          title: "Not eligible for this course", 
+          description: eligibility.reason,
+          variant: "destructive" 
+        });
+        // Redirect to next required course if available
+        if (eligibility.nextCourseId) {
+          setTimeout(() => {
+            window.location.href = `/courses/${eligibility.nextCourseId}`;
+          }, 2000);
+        }
+        return;
+      }
+
+      if (eligibility.status === "REQUIRES_APPROVAL") {
+        toast({ 
+          title: "Application required", 
+          description: eligibility.reason || "This course requires approval. Your application has been submitted.",
+        });
+        // For now, proceed with enrollment but mark as pending approval
+        // In a full implementation, you'd show an application form
+      }
+    } catch (err: any) {
+      console.error("Eligibility check failed:", err);
+      // Continue with enrollment if check fails (fallback behavior)
+    }
+
     // Save full profile before enrollment
     await saveProfile();
 
