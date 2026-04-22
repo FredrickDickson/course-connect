@@ -456,3 +456,22 @@ Now that enrollment is defined, the next critical pieces are:
 * Notifications (email + dashboard)
 
 If you want, I can map the **full end-to-end lifecycle (Enroll → Complete → Certify → Upgrade)** 👍
+
+
+
+Testing
+The dev server is running at http://localhost:8080. You can test the flow by:
+
+Navigate to a course page
+Click "Enroll Now"
+Verify eligibility check runs
+Proceed to checkout with company invoice option
+Complete payment (will use Paystack test mode)
+Next Steps
+To fully activate the system:
+
+Deploy Edge Functions to Supabase
+Configure Paystack webhook URL in Paystack dashboard
+Set up email service for welcome emails
+Configure community platform integration
+Set up CRM integration
