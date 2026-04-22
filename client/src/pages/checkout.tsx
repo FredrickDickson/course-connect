@@ -639,28 +639,36 @@ export default function Checkout() {
                       <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep("review")} className="flex-1">
-                        <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" onClick={() => setStep("review")} className="w-full">
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back
                       </Button>
                       <Button
                         onClick={handleConfirmPayment}
                         disabled={isProcessing || (paymentMethod === "paystack" && !isPaystackReady)}
-                        className="flex-[2]"
                         size="lg"
+                        className="w-full h-12 text-base font-semibold"
+                        aria-label={
+                          isProcessing
+                            ? "Processing payment"
+                            : paymentMethod === "paystack" && !isPaystackReady
+                              ? "Loading payment system"
+                              : `Pay ${currency} ${coursePrice.toFixed(2)} for ${course.title}`
+                        }
                       >
                         {isProcessing ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Processing...
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing Payment
                           </>
                         ) : paymentMethod === "paystack" && !isPaystackReady ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Loading...
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Loading Payment
                           </>
                         ) : (
                           <>
+                            <CreditCard className="w-5 h-5 mr-2" />
                             {paymentMethod === "paystack" ? "Pay Now" : "Submit Registration"}
                           </>
                         )}

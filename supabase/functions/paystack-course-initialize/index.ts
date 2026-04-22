@@ -19,8 +19,27 @@ interface CoursePaymentRequest {
 }
 
 Deno.serve(async (req: Request) => {
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      },
+    });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { 
+      status: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      },
+    });
   }
 
   try {
@@ -30,7 +49,13 @@ Deno.serve(async (req: Request) => {
     if (!body.courseId || !body.userId || !body.email || !body.amount) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
       );
     }
 
@@ -47,7 +72,13 @@ Deno.serve(async (req: Request) => {
     if (courseError || !course) {
       return new Response(
         JSON.stringify({ error: "Course not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 404, 
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
       );
     }
 
@@ -56,7 +87,13 @@ Deno.serve(async (req: Request) => {
     if (Math.abs(body.amount - expectedAmount) > 0.01) {
       return new Response(
         JSON.stringify({ error: "Amount mismatch" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
       );
     }
 
@@ -106,7 +143,13 @@ Deno.serve(async (req: Request) => {
     if (!paystackResponse.ok) {
       return new Response(
         JSON.stringify({ error: "Paystack initialization failed", details: paystackData }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
       );
     }
 
@@ -117,13 +160,25 @@ Deno.serve(async (req: Request) => {
         reference: paystackData.data.reference,
         access_code: paystackData.data.access_code,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(
-      JSON.stringify({ error: "Internal server error", message: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Internal server error", message: error?.message || "Unknown error" }),
+      { 
+        status: 500, 
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 });
