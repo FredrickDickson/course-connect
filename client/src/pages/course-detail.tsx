@@ -106,9 +106,15 @@ export default function CourseDetail() {
 
     // Check eligibility before proceeding
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch('/api/enrollments/check-eligibility', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           courseId: id,
           enrollmentLevel: course?.level?.toUpperCase() || 'ASSOCIATE'
