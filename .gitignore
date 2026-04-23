@@ -5,6 +5,9 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env
+.env.local
+.env.production
+.env.preview
 
 # Logs
 logs
