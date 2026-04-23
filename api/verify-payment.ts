@@ -74,10 +74,10 @@ async function createEnrollment(
   userId: string,
   courseId: string,
   enrollmentLevel: string,
-  paymentReference: string,
-  paymentAmount: number,
-  paymentCurrency: string
 ) {
+  // Payment details are recorded on the orders table; enrollments only tracks
+  // access state. Do NOT add payment_* columns here — they don't exist on
+  // public.enrollments and the insert will fail.
   const { data, error } = await supabaseAdmin
     .from("enrollments")
     .insert({
@@ -87,9 +87,6 @@ async function createEnrollment(
       status: "ACTIVE",
       enrollment_type: "COURSE",
       enrollment_level: enrollmentLevel || "ASSOCIATE",
-      payment_reference: paymentReference,
-      payment_amount: paymentAmount / 100, // Convert from kobo/cents
-      payment_currency: paymentCurrency,
     })
     .select()
     .single();
@@ -246,14 +243,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create order record
     await createOrder(userId, courseId, paymentData.data, metadata);
 
-    // Create enrollment
+    // Create enrollment (payment details live on the orders row)
     const enrollment = await createEnrollment(
-      userId, 
-      courseId, 
-      enrollmentLevel, 
-      paymentData.data.reference,
-      paymentData.data.amount,
-      paymentData.data.currency
+      userId,
+      courseId,
+      enrollmentLevel,
     );
 
     // Log activity
