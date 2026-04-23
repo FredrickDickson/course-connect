@@ -1,6 +1,7 @@
 /**
- * Vercel Serverless Function for POST /api/categories
- * Creates a new category (admin only)
+ * Vercel Serverless Function for /api/categories
+ * GET  - List all categories
+ * POST - Create a new category (admin only)
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -20,14 +21,14 @@ async function verifyAuth(authHeader: string): Promise<{ userId: string; email: 
   }
 
   const token = authHeader.substring(7);
-  
+
   try {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    
+
     if (error || !user) {
       throw new Error('Invalid token');
     }
-    
+
     return {
       userId: user.id,
       email: user.email || '',
@@ -54,26 +55,33 @@ async function checkAdminRole(userId: string): Promise<boolean> {
   return user.role === 'admin';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+async function handleGet(_req: VercelRequest, res: VercelResponse) {
   try {
-    // Verify authentication
+    const { data, error } = await supabaseAdmin
+      .from("categories")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      console.error('Categories fetch error:', error);
+      return res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+
+    return res.status(200).json(data);
+  } catch (error: any) {
+    console.error('Categories fetch error:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
+    });
+  }
+}
+
+async function handlePost(req: VercelRequest, res: VercelResponse) {
+  try {
     const authHeader = req.headers.authorization || '';
     const { userId } = await verifyAuth(authHeader);
 
-    // Check admin role
     const isAdmin = await checkAdminRole(userId);
     if (!isAdmin) {
       return res.status(403).json({ error: 'Admin access required' });
@@ -89,7 +97,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: "Slug must be between 2 and 100 characters" });
     }
 
-    // Create category
     const { data, error } = await supabaseAdmin
       .from("categories")
       .insert({
@@ -106,17 +113,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(201).json(data);
-
   } catch (error: any) {
     console.error('Category creation error:', error);
-    
+
     if (error.message === 'No authorization header' || error.message === 'Invalid token' || error.message === 'Token verification failed') {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    return res.status(500).json({ 
-      error: 'Internal server error', 
-      message: error.message 
+
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
     });
   }
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method === 'GET') {
+    return handleGet(req, res);
+  }
+
+  if (req.method === 'POST') {
+    return handlePost(req, res);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 }
