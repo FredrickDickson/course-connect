@@ -167,7 +167,7 @@ export default function PaymentSuccess() {
             <div className="flex gap-4 justify-center pt-6">
               {courseId ? (
                 <>
-                  <Link href={`/course/${courseId}/learn`}>
+                  <Link href={`/course/${courseId}`}>
                     <Button size="lg" className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-5 w-5 mr-2" />
                       Start Learning
