@@ -1449,7 +1449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         reference,
 
-        callback_url: `${req.protocol}://${req.get("host")}/payment-success`,
+        callback_url: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/payment-success`,
 
         metadata: {
 
