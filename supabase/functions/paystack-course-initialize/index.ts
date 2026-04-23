@@ -175,7 +175,7 @@ Deno.serve(async (req: Request) => {
             },
           ],
         },
-        callback_url: `${new URL(req.url).origin}/checkout/${body.courseId}?status=success`,
+        callback_url: `${new URL(req.url).origin}/payment-success`,
       }),
     });
 
