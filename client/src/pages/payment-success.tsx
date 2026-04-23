@@ -20,11 +20,15 @@ export default function PaymentSuccess() {
 
   const verifyPaymentMutation = useMutation({
     mutationFn: async (ref: string) => {
-      return await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      const res = await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      return await res.json();
     },
     onSuccess: (response: any) => {
-      if (response.success) {
+      if (response?.success) {
+        // Invalidate every enrollment-related cache so gated pages unlock immediately
         queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+        queryClient.invalidateQueries({ queryKey: ['enrollment-check'] });
+        queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       }
     },
   });
