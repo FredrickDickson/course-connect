@@ -177,14 +177,15 @@ export default function Checkout() {
       const initData = await initResponse.json();
 
       if (!initResponse.ok || !initData.success) {
-        throw new Error(initData.error || "Failed to initialize payment");
+        const detailMsg = initData?.details?.message;
+        throw new Error(detailMsg || initData.error || "Failed to initialize payment");
       }
 
       // Open Paystack popup with the authorization URL
       window.location.href = initData.authorization_url;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment initialization error:", error);
-      toast.error("Failed to initialize payment. Please try again.");
+      toast.error(error?.message || "Failed to initialize payment. Please try again.");
       setIsProcessing(false);
     }
   };
