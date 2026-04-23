@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCard from "@/components/course-card";
@@ -11,11 +10,9 @@ import {
   ArrowRight,
   BookOpen,
   Clock,
-  Trophy,
-  Users,
-  Star,
   TrendingUp,
-  Award,
+  GraduationCap,
+  BadgeCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -78,135 +75,111 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary via-primary/95 to-slate-900 text-primary-foreground min-h-[70vh] flex items-center">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 86c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-            }}
-          ></div>
-        </div>
+      {/* Hero Section — Executive Portal */}
+      <section className="relative flex flex-col md:flex-row items-stretch">
+        {/* Left: Burgundy welcome panel */}
+        <div className="w-full md:w-3/5 bg-[#8b0000] text-white p-12 md:p-16 lg:p-20 flex flex-col justify-center relative overflow-hidden min-h-[480px]">
+          {/* Decorative gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
+          <div className="relative z-10 max-w-2xl">
+            <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.2em] text-xs mb-4 block">
+              Executive Portal
+            </span>
+            <h1 className="font-['Noto_Serif'] text-5xl md:text-6xl lg:text-7xl mb-8 leading-tight">
+              Welcome back,
+              <br />
+              <span className="italic font-light">
+                {user?.firstName || "Learner"}!
+              </span>
+            </h1>
+            <p className="font-['Inter'] text-lg text-white/80 max-w-lg mb-12 leading-relaxed">
+              Your professional evolution continues. We have curated advanced
+              modules based on your recent inquiries.
+            </p>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center space-y-8 animate-in fade-in duration-1000">
-            <div className="space-y-4">
-              <Badge className="bg-white/10 text-white border-white/20 backdrop-blur-md text-sm px-5 py-2.5 shadow-xl shadow-white/5 group hover:bg-white/20 transition-all duration-300">
-                <Award className="w-4 h-4 mr-2 text-yellow-300 group-hover:scale-110 transition-transform" />
-                Professional ADR Certification
-              </Badge>
-              <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tightest leading-[1.1] drop-shadow-2xl">
-                Welcome back,
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-500 font-black animate-pulse-subtle">
-                  {user?.firstName || "Learner"}
-                </span>
-                !
-              </h1>
-              <p className="text-xl lg:text-2xl text-primary-foreground/80 max-w-3xl mx-auto font-medium leading-relaxed tracking-wide">
-                Master the art of{" "}
-                <span className="text-white font-semibold">
-                  Alternative Dispute Resolution
-                </span>{" "}
-                with CIMA's premium certification programs.
-              </p>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center gap-4">
               <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  className="bg-white text-primary hover:bg-white/90 transform hover:scale-105 transition-all duration-200"
-                >
-                  <BookOpen className="w-5 h-5 mr-2" />
-                  Continue Learning
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                <button className="bg-white text-[#610000] px-8 md:px-10 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  CONTINUE LEARNING
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </Link>
               <Link href="/courses">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white/40 text-white hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-sm"
-                >
-                  {/* <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 backdrop-blur"></Button> */}
-                  Explore Courses
-                </Button>
+                <button className="border border-white/20 text-white px-8 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center gap-2">
+                  EXPLORE COURSES
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </Link>
             </div>
           </div>
-
-          {/* Quick Stats */}
-          {progressOverview && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-16 animate-in slide-in-from-bottom-10 duration-700 delay-300">
-              <Card
-                className="bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5 group"
-                data-testid="stat-enrolled-courses"
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                    <BookOpen className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="text-4xl font-black text-yellow-300 mb-1">
-                    {progressOverview.totalCourses || "0"}
-                  </div>
-                  <div className="text-primary-foreground/60 text-xs uppercase tracking-widest font-bold">
-                    Enrolled
-                  </div>
-                </CardContent>
-              </Card>
-              <Card
-                className="bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5 group"
-                data-testid="stat-completed-courses"
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                    <Trophy className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="text-4xl font-black text-yellow-300 mb-1">
-                    {progressOverview.completedCourses || "0"}
-                  </div>
-                  <div className="text-primary-foreground/60 text-xs uppercase tracking-widest font-bold">
-                    Completed
-                  </div>
-                </CardContent>
-              </Card>
-              <Card
-                className="bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5 group"
-                data-testid="stat-study-hours"
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                    <Clock className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="text-4xl font-black text-yellow-300 mb-1">
-                    {progressOverview.totalHours || "0"}
-                  </div>
-                  <div className="text-primary-foreground/60 text-xs uppercase tracking-widest font-bold">
-                    Study Hours
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-white/5 group">
-                <CardContent className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                    <TrendingUp className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="text-4xl font-black text-yellow-300 mb-1">
-                    {Math.round(progressOverview?.averageProgress || 0)}%
-                  </div>
-                  <div className="text-primary-foreground/60 text-xs uppercase tracking-widest font-bold">
-                    Avg. Progress
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
+
+        {/* Right: Grayscale image panel */}
+        <div className="hidden md:block w-2/5 bg-[#efeee3] relative">
+          <img
+            alt="Law office interior"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvjP6NGCAEqFA8hfcEqDuplUFPMzLiCCajVnjul4WfXuyDEfpzEnWQUlRp-jyL80Lm2H5d5UQmstianRK8Ego5aWU-NO5sZWgpZLKGr9ak_38JWzTbYfhD2k1pcZwYl-5_DVdmJtqcWeuVEdnfWmQ2rFBMDgIZlSuFqTqlBB1to-PHrSAUavHYCrzgyok-ekarLdN-geMicwmxSivXDUe67UJph-tsBmNRcjxm8svz8bxhiNDGJ4XxumtnKzQijK8MdBw0lUzVu40"
+            className="absolute inset-0 w-full h-full object-cover grayscale opacity-40 mix-blend-multiply"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-[#efeee3]/20 to-[#8b0000]/10" />
+        </div>
+
       </section>
+
+      {/* Stats row — sibling to hero, sits cleanly below */}
+      {progressOverview && (
+        <section className="bg-[#fbfaee] px-6 md:px-8 lg:px-12 py-6 md:py-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div
+              className="bg-white p-6 md:p-8 shadow-[0px_20px_40px_rgba(27,28,21,0.06)] border-b-2 border-[#610000]"
+              data-testid="stat-enrolled-courses"
+            >
+              <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-[#610000] mb-3 md:mb-4" />
+              <div className="font-['Noto_Serif'] text-2xl md:text-3xl text-[#1b1c15]">
+                {progressOverview.totalCourses || 0}
+              </div>
+              <div className="font-['Work_Sans'] text-[#5a403c] text-[10px] md:text-xs uppercase tracking-widest mt-1">
+                Enrolled
+              </div>
+            </div>
+            <div
+              className="bg-white p-6 md:p-8 shadow-[0px_20px_40px_rgba(27,28,21,0.06)] border-b-2 border-[#e3beb8]"
+              data-testid="stat-completed-courses"
+            >
+              <BadgeCheck className="w-5 h-5 md:w-6 md:h-6 text-[#610000] mb-3 md:mb-4" />
+              <div className="font-['Noto_Serif'] text-2xl md:text-3xl text-[#1b1c15]">
+                {progressOverview.completedCourses || 0}
+              </div>
+              <div className="font-['Work_Sans'] text-[#5a403c] text-[10px] md:text-xs uppercase tracking-widest mt-1">
+                Completed
+              </div>
+            </div>
+            <div
+              className="bg-white p-6 md:p-8 shadow-[0px_20px_40px_rgba(27,28,21,0.06)] border-b-2 border-[#e3beb8]"
+              data-testid="stat-study-hours"
+            >
+              <Clock className="w-5 h-5 md:w-6 md:h-6 text-[#610000] mb-3 md:mb-4" />
+              <div className="font-['Noto_Serif'] text-2xl md:text-3xl text-[#1b1c15]">
+                {progressOverview.totalHours || 0}
+              </div>
+              <div className="font-['Work_Sans'] text-[#5a403c] text-[10px] md:text-xs uppercase tracking-widest mt-1">
+                Study Hours
+              </div>
+            </div>
+            <div className="bg-white p-6 md:p-8 shadow-[0px_20px_40px_rgba(27,28,21,0.06)] border-b-2 border-[#745b22]">
+              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-[#745b22] mb-3 md:mb-4" />
+              <div className="font-['Noto_Serif'] text-2xl md:text-3xl text-[#1b1c15]">
+                {Math.round(progressOverview?.averageProgress || 0)}%
+              </div>
+              <div className="font-['Work_Sans'] text-[#5a403c] text-[10px] md:text-xs uppercase tracking-widest mt-1">
+                Overall Progress
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Continue Learning */}
       {!enrollmentsLoading && enrollments.length > 0 && (
@@ -340,43 +313,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-primary to-slate-900" />
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+      {/* Call to Action — Academic Ledger vibe */}
+      <section className="relative py-24 md:py-32 bg-[#8b0000] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
 
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-10">
-          <div className="space-y-4">
-            <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight lead-tight">
-              Ready to Advance <br />
-              <span className="text-yellow-400">Your Professional Career?</span>
-            </h2>
-            <p className="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
-              Join 80,000+ professionals who have elevated their careers with
-              CIMA's internationally recognized ADR programs.
-            </p>
-          </div>
+        <div className="relative max-w-4xl mx-auto px-6 md:px-8 lg:px-12 text-center">
+          <h2 className="font-['Noto_Serif'] text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-6">
+            Ready to Advance
+            <br />
+            <span className="italic font-light">Your Professional Career?</span>
+          </h2>
+          <p className="font-['Inter'] text-lg md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-12">
+            Join 80,000+ professionals who have elevated their careers with
+            CIMA's internationally recognized ADR programs.
+          </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/programs">
-              <Button
+              <button
                 data-testid="button-explore-programs"
-                size="lg"
-                className="w-full sm:w-auto bg-yellow-400 text-slate-900 hover:bg-yellow-300 hover:scale-105 transition-all duration-300 font-bold px-8"
+                className="w-full sm:w-auto bg-white text-[#610000] px-8 md:px-10 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2"
               >
-                Explore Programs
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+                EXPLORE PROGRAMS
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </Link>
             <Link href="/community">
-              <Button
+              <button
                 data-testid="button-join-community"
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10 hover:scale-105 transition-all duration-300 px-8"
+                className="w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
               >
-                Join Community
-              </Button>
+                JOIN COMMUNITY
+              </button>
             </Link>
           </div>
         </div>
