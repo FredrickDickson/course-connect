@@ -16,6 +16,7 @@ import {
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
+import { send400Error, validateRequiredFields } from "../middleware/error-fixes";
 
 interface AuthRequest extends Request {
   user: {
@@ -49,8 +50,10 @@ router.post(
     const userId = req.user.claims.sub;
     const { courseId, enrollmentLevel } = req.body;
 
-    if (!courseId || !enrollmentLevel) {
-      return res.status(400).json({ message: "courseId and enrollmentLevel are required" });
+    // Enhanced validation with better error messages
+    const validation = validateRequiredFields(req, ['courseId', 'enrollmentLevel']);
+    if (!validation.isValid) {
+      return send400Error(res, validation.error.message, validation.error);
     }
 
     const course = await storage.getCourseById(courseId);
@@ -76,8 +79,10 @@ router.post(
     const userId = req.user.claims.sub;
     const { courseId, enrollmentLevel } = req.body;
 
-    if (!courseId || !enrollmentLevel) {
-      return res.status(400).json({ message: "courseId and enrollmentLevel are required" });
+    // Enhanced validation with better error messages
+    const validation = validateRequiredFields(req, ['courseId', 'enrollmentLevel']);
+    if (!validation.isValid) {
+      return send400Error(res, validation.error.message, validation.error);
     }
 
     const course = await storage.getCourseById(courseId);
