@@ -575,7 +575,7 @@ function LearningPathsSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-12 sm:mb-16">
@@ -588,7 +588,7 @@ function LearningPathsSection() {
           {learningPaths.map((path) => (
             <div
               key={path.name}
-              className="group bg-[#f7f9fa] border-[1.5px] border-[#d1d7dc] rounded-[10px] p-6 hover:border-[#1a3b6e] hover:bg-white hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col gap-2.5"
+              className="group bg-white border-[1.5px] border-[#d1d7dc] rounded-[10px] p-6 hover:border-[#1a3b6e] hover:-translate-y-0.5 hover:shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-pointer flex flex-col gap-2.5"
             >
               <div className={`w-11 h-11 rounded-[6px] ${path.tint} flex items-center justify-center`}>
                 <span className="material-symbols-outlined text-[20px]">{path.icon}</span>
@@ -635,7 +635,7 @@ function FeaturedCoursesSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-[#f7f9fa] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-end mb-12 sm:mb-16 flex-wrap gap-4">
@@ -720,7 +720,7 @@ function WhyChooseUsSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-12 sm:mb-16">
@@ -762,7 +762,7 @@ function MeetTheFacultySection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-[#f7f9fa] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-end mb-12 sm:mb-16 flex-wrap gap-4">
@@ -771,10 +771,6 @@ function MeetTheFacultySection() {
             <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Learn from the best</h2>
             <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Our instructors are active practitioners — not just academics.</p>
           </div>
-          <Link href="/instructors" className="font-['Plus_Jakarta_Sans'] text-[13px] font-semibold uppercase tracking-[0.12em] text-[#1a3b6e] hover:text-[#0e2144] transition-colors flex items-center gap-2 group">
-            All instructors
-            <span className="text-base transform group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
         </div>
 
         <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
@@ -789,7 +785,7 @@ function MeetTheFacultySection() {
               <h3 className="font-['Plus_Jakarta_Sans'] text-[15px] font-semibold text-[#1c1d1f] mb-[3px]">{ins.name}</h3>
               <p className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#6a6f73] leading-[1.4] px-4 mb-3">{ins.title}</p>
 
-              <div className="flex justify-center gap-4 my-3 px-4">
+              <div className="flex justify-center gap-4 my-3 px-4 pb-6">
                 <div className="flex flex-col items-center gap-px">
                   <div className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#1c1d1f]">{ins.rating}{"\u2605"}</div>
                   <div className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">Rating</div>
@@ -802,10 +798,6 @@ function MeetTheFacultySection() {
                   <div className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#1c1d1f]">{ins.courses}</div>
                   <div className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">Courses</div>
                 </div>
-              </div>
-
-              <div className="mt-auto border-t border-[#d1d7dc] py-[0.7rem] font-['Plus_Jakarta_Sans'] text-[12px] font-semibold text-[#1a3b6e]">
-                View profile →
               </div>
             </div>
           ))}
@@ -829,7 +821,7 @@ function StudentReviewsSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-12 sm:mb-16">
@@ -942,7 +934,7 @@ function PartnersSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-[#f7f9fa] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-landing-surface transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-12 sm:mb-16">
