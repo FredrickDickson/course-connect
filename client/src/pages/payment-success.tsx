@@ -20,11 +20,15 @@ export default function PaymentSuccess() {
 
   const verifyPaymentMutation = useMutation({
     mutationFn: async (ref: string) => {
-      return await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      const res = await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      return await res.json();
     },
     onSuccess: (response: any) => {
-      if (response.success) {
+      if (response?.success) {
+        // Invalidate every enrollment-related cache so gated pages unlock immediately
         queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+        queryClient.invalidateQueries({ queryKey: ['enrollment-check'] });
+        queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       }
     },
   });
@@ -163,7 +167,7 @@ export default function PaymentSuccess() {
             <div className="flex gap-4 justify-center pt-6">
               {courseId ? (
                 <>
-                  <Link href={`/course/${courseId}/learn`}>
+                  <Link href={`/course/${courseId}`}>
                     <Button size="lg" className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-5 w-5 mr-2" />
                       Start Learning
