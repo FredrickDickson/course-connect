@@ -19,6 +19,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { convertUSDtoGHS, formatCurrency, convertPayment } from "@/utils/currency";
 import {
   ArrowLeft,
   ArrowRight,
@@ -144,6 +145,10 @@ export default function Checkout() {
   const coursePrice = parseFloat(course?.price?.toString() || "0");
   const currency = course?.currency || "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
+  
+  // Convert USD to GHS for display
+  const paymentConversion = convertPayment(coursePrice);
+  const amountGHS = paymentConversion.amountGHS;
 
   const handlePaystackPayment = async () => {
     if (!user || !course) return;
@@ -511,7 +516,11 @@ export default function Checkout() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Course Price</span>
-                        <span>{currency} {coursePrice.toFixed(2)}</span>
+                        <span>{formatCurrency(coursePrice, 'USD')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">You'll be charged</span>
+                        <span className="font-semibold text-primary">{formatCurrency(amountGHS, 'GHS')}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Processing Fee</span>
@@ -519,9 +528,24 @@ export default function Checkout() {
                       </div>
                     </div>
                     <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-lg font-bold">
+                        <span>Total</span>
+                        <div className="text-right">
+                          <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            (~{formatCurrency(amountGHS, 'GHS')} will be charged)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span>
+                            Price shown in USD. You will be charged in Ghana Cedis (GHS) at current exchange rate.
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleProceedToPayment}>
                       Proceed to Payment
@@ -636,7 +660,12 @@ export default function Checkout() {
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                      <div className="text-right">
+                        <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
+                        <div className="text-sm font-normal text-muted-foreground">
+                          ({formatCurrency(amountGHS, 'GHS')} charged)
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -653,7 +682,7 @@ export default function Checkout() {
                             ? "Processing payment"
                             : paymentMethod === "paystack" && !isPaystackReady
                               ? "Loading payment system"
-                              : `Pay ${currency} ${coursePrice.toFixed(2)} for ${course.title}`
+                              : `Pay ${formatCurrency(amountGHS, 'GHS')} for ${course.title}`
                         }
                       >
                         {isProcessing ? (
@@ -669,7 +698,7 @@ export default function Checkout() {
                         ) : (
                           <>
                             <CreditCard className="w-5 h-5 mr-2" />
-                            {paymentMethod === "paystack" ? "Pay Now" : "Submit Registration"}
+                            {paymentMethod === "paystack" ? `Pay ${formatCurrency(amountGHS, 'GHS')}` : "Submit Registration"}
                           </>
                         )}
                       </Button>

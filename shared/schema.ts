@@ -170,12 +170,18 @@ export const orderSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().nullable().optional(),
   courseId: z.string().uuid().nullable().optional(),
-  amount: z.string(), // decimal
+  amount: z.string(), // decimal (legacy field - use amount_usd for new records)
   currency: z.string().default("USD"),
   status: z
     .enum(["pending", "completed", "failed", "refunded"])
     .default("pending"),
   paystackReference: z.string().nullable().optional(),
+  // Currency conversion fields
+  amountUsd: z.string().nullable().optional(), // Original USD amount
+  amountGhs: z.string().nullable().optional(), // Charged GHS amount
+  exchangeRate: z.string().nullable().optional(), // USD to GHS rate used
+  originalCurrency: z.string().nullable().optional(), // Original currency (usually USD)
+  chargedCurrency: z.string().nullable().optional(), // Currency actually charged (usually GHS)
   createdAt: z.date().optional(),
 });
 

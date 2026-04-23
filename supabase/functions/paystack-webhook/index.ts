@@ -43,6 +43,33 @@ Deno.serve(async (req: Request) => {
           return new Response("Enrollment already exists", { status: 200 });
         }
 
+        // Create order record with currency conversion details
+        const orderData = {
+          user_id: metadata.userId,
+          course_id: metadata.courseId,
+          amount: (event.data.amount / 100).toString(), // Charged amount in GHS
+          currency: event.data.currency, // GHS
+          status: "completed",
+          paystack_reference: event.data.reference,
+          // Currency conversion details from metadata
+          amount_usd: metadata.amountUSD?.toString() || null,
+          amount_ghs: metadata.amountGhs?.toString() || (event.data.amount / 100).toString(),
+          exchange_rate: metadata.exchangeRate?.toString() || null,
+          original_currency: metadata.originalCurrency || "USD",
+          charged_currency: metadata.chargedCurrency || event.data.currency,
+        };
+
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert(orderData)
+          .select()
+          .single();
+
+        if (orderError) {
+          console.error("Order creation error:", orderError);
+          return new Response("Order creation failed", { status: 500 });
+        }
+
         // Create enrollment
         const { data: enrollment, error: enrollError } = await supabase
           .from("enrollments")
