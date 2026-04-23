@@ -1,6 +1,6 @@
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollReveal, StaggerContainer } from "@/components/ScrollReveal";
@@ -31,7 +31,8 @@ import {
   Zap,
   Scale,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import PathwaySelection from "@/components/pathway-selection";
 
 function PathwayCard({
   icon: Icon,

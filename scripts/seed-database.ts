@@ -106,18 +106,19 @@ async function seedDatabase() {
           is_published: true
         },
         {
-          title: "Law, Practice and Procedure in Domestic and International Mediation",
-          description: "Law, Practice and Procedure in Domestic and International Mediation - Empowering the Next Generation of International Mediators. Are you eager to enhance your mediation skills and become a recognized international mediator? This comprehensive course provides in-depth training in mediation law, practice, and procedures.",
+          title: "Law, Practice & Procedure in Domestic and International Arbitration",
+          description: "Law, Practice & Procedure in Domestic and International Arbitration - Empowering the Next Generation of International Arbitrators. Are you eager to enhance your arbitration skills and become a recognized international arbitrator? This comprehensive course provides in-depth training in arbitration law, practice, and procedures.",
           instructor_id: sampleUsers![0].id,
-          category_id: sampleCategories![1].id,
-          price: "1850.00",
-          level: "member",
-          duration_hours: 60,
+          category_id: sampleCategories![0].id,
+          price: "2200.00",
+          level: "fellow",
+          duration_hours: 72,
           is_featured: true,
-          thumbnail_url: "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400",
-          avg_rating: "4.8",
-          enrollment_count: 156,
-          is_published: true
+          thumbnail_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400",
+          avg_rating: "4.9",
+          enrollment_count: 89,
+          is_published: true,
+          tags: ["arbitration", "international", "law", "procedure", "fellowship"]
         },
         {
           title: "Expedited Route to Membership (MCIMArb) – On Demand",
@@ -131,7 +132,8 @@ async function seedDatabase() {
           thumbnail_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
           avg_rating: "4.7",
           enrollment_count: 234,
-          is_published: true
+          is_published: true,
+          tags: ["arbitration", "membership", "expedited", "professional"]
         },
         {
           title: "Online Course on Maritime Mediation",
@@ -145,7 +147,8 @@ async function seedDatabase() {
           thumbnail_url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400",
           avg_rating: "4.6",
           enrollment_count: 67,
-          is_published: true
+          is_published: true,
+          tags: ["mediation", "maritime", "specialized", "international"]
         },
         {
           title: "AI Tools for ADR Practitioners",
@@ -159,7 +162,8 @@ async function seedDatabase() {
           thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400",
           avg_rating: "4.8",
           enrollment_count: 198,
-          is_published: true
+          is_published: true,
+          tags: ["ai", "technology", "adr", "mediation", "arbitration"]
         },
         {
           title: "Mock Arbitrations",
@@ -173,7 +177,8 @@ async function seedDatabase() {
           thumbnail_url: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400",
           avg_rating: "4.9",
           enrollment_count: 123,
-          is_published: true
+          is_published: true,
+          tags: ["arbitration", "practice", "simulation", "hands-on", "fellowship"]
         }
       ])
       .select();
