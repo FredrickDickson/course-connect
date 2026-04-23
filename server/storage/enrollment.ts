@@ -34,7 +34,7 @@ export async function checkEligibility(
   
   // Get user's current track progress
   const { data: trackProgress } = await supabaseAdmin
-    .from("track_progress")
+    .from("user_track_progress")
     .select("*")
     .eq("user_id", user.id)
     .eq("track", track)

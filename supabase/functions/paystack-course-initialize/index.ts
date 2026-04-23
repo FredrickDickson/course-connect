@@ -5,6 +5,20 @@ const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Exchange rate for USD to GHS conversion
+const USD_TO_GHS_RATE = 15.50; // Update this rate as needed
+
+/**
+ * Convert USD amount to GHS
+ * @param usdAmount - Amount in USD
+ * @returns Amount in GHS (rounded to 2 decimal places)
+ */
+function convertUSDtoGHS(usdAmount: number): number {
+  if (usdAmount <= 0) return 0;
+  const ghsAmount = usdAmount * USD_TO_GHS_RATE;
+  return Math.round(ghsAmount * 100) / 100;
+}
+
 interface CoursePaymentRequest {
   courseId: string;
   userId: string;
@@ -97,6 +111,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Convert USD to GHS for Paystack (always charge in GHS for Ghana merchant)
+    const amountUSD = body.amount;
+    const amountGHS = convertUSDtoGHS(amountUSD);
+    
+    console.log(`Currency conversion: $${amountUSD} USD -> ¢${amountGHS} GHS (Rate: ${USD_TO_GHS_RATE})`);
+
     // Initialize Paystack transaction
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -106,8 +126,8 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         email: body.email,
-        amount: Math.round(body.amount * 100), // Convert to kobo/cents
-        currency: body.currency || "GHS",
+        amount: Math.round(amountGHS * 100), // Convert to pesewas (GHS smallest unit)
+        currency: "GHS", // Always GHS for Ghana merchant
         metadata: {
           courseId: body.courseId,
           courseName: course.title,
@@ -116,6 +136,12 @@ Deno.serve(async (req: Request) => {
           userId: body.userId,
           enrollmentLevel: body.enrollmentLevel,
           paymentType: body.paymentType,
+          // Currency conversion details
+          amountUSD: amountUSD,
+          amountGHS: amountGHS,
+          exchangeRate: USD_TO_GHS_RATE,
+          originalCurrency: body.currency || "USD",
+          chargedCurrency: "GHS",
           ...(body.paymentType === "company_invoice" && {
             companyName: body.companyName,
             companyEmail: body.companyEmail,
@@ -131,6 +157,21 @@ Deno.serve(async (req: Request) => {
               display_name: "Enrollment Level",
               variable_name: "enrollment_level",
               value: body.enrollmentLevel,
+            },
+            {
+              display_name: "Original Amount (USD)",
+              variable_name: "original_amount_usd",
+              value: amountUSD.toString(),
+            },
+            {
+              display_name: "Charged Amount (GHS)",
+              variable_name: "charged_amount_ghs",
+              value: amountGHS.toString(),
+            },
+            {
+              display_name: "Exchange Rate",
+              variable_name: "exchange_rate",
+              value: USD_TO_GHS_RATE.toString(),
             },
           ],
         },
