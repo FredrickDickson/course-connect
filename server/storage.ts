@@ -94,6 +94,7 @@ export interface IStorage {
     search?: string;
     level?: string;
     featured?: boolean;
+    pathway?: string;
   }): Promise<any[]>;
   getCourseById(id: string): Promise<any>;
   createCourse(course: InsertCourse): Promise<Course>;
@@ -448,6 +449,7 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     level?: string;
     featured?: boolean;
+    pathway?: string;
   }): Promise<any[]> {
     let query = supabaseAdmin
       .from("courses")
@@ -483,6 +485,15 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.featured !== undefined) {
       query = query.eq("is_featured", filters.featured);
+    }
+
+    // Pathway filtering - filter by title and tags containing pathway keywords
+    if (filters?.pathway && filters.pathway !== "all") {
+      if (filters.pathway === "arbitration") {
+        query = query.or(`title.ilike.%arbitration%,tags.cs.{arbitration}`);
+      } else if (filters.pathway === "mediation") {
+        query = query.or(`title.ilike.%mediation%,tags.cs.{mediation}`);
+      }
     }
 
     const { data, error } = await query.order("created_at", {

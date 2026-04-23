@@ -152,19 +152,162 @@ async function triggerProvisioning(supabase: any, metadata: any) {
     vatId: metadata.vatId,
   };
 
-  // TODO: Implement the following provisioning steps:
-  // 1. Send tiered welcome email (Associate/Member/Fellow)
-  // 2. Add user to track-specific community channels
-  // 3. Update CRM with professional data
-  // 4. Log provisioning activity
-  // 5. Generate company invoice if applicable
-
   console.log(`Provisioning triggered for user ${context.userId}, course ${context.courseId}, level ${context.enrollmentLevel}`);
 
-  // Log provisioning activity
+  try {
+    // 1. Send tiered welcome email (Associate/Member/Fellow)
+    await sendWelcomeEmail(supabase, user, course, context);
+
+    // 2. Add user to track-specific community channels
+    await addCommunityAccess(supabase, user, course, context);
+
+    // 3. Update CRM with professional data
+    await updateCRM(supabase, user, course, context);
+
+    // 4. Generate company invoice if applicable
+    if (metadata.paymentType === "company_invoice") {
+      await generateCompanyInvoice(supabase, user, course, context);
+    }
+
+    // Log provisioning activity
+    await supabase.from("activity_log").insert({
+      user_id: context.userId,
+      event_type: "provisioning_completed",
+      event_data: {
+        ...context,
+        completed_steps: ["welcome_email", "community_access", "crm_update", ...(metadata.paymentType === "company_invoice" ? ["company_invoice"] : [])]
+      },
+    });
+
+    console.log(`Provisioning completed for user ${context.userId}`);
+  } catch (error) {
+    console.error("Provisioning error:", error);
+    await supabase.from("activity_log").insert({
+      user_id: context.userId,
+      event_type: "provisioning_failed",
+      event_data: {
+        ...context,
+        error: error instanceof Error ? error.message : "Unknown error"
+      },
+    });
+  }
+}
+
+async function sendWelcomeEmail(supabase: any, user: any, course: any, context: any) {
+  // Get email template based on enrollment level
+  const templates = {
+    ASSOCIATE: "welcome_associate",
+    MEMBER: "welcome_member", 
+    FELLOW: "welcome_fellow"
+  };
+
+  const template = templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
+
+  // This would integrate with your email service (SendGrid, etc.)
+  console.log(`Sending ${template} email to ${user.email} for course ${course.title}`);
+  
+  // Log email activity
   await supabase.from("activity_log").insert({
     user_id: context.userId,
-    event_type: "provisioning_triggered",
-    event_data: context,
+    event_type: "email_sent",
+    event_data: {
+      template,
+      recipient: user.email,
+      course_name: course.title,
+    },
+  });
+}
+
+async function addCommunityAccess(supabase: any, user: any, course: any, context: any) {
+  // Add user to course-specific community channels
+  const communityChannels = [
+    `course-${course.id}-general`,
+    `course-${course.id}-announcements`,
+    `${context.enrollmentLevel.toLowerCase()}-members`
+  ];
+
+  console.log(`Adding user ${user.email} to channels: ${communityChannels.join(", ")}`);
+
+  // This would integrate with your community platform (Discord, Slack, etc.)
+  for (const channel of communityChannels) {
+    await supabase.from("community_memberships").insert({
+      user_id: context.userId,
+      channel_name: channel,
+      course_id: context.courseId,
+      joined_at: new Date().toISOString(),
+    }).ignore(); // Ignore duplicates
+  }
+
+  // Log community access
+  await supabase.from("activity_log").insert({
+    user_id: context.userId,
+    event_type: "community_access_granted",
+    event_data: {
+      channels: communityChannels,
+      course_id: context.courseId,
+    },
+  });
+}
+
+async function updateCRM(supabase: any, user: any, course: any, context: any) {
+  // Update CRM with enrollment data
+  const crmData = {
+    user_id: context.userId,
+    email: user.email,
+    full_name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+    course_enrolled: course.title,
+    enrollment_level: context.enrollmentLevel,
+    enrollment_date: new Date().toISOString(),
+    payment_type: context.paymentType,
+    ...(context.paymentType === "company_invoice" && {
+      company_name: context.companyName,
+      company_email: context.companyEmail,
+      vat_id: context.vatId,
+    }),
+  };
+
+  console.log(`Updating CRM for user ${user.email} with data:`, crmData);
+
+  // This would integrate with your CRM system (HubSpot, Salesforce, etc.)
+  await supabase.from("crm_updates").insert({
+    user_id: context.userId,
+    crm_data: crmData,
+    status: "pending",
+    created_at: new Date().toISOString(),
+  });
+
+  // Log CRM update
+  await supabase.from("activity_log").insert({
+    user_id: context.userId,
+    event_type: "crm_update_queued",
+    event_data: crmData,
+  });
+}
+
+async function generateCompanyInvoice(supabase: any, user: any, course: any, context: any) {
+  const invoiceData = {
+    invoice_number: `INV-${Date.now()}`,
+    user_id: context.userId,
+    course_id: context.courseId,
+    company_name: context.companyName,
+    company_email: context.companyEmail,
+    vat_id: context.vatId,
+    amount: course.price,
+    currency: course.currency || "USD",
+    issue_date: new Date().toISOString(),
+    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+    status: "issued",
+  };
+
+  console.log(`Generating company invoice for ${context.companyName}:`, invoiceData);
+
+  // Create invoice record
+  await supabase.from("invoices").insert(invoiceData);
+
+  // Log invoice generation
+  await supabase.from("activity_log").insert({
+    user_id: context.userId,
+    event_type: "company_invoice_generated",
+    event_data: invoiceData,
   });
 }

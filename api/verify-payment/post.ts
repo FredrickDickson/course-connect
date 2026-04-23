@@ -34,27 +34,123 @@ async function verifyPayment(reference: string) {
 }
 
 /**
+ * Create order record with payment details
+ */
+async function createOrder(
+  userId: string,
+  courseId: string,
+  paymentData: any,
+  metadata: any
+) {
+  const orderData = {
+    user_id: userId,
+    course_id: courseId,
+    amount: (paymentData.amount / 100).toString(), // Charged amount in GHS
+    currency: paymentData.currency, // GHS
+    status: "completed",
+    paystack_reference: paymentData.reference,
+    // Currency conversion details from metadata
+    amount_usd: metadata.amountUSD?.toString() || null,
+    amount_ghs: metadata.amountGhs?.toString() || (paymentData.amount / 100).toString(),
+    exchange_rate: metadata.exchangeRate?.toString() || null,
+    original_currency: metadata.originalCurrency || "USD",
+    charged_currency: metadata.chargedCurrency || paymentData.currency,
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .insert(orderData)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Create enrollment after successful payment
  */
 async function createEnrollment(
   userId: string,
   courseId: string,
-  enrollmentLevel: string
+  enrollmentLevel: string,
+  paymentReference: string,
+  paymentAmount: number,
+  paymentCurrency: string
 ) {
   const { data, error } = await supabaseAdmin
     .from("enrollments")
     .insert({
       user_id: userId,
       course_id: courseId,
-      enrollment_type: "COURSE",
-      enrollment_level: enrollmentLevel,
+      progress: "0",
       status: "ACTIVE",
+      enrollment_type: "COURSE",
+      enrollment_level: enrollmentLevel || "ASSOCIATE",
+      payment_reference: paymentReference,
+      payment_amount: paymentAmount / 100, // Convert from kobo/cents
+      payment_currency: paymentCurrency,
     })
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Log activity for course enrollment
+ */
+async function logActivity(
+  userId: string,
+  courseId: string,
+  courseName: string,
+  enrollmentId: string,
+  paymentReference: string,
+  metadata: any
+) {
+  const activityData = {
+    user_id: userId,
+    event_type: "course_enrolled",
+    event_data: {
+      course_id: courseId,
+      course_name: courseName,
+      enrollment_id: enrollmentId,
+      payment_reference: paymentReference,
+      payment_type: metadata.paymentType || "individual",
+      ...(metadata.paymentType === "company_invoice" && {
+        company_name: metadata.companyName,
+        company_email: metadata.companyEmail,
+        vat_id: metadata.vatId,
+      }),
+    },
+  };
+
+  const { error } = await supabaseAdmin
+    .from("activity_log")
+    .insert(activityData);
+
+  if (error) throw error;
+}
+
+/**
+ * Update course enrollment count
+ */
+async function updateCourseEnrollmentCount(courseId: string) {
+  const { data: course } = await supabaseAdmin
+    .from("courses")
+    .select("enrollment_count")
+    .eq("id", courseId)
+    .single();
+
+  const newCount = (course?.enrollment_count || 0) + 1;
+
+  const { error } = await supabaseAdmin
+    .from("courses")
+    .update({ enrollment_count: newCount })
+    .eq("id", courseId);
+
+  if (error) throw error;
 }
 
 /**
@@ -147,8 +243,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Create order record
+    await createOrder(userId, courseId, paymentData.data, metadata);
+
     // Create enrollment
-    await createEnrollment(userId, courseId, enrollmentLevel);
+    const enrollment = await createEnrollment(
+      userId, 
+      courseId, 
+      enrollmentLevel, 
+      paymentData.data.reference,
+      paymentData.data.amount,
+      paymentData.data.currency
+    );
+
+    // Log activity
+    await logActivity(
+      userId,
+      courseId,
+      metadata.courseName || 'Unknown Course',
+      enrollment.id,
+      paymentData.data.reference,
+      metadata
+    );
+
+    // Update course enrollment count
+    await updateCourseEnrollmentCount(courseId);
 
     return res.json({
       success: true,

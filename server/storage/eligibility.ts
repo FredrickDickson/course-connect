@@ -36,7 +36,20 @@ export async function getUserQualificationState(
   // Get user's global role and experience
   const { data: user } = await supabaseAdmin
     .from("users")
-    .select("years_adr_experience, years_legal_experience, role")
+    .select(`
+      years_adr_experience, 
+      years_legal_experience, 
+      role,
+      has_llm_degree,
+      llm_institution,
+      llm_specialization,
+      llm_graduation_year,
+      professional_portfolio_url,
+      bar_admission_number,
+      bar_jurisdiction,
+      current_employer,
+      job_title
+    `)
     .eq("id", userId)
     .single();
 
@@ -115,8 +128,13 @@ export async function getUserQualificationState(
     globalRole,
     completedCourses,
     hasLegalExperience: (user.years_legal_experience || 0) >= 3,
-    hasLLM: false, // TODO: Add LLM field to users table if needed
+    hasLLM: user.has_llm_degree || false,
     hasExperience: (user.years_adr_experience || 0) >= 3,
+    hasBarAdmission: !!user.bar_admission_number,
+    hasPortfolio: !!user.professional_portfolio_url,
+    llmSpecialization: user.llm_specialization,
+    currentEmployer: user.current_employer,
+    jobTitle: user.job_title,
   } as UserQualificationState;
 }
 
@@ -251,12 +269,13 @@ export async function canTakeCourse(
 }
 
 /**
- * Check if user can apply for expedited pathway
+ * Enhanced eligibility check for expedited member route (MCIMArb)
+ * Based on guide requirements: LL.M holders, ACIMArb members, or experienced legal professionals
  */
-export async function canApplyExpedited(
+export async function canApplyExpeditedMember(
   userId: string,
   track: "ARBITRATION" | "MEDIATION"
-): Promise<{ canApply: boolean; reason?: string }> {
+): Promise<{ canApply: boolean; reason?: string; eligibilityType?: string }> {
   // Mediation track does not support expedited
   if (track === "MEDIATION") {
     return {
@@ -265,20 +284,124 @@ export async function canApplyExpedited(
     };
   }
 
-  const eligibility = await getEligibilityState(userId);
-
-  if (!eligibility) {
+  const state = await getUserQualificationState(userId);
+  if (!state) {
     return { canApply: false, reason: "Could not determine eligibility" };
   }
 
-  if (!eligibility.arbitration.canUseExpedited) {
-    return {
-      canApply: false,
-      reason: "You need at least 3 years of legal or ADR experience to apply for expedited pathway",
+  // Check eligibility criteria based on guide requirements
+  const eligibilityChecks = [
+    {
+      type: "LLM_HOLDER",
+      eligible: state.hasLLM,
+      reason: state.hasLLM ? undefined : "LL.M degree required for this pathway",
+    },
+    {
+      type: "ACIMARB_MEMBER", 
+      eligible: state.tracks.arbitration.level === "ASSOCIATE",
+      reason: state.tracks.arbitration.level === "ASSOCIATE" ? undefined : "ACIMArb membership required for this pathway",
+    },
+    {
+      type: "EXPERIENCED_LEGAL",
+      eligible: state.hasLegalExperience && state.hasBarAdmission,
+      reason: state.hasLegalExperience && state.hasBarAdmission ? undefined : "3+ years legal experience and bar admission required",
+    },
+    {
+      type: "EXPERIENCED_ADR",
+      eligible: state.hasExperience && state.yearsAdrExperience >= 5,
+      reason: state.hasExperience && state.yearsAdrExperience >= 5 ? undefined : "5+ years ADR experience required for this pathway",
+    },
+  ];
+
+  // User is eligible if ANY of the criteria are met
+  const eligibleCheck = eligibilityChecks.find(check => check.eligible);
+  
+  if (eligibleCheck) {
+    return { 
+      canApply: true, 
+      eligibilityType: eligibleCheck.type 
     };
   }
 
-  return { canApply: true };
+  // If not eligible, provide comprehensive feedback
+  const reasons = eligibilityChecks
+    .filter(check => !check.eligible && check.reason)
+    .map(check => check.reason)
+    .filter(Boolean);
+
+  return {
+    canApply: false,
+    reason: `You may be eligible if you: ${reasons.join(" or ")}. Alternatively, we recommend starting with Part I (Associate) training.`,
+  };
+}
+
+/**
+ * Enhanced eligibility check for expedited fellow route (FCIMArb)
+ * Based on guide requirements: MCIMArb or equivalent + 7+ years ADR / 10+ legal experience
+ */
+export async function canApplyExpeditedFellow(
+  userId: string,
+  track: "ARBITRATION" | "MEDIATION"
+): Promise<{ canApply: boolean; reason?: string; eligibilityType?: string }> {
+  const state = await getUserQualificationState(userId);
+  if (!state) {
+    return { canApply: false, reason: "Could not determine eligibility" };
+  }
+
+  const trackProgress = track === "ARBITRATION" ? state.tracks.arbitration : state.tracks.mediation;
+  
+  // Must have Member level first
+  if (trackProgress.level !== "MEMBER") {
+    return {
+      canApply: false,
+      reason: "You must complete the Member level before applying for Fellowship",
+    };
+  }
+
+  // Check experience requirements
+  const hasRequiredADRExperience = state.hasExperience && (state.yearsAdrExperience >= 7);
+  const hasRequiredLegalExperience = state.hasLegalExperience && (state.yearsLegalExperience >= 10);
+  const hasPortfolio = state.hasPortfolio;
+  const hasAwardWritingSamples = (state.awardWritingSamples?.length || 0) > 0;
+
+  if (hasRequiredADRExperience || hasRequiredLegalExperience) {
+    const missingRequirements = [];
+    if (!hasPortfolio) missingRequirements.push("professional portfolio");
+    if (!hasAwardWritingSamples) missingRequirements.push("award writing samples");
+
+    if (missingRequirements.length > 0) {
+      return {
+        canApply: true,
+        reason: `Recommended: Upload ${missingRequirements.join(" and ")} to strengthen your application`,
+        eligibilityType: hasRequiredADRExperience ? "EXPERIENCED_ADR" : "EXPERIENCED_LEGICAL",
+      };
+    }
+
+    return {
+      canApply: true,
+      eligibilityType: hasRequiredADRExperience ? "EXPERIENCED_ADR" : "EXPERIENCED_LEGAL",
+    };
+  }
+
+  return {
+    canApply: false,
+    reason: "FCIMArb requires 7+ years ADR experience OR 10+ years legal experience. Consider gaining more experience or completing the standard fellowship pathway.",
+  };
+}
+
+/**
+ * Check if user can apply for expedited pathway (legacy function for backward compatibility)
+ */
+export async function canApplyExpedited(
+  userId: string,
+  track: "ARBITRATION" | "MEDIATION"
+): Promise<{ canApply: boolean; reason?: string }> {
+  // Use the enhanced member eligibility check
+  const result = await canApplyExpeditedMember(userId, track);
+  return {
+    canApply: result.canApply,
+    reason: result.reason,
+  };
 }
 
 /**
@@ -378,37 +501,29 @@ export async function getAvailablePathwaysForTrack(
     });
   }
 
-  // Expedited pathway options (Arbitration only)
+  // Enhanced expedited pathway options (Arbitration only) - based on guide requirements
   if (isArbitration && (level === "NONE" || level === "ASSOCIATE")) {
-    const canExpedite = await canApplyExpedited(userId, "ARBITRATION");
-    if (canExpedite.canApply) {
+    const memberEligibility = await canApplyExpeditedMember(userId, "ARBITRATION");
+    if (memberEligibility.canApply) {
       pathways.push({
         type: "EXPEDITED",
         level: "MEMBER",
         name: "Expedited Member (MCIMArb)",
-        description: "14-day assessment for experienced professionals",
+        description: `14-day assessment for ${memberEligibility.eligibilityType?.toLowerCase()?.replace('_', ' ')} professionals`,
         action: "apply_expedited",
       });
     }
   }
 
   if (isArbitration && level === "MEMBER") {
-    // Check for fellowship expedited eligibility (requires more experience)
-    const { data: user } = await supabaseAdmin
-      .from("users")
-      .select("years_adr_experience, years_legal_experience")
-      .eq("id", userId)
-      .single();
-
-    const yearsAdr = user?.years_adr_experience || 0;
-    const yearsLegal = user?.years_legal_experience || 0;
-
-    if (yearsAdr >= 7 || yearsLegal >= 10) {
+    // Check for fellowship expedited eligibility (enhanced requirements)
+    const fellowEligibility = await canApplyExpeditedFellow(userId, "ARBITRATION");
+    if (fellowEligibility.canApply) {
       pathways.push({
         type: "EXPEDITED",
         level: "FELLOW",
         name: "Expedited Fellow (FCIMArb)",
-        description: "48-hour assessment for senior professionals",
+        description: "48-hour award writing assessment for senior professionals",
         action: "apply_expedited",
       });
     }

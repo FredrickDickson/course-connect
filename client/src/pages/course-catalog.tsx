@@ -7,9 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CourseCard from "@/components/course-card";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  PATHWAY_TYPES, 
+  detectCoursePathway,
+  getPathwayConfig,
+  type PathwayType 
+} from "../../../shared/pathways";
 
 export default function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPathway, setSelectedPathway] = useState<PathwayType | "all">("all");
 
   // Fetch categories from Supabase
   const { data: categoriesData = [] } = useQuery({
@@ -43,11 +50,20 @@ export default function CourseCatalog() {
     ...Object.fromEntries(categoriesData.map((cat: any) => [cat.id, cat.name])),
   };
 
-  // Filter courses by category
-  const filteredCourses =
-    selectedCategory === "all"
-      ? courses
-      : courses.filter((course) => course.category_id === selectedCategory);
+  // Filter courses by category and pathway
+  const filteredCourses = courses.filter((course) => {
+    // Category filter
+    const categoryMatch = selectedCategory === "all" || course.category_id === selectedCategory;
+    
+    // Pathway filter - detect course pathway from title and tags
+    const coursePathway = detectCoursePathway({
+      title: course.title,
+      tags: course.tags || []
+    });
+    const pathwayMatch = selectedPathway === "all" || coursePathway === selectedPathway;
+    
+    return categoryMatch && pathwayMatch;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,6 +111,34 @@ export default function CourseCatalog() {
                 {categoryNames[category] || category}
               </Button>
             ))}
+          </div>
+
+          {/* Filter Pathways */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              variant={selectedPathway === "all" ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedPathway("all")}
+            >
+              All Pathways
+            </Button>
+            <Button
+              variant={selectedPathway === PATHWAY_TYPES.ARBITRATION ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedPathway(PATHWAY_TYPES.ARBITRATION)}
+            >
+              Arbitration (ACIMArb)
+            </Button>
+            <Button
+              variant={selectedPathway === PATHWAY_TYPES.MEDIATION ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedPathway(PATHWAY_TYPES.MEDIATION)}
+            >
+              Mediation (ACIMed)
+            </Button>
           </div>
 
           {/* Loading State */}

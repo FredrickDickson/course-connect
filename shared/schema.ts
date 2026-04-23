@@ -353,6 +353,18 @@ export const userQualificationStateSchema = z.object({
   }),
   globalRole: z.enum(["STUDENT", "PROFESSIONAL"]).default("PROFESSIONAL"),
   completedCourses: z.array(z.string()).default([]),
+  // Enhanced eligibility properties for expedited routes
+  hasLegalExperience: z.boolean().default(false),
+  hasLLM: z.boolean().default(false),
+  hasExperience: z.boolean().default(false),
+  hasBarAdmission: z.boolean().default(false),
+  hasPortfolio: z.boolean().default(false),
+  llmSpecialization: z.string().nullable().optional(),
+  currentEmployer: z.string().nullable().optional(),
+  jobTitle: z.string().nullable().optional(),
+  yearsAdrExperience: z.number().default(0),
+  yearsLegalExperience: z.number().default(0),
+  awardWritingSamples: z.array(z.string()).default([]),
 });
 
 // Certificate with multi-dimensional metadata
