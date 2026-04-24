@@ -8,16 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { COUNTRIES } from "@/lib/countries";
-import PhoneInput from "@/components/ui/phone-input";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
 
 const PROFESSIONAL_BACKGROUNDS = [
   "Lawyer / Legal Practitioner",
@@ -61,6 +60,24 @@ const GENDERS = [
   { value: "female", label: "Female" },
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
+
+const splitPhoneValue = (value: string) => {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\+?\d{1,4})\s*(.*)$/);
+  return {
+    countryCode: match?.[1] ? (match[1].startsWith("+") ? match[1] : `+${match[1]}`) : "",
+    number: match?.[2] ?? trimmed,
+  };
+};
+
+const joinPhoneValue = (countryCode: string, number: string) => {
+  const normalizedCode = countryCode.trim()
+    ? countryCode.trim().startsWith("+")
+      ? countryCode.trim()
+      : `+${countryCode.trim()}`
+    : "";
+  return [normalizedCode, number.trim()].filter(Boolean).join(" ");
+};
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -258,6 +275,7 @@ export default function Onboarding() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const dateOfBirth = form.date_of_birth ? new Date(`${form.date_of_birth}T00:00:00`) : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-8 px-4">
