@@ -80,7 +80,7 @@ export async function requireSupabaseAuth(req: Request, res: Response, next: Nex
         .from("users")
         .insert(insertPayload)
         .select()
-        .single();
+        .maybeSingle();
 
       if (insertErr) {
         console.error("[AUTH] Failed to auto-provision user:", {

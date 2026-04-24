@@ -61,7 +61,7 @@ async function createOrder(
     .from("orders")
     .insert(orderData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -89,7 +89,7 @@ async function createEnrollment(
       enrollment_level: enrollmentLevel || "ASSOCIATE",
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -138,7 +138,7 @@ async function updateCourseEnrollmentCount(courseId: string) {
     .from("courses")
     .select("enrollment_count")
     .eq("id", courseId)
-    .single();
+    .maybeSingle();
 
   const newCount = (course?.enrollment_count || 0) + 1;
 

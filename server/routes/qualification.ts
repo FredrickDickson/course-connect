@@ -235,7 +235,7 @@ router.post(
       .from("users")
       .select("email")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (!userRow?.email) {
       return res
@@ -846,7 +846,7 @@ router.post(
         status: "pending",
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return res.status(500).json({ error: "Failed to create fellowship application" });
@@ -922,7 +922,7 @@ router.post(
       .from("fellowship_applications")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error || !application) {
       return res.status(404).json({ error: "Application not found" });
@@ -1030,7 +1030,7 @@ router.post(
         expires_at: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 2 years from now
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return res.status(500).json({ error: "Failed to create student membership application" });
@@ -1058,7 +1058,7 @@ router.get(
       .from("student_memberships")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       return res.status(500).json({ error: "Failed to fetch student status" });

@@ -49,7 +49,7 @@ export async function createEnrollment(
       status: enrollmentType === "APPLICATION" ? "PENDING_APPROVAL" : "ACTIVE",
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -74,7 +74,7 @@ export async function createFellowshipApplication(
       status: "pending",
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -110,7 +110,7 @@ export async function updateEnrollmentStatus(
     .update({ status })
     .eq("id", enrollmentId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

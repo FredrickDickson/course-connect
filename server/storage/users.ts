@@ -19,7 +19,7 @@ export async function getUser(id: string): Promise<User | undefined> {
     .from("users")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return undefined;
   return data as User;
@@ -30,7 +30,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     .from("users")
     .select("*")
     .eq("email", email.toLowerCase())
-    .single();
+    .maybeSingle();
 
   if (error || !data) return undefined;
   return data as User;
@@ -45,7 +45,7 @@ export async function upsertUser(userData: UpsertUser): Promise<User> {
       updated_at: new Date().toISOString(),
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as User;
@@ -64,7 +64,7 @@ export async function updateUser(
     })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return updatedUser as User;
@@ -82,7 +82,7 @@ export async function updateUserPaystackInfo(
     })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return user;
@@ -100,7 +100,7 @@ export async function updateUserRole(
     })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return user;

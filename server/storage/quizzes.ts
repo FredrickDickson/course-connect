@@ -28,7 +28,7 @@ export async function createQuiz(quiz: InsertQuiz): Promise<Quiz> {
     .from("quizzes")
     .insert(quiz)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -38,7 +38,7 @@ export async function getQuizById(id: string): Promise<Quiz | undefined> {
     .from("quizzes")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
   if (error || !data) return undefined;
   return data;
 }
@@ -73,7 +73,7 @@ export async function createQuizQuestion(
     .from("quiz_questions")
     .insert(question)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -85,7 +85,7 @@ export async function createQuizAnswer(
     .from("quiz_answers")
     .insert(answer)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -108,7 +108,7 @@ export async function submitQuizAttempt(attempt: {
     .from("quiz_attempts")
     .insert(insertData)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -134,7 +134,7 @@ export async function recordQuizResponse(
     .from("quiz_responses")
     .insert(response)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -163,7 +163,7 @@ export async function createOrUpdateQuiz(lessonId: string, quizData: any) {
       .update(quizPayload)
       .eq("id", existing.id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     quizId = updated.id;
   } else {
@@ -171,7 +171,7 @@ export async function createOrUpdateQuiz(lessonId: string, quizData: any) {
       .from("quizzes")
       .insert(quizPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     quizId = created.id;
   }
@@ -191,7 +191,7 @@ export async function createOrUpdateQuiz(lessonId: string, quizData: any) {
           order: i,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (qError) throw qError;
 
@@ -218,7 +218,7 @@ export async function getQuizWithQuestions(
     .from("quizzes")
     .select("*, questions:quiz_questions(*, answers:quiz_answers(*))")
     .eq("id", quizId)
-    .single();
+    .maybeSingle();
 
   if (error || !quiz) return null;
 
@@ -296,7 +296,7 @@ export async function gradeQuizAttempt(
     })
     .eq("id", attemptId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
@@ -308,7 +308,7 @@ export async function gradeQuizAttempt(
         .from("lessons")
         .select("*, module:modules(*, course:courses(*))")
         .eq("id", quiz.lesson_id)
-        .single();
+        .maybeSingle();
 
       if (lesson && lesson.module?.course) {
         const course = lesson.module.course;

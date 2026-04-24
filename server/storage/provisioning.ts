@@ -56,13 +56,13 @@ async function sendWelcomeEmail(context: ProvisioningContext) {
     .from("users")
     .select("email, first_name, last_name")
     .eq("id", context.userId)
-    .single();
+    .maybeSingle();
 
   const { data: course } = await supabaseAdmin
     .from("courses")
     .select("title, track")
     .eq("id", context.courseId)
-    .single();
+    .maybeSingle();
 
   if (!user || !course) {
     console.error("User or course not found for welcome email");
@@ -109,7 +109,7 @@ async function updateCRM(context: ProvisioningContext) {
     .from("profiles")
     .select("*")
     .eq("user_id", context.userId)
-    .single();
+    .maybeSingle();
 
   if (!user) {
     console.error("User profile not found for CRM update");
@@ -150,7 +150,7 @@ async function grantCommunityAccess(context: ProvisioningContext) {
     .from("courses")
     .select("track")
     .eq("id", context.courseId)
-    .single();
+    .maybeSingle();
 
   if (!course) {
     console.error("Course not found for community access");
@@ -216,7 +216,7 @@ export async function generateCompanyInvoice(context: ProvisioningContext) {
     .from("courses")
     .select("title, price, currency")
     .eq("id", context.courseId)
-    .single();
+    .maybeSingle();
 
   if (!course) {
     console.error("Course not found for invoice generation");

@@ -46,7 +46,7 @@ async function checkAdminRole(userId: string): Promise<boolean> {
     .from("users")
     .select("role")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error || !user) {
     return false;
@@ -105,7 +105,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         slug,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Category creation error:', error);

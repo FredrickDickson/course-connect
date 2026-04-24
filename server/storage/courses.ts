@@ -41,7 +41,7 @@ export async function createCategory(
     .from("categories")
     .insert(category)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -103,7 +103,7 @@ export async function getCourseById(id: string): Promise<any> {
       "*, category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
     )
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) return null;
   return data;
@@ -114,7 +114,7 @@ export async function createCourse(course: InsertCourse): Promise<Course> {
     .from("courses")
     .insert(course)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -129,7 +129,7 @@ export async function updateCourse(
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -273,7 +273,7 @@ export async function createModule(module: InsertModule): Promise<Module> {
     .from("modules")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -287,7 +287,7 @@ export async function updateModule(
     .update(updates)
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -334,7 +334,7 @@ export async function createLesson(lesson: InsertLesson): Promise<Lesson> {
     .from("lessons")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -348,7 +348,7 @@ export async function updateLesson(
     .update(updates)
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -435,7 +435,7 @@ export async function createCourseResource(
     .from("course_resources")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
