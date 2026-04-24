@@ -20,6 +20,7 @@ import {
   PlayCircle,
   CheckCircle,
 } from "lucide-react";
+import type { EligibilityResponse } from "@shared/eligibility-engine";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -109,36 +110,35 @@ export default function CourseDetail() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const response = await fetch('/api/enrollments/check-eligibility', {
-        method: 'POST',
+      const response = await fetch("/api/enrollments/check-eligibility", {
+        method: "POST",
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
         },
-        body: JSON.stringify({
-          courseId: id,
-          enrollmentLevel: course?.level?.toUpperCase() || 'ASSOCIATE'
-        })
+        body: JSON.stringify({ courseId: id }),
       });
 
-      const eligibility = await response.json();
-
-      if (eligibility.status === 'BLOCKED') {
-        toast.error(eligibility.reason);
-        if (eligibility.nextCourseId) {
-          setLocation(`/course/${eligibility.nextCourseId}`);
-        }
+      if (response.status === 401) {
+        setLocation(`/login?redirect=/course/${id}`);
         return;
       }
 
-      if (eligibility.status === 'REQUIRES_APPROVAL') {
-        toast.info('This course requires approval. Please submit an application.');
-        // TODO: Show application modal
+      if (!response.ok) {
+        throw new Error("Unable to verify eligibility");
+      }
+
+      const eligibility: EligibilityResponse = await response.json();
+
+      if (eligibility.status === "ELIGIBLE") {
+        setLocation(`/checkout/${id}`);
         return;
       }
 
-      // Eligible - proceed to checkout
-      setLocation(`/checkout/${id}`);
+      toast.info(eligibility.ui.title, {
+        description: eligibility.ui.message,
+      });
+      setLocation(`/enroll/${id}/status`);
     } catch (error) {
       toast.error('Failed to check eligibility. Please try again.');
     }

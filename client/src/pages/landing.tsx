@@ -870,7 +870,7 @@ function PartnersSection() {
       name: "Russian International Arbitration Congress (RIAC)",
       type: "Featured partner",
       url: "riac-arbitration.com",
-      website: "https://riac-arbitration.com",
+      website: "https://modernarbitration.ru/en",
       featured: true
     },
     {

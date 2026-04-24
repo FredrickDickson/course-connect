@@ -25,12 +25,16 @@ import {
   updateExpeditedApplicationStatus,
   getAllFellowshipApplications,
   updateFellowshipApplicationStatus,
+  getExpeditedPricing,
+  attachPaymentReference,
 } from "../storage/qualification";
 import {
   getUserQualificationState,
   getEligibilityState,
   canTakeCourse,
   canApplyExpedited,
+  canApplyExpeditedMember,
+  canApplyExpeditedFellow,
   canApplyFellowship,
   getAvailablePathwaysForTrack,
 } from "../storage/eligibility";
@@ -122,38 +126,48 @@ router.post(
   requireSupabaseAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.id;
-    const { targetLevel, experienceSummary, qualificationsSummary, cvUrl } =
-      req.body;
-
-    // Validate input
-    const validationResult = expeditedApplicationSchema.safeParse({
-      userId,
+    const {
+      track,
       targetLevel,
-      status: "pending",
       experienceSummary,
       qualificationsSummary,
       cvUrl,
-    });
+    } = req.body ?? {};
 
-    if (!validationResult.success) {
-      return res
-        .status(400)
-        .json({ error: "Invalid input", details: validationResult.error });
+    const normalizedTrack: "ARBITRATION" | "MEDIATION" =
+      track === "MEDIATION" ? "MEDIATION" : "ARBITRATION";
+
+    if (targetLevel !== "MEMBER" && targetLevel !== "FELLOW") {
+      return res.status(400).json({ error: "Invalid targetLevel" });
     }
 
-    // Check if user already has a pending application for this level
+    // Enforce server-side eligibility
+    const eligibility =
+      targetLevel === "MEMBER"
+        ? await canApplyExpeditedMember(userId, normalizedTrack)
+        : await canApplyExpeditedFellow(userId, normalizedTrack);
+
+    if (!eligibility.canApply) {
+      return res.status(403).json({
+        error: "Not eligible for this expedited pathway",
+        reason: eligibility.reason,
+      });
+    }
+
+    // Block duplicate pending applications for the same level
     const hasPending = await hasPendingApplication(userId, targetLevel);
     if (hasPending) {
-      return res
-        .status(400)
-        .json({ error: "You already have a pending application for this level" });
+      return res.status(409).json({
+        error: "You already have an open application for this level",
+      });
     }
 
-    // Create application
+    // Create application in DRAFT — will move to submitted after payment webhook
     const application = await createExpeditedApplication({
       userId,
+      track: normalizedTrack,
       targetLevel,
-      status: "pending",
+      status: "draft",
       experienceSummary,
       qualificationsSummary,
       cvUrl,
@@ -164,6 +178,111 @@ router.post(
     }
 
     res.status(201).json(application);
+  })
+);
+
+/**
+ * POST /api/expedited/applications/:id/pay
+ * Initialize a Paystack transaction for an expedited application.
+ * Returns the Paystack authorization_url the client should redirect to.
+ */
+router.post(
+  "/expedited/applications/:id/pay",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
+    if (!PAYSTACK_SECRET_KEY) {
+      return res.status(503).json({
+        error: "Payment system is not configured",
+      });
+    }
+
+    const application = await getExpeditedApplicationById(id);
+    if (!application) {
+      return res.status(404).json({ error: "Application not found" });
+    }
+    if (application.userId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (
+      application.status !== "draft" &&
+      application.status !== "payment_pending"
+    ) {
+      return res.status(400).json({
+        error: `Application is already in status ${application.status}`,
+      });
+    }
+
+    const pricing = await getExpeditedPricing(
+      application.track,
+      application.targetLevel
+    );
+    if (!pricing) {
+      return res.status(500).json({ error: "Pricing not configured" });
+    }
+
+    // Look up the user's email for Paystack
+    const { data: userRow } = await supabaseAdmin
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (!userRow?.email) {
+      return res
+        .status(400)
+        .json({ error: "User email required for payment" });
+    }
+
+    const reference = `expedited_${id}_${Date.now()}`;
+    const callbackUrl = `${
+      process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`
+    }/payment-success?expedited=1`;
+
+    const paystackResponse = await fetch(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userRow.email,
+          amount: pricing.amountMinor,
+          currency: pricing.currency,
+          reference,
+          callback_url: callbackUrl,
+          metadata: {
+            expeditedApplicationId: id,
+            userId,
+            track: application.track,
+            targetLevel: application.targetLevel,
+            sku: pricing.sku,
+          },
+        }),
+      }
+    );
+
+    const paystackData = await paystackResponse.json();
+    if (!paystackResponse.ok || !paystackData?.status) {
+      console.error("Paystack init failed:", paystackData);
+      return res.status(502).json({
+        error: "Payment initialization failed",
+        details: paystackData?.message,
+      });
+    }
+
+    await attachPaymentReference(id, reference);
+
+    res.json({
+      authorization_url: paystackData.data.authorization_url,
+      access_code: paystackData.data.access_code,
+      reference,
+    });
   })
 );
 
@@ -245,10 +364,14 @@ router.post(
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    if (application.status !== "pending") {
-      return res
-        .status(400)
-        .json({ error: "Cannot add documents to non-pending application" });
+    if (
+      application.status !== "draft" &&
+      application.status !== "payment_pending" &&
+      application.status !== "pending"
+    ) {
+      return res.status(400).json({
+        error: "Cannot add documents to an application that has been reviewed",
+      });
     }
 
     // Create document

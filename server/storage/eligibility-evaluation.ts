@@ -1,10 +1,4 @@
-/**
- * Vercel Serverless Function for POST /api/enrollments/check-eligibility
- * Checks if a user is eligible to enroll in a course
- */
-
-import { createClient } from "@supabase/supabase-js";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   evaluateEligibility,
   type EligibilityEvaluationInput,
@@ -15,130 +9,33 @@ import {
 import {
   canApplyExpeditedMember,
   canApplyExpeditedFellow,
-} from "../../server/storage/eligibility";
+} from "./eligibility";
 
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-/**
- * Check if user is eligible to enroll in a course
- */
-/**
- * Verify JWT token from Supabase
- */
-async function verifyAuth(authHeader: string): Promise<{ userId: string; email: string }> {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('No authorization header');
-  }
-
-  const token = authHeader.substring(7);
-  
-  try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    
-    if (error || !user) {
-      throw new Error('Invalid token');
-    }
-    
-    return {
-      userId: user.id,
-      email: user.email || '',
-    };
-  } catch (error) {
-    throw new Error('Token verification failed');
-  }
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Verify authentication
-    const authHeader = req.headers.authorization || '';
-    const { userId } = await verifyAuth(authHeader);
-
-    const { courseId, enrollmentLevel } = req.body || {};
-
-    if (!courseId) {
-      return res.status(400).json({ message: "courseId is required" });
-    }
-
-    // Get course details
-    const { data: course, error: courseError } = await supabaseAdmin
-      .from("courses")
-      .select("*")
-      .eq("id", courseId)
-      .single();
-
-    if (courseError || !course) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    // Get user details
-    const { data: user, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const evaluation = await runEligibilityEvaluation({
-      user,
-      course,
-      enrollmentLevel: enrollmentLevel || course.level?.toUpperCase?.() || "ASSOCIATE",
-    });
-
-    return res.status(200).json(evaluation);
-
-  } catch (error: any) {
-    console.error('Eligibility check error:', error);
-    
-    if (error.message === 'No authorization header' || error.message === 'Invalid token' || error.message === 'Token verification failed') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    return res.status(500).json({ error: 'Internal server error', message: error.message });
-  }
-}
-
-async function runEligibilityEvaluation(params: {
+interface EvaluationParams {
+  supabaseClient: SupabaseClient<any, any, any>;
   user: any;
   course: any;
   enrollmentLevel: string;
-}) {
+}
+
+export async function evaluateEligibilityWithContext(params: EvaluationParams) {
   const track = params.course.track || "ARBITRATION";
 
   const [trackProgress, existingEnrollment, trackCoursesData, memberExpedited, fellowExpedited] = await Promise.all([
-    supabaseAdmin
+    params.supabaseClient
       .from("user_track_progress")
       .select("level")
       .eq("user_id", params.user.id)
       .eq("track", track)
       .maybeSingle(),
-    supabaseAdmin
+    params.supabaseClient
       .from("enrollments")
       .select("id,status,enrollment_type")
       .eq("user_id", params.user.id)
       .eq("course_id", params.course.id)
       .in("status", ["ACTIVE", "PENDING_APPROVAL", "APPROVED"])
       .maybeSingle(),
-    supabaseAdmin
+    params.supabaseClient
       .from("courses")
       .select("id,title,level,track")
       .eq("track", track)
