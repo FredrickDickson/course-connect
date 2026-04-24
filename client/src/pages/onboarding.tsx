@@ -243,11 +243,6 @@ export default function Onboarding() {
 
   });
 
-  const phoneDefaultCountry = useMemo<CountryCode>(() => {
-    const match = COUNTRIES.find((c) => c.name === form.country);
-    return ((match?.code || "GH").toUpperCase() as CountryCode);
-  }, [form.country]);
-
   const today = new Date();
   const oldestAllowedDob = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
   const youngestAllowedDob = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
@@ -690,7 +685,7 @@ export default function Onboarding() {
 
                       >
 
-                        {isDobValid && dobDate ? format(dobDate, "PPP") : "Select date"}
+                        {isDobValid && dobDate ? dobDate.toLocaleDateString() : "Select date"}
 
                       </Button>
 
@@ -856,17 +851,15 @@ export default function Onboarding() {
 
                   <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
 
-                  <PhoneInput
+                  <PhoneNumberField
 
                     id="phone"
 
                     value={form.phone}
 
-                    onChange={(value) => updateField("phone", value)}
+                    onChange={(value: string) => updateField("phone", value)}
 
-                    defaultCountry={phoneDefaultCountry}
-
-                    placeholder="Enter phone number"
+                    placeholder="24 000 0000"
 
                   />
 
@@ -878,17 +871,15 @@ export default function Onboarding() {
 
                   <div className="space-y-2">
 
-                    <PhoneInput
+                    <PhoneNumberField
 
                       id="whatsapp"
 
                       value={whatsappSameAsPhone ? form.phone : form.whatsapp}
 
-                      onChange={(value) => !whatsappSameAsPhone && updateField("whatsapp", value)}
+                      onChange={(value: string) => !whatsappSameAsPhone && updateField("whatsapp", value)}
 
-                      placeholder="Enter WhatsApp number"
-
-                      defaultCountry={phoneDefaultCountry}
+                      placeholder="24 000 0000"
 
                       disabled={whatsappSameAsPhone}
 
