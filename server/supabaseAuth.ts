@@ -107,7 +107,7 @@ export async function requireSupabaseAuth(req: Request, res: Response, next: Nex
     (req as any).user = {
       ...user,
       claims: { sub: user.id }, // Maintain compatibility with existing code
-      role: localUser.role || 'student'
+      role: localUser?.role || 'student'
     };
     
     next();
