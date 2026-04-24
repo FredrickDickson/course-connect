@@ -72,7 +72,7 @@ export async function requireSupabaseAuth(req: Request, res: Response, next: Nex
           last_name: lastName,
           profile_image_url: user.user_metadata?.avatar_url || null,
           role: "student", // Default role
-          createdAt: new Date(),
+          created_at: new Date(),
         });
         console.log(`[AUTH] Auto-provisioned new user record: ${user.email} (${user.id})`);
       } catch (provisionErr) {
