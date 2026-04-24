@@ -35,7 +35,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldLabel } from "@/components/ui/field";
 import PhoneInput from "@/components/ui/phone-input";
-import type { CountryCode } from "libphonenumber-js/core";
+import type { Country } from "react-phone-number-input";
 
 const PROFESSIONAL_BACKGROUNDS = [
 
@@ -185,9 +185,9 @@ export default function Onboarding() {
 
   });
 
-  const phoneDefaultCountry = useMemo<CountryCode>(() => {
+  const phoneDefaultCountry = useMemo<Country>(() => {
     const match = COUNTRIES.find((c) => c.name === form.country);
-    return ((match?.code || "GH").toUpperCase() as CountryCode);
+    return ((match?.code || "GH").toUpperCase() as Country);
   }, [form.country]);
 
   const today = new Date();
