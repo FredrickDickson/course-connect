@@ -467,11 +467,24 @@ export const eligibilityStateSchema = z.object({
 export const expeditedApplicationSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().nullable().optional(),
+  track: z.enum(["ARBITRATION", "MEDIATION"]).default("ARBITRATION"),
   targetLevel: z.enum(["MEMBER", "FELLOW"]),
-  status: z.enum(["pending", "under_review", "approved", "rejected"]).default("pending"),
+  status: z
+    .enum([
+      "draft",
+      "payment_pending",
+      "submitted",
+      "pending",
+      "under_review",
+      "approved",
+      "rejected",
+    ])
+    .default("draft"),
   cvUrl: z.string().nullable().optional(),
   experienceSummary: z.string().nullable().optional(),
   qualificationsSummary: z.string().nullable().optional(),
+  paystackReference: z.string().nullable().optional(),
+  paidAt: z.date().nullable().optional(),
   submittedAt: z.date().optional(),
   reviewedAt: z.date().nullable().optional(),
   reviewedBy: z.string().nullable().optional(),

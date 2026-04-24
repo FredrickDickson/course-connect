@@ -18,6 +18,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import type { EligibilityResponse } from "@shared/eligibility-engine";
 import {
   ArrowLeft,
   ArrowRight,
@@ -115,6 +117,7 @@ export default function EnrollmentForm({
 }: EnrollmentFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   // Step 0 = Quick Start, Steps 1-4 = main form, Step 5 = success
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -414,41 +417,37 @@ export default function EnrollmentForm({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
           courseId: course.id,
-          enrollmentLevel: ticketName.toUpperCase() as "ASSOCIATE" | "MEMBER" | "FELLOW",
+          enrollmentLevel: ticketName.toUpperCase(),
         }),
       });
-      const eligibility = await eligibilityResponse.json();
 
-      if (eligibility.status === "BLOCKED") {
-        toast({ 
-          title: "Not eligible for this course", 
-          description: eligibility.reason,
-          variant: "destructive" 
-        });
-        // Redirect to next required course if available
-        if (eligibility.nextCourseId) {
-          setTimeout(() => {
-            window.location.href = `/courses/${eligibility.nextCourseId}`;
-          }, 2000);
-        }
-        return;
+      if (!eligibilityResponse.ok) {
+        throw new Error("Unable to verify eligibility");
       }
 
-      if (eligibility.status === "REQUIRES_APPROVAL") {
-        toast({ 
-          title: "Application required", 
-          description: eligibility.reason || "This course requires approval. Your application has been submitted.",
+      const eligibility: EligibilityResponse = await eligibilityResponse.json();
+
+      if (eligibility.status !== "ELIGIBLE") {
+        toast({
+          title: eligibility.ui.title,
+          description: eligibility.ui.message,
+          variant: eligibility.status === "BLOCKED" ? "destructive" : "default",
         });
-        // For now, proceed with enrollment but mark as pending approval
-        // In a full implementation, you'd show an application form
+        setLocation(`/enroll/${course.id}/status`);
+        return;
       }
     } catch (err: any) {
       console.error("Eligibility check failed:", err);
-      // Continue with enrollment if check fails (fallback behavior)
+      toast({
+        title: "Eligibility check failed",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Save full profile before enrollment

@@ -1611,6 +1611,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const { reference, metadata } = event.data;
 
+          // ----------------------------------------------------------------
+          // Expedited application payment: flip status draft -> submitted
+          // ----------------------------------------------------------------
+          if (metadata?.expeditedApplicationId) {
+            const { markApplicationPaid } = await import(
+              "./storage/qualification"
+            );
+            const updated = await markApplicationPaid(reference);
+            if (!updated) {
+              console.error(
+                "Failed to mark expedited application paid for reference",
+                reference,
+              );
+              return res
+                .status(500)
+                .json({ message: "Expedited payment reconciliation failed" });
+            }
+            console.log(
+              `Expedited application ${updated.id} marked submitted after payment ${reference}`,
+            );
+            return res.json({ received: true, kind: "expedited" });
+          }
+
           const { courseId, userId } = metadata;
 
 

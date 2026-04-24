@@ -135,6 +135,9 @@ export async function getUserQualificationState(
     llmSpecialization: user.llm_specialization,
     currentEmployer: user.current_employer,
     jobTitle: user.job_title,
+    yearsAdrExperience: user.years_adr_experience || 0,
+    yearsLegalExperience: user.years_legal_experience || 0,
+    awardWritingSamples: [],
   } as UserQualificationState;
 }
 
@@ -159,8 +162,8 @@ function calculateTrackEligibility(
     // Fellowship - requires Member level
     canApplyFellow: level === "MEMBER",
 
-    // Expedited - only for Arbitration track, requires experience
-    canUseExpedited: isArbitration && (hasLegalExperience || hasExperience),
+    // Expedited - available on both tracks for experienced professionals
+    canUseExpedited: hasLegalExperience || hasExperience,
 
     // Associate course (for Mediation track terminology)
     canTakeAssociate: level === "NONE" || level === "STUDENT",
@@ -276,18 +279,14 @@ export async function canApplyExpeditedMember(
   userId: string,
   track: "ARBITRATION" | "MEDIATION"
 ): Promise<{ canApply: boolean; reason?: string; eligibilityType?: string }> {
-  // Mediation track does not support expedited
-  if (track === "MEDIATION") {
-    return {
-      canApply: false,
-      reason: "Expedited pathway is only available for Arbitration track",
-    };
-  }
-
   const state = await getUserQualificationState(userId);
   if (!state) {
     return { canApply: false, reason: "Could not determine eligibility" };
   }
+
+  const trackProgress =
+    track === "ARBITRATION" ? state.tracks.arbitration : state.tracks.mediation;
+  const associatePostNominal = track === "ARBITRATION" ? "ACIMArb" : "ACIMed";
 
   // Check eligibility criteria based on guide requirements
   const eligibilityChecks = [
@@ -297,9 +296,9 @@ export async function canApplyExpeditedMember(
       reason: state.hasLLM ? undefined : "LL.M degree required for this pathway",
     },
     {
-      type: "ACIMARB_MEMBER", 
-      eligible: state.tracks.arbitration.level === "ASSOCIATE",
-      reason: state.tracks.arbitration.level === "ASSOCIATE" ? undefined : "ACIMArb membership required for this pathway",
+      type: "ASSOCIATE_MEMBER",
+      eligible: trackProgress.level === "ASSOCIATE",
+      reason: trackProgress.level === "ASSOCIATE" ? undefined : `${associatePostNominal} membership required for this pathway`,
     },
     {
       type: "EXPERIENCED_LEGAL",
@@ -373,7 +372,7 @@ export async function canApplyExpeditedFellow(
       return {
         canApply: true,
         reason: `Recommended: Upload ${missingRequirements.join(" and ")} to strengthen your application`,
-        eligibilityType: hasRequiredADRExperience ? "EXPERIENCED_ADR" : "EXPERIENCED_LEGICAL",
+        eligibilityType: hasRequiredADRExperience ? "EXPERIENCED_ADR" : "EXPERIENCED_LEGAL",
       };
     }
 
@@ -501,28 +500,30 @@ export async function getAvailablePathwaysForTrack(
     });
   }
 
-  // Enhanced expedited pathway options (Arbitration only) - based on guide requirements
-  if (isArbitration && (level === "NONE" || level === "ASSOCIATE")) {
-    const memberEligibility = await canApplyExpeditedMember(userId, "ARBITRATION");
+  // Expedited pathway options — available on both Arbitration and Mediation tracks
+  const memberPostNominal = isArbitration ? "MCIMArb" : "MCIMed";
+  const fellowPostNominal = isArbitration ? "FCIMArb" : "FCIMed";
+
+  if (level === "NONE" || level === "ASSOCIATE") {
+    const memberEligibility = await canApplyExpeditedMember(userId, track);
     if (memberEligibility.canApply) {
       pathways.push({
         type: "EXPEDITED",
         level: "MEMBER",
-        name: "Expedited Member (MCIMArb)",
+        name: `Expedited Member (${memberPostNominal})`,
         description: `14-day assessment for ${memberEligibility.eligibilityType?.toLowerCase()?.replace('_', ' ')} professionals`,
         action: "apply_expedited",
       });
     }
   }
 
-  if (isArbitration && level === "MEMBER") {
-    // Check for fellowship expedited eligibility (enhanced requirements)
-    const fellowEligibility = await canApplyExpeditedFellow(userId, "ARBITRATION");
+  if (level === "MEMBER") {
+    const fellowEligibility = await canApplyExpeditedFellow(userId, track);
     if (fellowEligibility.canApply) {
       pathways.push({
         type: "EXPEDITED",
         level: "FELLOW",
-        name: "Expedited Fellow (FCIMArb)",
+        name: `Expedited Fellow (${fellowPostNominal})`,
         description: "48-hour award writing assessment for senior professionals",
         action: "apply_expedited",
       });

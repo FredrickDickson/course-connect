@@ -162,7 +162,34 @@ export async function getAvailablePathways(
 }
 
 /**
- * Create expedited application
+ * Map a DB row to the ExpeditedApplication shape.
+ */
+function mapExpeditedRow(row: any): ExpeditedApplication {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    track: row.track || "ARBITRATION",
+    targetLevel: row.target_level,
+    status: row.status,
+    cvUrl: row.cv_url,
+    experienceSummary: row.experience_summary,
+    qualificationsSummary: row.qualifications_summary,
+    paystackReference: row.paystack_reference,
+    paidAt: row.paid_at,
+    submittedAt: row.submitted_at,
+    reviewedAt: row.reviewed_at,
+    reviewedBy: row.reviewed_by,
+    reviewComments: row.review_comments,
+    assessmentScore: row.assessment_score?.toString(),
+    assessmentPassed: row.assessment_passed,
+    assessmentCompletedAt: row.assessment_completed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Create expedited application (starts in `draft` pending payment).
  */
 export async function createExpeditedApplication(
   application: InsertExpeditedApplication
@@ -171,8 +198,9 @@ export async function createExpeditedApplication(
     .from("expedited_applications")
     .insert({
       user_id: application.userId,
+      track: application.track || "ARBITRATION",
       target_level: application.targetLevel,
-      status: application.status || "pending",
+      status: application.status || "draft",
       cv_url: application.cvUrl,
       experience_summary: application.experienceSummary,
       qualifications_summary: application.qualificationsSummary,
@@ -181,27 +209,100 @@ export async function createExpeditedApplication(
     .single();
 
   if (error) {
+    console.error("createExpeditedApplication error:", error);
+    return null;
+  }
+
+  return mapExpeditedRow(data);
+}
+
+/**
+ * Pricing config helpers
+ */
+export interface ExpeditedPricing {
+  sku: string;
+  track: "ARBITRATION" | "MEDIATION";
+  level: "MEMBER" | "FELLOW";
+  amountMinor: number;
+  currency: string;
+  description?: string | null;
+}
+
+export async function getExpeditedPricing(
+  track: "ARBITRATION" | "MEDIATION",
+  level: "MEMBER" | "FELLOW"
+): Promise<ExpeditedPricing | null> {
+  const { data, error } = await supabaseAdmin
+    .from("pricing_config")
+    .select("sku, track, level, amount_minor, currency, description, active")
+    .eq("track", track)
+    .eq("level", level)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error || !data) {
     return null;
   }
 
   return {
-    id: data.id,
-    userId: data.user_id,
-    targetLevel: data.target_level,
-    status: data.status,
-    cvUrl: data.cv_url,
-    experienceSummary: data.experience_summary,
-    qualificationsSummary: data.qualifications_summary,
-    submittedAt: data.submitted_at,
-    reviewedAt: data.reviewed_at,
-    reviewedBy: data.reviewed_by,
-    reviewComments: data.review_comments,
-    assessmentScore: data.assessment_score?.toString(),
-    assessmentPassed: data.assessment_passed,
-    assessmentCompletedAt: data.assessment_completed_at,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    sku: data.sku,
+    track: data.track,
+    level: data.level,
+    amountMinor: data.amount_minor,
+    currency: data.currency,
+    description: data.description,
   };
+}
+
+/**
+ * Attach a Paystack transaction reference to an application and move it to
+ * `payment_pending` so the user cannot mutate it while awaiting webhook.
+ */
+export async function attachPaymentReference(
+  applicationId: string,
+  reference: string
+): Promise<ExpeditedApplication | null> {
+  const { data, error } = await supabaseAdmin
+    .from("expedited_applications")
+    .update({
+      paystack_reference: reference,
+      status: "payment_pending",
+    })
+    .eq("id", applicationId)
+    .select()
+    .single();
+
+  if (error || !data) {
+    console.error("attachPaymentReference error:", error);
+    return null;
+  }
+
+  return mapExpeditedRow(data);
+}
+
+/**
+ * Mark an expedited application as paid/submitted. Called by the Paystack
+ * webhook after verifying `charge.success`.
+ */
+export async function markApplicationPaid(
+  reference: string
+): Promise<ExpeditedApplication | null> {
+  const { data, error } = await supabaseAdmin
+    .from("expedited_applications")
+    .update({
+      status: "submitted",
+      paid_at: new Date().toISOString(),
+      submitted_at: new Date().toISOString(),
+    })
+    .eq("paystack_reference", reference)
+    .select()
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapExpeditedRow(data);
 }
 
 /**
@@ -220,24 +321,7 @@ export async function getUserExpeditedApplications(
     return [];
   }
 
-  return data.map((app) => ({
-    id: app.id,
-    userId: app.user_id,
-    targetLevel: app.target_level,
-    status: app.status,
-    cvUrl: app.cv_url,
-    experienceSummary: app.experience_summary,
-    qualificationsSummary: app.qualifications_summary,
-    submittedAt: app.submitted_at,
-    reviewedAt: app.reviewed_at,
-    reviewedBy: app.reviewed_by,
-    reviewComments: app.review_comments,
-    assessmentScore: app.assessment_score?.toString(),
-    assessmentPassed: app.assessment_passed,
-    assessmentCompletedAt: app.assessment_completed_at,
-    createdAt: app.created_at,
-    updatedAt: app.updated_at,
-  }));
+  return data.map(mapExpeditedRow);
 }
 
 /**
@@ -270,22 +354,7 @@ export async function getExpeditedApplicationById(
     .eq("application_id", applicationId);
 
   return {
-    id: application.id,
-    userId: application.user_id,
-    targetLevel: application.target_level as "MEMBER" | "FELLOW",
-    status: application.status,
-    cvUrl: application.cv_url,
-    experienceSummary: application.experience_summary,
-    qualificationsSummary: application.qualifications_summary,
-    submittedAt: application.submitted_at,
-    reviewedAt: application.reviewed_at,
-    reviewedBy: application.reviewed_by,
-    reviewComments: application.review_comments,
-    assessmentScore: application.assessment_score?.toString(),
-    assessmentPassed: application.assessment_passed,
-    assessmentCompletedAt: application.assessment_completed_at,
-    createdAt: application.created_at,
-    updatedAt: application.updated_at,
+    ...mapExpeditedRow(application),
     documents:
       documents?.map((doc) => ({
         id: doc.id,
@@ -505,22 +574,7 @@ export async function getAllExpeditedApplications(
         .eq("application_id", app.id);
 
       return {
-        id: app.id,
-        userId: app.user_id,
-        targetLevel: app.target_level as "MEMBER" | "FELLOW",
-        status: app.status,
-        cvUrl: app.cv_url,
-        experienceSummary: app.experience_summary,
-        qualificationsSummary: app.qualifications_summary,
-        submittedAt: app.submitted_at,
-        reviewedAt: app.reviewed_at,
-        reviewedBy: app.reviewed_by,
-        reviewComments: app.review_comments,
-        assessmentScore: app.assessment_score?.toString(),
-        assessmentPassed: app.assessment_passed,
-        assessmentCompletedAt: app.assessment_completed_at,
-        createdAt: app.created_at,
-        updatedAt: app.updated_at,
+        ...mapExpeditedRow(app),
         documents:
           documents?.map((doc) => ({
             id: doc.id,
@@ -587,24 +641,7 @@ export async function updateExpeditedApplicationStatus(
     return null;
   }
 
-  return {
-    id: data.id,
-    userId: data.user_id,
-    targetLevel: data.target_level,
-    status: data.status,
-    cvUrl: data.cv_url,
-    experienceSummary: data.experience_summary,
-    qualificationsSummary: data.qualifications_summary,
-    submittedAt: data.submitted_at,
-    reviewedAt: data.reviewed_at,
-    reviewedBy: data.reviewed_by,
-    reviewComments: data.review_comments,
-    assessmentScore: data.assessment_score?.toString(),
-    assessmentPassed: data.assessment_passed,
-    assessmentCompletedAt: data.assessment_completed_at,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapExpeditedRow(data);
 }
 
 /**

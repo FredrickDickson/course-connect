@@ -26,7 +26,53 @@ Deno.serve(async (req: Request) => {
     // Handle successful payment
     if (event.event === "charge.success") {
       const metadata = event.data.metadata;
-      
+
+      // ------------------------------------------------------------------
+      // Expedited application payment: flip status draft -> submitted
+      // ------------------------------------------------------------------
+      if (metadata && metadata.expeditedApplicationId) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const now = new Date().toISOString();
+
+        const { data: updated, error: updateErr } = await supabase
+          .from("expedited_applications")
+          .update({
+            status: "submitted",
+            paid_at: now,
+            submitted_at: now,
+          })
+          .eq("paystack_reference", event.data.reference)
+          .select()
+          .single();
+
+        if (updateErr || !updated) {
+          console.error(
+            "Failed to mark expedited application paid",
+            updateErr,
+            event.data.reference,
+          );
+          return new Response("Expedited update failed", { status: 500 });
+        }
+
+        await supabase.from("activity_log").insert({
+          user_id: updated.user_id,
+          event_type: "expedited_payment_succeeded",
+          event_data: {
+            application_id: updated.id,
+            track: updated.track,
+            target_level: updated.target_level,
+            reference: event.data.reference,
+            amount: event.data.amount / 100,
+            currency: event.data.currency,
+          },
+        });
+
+        console.log(
+          `Expedited application ${updated.id} submitted after payment ${event.data.reference}`,
+        );
+        return new Response("Expedited payment recorded", { status: 200 });
+      }
+
       if (metadata && metadata.courseId) {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

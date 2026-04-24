@@ -9,68 +9,154 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Link } from "wouter";
 import { useState } from "react";
-import { Upload, FileText, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { FileText, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentUpload {
   file: File;
   type: "certificate" | "degree" | "transcript" | "cv" | "other";
-  url?: string;
+}
+
+async function authHeader(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export default function ExpeditedApplication() {
+  const [track, setTrack] = useState<"ARBITRATION" | "MEDIATION">("ARBITRATION");
   const [targetLevel, setTargetLevel] = useState<"MEMBER" | "FELLOW" | null>(null);
   const [experienceSummary, setExperienceSummary] = useState("");
   const [qualificationsSummary, setQualificationsSummary] = useState("");
   const [documents, setDocuments] = useState<DocumentUpload[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [progressMessage, setProgressMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: DocumentUpload["type"]) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: DocumentUpload["type"],
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In production, you would upload to Supabase Storage here
-      // For now, we'll store the file locally
-      setDocuments([...documents, { file, type }]);
+      setDocuments((prev) => [...prev, { file, type }]);
     }
+    // Reset the input so the same filename can be re-selected if removed
+    e.target.value = "";
   };
 
   const removeDocument = (index: number) => {
     setDocuments(documents.filter((_, i) => i !== index));
   };
 
+  const hasCv = documents.some((d) => d.type === "cv");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setErrorMessage("");
+    setProgressMessage("");
+
     if (!targetLevel) {
-      setErrorMessage("Please select a target level");
+      setErrorMessage("Please select a target level.");
       return;
     }
-
-    if (documents.length === 0) {
-      setErrorMessage("Please upload at least one supporting document");
+    if (!hasCv) {
+      setErrorMessage("A CV / Resume is required.");
+      return;
+    }
+    if (!experienceSummary.trim() || !qualificationsSummary.trim()) {
+      setErrorMessage("Please fill in both experience and qualifications summaries.");
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitStatus("idle");
-    setErrorMessage("");
 
     try {
-      // In production, this would call the API endpoints
-      // 1. Create expedited application
-      // 2. Upload documents to Supabase Storage
-      // 3. Link documents to application
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setSubmitStatus("success");
-    } catch (error) {
-      setSubmitStatus("error");
-      setErrorMessage("Failed to submit application. Please try again.");
-    } finally {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) {
+        throw new Error("You must be signed in to apply.");
+      }
+      const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+
+      // 1. Create application in DRAFT
+      setProgressMessage("Creating application...");
+      const applyResp = await fetch("/api/qualification/expedited/apply", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          track,
+          targetLevel,
+          experienceSummary,
+          qualificationsSummary,
+        }),
+      });
+      const applyJson = await applyResp.json().catch(() => ({}));
+      if (!applyResp.ok) {
+        throw new Error(
+          applyJson.reason || applyJson.error || "Failed to create application",
+        );
+      }
+      const applicationId: string = applyJson.id;
+
+      // 2. Upload each document to Supabase Storage, then register on the app
+      for (let i = 0; i < documents.length; i++) {
+        const doc = documents[i];
+        setProgressMessage(
+          `Uploading document ${i + 1} of ${documents.length}: ${doc.file.name}`,
+        );
+        const safeName = doc.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${userId}/${applicationId}/${Date.now()}_${safeName}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from("expedited-documents")
+          .upload(path, doc.file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: doc.file.type || undefined,
+          });
+        if (uploadErr) {
+          throw new Error(`Failed to upload ${doc.file.name}: ${uploadErr.message}`);
+        }
+
+        const regResp = await fetch(
+          `/api/qualification/expedited/applications/${applicationId}/documents`,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              documentType: doc.type,
+              fileUrl: path,
+              fileName: doc.file.name,
+              fileSize: doc.file.size,
+            }),
+          },
+        );
+        if (!regResp.ok) {
+          const errJson = await regResp.json().catch(() => ({}));
+          throw new Error(
+            errJson.error || `Failed to register ${doc.file.name} on application`,
+          );
+        }
+      }
+
+      // 3. Initialize Paystack payment and redirect
+      setProgressMessage("Redirecting to secure checkout...");
+      const payResp = await fetch(
+        `/api/qualification/expedited/applications/${applicationId}/pay`,
+        { method: "POST", headers },
+      );
+      const payJson = await payResp.json().catch(() => ({}));
+      if (!payResp.ok || !payJson.authorization_url) {
+        throw new Error(payJson.error || "Failed to initialize payment");
+      }
+
+      window.location.href = payJson.authorization_url;
+    } catch (err: any) {
+      console.error("Expedited submission failed:", err);
+      setErrorMessage(err?.message || "Failed to submit application. Please try again.");
       setIsSubmitting(false);
+      setProgressMessage("");
     }
   };
 
@@ -102,28 +188,47 @@ export default function ExpeditedApplication() {
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up" distance={25} duration={0.6}>
-            {submitStatus === "success" ? (
-              <Card className="border-green-500/20">
-                <CardContent className="p-12 text-center space-y-6">
-                  <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Application Submitted Successfully</h2>
-                    <p className="text-muted-foreground">
-                      Your expedited application has been submitted and is under review. 
-                      You will be notified once a decision has been made.
-                    </p>
-                  </div>
-                  <Link href="/dashboard">
-                    <Button size="lg">
-                      Return to Dashboard
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
               <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Track Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Qualification Track</CardTitle>
+                    <CardDescription>
+                      Select the discipline you are applying under
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Button
+                        type="button"
+                        variant={track === "ARBITRATION" ? "default" : "outline"}
+                        className={`h-auto p-6 flex flex-col items-start gap-2 ${
+                          track === "ARBITRATION" ? "border-primary" : ""
+                        }`}
+                        onClick={() => setTrack("ARBITRATION")}
+                      >
+                        <span className="font-bold">Arbitration</span>
+                        <p className="text-sm text-left opacity-70">
+                          CIMArb pathway (ACIMArb → MCIMArb → FCIMArb)
+                        </p>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={track === "MEDIATION" ? "default" : "outline"}
+                        className={`h-auto p-6 flex flex-col items-start gap-2 ${
+                          track === "MEDIATION" ? "border-primary" : ""
+                        }`}
+                        onClick={() => setTrack("MEDIATION")}
+                      >
+                        <span className="font-bold">Mediation</span>
+                        <p className="text-sm text-left opacity-70">
+                          CIMed pathway (ACIMed → MCIMed → FCIMed)
+                        </p>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Target Level Selection */}
                 <Card>
                   <CardHeader>
@@ -318,26 +423,34 @@ export default function ExpeditedApplication() {
                   </Card>
                 )}
 
+                {progressMessage && (
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <p className="text-sm text-foreground">{progressMessage}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Submit Button */}
                 <div className="flex justify-end">
                   <Button
                     type="submit"
                     size="lg"
                     disabled={isSubmitting}
-                    className="min-w-[200px]"
+                    className="min-w-[220px]"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
+                        Processing...
                       </>
                     ) : (
-                      "Submit Application"
+                      "Submit & Continue to Payment"
                     )}
                   </Button>
                 </div>
               </form>
-            )}
           </ScrollReveal>
         </div>
       </section>

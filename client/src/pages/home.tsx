@@ -329,7 +329,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/programs">
+            <Link href="/course-catalog">
               <button
                 data-testid="button-explore-programs"
                 className="w-full sm:w-auto bg-white text-[#610000] px-8 md:px-10 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2"

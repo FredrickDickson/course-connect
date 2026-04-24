@@ -9,13 +9,12 @@ import { storage } from "../storage";
 import { getQualificationStatus } from "../storage/qualification";
 import { 
   checkEligibility, 
-  createEnrollment, 
-  createFellowshipApplication,
-  type EligibilityResult 
+  createEnrollment,
 } from "../storage/enrollment";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
+import type { EligibilityResponse, EnrollmentLevel } from "@shared/eligibility-engine";
 import { send400Error, validateRequiredFields } from "../middleware/error-fixes";
 
 interface AuthRequest extends Request {
@@ -51,7 +50,7 @@ router.post(
     const { courseId, enrollmentLevel } = req.body;
 
     // Enhanced validation with better error messages
-    const validation = validateRequiredFields(req, ['courseId', 'enrollmentLevel']);
+    const validation = validateRequiredFields(req, ['courseId']);
     if (!validation.isValid) {
       return send400Error(res, validation.error.message, validation.error);
     }
@@ -66,7 +65,8 @@ router.post(
       return res.status(404).json({ message: "User not found" });
     }
 
-    const eligibility = await checkEligibility(user, course, enrollmentLevel);
+    const resolvedLevel = resolveEnrollmentLevel(enrollmentLevel, course.level);
+    const eligibility = await checkEligibility(user, course, resolvedLevel);
     res.json(eligibility);
   }),
 );
@@ -80,7 +80,7 @@ router.post(
     const { courseId, enrollmentLevel } = req.body;
 
     // Enhanced validation with better error messages
-    const validation = validateRequiredFields(req, ['courseId', 'enrollmentLevel']);
+    const validation = validateRequiredFields(req, ['courseId']);
     if (!validation.isValid) {
       return send400Error(res, validation.error.message, validation.error);
     }
@@ -96,49 +96,48 @@ router.post(
     }
 
     // Check eligibility
-    const eligibility = await checkEligibility(user, course, enrollmentLevel);
+    const resolvedLevel = resolveEnrollmentLevel(enrollmentLevel, course.level);
+    const eligibility = await checkEligibility(user, course, resolvedLevel);
 
     if (eligibility.status === "BLOCKED") {
-      return res.status(403).json({
-        message: eligibility.reason,
-        nextCourseId: eligibility.nextCourseId,
-        nextCourseTitle: eligibility.nextCourseTitle,
-      });
+      return res.status(403).json(formatEligibilityError(eligibility));
     }
 
     if (eligibility.status === "REQUIRES_APPROVAL") {
-      // Create fellowship application
-      const application = await createFellowshipApplication(
-        userId,
-        course.track || "ARBITRATION",
-      );
-      
-      // Create enrollment with APPLICATION type
-      const enrollment = await createEnrollment(
-        userId,
-        courseId,
-        enrollmentLevel,
-        "APPLICATION",
-      );
-      
-      return res.json({
-        enrollment,
-        application,
-        message: "Application submitted for approval",
-      });
+      return res.status(403).json(formatEligibilityError(eligibility));
     }
 
     // Direct enrollment
     const enrollment = await createEnrollment(
       userId,
       courseId,
-      enrollmentLevel,
+      resolvedLevel,
       "COURSE",
     );
 
     res.json(enrollment);
   }),
 );
+
+function resolveEnrollmentLevel(
+  requestedLevel: string | undefined,
+  courseLevel: string | undefined,
+): EnrollmentLevel {
+  const fallback = courseLevel ? courseLevel.toUpperCase() : "ASSOCIATE";
+  const raw = (requestedLevel || fallback).toUpperCase();
+  if (raw === "ASSOCIATE" || raw === "MEMBER" || raw === "FELLOW") {
+    return raw;
+  }
+  return "ASSOCIATE";
+}
+
+function formatEligibilityError(eligibility: EligibilityResponse) {
+  return {
+    message: eligibility.ui.message,
+    ui: eligibility.ui,
+    progression: eligibility.progression,
+  };
+}
 
 // Get my enrollments
 router.get(

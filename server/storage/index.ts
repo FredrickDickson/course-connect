@@ -77,9 +77,8 @@ export {
   createEnrollment,
   createFellowshipApplication,
   updateEnrollmentStatus,
-  type EligibilityResult,
-  type EligibilityStatus,
 } from "./enrollment";
+export type { EligibilityResponse, EligibilityStatus } from "@shared/eligibility-engine";
 
 // Re-export all quiz operations
 export {
