@@ -1,23 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
+import type {
+  Track,
+  TrackLevel,
+  EnrollmentLevel,
+  PathwayType,
+  PathwayAction,
+} from "@/types/qualification";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
 
-export interface TrackProgress {
-  track: "ARBITRATION" | "MEDIATION";
-  level: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
-  pathway?: "STANDARD" | "EXPEDITED" | "HYBRID";
-  created_at: string;
-  updated_at: string;
+export interface QualificationTrackProgress {
+  track: Track;
+  level: TrackLevel;
+  pathway?: "STANDARD" | "EXPEDITED" | "HYBRID" | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface QualificationState {
-  arbitration: TrackProgress;
-  mediation: TrackProgress;
-  yearsAdrExperience: number;
-  yearsLegalExperience: number;
+export interface UserQualificationState {
+  tracks: {
+    arbitration: QualificationTrackProgress;
+    mediation: QualificationTrackProgress;
+  };
+  yearsAdrExperience?: number;
+  yearsLegalExperience?: number;
 }
 
 export interface TrackEligibility {
@@ -32,12 +41,12 @@ export interface EligibilityResponse {
   mediation: TrackEligibility;
 }
 
-export interface PathwayOption {
-  type: "STANDARD" | "EXPEDITED";
-  level: "ASSOCIATE" | "MEMBER" | "FELLOW";
+export interface ApiPathwayOption {
+  type: PathwayType;
+  level: EnrollmentLevel;
   name: string;
   description: string;
-  action: "enroll" | "apply";
+  action: PathwayAction;
 }
 
 export interface Certificate {
@@ -66,69 +75,55 @@ export interface ProgressionHistory {
 }
 
 // Fetch user's qualification state
-export async function getQualificationState(): Promise<QualificationState | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+async function fetchWithAuth(path: string): Promise<Response | null> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
 
-    const token = await supabase.auth.getSession();
-    const response = await fetch('/api/qualification/state', {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(path, {
       headers: {
-        'Authorization': `Bearer ${token.data.session?.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) throw new Error('Failed to fetch qualification state');
+    if (!response.ok) {
+      console.error(`Qualification API error for ${path}`, response.statusText);
+      return null;
+    }
 
-    return await response.json();
+    return response;
   } catch (error) {
-    console.error('Error fetching qualification state:', error);
+    console.error(`Qualification API request failed for ${path}`, error);
     return null;
   }
 }
 
-// Fetch user's eligibility for each track
+export async function getQualificationState(): Promise<UserQualificationState | null> {
+  const response = await fetchWithAuth("/api/qualification/state");
+  if (!response) return null;
+  return response.json();
+}
+
 export async function getEligibility(): Promise<EligibilityResponse | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const token = await supabase.auth.getSession();
-    const response = await fetch('/api/qualification/eligibility', {
-      headers: {
-        'Authorization': `Bearer ${token.data.session?.access_token}`,
-      },
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch eligibility');
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching eligibility:', error);
-    return null;
-  }
+  const response = await fetchWithAuth("/api/qualification/eligibility");
+  if (!response) return null;
+  return response.json();
 }
 
-// Fetch available pathways for a specific track
-export async function getTrackPathways(track: "ARBITRATION" | "MEDIATION"): Promise<PathwayOption[] | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+export async function getTrackPathways(track: Track): Promise<ApiPathwayOption[] | null> {
+  const response = await fetchWithAuth(`/api/qualification/pathways/${track}`);
+  if (!response) return null;
 
-    const token = await supabase.auth.getSession();
-    const response = await fetch(`/api/qualification/pathways/${track}`, {
-      headers: {
-        'Authorization': `Bearer ${token.data.session?.access_token}`,
-      },
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch pathways');
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching pathways:', error);
-    return null;
+  const payload = await response.json();
+  if (Array.isArray(payload?.pathways)) {
+    return payload.pathways as ApiPathwayOption[];
   }
+
+  return [];
 }
 
 // Fetch user's certificates

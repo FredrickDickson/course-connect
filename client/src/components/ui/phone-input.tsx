@@ -21,6 +21,8 @@ import {
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const ALL_COUNTRIES = RPNInput.getCountries();
+
 type PhoneInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'onChange' | 'value'
@@ -28,15 +30,28 @@ type PhoneInputProps = Omit<
   Omit<RPNInput.Props<typeof RPNInput.default>, 'onChange'> & {
     onChange?: (value: string) => void;
   };
+
 const PhoneInput = React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
-  ({ className, onChange, ...props }, ref) => {
+  ({
+    className,
+    onChange,
+    defaultCountry = 'GH',
+    international = true,
+    countryCallingCodeEditable = false,
+    countries,
+    ...props
+  }, ref) => {
     return (
       <RPNInput.default
         ref={ref}
-        className={cn('flex', className)}
+        className={cn('flex w-full', className)}
         flagComponent={FlagComponent}
         countrySelectComponent={CountrySelect}
         inputComponent={InputComponent}
+        countries={countries ?? ALL_COUNTRIES}
+        defaultCountry={defaultCountry as RPNInput.Country}
+        international={international}
+        countryCallingCodeEditable={countryCallingCodeEditable}
         onChange={(value) => onChange?.(value || '')}
         {...props}
       />
@@ -49,7 +64,7 @@ const InputComponent = React.forwardRef<HTMLInputElement, React.InputHTMLAttribu
   ({ className, ...props }, ref) => (
     <input
       className={cn(
-        'rounded-e-lg rounded-s-none px-2 bg-background text-foreground outline-none ',
+        'rounded-e-lg rounded-s-none border border-input border-s-0 bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
@@ -86,7 +101,8 @@ const CountrySelect = ({
       <PopoverTrigger asChild>
         <Button
           type='button'
-          className={cn('flex gap-1 rounded-e-none rounded-s-lg px-3 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground')}
+          variant='outline'
+          className={cn('flex gap-1 rounded-e-none rounded-s-lg border border-input border-e-0 bg-background px-3 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2')}
           disabled={disabled}
         >
           <FlagComponent country={value} countryName={value} />
@@ -144,7 +160,7 @@ const FlagComponent = ({ country, countryName }: RPNInput.FlagProps) => {
   const Flag = flags[country];
 
   return (
-    <span className='bg-foreground/20 flex h-4 w-6 overflow-hidden rounded-sm'>
+    <span className='bg-foreground/20 flex h-4 w-6 items-center justify-center overflow-hidden rounded-sm'>
       {Flag && <Flag title={countryName} />}
     </span>
   );

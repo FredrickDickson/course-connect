@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -194,10 +195,10 @@ export default function ExpeditedApplication() {
                   <CardHeader>
                     <CardTitle>Qualification Track</CardTitle>
                     <CardDescription>
-                      Select the discipline you are applying under
+                      Expedited applications are currently limited to the Arbitration pathway.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <Button
                         type="button"
@@ -214,18 +215,21 @@ export default function ExpeditedApplication() {
                       </Button>
                       <Button
                         type="button"
-                        variant={track === "MEDIATION" ? "default" : "outline"}
-                        className={`h-auto p-6 flex flex-col items-start gap-2 ${
-                          track === "MEDIATION" ? "border-primary" : ""
-                        }`}
-                        onClick={() => setTrack("MEDIATION")}
+                        variant="ghost"
+                        className="h-auto p-6 flex flex-col items-start gap-2 opacity-60 cursor-not-allowed"
+                        disabled
                       >
                         <span className="font-bold">Mediation</span>
                         <p className="text-sm text-left opacity-70">
-                          CIMed pathway (ACIMed → MCIMed → FCIMed)
+                          Expedited routes are not available for this track yet.
                         </p>
                       </Button>
                     </div>
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertDescription className="text-sm text-blue-900">
+                        Need expedited consideration for Mediation? Our team can review exceptional cases manually. Contact admissions after submitting your standard application.
+                      </AlertDescription>
+                    </Alert>
                   </CardContent>
                 </Card>
 

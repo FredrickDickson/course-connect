@@ -30,9 +30,14 @@ import {
   ArrowRight,
   Zap,
   Scale,
+  Loader2,
+  AlertCircle,
+  RefreshCcw,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import PathwaySelection from "@/components/pathway-selection";
+import { useQualificationState } from "@/hooks/use-qualification-state";
+import type { Track } from "@/types/qualification";
 
 function PathwayCard({
   icon: Icon,
@@ -197,6 +202,22 @@ function ExpeditedCard({
 }
 
 export default function QualificationPathway() {
+  const [activeTrack, setActiveTrack] = useState<Track>("ARBITRATION");
+  const {
+    loading: pathwaysLoading,
+    error: pathwaysError,
+    pathways,
+    userLevel,
+    eligibilityChecks,
+    hasSession,
+    refetch,
+  } = useQualificationState();
+
+  const currentPathways = pathways[activeTrack] ?? [];
+  const currentUserLevel = userLevel[activeTrack];
+  const currentEligibility = eligibilityChecks[activeTrack];
+  const showSignInPrompt = !hasSession && !pathwaysLoading;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -220,6 +241,83 @@ export default function QualificationPathway() {
             </p>
           </div>
         </ScrollReveal>
+      </section>
+
+      {/* Personalized Pathway Selector */}
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal direction="up" distance={25} duration={0.6}>
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Your qualification roadmap</h2>
+                <p className="text-muted-foreground">
+                  See which routes are currently open based on your profile and track progression.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant={activeTrack === "ARBITRATION" ? "default" : "outline"}
+                  onClick={() => setActiveTrack("ARBITRATION")}
+                >
+                  Arbitration
+                </Button>
+                <Button
+                  variant={activeTrack === "MEDIATION" ? "default" : "outline"}
+                  onClick={() => setActiveTrack("MEDIATION")}
+                >
+                  Mediation
+                </Button>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="mt-8">
+            {pathwaysLoading ? (
+              <Card className="py-12">
+                <CardContent className="flex items-center justify-center gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-muted-foreground">Loading personalized pathways…</span>
+                </CardContent>
+              </Card>
+            ) : pathwaysError ? (
+              <Card className="py-8">
+                <CardContent className="flex flex-col items-center gap-4 text-center">
+                  <AlertCircle className="w-6 h-6 text-destructive" />
+                  <div>
+                    <p className="font-semibold">Unable to load pathways</p>
+                    <p className="text-sm text-muted-foreground">{pathwaysError}</p>
+                  </div>
+                  <Button variant="outline" onClick={refetch}>
+                    <RefreshCcw className="w-4 h-4 mr-2" />
+                    Try again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : currentPathways.length > 0 ? (
+              <PathwaySelection
+                track={activeTrack}
+                pathways={currentPathways}
+                userLevel={currentUserLevel}
+                eligibilityChecks={currentEligibility}
+              />
+            ) : (
+              <Card className="py-10">
+                <CardContent className="text-center text-muted-foreground space-y-2">
+                  <p>
+                    {showSignInPrompt
+                      ? "Sign in to view personalized pathways and expedited eligibility."
+                      : "No pathway recommendations are available yet. Check back after updating your profile."}
+                  </p>
+                  {showSignInPrompt && (
+                    <p className="text-xs">
+                      Create an account or log in from the top navigation to unlock this view.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
       </section>
 
       {/* ====== ARBITRATION PATHWAY ====== */}

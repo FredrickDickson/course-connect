@@ -112,6 +112,7 @@ export function evaluateEligibility(input: EligibilityEvaluationInput): Eligibil
   const trackCourses = input.trackCourses ?? {};
   const memberExpedited = input.expedited?.member;
   const fellowExpedited = input.expedited?.fellow;
+  const isArbitrationTrack = input.course.track === "ARBITRATION";
 
   if (!targetLevel) {
     return buildInvalidLevelResponse(input.course, currentLevel);
@@ -142,7 +143,7 @@ export function evaluateEligibility(input: EligibilityEvaluationInput): Eligibil
       return buildEligibleResponse(input.course, targetLevel, currentLevel);
     }
 
-    if (memberExpedited?.canApply) {
+    if (memberExpedited?.canApply && isArbitrationTrack) {
       return buildExpeditedResponse(
         input.course,
         targetLevel,
@@ -167,7 +168,7 @@ export function evaluateEligibility(input: EligibilityEvaluationInput): Eligibil
     return buildRequiresApprovalResponse(input.course, targetLevel, currentLevel, "experience verification");
   }
 
-  if (fellowExpedited?.canApply) {
+  if (fellowExpedited?.canApply && isArbitrationTrack) {
     return buildExpeditedResponse(
       input.course,
       targetLevel,
