@@ -358,42 +358,30 @@ export default function Onboarding() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Date of Birth *</Label>
+                <Field>
+                  <FieldLabel htmlFor="date">Date of Birth *</FieldLabel>
                   <Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !form.date_of_birth && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.date_of_birth ? format(new Date(form.date_of_birth), "PPP") : <span>Pick a date</span>}
+                      <Button variant="outline" id="date" className="justify-start font-normal">
+                        {dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={form.date_of_birth ? new Date(form.date_of_birth) : undefined}
+                        selected={dateOfBirth}
+                        defaultMonth={dateOfBirth}
+                        captionLayout="dropdown"
                         onSelect={(date) => {
-                          if (date) {
-                            updateField("date_of_birth", date.toISOString().split("T")[0]);
-                            setDateOfBirthOpen(false);
-                          }
+                          if (!date) return;
+                          updateField("date_of_birth", date.toISOString().split("T")[0]);
+                          setDateOfBirthOpen(false);
                         }}
-                        disabled={(date) => {
-                          const today = new Date();
-                          const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-                          const maxDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
-                          return date < minDate || date > maxDate;
-                        }}
-                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
-                </div>
+                </Field>
                 <div className="space-y-2">
                   <Label htmlFor="gender-select" className="text-sm font-medium">Gender *</Label>
                   <div className="flex gap-2" role="group" aria-labelledby="gender-select">
@@ -456,21 +444,21 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
-                  <PhoneInput
+                    <PhoneNumberField
                     id="phone"
                     value={form.phone}
                     onChange={(value) => updateField("phone", value)}
-                    placeholder="Enter phone number"
+                      placeholder="24 000 0000"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp {whatsappSameAsPhone ? "" : "(optional)"}</Label>
                   <div className="space-y-2">
-                    <PhoneInput
+                      <PhoneNumberField
                       id="whatsapp"
                       value={whatsappSameAsPhone ? form.phone : form.whatsapp}
                       onChange={(value) => !whatsappSameAsPhone && updateField("whatsapp", value)}
-                      placeholder="Enter WhatsApp number"
+                        placeholder="24 000 0000"
                       disabled={whatsappSameAsPhone}
                     />
                     <div className="flex items-center gap-2">
