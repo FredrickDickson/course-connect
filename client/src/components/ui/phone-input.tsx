@@ -44,7 +44,10 @@ const PhoneInput = React.forwardRef<React.ElementRef<typeof RPNInput.default>, P
     return (
       <RPNInput.default
         ref={ref}
-        className={cn('flex w-full', className)}
+        className={cn(
+          'PhoneInput inline-flex h-12 w-full items-center rounded-2xl border border-input bg-muted/40 pr-3 text-base shadow-sm transition focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20 disabled:opacity-60',
+          className
+        )}
         flagComponent={FlagComponent}
         countrySelectComponent={CountrySelect}
         inputComponent={InputComponent}
@@ -64,7 +67,7 @@ const InputComponent = React.forwardRef<HTMLInputElement, React.InputHTMLAttribu
   ({ className, ...props }, ref) => (
     <input
       className={cn(
-        'rounded-e-lg rounded-s-none border border-input border-s-0 bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+        'h-full w-full flex-1 border-0 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-40',
         className
       )}
       {...props}
@@ -101,8 +104,11 @@ const CountrySelect = ({
       <PopoverTrigger asChild>
         <Button
           type='button'
-          variant='outline'
-          className={cn('flex gap-1 rounded-e-none rounded-s-lg border border-input border-e-0 bg-background px-3 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2')}
+          variant='ghost'
+          className={cn(
+            'h-full min-h-[48px] rounded-s-2xl rounded-e-none border-0 border-r border-input/70 bg-transparent px-3 text-sm text-foreground hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0',
+            disabled && 'bg-muted'
+          )}
           disabled={disabled}
         >
           <FlagComponent country={value} countryName={value} />
