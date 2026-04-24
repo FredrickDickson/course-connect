@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
-import type { CountryCode } from "libphonenumber-js/core";
+import { useState, useEffect } from "react";
 
 import { useLocation } from "wouter";
 
@@ -19,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,18 +28,12 @@ import { toast } from "sonner";
 
 import { COUNTRIES } from "@/lib/countries";
 
-import PhoneInput from "@/components/ui/phone-input";
-
 import { cn } from "@/lib/utils";
 
 import { Calendar } from "@/components/ui/calendar";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldLabel } from "@/components/ui/field";
-
-import { format } from "date-fns";
-
-
 
 const PROFESSIONAL_BACKGROUNDS = [
 
@@ -126,6 +119,66 @@ const GENDERS = [
 
 ];
 
+const splitPhoneValue = (value: string) => {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\+?\d{1,4})\s*(.*)$/);
+
+  return {
+    countryCode: match?.[1] ? (match[1].startsWith("+") ? match[1] : `+${match[1]}`) : "",
+    number: match?.[2] ?? trimmed,
+  };
+};
+
+const joinPhoneValue = (countryCode: string, number: string) => {
+  const digits = countryCode.replace(/[^\d]/g, "");
+  const normalizedCode = digits ? `+${digits.slice(0, 4)}` : "";
+
+  return [normalizedCode, number.trim()].filter(Boolean).join(" ");
+};
+
+function PhoneNumberField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const { countryCode, number } = splitPhoneValue(value);
+
+  return (
+    <div className={cn(
+      "flex min-h-11 overflow-hidden rounded-lg border border-input bg-background shadow-sm transition-colors duration-200",
+      "focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20",
+      disabled && "opacity-60"
+    )}>
+      <Input
+        value={countryCode}
+        onChange={(event) => onChange(joinPhoneValue(event.target.value, number))}
+        placeholder="+233"
+        inputMode="tel"
+        disabled={disabled}
+        aria-label="Country code"
+        className="h-11 w-24 rounded-none border-0 border-r bg-muted/50 text-center font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+      <Input
+        id={id}
+        value={number}
+        onChange={(event) => onChange(joinPhoneValue(countryCode, event.target.value.replace(/[^\d\s-]/g, "")))}
+        placeholder={placeholder}
+        inputMode="tel"
+        disabled={disabled}
+        className="h-11 min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+    </div>
+  );
+}
+
 
 
 export default function Onboarding() {
@@ -189,11 +242,6 @@ export default function Onboarding() {
     profile_completed: false,
 
   });
-
-  const phoneDefaultCountry = useMemo<CountryCode>(() => {
-    const match = COUNTRIES.find((c) => c.name === form.country);
-    return ((match?.code || "GH").toUpperCase() as CountryCode);
-  }, [form.country]);
 
   const today = new Date();
   const oldestAllowedDob = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
@@ -637,7 +685,7 @@ export default function Onboarding() {
 
                       >
 
-                        {isDobValid && dobDate ? format(dobDate, "PPP") : "Select date"}
+                        {isDobValid && dobDate ? dobDate.toLocaleDateString() : "Select date"}
 
                       </Button>
 
@@ -803,17 +851,15 @@ export default function Onboarding() {
 
                   <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
 
-                  <PhoneInput
+                  <PhoneNumberField
 
                     id="phone"
 
                     value={form.phone}
 
-                    onChange={(value) => updateField("phone", value)}
+                    onChange={(value: string) => updateField("phone", value)}
 
-                    defaultCountry={phoneDefaultCountry}
-
-                    placeholder="Enter phone number"
+                    placeholder="24 000 0000"
 
                   />
 
@@ -825,17 +871,15 @@ export default function Onboarding() {
 
                   <div className="space-y-2">
 
-                    <PhoneInput
+                    <PhoneNumberField
 
                       id="whatsapp"
 
                       value={whatsappSameAsPhone ? form.phone : form.whatsapp}
 
-                      onChange={(value) => !whatsappSameAsPhone && updateField("whatsapp", value)}
+                      onChange={(value: string) => !whatsappSameAsPhone && updateField("whatsapp", value)}
 
-                      placeholder="Enter WhatsApp number"
-
-                      defaultCountry={phoneDefaultCountry}
+                      placeholder="24 000 0000"
 
                       disabled={whatsappSameAsPhone}
 
