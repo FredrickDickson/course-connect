@@ -255,7 +255,7 @@ export default function Community() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
-  // Fetch upcoming events (course editions with registration_open status)
+  // Fetch upcoming events (published courses with upcoming start dates)
   const { data: upcomingEvents = [] } = useQuery({
     queryKey: ['upcoming-events'],
     queryFn: async () => {
@@ -263,18 +263,19 @@ export default function Community() {
       today.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
-        .from('course_editions')
-        .select(`
-          *,
-          course:courses(id, title)
-        `)
+        .from('courses')
+        .select('id, title, start_date')
         .gt('start_date', today.toISOString())
-        .eq('status', 'registration_open')
+        .eq('is_published', true)
         .order('start_date', { ascending: true })
         .limit(3);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map((course) => ({
+        id: course.id,
+        start_date: course.start_date,
+        course: { id: course.id, title: course.title },
+      }));
     },
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),

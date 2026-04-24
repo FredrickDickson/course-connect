@@ -83,10 +83,9 @@ export default function InstructorDashboard() {
         .from('instructor_assignments')
         .select(`
           *,
-          board:forum_boards(id, name, slug, description),
-          course_edition:course_editions(id, name, course:courses(id, title))
+          board:forum_boards(id, name, slug, description)
         `)
-        .eq('instructor_id', user!.id);
+        .eq('user_id', user!.id);
 
       if (error) throw error;
       return data || [];

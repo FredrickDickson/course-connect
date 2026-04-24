@@ -1660,7 +1660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           await storage.updateOrderByReference(reference, "completed");
 
-          await storage.enrollUser({ userId, courseId, progress: "0" });
+          await storage.enrollUser({ userId, courseId, progress: "0", enrollmentType: "COURSE", status: "ACTIVE" });
 
         }
 
@@ -1748,7 +1748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await storage.updateOrderByReference(reference, "completed");
 
-        await storage.enrollUser({ userId, courseId, progress: "0" });
+        await storage.enrollUser({ userId, courseId, progress: "0", enrollmentType: "COURSE", status: "ACTIVE" });
 
 
 
