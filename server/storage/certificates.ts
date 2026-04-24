@@ -77,7 +77,7 @@ async function hasCertificateForLevel(
     .eq("track", track)
     .eq("level", level)
     .eq("is_revoked", false)
-    .single();
+    .maybeSingle();
 
   return !error && !!data;
 }
@@ -195,7 +195,7 @@ export async function createCertificate(
     .from("certificates")
     .insert(certificateData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -266,7 +266,7 @@ export async function getCertificateByNumber(
     .from("certificates")
     .select("*, users(first_name, last_name)")
     .eq("certificate_number", certificateNumber)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -344,7 +344,7 @@ export async function getCertificateDataForPDF(
     .from("certificates")
     .select("*")
     .eq("id", certificateId)
-    .single();
+    .maybeSingle();
 
   if (!certificate.data) {
     return null;
@@ -354,7 +354,7 @@ export async function getCertificateDataForPDF(
     .from("users")
     .select("first_name, last_name")
     .eq("id", certificate.data.user_id)
-    .single();
+    .maybeSingle();
 
   if (!user.data) {
     return null;

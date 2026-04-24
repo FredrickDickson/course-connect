@@ -39,7 +39,7 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
     .from("orders")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -58,7 +58,7 @@ export async function updateOrderStatus(
     .update({ ...updateData, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -72,7 +72,7 @@ export async function updateOrderByReference(
     .update({ status, updated_at: new Date().toISOString() })
     .eq("paystack_reference", reference)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -95,7 +95,7 @@ export async function createInstructorPayout(
     .from("instructor_payouts")
     .insert(payout)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -125,7 +125,7 @@ export async function updatePayoutStatus(
     .update(updateData)
     .eq("id", payoutId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -138,7 +138,7 @@ export async function createInstructorApplication(
     .from("instructor_applications")
     .insert(application)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -185,7 +185,7 @@ export async function updateInstructorApplication(
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

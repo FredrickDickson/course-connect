@@ -51,7 +51,7 @@ export async function getQualificationStatus(
       "current_level, pathway_type, eligibility_flags, years_adr_experience, years_legal_experience"
     )
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error || !user) {
     return null;
@@ -92,7 +92,7 @@ export async function getAvailablePathways(
     .from("users")
     .select("current_level, years_adr_experience, years_legal_experience")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error || !user) {
     return [];
@@ -206,7 +206,7 @@ export async function createExpeditedApplication(
       qualifications_summary: application.qualificationsSummary,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("createExpeditedApplication error:", error);
@@ -270,7 +270,7 @@ export async function attachPaymentReference(
     })
     .eq("id", applicationId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     console.error("attachPaymentReference error:", error);
@@ -296,7 +296,7 @@ export async function markApplicationPaid(
     })
     .eq("paystack_reference", reference)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -337,7 +337,7 @@ export async function getExpeditedApplicationById(
     .from("expedited_applications")
     .select("*")
     .eq("id", applicationId)
-    .single();
+    .maybeSingle();
 
   if (appError || !application) {
     return null;
@@ -394,7 +394,7 @@ export async function hasPendingApplication(
     .eq("user_id", userId)
     .eq("target_level", targetLevel)
     .in("status", ["pending", "under_review"])
-    .single();
+    .maybeSingle();
 
   return !error && !!data;
 }
@@ -415,7 +415,7 @@ export async function uploadApplicationDocument(
       file_size: document.fileSize,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     return null;
@@ -443,7 +443,7 @@ export async function submitQualificationAssessment(
     .from("qualification_assessments")
     .select("*")
     .eq("application_id", assessment.applicationId)
-    .single();
+    .maybeSingle();
 
   let result;
 
@@ -457,7 +457,7 @@ export async function submitQualificationAssessment(
       })
       .eq("id", existing.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     result = data;
@@ -471,7 +471,7 @@ export async function submitQualificationAssessment(
       })
       .eq("id", existing.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     result = data;
@@ -487,7 +487,7 @@ export async function submitQualificationAssessment(
         completed_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     result = data;
@@ -635,7 +635,7 @@ export async function updateExpeditedApplicationStatus(
     .update(updateData)
     .eq("id", applicationId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -723,7 +723,7 @@ export async function updateFellowshipApplicationStatus(
     .update(updateData)
     .eq("id", applicationId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;

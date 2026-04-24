@@ -96,7 +96,7 @@ export async function getUserQualificationState(
     .select("*")
     .eq("user_id", userId)
     .eq("status", "verified")
-    .single();
+    .maybeSingle();
 
   const globalRole =
     studentMembership &&
@@ -182,7 +182,7 @@ export async function getEligibilityState(
     .from("users")
     .select("years_adr_experience, years_legal_experience")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   const hasLegalExperience = (user?.years_legal_experience || 0) >= 3;
   const hasExperience = (user?.years_adr_experience || 0) >= 3;
@@ -220,7 +220,7 @@ export async function canTakeCourse(
     .from("courses")
     .select("track, level")
     .eq("id", courseId)
-    .single();
+    .maybeSingle();
 
   if (!course) {
     return { canTake: false, reason: "Course not found" };

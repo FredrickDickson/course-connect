@@ -24,7 +24,7 @@ export async function createAssignment(
     .from("assignments")
     .insert(assignment)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -36,7 +36,7 @@ export async function getAssignmentById(
     .from("assignments")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
   if (error || !data) return undefined;
   return data;
 }
@@ -79,7 +79,7 @@ export async function submitAssignment(
     .from("assignment_submissions")
     .insert(submission)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -100,7 +100,7 @@ export async function gradeAssignment(
     })
     .eq("id", submissionId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -139,7 +139,7 @@ export async function createOrUpdateAssignment(
     .from("assignments")
     .upsert(assignmentPayload, { onConflict: "lesson_id" })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

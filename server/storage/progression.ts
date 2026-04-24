@@ -26,7 +26,7 @@ async function getCourseMetadata(courseId: string) {
     .from("courses")
     .select("id, track, level, title")
     .eq("id", courseId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -85,7 +85,7 @@ async function updateTrackProgress(
     .select("*")
     .eq("user_id", userId)
     .eq("track", track)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     // Update existing progress
@@ -183,7 +183,7 @@ export async function handleCourseCompletion(
     .eq("track", track)
     .eq("level", newLevel)
     .eq("is_revoked", false)
-    .single();
+    .maybeSingle();
 
   if (existingCertificate) {
     // Mark as supplementary training (retake)
@@ -328,7 +328,7 @@ export async function handleFellowshipApproval(
     .select("level, pathway")
     .eq("user_id", userId)
     .eq("track", track)
-    .single();
+    .maybeSingle();
 
   if (!trackProgress || trackProgress.level !== "MEMBER") {
     return {
@@ -417,7 +417,7 @@ export async function checkUpgradeEligibility(
     .select("level")
     .eq("user_id", userId)
     .eq("track", track)
-    .single();
+    .maybeSingle();
 
   if (!trackProgress) {
     return {

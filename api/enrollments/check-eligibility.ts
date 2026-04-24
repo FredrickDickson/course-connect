@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from("courses")
       .select("*")
       .eq("id", courseId)
-      .single();
+      .maybeSingle();
 
     if (courseError || !course) {
       return res.status(404).json({ message: "Course not found" });
@@ -114,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: "student",
         })
         .select()
-        .single();
+        .maybeSingle();
       if (createErr || !created) {
         console.error("User backfill failed:", createErr);
         return res.status(500).json({ message: "Could not initialize user profile", error: createErr?.message });

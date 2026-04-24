@@ -30,7 +30,7 @@ export async function enrollUser(
     .from("enrollments")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -103,7 +103,7 @@ export async function updateProgress(
       { onConflict: "user_id,lesson_id" },
     )
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

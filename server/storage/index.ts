@@ -163,7 +163,7 @@ export async function createReview(review: InsertReview): Promise<Review> {
     .from("reviews")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   // Update course rating asynchronously
   if (review.courseId) {
@@ -210,7 +210,7 @@ export async function createDiscussion(discussion: InsertDiscussion): Promise<Di
     .from("discussions")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -244,7 +244,7 @@ export async function createReply(reply: InsertReply): Promise<Reply> {
     .from("replies")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -273,7 +273,7 @@ export async function createCertification(
     .from("certifications")
     .insert(insertPayload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

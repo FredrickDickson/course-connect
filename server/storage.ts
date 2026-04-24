@@ -320,7 +320,7 @@ export class DatabaseStorage implements IStorage {
       .from("users")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return undefined;
     return data;
@@ -331,7 +331,7 @@ export class DatabaseStorage implements IStorage {
       .from("users")
       .select("*")
       .eq("email", email.toLowerCase())
-      .single();
+      .maybeSingle();
 
     if (error || !data) return undefined;
     return data;
@@ -346,7 +346,7 @@ export class DatabaseStorage implements IStorage {
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -361,7 +361,7 @@ export class DatabaseStorage implements IStorage {
       })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return updatedUser;
@@ -379,7 +379,7 @@ export class DatabaseStorage implements IStorage {
       })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return user;
@@ -397,7 +397,7 @@ export class DatabaseStorage implements IStorage {
       })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return user;
@@ -434,7 +434,7 @@ export class DatabaseStorage implements IStorage {
       .from("categories")
       .insert(category)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -511,7 +511,7 @@ export class DatabaseStorage implements IStorage {
         "*, category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
       )
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     return data;
@@ -522,7 +522,7 @@ export class DatabaseStorage implements IStorage {
       .from("courses")
       .insert(course)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -537,7 +537,7 @@ export class DatabaseStorage implements IStorage {
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -643,7 +643,7 @@ export class DatabaseStorage implements IStorage {
       .from("enrollments")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -700,7 +700,7 @@ export class DatabaseStorage implements IStorage {
         { onConflict: "user_id,lesson_id" },
       )
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -756,7 +756,7 @@ export class DatabaseStorage implements IStorage {
       .from("reviews")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     if (review.courseId) {
       this.updateCourseRating(review.courseId).catch(console.error);
@@ -805,7 +805,7 @@ export class DatabaseStorage implements IStorage {
       .from("discussions")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -839,7 +839,7 @@ export class DatabaseStorage implements IStorage {
       .from("replies")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -871,7 +871,7 @@ export class DatabaseStorage implements IStorage {
       .from("certifications")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -903,7 +903,7 @@ export class DatabaseStorage implements IStorage {
       .from("orders")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -922,7 +922,7 @@ export class DatabaseStorage implements IStorage {
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -936,7 +936,7 @@ export class DatabaseStorage implements IStorage {
       .update({ status, updated_at: new Date().toISOString() })
       .eq("paystack_reference", reference)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -988,7 +988,7 @@ export class DatabaseStorage implements IStorage {
       .from("modules")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1002,7 +1002,7 @@ export class DatabaseStorage implements IStorage {
       .update(updates)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1046,7 +1046,7 @@ export class DatabaseStorage implements IStorage {
       .from("lessons")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1060,7 +1060,7 @@ export class DatabaseStorage implements IStorage {
       .update(updates)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1088,7 +1088,7 @@ export class DatabaseStorage implements IStorage {
       .from("quizzes")
       .insert(quiz)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1098,7 +1098,7 @@ export class DatabaseStorage implements IStorage {
       .from("quizzes")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
     if (error || !data) return undefined;
     return data;
   }
@@ -1128,7 +1128,7 @@ export class DatabaseStorage implements IStorage {
       .from("quiz_questions")
       .insert(question)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1138,7 +1138,7 @@ export class DatabaseStorage implements IStorage {
       .from("quiz_answers")
       .insert(answer)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1161,7 +1161,7 @@ export class DatabaseStorage implements IStorage {
       .from("quiz_attempts")
       .insert(insertData)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1201,7 +1201,7 @@ export class DatabaseStorage implements IStorage {
       .from("quiz_responses")
       .insert(response)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1215,7 +1215,7 @@ export class DatabaseStorage implements IStorage {
       .from("assignments")
       .insert(assignment)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1225,7 +1225,7 @@ export class DatabaseStorage implements IStorage {
       .from("assignments")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
     if (error || !data) return undefined;
     return data;
   }
@@ -1264,7 +1264,7 @@ export class DatabaseStorage implements IStorage {
       .from("assignment_submissions")
       .insert(submission)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1285,7 +1285,7 @@ export class DatabaseStorage implements IStorage {
       })
       .eq("id", submissionId)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1314,7 +1314,7 @@ export class DatabaseStorage implements IStorage {
       .from("instructor_payouts")
       .insert(payout)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1344,7 +1344,7 @@ export class DatabaseStorage implements IStorage {
       .update(updateData)
       .eq("id", payoutId)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1360,7 +1360,7 @@ export class DatabaseStorage implements IStorage {
       .from("instructor_applications")
       .insert(application)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1407,7 +1407,7 @@ export class DatabaseStorage implements IStorage {
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -1533,7 +1533,7 @@ export class DatabaseStorage implements IStorage {
       .from("course_resources")
       .insert(insertPayload)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -1594,7 +1594,7 @@ export class DatabaseStorage implements IStorage {
         .update(quizPayload)
         .eq("id", existing.id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       quizId = updated.id;
     } else {
@@ -1602,7 +1602,7 @@ export class DatabaseStorage implements IStorage {
         .from("quizzes")
         .insert(quizPayload)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       quizId = created.id;
     }
@@ -1624,7 +1624,7 @@ export class DatabaseStorage implements IStorage {
             order: i,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (qError) throw qError;
 
@@ -1649,7 +1649,7 @@ export class DatabaseStorage implements IStorage {
       .from("quizzes")
       .select("*, questions:quiz_questions(*, answers:quiz_answers(*))")
       .eq("id", quizId)
-      .single();
+      .maybeSingle();
 
     if (error || !quiz) return null;
 
@@ -1740,7 +1740,7 @@ export class DatabaseStorage implements IStorage {
       })
       .eq("id", attemptId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return attempt;
@@ -2166,7 +2166,7 @@ export class DatabaseStorage implements IStorage {
       .from("assignments")
       .upsert(assignmentPayload, { onConflict: "lesson_id" })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
