@@ -24,7 +24,6 @@ export const objectStorageClient = new Storage({
         subject_token_field_name: "access_token",
       },
     },
-    universe_domain: "googleapis.com",
   },
   projectId: "",
 });

@@ -525,7 +525,7 @@ export const qualificationAssessmentSchema = z.object({
 
 // Base types
 export type User = z.infer<typeof userSchema>;
-export type UpsertUser = z.infer<typeof userSchema>;
+export type UpsertUser = Pick<User, "id" | "email"> & Partial<Omit<User, "id" | "email">>;
 export type Course = z.infer<typeof courseSchema>;
 export type Module = z.infer<typeof moduleSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
