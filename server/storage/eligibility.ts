@@ -33,29 +33,20 @@ export async function getUserQualificationState(
     return null;
   }
 
-  // Get user's global role and experience
-  const { data: user } = await supabaseAdmin
+  // Get user's global role and experience.
+  // Use SELECT * + safe fallbacks so missing optional columns (e.g. has_llm_degree,
+  // bar_admission_number) never cause a 500 — they just default to falsy.
+  const { data: userRow } = await supabaseAdmin
     .from("users")
-    .select(`
-      years_adr_experience, 
-      years_legal_experience, 
-      role,
-      has_llm_degree,
-      llm_institution,
-      llm_specialization,
-      llm_graduation_year,
-      professional_portfolio_url,
-      bar_admission_number,
-      bar_jurisdiction,
-      current_employer,
-      job_title
-    `)
+    .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (!user) {
+  if (!userRow) {
     return null;
   }
+
+  const user: any = userRow;
 
   // Build track progress object
   const tracks: {
