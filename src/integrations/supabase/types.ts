@@ -260,6 +260,13 @@ export type Database = {
             foreignKeyName: "certificates_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -460,6 +467,13 @@ export type Database = {
             foreignKeyName: "course_completion_records_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "course_completion_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -480,6 +494,8 @@ export type Database = {
           id: string
           institution: string | null
           invoice_expiry_date: string | null
+          pathway: string | null
+          pathway_detected_at: string | null
           payment_method: string
           payment_status: string
           paystack_reference: string | null
@@ -506,6 +522,8 @@ export type Database = {
           id?: string
           institution?: string | null
           invoice_expiry_date?: string | null
+          pathway?: string | null
+          pathway_detected_at?: string | null
           payment_method?: string
           payment_status?: string
           paystack_reference?: string | null
@@ -532,6 +550,8 @@ export type Database = {
           id?: string
           institution?: string | null
           invoice_expiry_date?: string | null
+          pathway?: string | null
+          pathway_detected_at?: string | null
           payment_method?: string
           payment_status?: string
           paystack_reference?: string | null
@@ -722,6 +742,8 @@ export type Database = {
           is_published: boolean | null
           level: string | null
           member_price: number | null
+          pathway: string | null
+          pathway_tags: string[] | null
           price: number
           promo_video_url: string | null
           qualification_level: string | null
@@ -760,6 +782,8 @@ export type Database = {
           is_published?: boolean | null
           level?: string | null
           member_price?: number | null
+          pathway?: string | null
+          pathway_tags?: string[] | null
           price: number
           promo_video_url?: string | null
           qualification_level?: string | null
@@ -798,6 +822,8 @@ export type Database = {
           is_published?: boolean | null
           level?: string | null
           member_price?: number | null
+          pathway?: string | null
+          pathway_tags?: string[] | null
           price?: number
           promo_video_url?: string | null
           qualification_level?: string | null
@@ -822,6 +848,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "courses_instructor_id_fkey"
@@ -972,6 +1005,8 @@ export type Database = {
           cv_url: string | null
           experience_summary: string | null
           id: string
+          paid_at: string | null
+          paystack_reference: string | null
           qualifications_summary: string | null
           review_comments: string | null
           reviewed_at: string | null
@@ -979,6 +1014,7 @@ export type Database = {
           status: string | null
           submitted_at: string | null
           target_level: string
+          track: string
           updated_at: string | null
           user_id: string
         }
@@ -990,6 +1026,8 @@ export type Database = {
           cv_url?: string | null
           experience_summary?: string | null
           id?: string
+          paid_at?: string | null
+          paystack_reference?: string | null
           qualifications_summary?: string | null
           review_comments?: string | null
           reviewed_at?: string | null
@@ -997,6 +1035,7 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           target_level: string
+          track?: string
           updated_at?: string | null
           user_id: string
         }
@@ -1008,6 +1047,8 @@ export type Database = {
           cv_url?: string | null
           experience_summary?: string | null
           id?: string
+          paid_at?: string | null
+          paystack_reference?: string | null
           qualifications_summary?: string | null
           review_comments?: string | null
           reviewed_at?: string | null
@@ -1015,6 +1056,7 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           target_level?: string
+          track?: string
           updated_at?: string | null
           user_id?: string
         }
@@ -1023,8 +1065,22 @@ export type Database = {
             foreignKeyName: "expedited_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expedited_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expedited_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "expedited_applications_user_id_fkey"
@@ -1133,8 +1189,22 @@ export type Database = {
             foreignKeyName: "fellowship_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fellowship_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fellowship_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "fellowship_applications_user_id_fkey"
@@ -1757,10 +1827,13 @@ export type Database = {
           last_reminder_sent: string | null
           member_id: string
           part: Database["public"]["Enums"]["membership_level"]
+          pathway_confirmed_at: string | null
+          pathway_confirmed_by: string | null
           payment_reference: string | null
           payment_status: string | null
           phone: string | null
           post_nominal: string | null
+          primary_pathway: string | null
           renewal_count: number
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
@@ -1778,10 +1851,13 @@ export type Database = {
           last_reminder_sent?: string | null
           member_id: string
           part?: Database["public"]["Enums"]["membership_level"]
+          pathway_confirmed_at?: string | null
+          pathway_confirmed_by?: string | null
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
           post_nominal?: string | null
+          primary_pathway?: string | null
           renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
@@ -1799,16 +1875,26 @@ export type Database = {
           last_reminder_sent?: string | null
           member_id?: string
           part?: Database["public"]["Enums"]["membership_level"]
+          pathway_confirmed_at?: string | null
+          pathway_confirmed_by?: string | null
           payment_reference?: string | null
           payment_status?: string | null
           phone?: string | null
           post_nominal?: string | null
+          primary_pathway?: string | null
           renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
@@ -1921,30 +2007,45 @@ export type Database = {
       orders: {
         Row: {
           amount: number
+          amount_ghs: number | null
+          amount_usd: number | null
+          charged_currency: string | null
           course_id: string | null
           created_at: string | null
           currency: string | null
+          exchange_rate: number | null
           id: string
+          original_currency: string | null
           paystack_reference: string | null
           status: string | null
           user_id: string | null
         }
         Insert: {
           amount: number
+          amount_ghs?: number | null
+          amount_usd?: number | null
+          charged_currency?: string | null
           course_id?: string | null
           created_at?: string | null
           currency?: string | null
+          exchange_rate?: number | null
           id?: string
+          original_currency?: string | null
           paystack_reference?: string | null
           status?: string | null
           user_id?: string | null
         }
         Update: {
           amount?: number
+          amount_ghs?: number | null
+          amount_usd?: number | null
+          charged_currency?: string | null
           course_id?: string | null
           created_at?: string | null
           currency?: string | null
+          exchange_rate?: number | null
           id?: string
+          original_currency?: string | null
           paystack_reference?: string | null
           status?: string | null
           user_id?: string | null
@@ -1958,6 +2059,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pathway_certificates: {
+        Row: {
+          certificate_url: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_revoked: boolean | null
+          issued_at: string | null
+          issuer_id: string | null
+          level: string
+          pathway: string
+          post_nominal: string
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string | null
+          user_id: string
+          verification_code: string | null
+        }
+        Insert: {
+          certificate_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          issued_at?: string | null
+          issuer_id?: string | null
+          level: string
+          pathway: string
+          post_nominal: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_code?: string | null
+        }
+        Update: {
+          certificate_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          issued_at?: string | null
+          issuer_id?: string | null
+          level?: string
+          pathway?: string
+          post_nominal?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_code?: string | null
+        }
+        Relationships: []
+      }
+      pathway_progress: {
+        Row: {
+          courses_completed: string[] | null
+          created_at: string | null
+          current_level: string
+          id: string
+          last_updated_at: string | null
+          next_level_requirements: Json | null
+          pathway: string
+          progress_percentage: number | null
+          total_courses_required: number | null
+          user_id: string
+        }
+        Insert: {
+          courses_completed?: string[] | null
+          created_at?: string | null
+          current_level: string
+          id?: string
+          last_updated_at?: string | null
+          next_level_requirements?: Json | null
+          pathway: string
+          progress_percentage?: number | null
+          total_courses_required?: number | null
+          user_id: string
+        }
+        Update: {
+          courses_completed?: string[] | null
+          created_at?: string | null
+          current_level?: string
+          id?: string
+          last_updated_at?: string | null
+          next_level_requirements?: Json | null
+          pathway?: string
+          progress_percentage?: number | null
+          total_courses_required?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       post_bookmarks: {
         Row: {
@@ -2023,6 +2220,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_config: {
+        Row: {
+          active: boolean
+          amount_minor: number
+          created_at: string | null
+          currency: string
+          description: string | null
+          level: string
+          sku: string
+          track: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          amount_minor: number
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          level: string
+          sku: string
+          track: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          amount_minor?: number
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          level?: string
+          sku?: string
+          track?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -2653,6 +2886,13 @@ export type Database = {
             foreignKeyName: "reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -2730,8 +2970,22 @@ export type Database = {
             foreignKeyName: "student_memberships_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "student_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_memberships_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "student_memberships_verified_by_fkey"
@@ -2843,6 +3097,13 @@ export type Database = {
             foreignKeyName: "user_track_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "pathway_dashboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_track_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -2913,7 +3174,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pathway_analytics: {
+        Row: {
+          avg_progress: number | null
+          certificates_issued: number | null
+          current_level: string | null
+          pathway: string | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
+      pathway_dashboard: {
+        Row: {
+          arbitration_enrollments: number | null
+          arbitration_post_nominal: string | null
+          current_level: Database["public"]["Enums"]["membership_level"] | null
+          current_post_nominal: string | null
+          email: string | null
+          first_name: string | null
+          last_name: string | null
+          mediation_enrollments: number | null
+          mediation_post_nominal: string | null
+          primary_pathway: string | null
+          total_certificates: number | null
+          total_enrollments: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       award_reputation_points: {
@@ -2921,6 +3209,7 @@ export type Database = {
         Returns: undefined
       }
       calculate_member_level: { Args: { p_user_id: string }; Returns: string }
+      generate_certificate_verification_code: { Args: never; Returns: string }
       generate_member_id: { Args: never; Returns: string }
       get_popular_tags: {
         Args: { limit_count?: number }
@@ -2928,6 +3217,10 @@ export type Database = {
           count: number
           tag: string
         }[]
+      }
+      get_user_post_nominal: {
+        Args: { pathway?: string; user_uuid: string }
+        Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }

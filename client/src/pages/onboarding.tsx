@@ -8,16 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { COUNTRIES } from "@/lib/countries";
-import PhoneInput from "@/components/ui/phone-input";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
 
 const PROFESSIONAL_BACKGROUNDS = [
   "Lawyer / Legal Practitioner",
@@ -61,6 +60,63 @@ const GENDERS = [
   { value: "female", label: "Female" },
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
+
+const splitPhoneValue = (value: string) => {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\+?\d{1,4})\s*(.*)$/);
+  return {
+    countryCode: match?.[1] ? (match[1].startsWith("+") ? match[1] : `+${match[1]}`) : "",
+    number: match?.[2] ?? trimmed,
+  };
+};
+
+const joinPhoneValue = (countryCode: string, number: string) => {
+  const normalizedCode = countryCode.trim()
+    ? countryCode.trim().startsWith("+")
+      ? countryCode.trim()
+      : `+${countryCode.trim()}`
+    : "";
+  return [normalizedCode, number.trim()].filter(Boolean).join(" ");
+};
+
+function PhoneNumberField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const { countryCode, number } = splitPhoneValue(value);
+
+  return (
+    <div className="flex min-h-[44px] overflow-hidden rounded-md border border-input bg-background transition-colors duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <Input
+        value={countryCode}
+        onChange={(event) => onChange(joinPhoneValue(event.target.value.replace(/[^+\d]/g, ""), number))}
+        placeholder="+233"
+        inputMode="tel"
+        disabled={disabled}
+        aria-label="Country code"
+        className="w-24 rounded-none border-0 border-r bg-muted/50 text-center shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+      <Input
+        id={id}
+        value={number}
+        onChange={(event) => onChange(joinPhoneValue(countryCode, event.target.value.replace(/[^\d\s-]/g, "")))}
+        placeholder={placeholder}
+        inputMode="tel"
+        disabled={disabled}
+        className="min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+    </div>
+  );
+}
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -258,6 +314,7 @@ export default function Onboarding() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const dateOfBirth = form.date_of_birth ? new Date(`${form.date_of_birth}T00:00:00`) : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-8 px-4">
@@ -301,42 +358,30 @@ export default function Onboarding() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Date of Birth *</Label>
+                <Field>
+                  <FieldLabel htmlFor="date">Date of Birth *</FieldLabel>
                   <Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !form.date_of_birth && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.date_of_birth ? format(new Date(form.date_of_birth), "PPP") : <span>Pick a date</span>}
+                      <Button variant="outline" id="date" className="justify-start font-normal">
+                        {dateOfBirth ? dateOfBirth.toLocaleDateString() : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={form.date_of_birth ? new Date(form.date_of_birth) : undefined}
+                        selected={dateOfBirth}
+                        defaultMonth={dateOfBirth}
+                        captionLayout="dropdown"
                         onSelect={(date) => {
-                          if (date) {
-                            updateField("date_of_birth", date.toISOString().split("T")[0]);
-                            setDateOfBirthOpen(false);
-                          }
+                          if (!date) return;
+                          updateField("date_of_birth", date.toISOString().split("T")[0]);
+                          setDateOfBirthOpen(false);
                         }}
-                        disabled={(date) => {
-                          const today = new Date();
-                          const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-                          const maxDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
-                          return date < minDate || date > maxDate;
-                        }}
-                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
-                </div>
+                </Field>
                 <div className="space-y-2">
                   <Label htmlFor="gender-select" className="text-sm font-medium">Gender *</Label>
                   <div className="flex gap-2" role="group" aria-labelledby="gender-select">
@@ -399,21 +444,21 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
-                  <PhoneInput
+                    <PhoneNumberField
                     id="phone"
                     value={form.phone}
                     onChange={(value) => updateField("phone", value)}
-                    placeholder="Enter phone number"
+                      placeholder="24 000 0000"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp {whatsappSameAsPhone ? "" : "(optional)"}</Label>
                   <div className="space-y-2">
-                    <PhoneInput
+                      <PhoneNumberField
                       id="whatsapp"
                       value={whatsappSameAsPhone ? form.phone : form.whatsapp}
                       onChange={(value) => !whatsappSameAsPhone && updateField("whatsapp", value)}
-                      placeholder="Enter WhatsApp number"
+                        placeholder="24 000 0000"
                       disabled={whatsappSameAsPhone}
                     />
                     <div className="flex items-center gap-2">
