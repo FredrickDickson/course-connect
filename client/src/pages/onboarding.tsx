@@ -79,6 +79,45 @@ const joinPhoneValue = (countryCode: string, number: string) => {
   return [normalizedCode, number.trim()].filter(Boolean).join(" ");
 };
 
+function PhoneNumberField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  const { countryCode, number } = splitPhoneValue(value);
+
+  return (
+    <div className="flex min-h-[44px] overflow-hidden rounded-md border border-input bg-background transition-colors duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <Input
+        value={countryCode}
+        onChange={(event) => onChange(joinPhoneValue(event.target.value.replace(/[^+\d]/g, ""), number))}
+        placeholder="+233"
+        inputMode="tel"
+        disabled={disabled}
+        aria-label="Country code"
+        className="w-24 rounded-none border-0 border-r bg-muted/50 text-center shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+      <Input
+        id={id}
+        value={number}
+        onChange={(event) => onChange(joinPhoneValue(countryCode, event.target.value.replace(/[^\d\s-]/g, "")))}
+        placeholder={placeholder}
+        inputMode="tel"
+        disabled={disabled}
+        className="min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+    </div>
+  );
+}
+
 export default function Onboarding() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
