@@ -137,6 +137,12 @@ router.post(
     const normalizedTrack: "ARBITRATION" | "MEDIATION" =
       track === "MEDIATION" ? "MEDIATION" : "ARBITRATION";
 
+    if (normalizedTrack === "MEDIATION") {
+      return res.status(403).json({
+        error: "Mediation track applications must use the standard progression",
+      });
+    }
+
     if (targetLevel !== "MEMBER" && targetLevel !== "FELLOW") {
       return res.status(400).json({ error: "Invalid targetLevel" });
     }

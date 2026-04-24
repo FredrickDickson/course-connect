@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import {
   Shield,
   Star,
@@ -23,39 +22,16 @@ import {
   Scale,
 } from "lucide-react";
 import { Link } from "wouter";
-
-interface PathwayOption {
-  type: "STANDARD" | "EXPEDITED";
-  level: "ASSOCIATE" | "MEMBER" | "FELLOW";
-  name: string;
-  postNominal: string;
-  description: string;
-  duration: string;
-  format: string;
-  assessment: string;
-  action: "enroll" | "apply" | "apply_expedited";
-  eligibility: string;
-  outcome: string;
-  modules?: string[];
-  requirements?: string[];
-  isRecommended?: boolean;
-  recommendationReason?: string;
-}
-
-interface EligibilityCheck {
-  canApply: boolean;
-  reason?: string;
-  eligibilityType?: string;
-}
+import type {
+  PathwayOption,
+  PathwayEligibilityMap,
+} from "@/types/qualification";
 
 interface PathwaySelectionProps {
   track: "ARBITRATION" | "MEDIATION";
   pathways: PathwayOption[];
   userLevel: string;
-  eligibilityChecks: {
-    member: EligibilityCheck;
-    fellow: EligibilityCheck;
-  };
+  eligibilityChecks: PathwayEligibilityMap;
 }
 
 export default function PathwaySelection({

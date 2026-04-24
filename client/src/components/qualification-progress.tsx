@@ -22,13 +22,13 @@ import React from "react";
 import { 
   getQualificationState, 
   getEligibility,
-  type QualificationState,
+  type UserQualificationState,
   type EligibilityResponse
 } from "@/lib/qualification-api";
 
 interface TrackProgress {
   level: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
-  pathway?: "STANDARD" | "EXPEDITED" | "HYBRID";
+  pathway?: "STANDARD" | "EXPEDITED" | "HYBRID" | null;
 }
 
 interface QualificationProgressProps {
@@ -307,19 +307,19 @@ export function QualificationProgress({
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [state, eligibilityData] = await Promise.all([
+      const [qualificationState, eligibilityData] = await Promise.all([
         getQualificationState(),
         getEligibility(),
       ]);
 
-      if (state && eligibilityData) {
+      if (qualificationState && eligibilityData) {
         setData({
           tracks: {
-            arbitration: state.arbitration,
-            mediation: state.mediation,
+            arbitration: qualificationState.tracks?.arbitration,
+            mediation: qualificationState.tracks?.mediation,
           },
-          yearsAdrExperience: state.yearsAdrExperience,
-          yearsLegalExperience: state.yearsLegalExperience,
+          yearsAdrExperience: qualificationState.yearsAdrExperience,
+          yearsLegalExperience: qualificationState.yearsLegalExperience,
           eligibility: {
             arbitration: {
               canTakePart1: eligibilityData.arbitration.canTakeAssociate,

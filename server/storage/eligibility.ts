@@ -279,6 +279,13 @@ export async function canApplyExpeditedMember(
   userId: string,
   track: "ARBITRATION" | "MEDIATION"
 ): Promise<{ canApply: boolean; reason?: string; eligibilityType?: string }> {
+  if (track === "MEDIATION") {
+    return {
+      canApply: false,
+      reason: "Expedited routes are currently available only on the Arbitration track.",
+    };
+  }
+
   const state = await getUserQualificationState(userId);
   if (!state) {
     return { canApply: false, reason: "Could not determine eligibility" };
@@ -342,6 +349,13 @@ export async function canApplyExpeditedFellow(
   userId: string,
   track: "ARBITRATION" | "MEDIATION"
 ): Promise<{ canApply: boolean; reason?: string; eligibilityType?: string }> {
+  if (track === "MEDIATION") {
+    return {
+      canApply: false,
+      reason: "Expedited routes are currently available only on the Arbitration track.",
+    };
+  }
+
   const state = await getUserQualificationState(userId);
   if (!state) {
     return { canApply: false, reason: "Could not determine eligibility" };
@@ -395,6 +409,13 @@ export async function canApplyExpedited(
   userId: string,
   track: "ARBITRATION" | "MEDIATION"
 ): Promise<{ canApply: boolean; reason?: string }> {
+  if (track === "MEDIATION") {
+    return {
+      canApply: false,
+      reason: "Expedited routes are currently available only on the Arbitration track.",
+    };
+  }
+
   // Use the enhanced member eligibility check
   const result = await canApplyExpeditedMember(userId, track);
   return {
@@ -500,33 +521,34 @@ export async function getAvailablePathwaysForTrack(
     });
   }
 
-  // Expedited pathway options — available on both Arbitration and Mediation tracks
-  const memberPostNominal = isArbitration ? "MCIMArb" : "MCIMed";
-  const fellowPostNominal = isArbitration ? "FCIMArb" : "FCIMed";
+  if (isArbitration) {
+    const memberPostNominal = "MCIMArb";
+    const fellowPostNominal = "FCIMArb";
 
-  if (level === "NONE" || level === "ASSOCIATE") {
-    const memberEligibility = await canApplyExpeditedMember(userId, track);
-    if (memberEligibility.canApply) {
-      pathways.push({
-        type: "EXPEDITED",
-        level: "MEMBER",
-        name: `Expedited Member (${memberPostNominal})`,
-        description: `14-day assessment for ${memberEligibility.eligibilityType?.toLowerCase()?.replace('_', ' ')} professionals`,
-        action: "apply_expedited",
-      });
+    if (level === "NONE" || level === "ASSOCIATE") {
+      const memberEligibility = await canApplyExpeditedMember(userId, track);
+      if (memberEligibility.canApply) {
+        pathways.push({
+          type: "EXPEDITED",
+          level: "MEMBER",
+          name: `Expedited Member (${memberPostNominal})`,
+          description: `14-day assessment for ${memberEligibility.eligibilityType?.toLowerCase()?.replace('_', ' ')} professionals`,
+          action: "apply_expedited",
+        });
+      }
     }
-  }
 
-  if (level === "MEMBER") {
-    const fellowEligibility = await canApplyExpeditedFellow(userId, track);
-    if (fellowEligibility.canApply) {
-      pathways.push({
-        type: "EXPEDITED",
-        level: "FELLOW",
-        name: `Expedited Fellow (${fellowPostNominal})`,
-        description: "48-hour award writing assessment for senior professionals",
-        action: "apply_expedited",
-      });
+    if (level === "MEMBER") {
+      const fellowEligibility = await canApplyExpeditedFellow(userId, track);
+      if (fellowEligibility.canApply) {
+        pathways.push({
+          type: "EXPEDITED",
+          level: "FELLOW",
+          name: `Expedited Fellow (${fellowPostNominal})`,
+          description: "48-hour award writing assessment for senior professionals",
+          action: "apply_expedited",
+        });
+      }
     }
   }
 
