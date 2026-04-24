@@ -32,9 +32,17 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
-        const enrolledCourseId = response?.data?.metadata?.courseId;
+        // Extract course ID from the correct nested structure
+        const enrolledCourseId = response?.data?.data?.metadata?.courseId;
+        console.log('Payment verification response:', response);
+        console.log('Extracted course ID:', enrolledCourseId);
+        
         if (enrolledCourseId) {
           setLocation(`/course/${enrolledCourseId}`);
+        } else {
+          // Fallback to dashboard if course ID extraction fails
+          console.error('Course ID not found in payment response');
+          setLocation('/dashboard');
         }
       }
     },
@@ -125,6 +133,10 @@ export default function PaymentSuccess() {
 
   const paymentData = verifyPaymentMutation.data?.data;
   const courseId = paymentData?.metadata?.courseId;
+  
+  // Also try the nested structure in case the response is different
+  const nestedCourseId = verifyPaymentMutation.data?.data?.data?.metadata?.courseId;
+  const finalCourseId = courseId || nestedCourseId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -172,9 +184,9 @@ export default function PaymentSuccess() {
             </div>
 
             <div className="flex gap-4 justify-center pt-6">
-              {courseId ? (
+              {finalCourseId ? (
                 <>
-                  <Link href={`/course/${courseId}`}>
+                  <Link href={`/course/${finalCourseId}`}>
                     <Button size="lg" className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-5 w-5 mr-2" />
                       Start Learning
