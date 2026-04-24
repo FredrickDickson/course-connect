@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2, PlayCircle, Home } from "lucide-react";
@@ -23,12 +23,19 @@ export default function PaymentSuccess() {
       const res = await apiRequest('POST', '/api/verify-payment', { reference: ref });
       return await res.json();
     },
-    onSuccess: (response: any) => {
+    onSuccess: async (response: any) => {
       if (response?.success) {
         // Invalidate every enrollment-related cache so gated pages unlock immediately
-        queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
-        queryClient.invalidateQueries({ queryKey: ['enrollment-check'] });
-        queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] }),
+          queryClient.invalidateQueries({ queryKey: ['enrollment-check'] }),
+          queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
+        ]);
+
+        const enrolledCourseId = response?.data?.metadata?.courseId;
+        if (enrolledCourseId) {
+          setLocation(`/course/${enrolledCourseId}`);
+        }
       }
     },
   });
