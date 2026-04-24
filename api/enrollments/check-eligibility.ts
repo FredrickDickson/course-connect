@@ -87,15 +87,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    // Get user details
-    const { data: user, error: userError } = await supabaseAdmin
+    // Get user details (auto-create if missing — handles users created before trigger)
+    let { data: user, error: userError } = await supabaseAdmin
       .from("users")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (userError || !user) {
-      return res.status(404).json({ message: "User not found" });
+    if (userError) {
+      console.error("User fetch error:", userError);
+      return res.status(500).json({ message: "Failed to load user", error: userError.message });
+    }
+
+    if (!user) {
+      // Backfill the public.users row from auth.users
+      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const authUser = authData?.user;
+      const meta: any = authUser?.user_metadata || {};
+      const { data: created, error: createErr } = await supabaseAdmin
+        .from("users")
+        .insert({
+          id: userId,
+          email: authUser?.email || "",
+          first_name: meta.first_name || meta.name || (authUser?.email?.split("@")[0] ?? ""),
+          last_name: meta.last_name || "",
+          role: "student",
+        })
+        .select()
+        .single();
+      if (createErr || !created) {
+        console.error("User backfill failed:", createErr);
+        return res.status(500).json({ message: "Could not initialize user profile", error: createErr?.message });
+      }
+      user = created;
     }
 
     const evaluation = await runEligibilityEvaluation({
