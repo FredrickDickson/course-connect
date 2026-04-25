@@ -32,9 +32,12 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
+        // Server returns { success, data: paystackTransaction }
+        // where paystackTransaction.metadata.courseId is set during checkout init.
+        const tx = response?.data;
         const enrolledCourseId =
-          response?.data?.metadata?.courseId ||
-          response?.data?.data?.metadata?.courseId;
+          tx?.metadata?.courseId ||
+          tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
 
         if (enrolledCourseId) {
           setLocation(`/course/${enrolledCourseId}`);
@@ -130,11 +133,9 @@ export default function PaymentSuccess() {
   }
 
   const paymentData = verifyPaymentMutation.data?.data;
-  const courseId = paymentData?.metadata?.courseId;
-  
-  // Also try the nested structure in case the response is different
-  const nestedCourseId = verifyPaymentMutation.data?.data?.data?.metadata?.courseId;
-  const finalCourseId = courseId || nestedCourseId;
+  const finalCourseId =
+    paymentData?.metadata?.courseId ||
+    paymentData?.data?.metadata?.courseId;
 
   return (
     <div className="min-h-screen bg-background">
