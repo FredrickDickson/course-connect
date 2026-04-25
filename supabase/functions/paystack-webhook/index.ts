@@ -126,9 +126,6 @@ Deno.serve(async (req: Request) => {
             status: "ACTIVE",
             enrollment_type: "COURSE",
             enrollment_level: metadata.enrollmentLevel || "ASSOCIATE",
-            payment_reference: event.data.reference,
-            payment_amount: event.data.amount / 100, // Convert from kobo/cents
-            payment_currency: event.data.currency,
           })
           .select()
           .single();
@@ -157,9 +154,15 @@ Deno.serve(async (req: Request) => {
         });
 
         // Update course enrollment count
+        const { data: courseRow } = await supabase
+          .from("courses")
+          .select("enrollment_count")
+          .eq("id", metadata.courseId)
+          .single();
+
         await supabase
           .from("courses")
-          .update({ enrollment_count: (await supabase.from("courses").select("enrollment_count").eq("id", metadata.courseId).single()).data?.enrollment_count || 0 + 1 })
+          .update({ enrollment_count: (courseRow?.enrollment_count || 0) + 1 })
           .eq("id", metadata.courseId);
 
         // Trigger immediate provisioning
