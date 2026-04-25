@@ -32,18 +32,16 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
-        // Extract course ID from the correct nested structure
-        const enrolledCourseId = response?.data?.data?.metadata?.courseId;
-        console.log('Payment verification response:', response);
-        console.log('Extracted course ID:', enrolledCourseId);
-        
+        const enrolledCourseId =
+          response?.data?.metadata?.courseId ||
+          response?.data?.data?.metadata?.courseId;
+
         if (enrolledCourseId) {
           setLocation(`/course/${enrolledCourseId}`);
-        } else {
-          // Fallback to dashboard if course ID extraction fails
-          console.error('Course ID not found in payment response');
-          setLocation('/dashboard');
+          return;
         }
+
+        setLocation('/dashboard');
       }
     },
   });
