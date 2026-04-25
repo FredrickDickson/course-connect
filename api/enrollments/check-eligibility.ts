@@ -180,7 +180,7 @@ async function runEligibilityEvaluation(params: {
 
   const currentLevel = mapTrackLevel(trackProgress.data?.level);
   const trackCourses = buildTrackCoursesMap(trackCoursesData.data);
-  const profile = profileRow.data || {};
+  const profile: any = profileRow.data || {};
 
   const evaluationInput: EligibilityEvaluationInput = {
     user: {
