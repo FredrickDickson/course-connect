@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -273,6 +274,9 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2 mt-3 sm:mt-0">
+            <Button asChild size="sm" variant="secondary">
+              <Link href="/admin/expedited">Expedited Reviews</Link>
+            </Button>
             <AdminNotifications />
             <Badge variant="outline" className="text-xs">
               <AlertCircle className="w-3 h-3 mr-1" />
