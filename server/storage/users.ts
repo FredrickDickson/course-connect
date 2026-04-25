@@ -19,10 +19,42 @@ export async function getUser(id: string): Promise<User | undefined> {
     .from("users")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return undefined;
-  return data as User;
+  if (error) {
+    console.error("[getUser] fetch error", error);
+    return undefined;
+  }
+  if (data) return data as User;
+
+  // Backfill missing public.users row from auth.users (handles users
+  // created before the handle_new_user trigger existed).
+  try {
+    const { data: authData } = await supabaseAdmin.auth.admin.getUserById(id);
+    const authUser = authData?.user;
+    if (!authUser) return undefined;
+    const meta: any = authUser.user_metadata || {};
+    const { data: created, error: createErr } = await supabaseAdmin
+      .from("users")
+      .insert({
+        id,
+        email: authUser.email || "",
+        first_name:
+          meta.first_name || meta.name || (authUser.email?.split("@")[0] ?? ""),
+        last_name: meta.last_name || "",
+        role: "student",
+      })
+      .select()
+      .single();
+    if (createErr || !created) {
+      console.error("[getUser] backfill failed", createErr);
+      return undefined;
+    }
+    return created as User;
+  } catch (err) {
+    console.error("[getUser] backfill exception", err);
+    return undefined;
+  }
 }
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
