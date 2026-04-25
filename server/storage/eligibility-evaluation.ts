@@ -21,7 +21,7 @@ interface EvaluationParams {
 export async function evaluateEligibilityWithContext(params: EvaluationParams) {
   const track = params.course.track || "ARBITRATION";
 
-  const [trackProgress, existingEnrollment, trackCoursesData, memberExpedited, fellowExpedited] = await Promise.all([
+  const [trackProgress, existingEnrollment, trackCoursesData, profileRow, memberExpedited, fellowExpedited] = await Promise.all([
     params.supabaseClient
       .from("user_track_progress")
       .select("level")
@@ -42,24 +42,30 @@ export async function evaluateEligibilityWithContext(params: EvaluationParams) {
       .in("level", ["associate", "member", "fellow"])
       .eq("is_published", true)
       .order("created_at", { ascending: true }),
+    params.supabaseClient
+      .from("profiles")
+      .select("education_level, professional_background, adr_experience, job_title, years_experience")
+      .eq("user_id", params.user.id)
+      .maybeSingle(),
     canApplyExpeditedMember(params.user.id, track),
     canApplyExpeditedFellow(params.user.id, track),
   ]);
 
   const currentLevel = mapTrackLevel(trackProgress.data?.level);
   const trackCourses = buildTrackCoursesMap(trackCoursesData.data);
+  const profile = profileRow.data || {};
 
   const evaluationInput: EligibilityEvaluationInput = {
     user: {
       years_adr_experience: params.user.years_adr_experience,
       years_legal_experience: params.user.years_legal_experience,
-      years_experience: params.user.years_experience,
+      years_experience: profile.years_experience,
       has_llm_degree: params.user.has_llm_degree,
       bar_admission_number: params.user.bar_admission_number,
-      education_level: params.user.education_level,
-      professional_background: params.user.professional_background,
-      adr_experience: params.user.adr_experience,
-      job_title: params.user.job_title,
+      education_level: profile.education_level,
+      professional_background: profile.professional_background,
+      adr_experience: profile.adr_experience,
+      job_title: profile.job_title || params.user.job_title,
       first_name: params.user.first_name,
       last_name: params.user.last_name,
       role: params.user.role,
