@@ -96,7 +96,7 @@ export async function getUserQualificationState(
     .select("*")
     .eq("user_id", userId)
     .eq("status", "verified")
-    .single();
+    .maybeSingle();
 
   const globalRole =
     studentMembership &&
