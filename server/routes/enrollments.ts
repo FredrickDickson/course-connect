@@ -11,6 +11,7 @@ import {
   checkEligibility, 
   createEnrollment,
 } from "../storage/enrollment";
+import { getProfessionalProfileByUserId } from "../storage/professionalProfiles";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
@@ -65,7 +66,7 @@ router.post(
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resolvedLevel = resolveEnrollmentLevel(enrollmentLevel, course.level);
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
     res.json(eligibility);
   }),
@@ -96,14 +97,10 @@ router.post(
     }
 
     // Check eligibility
-    const resolvedLevel = resolveEnrollmentLevel(enrollmentLevel, course.level);
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
 
     if (eligibility.status === "BLOCKED") {
-      return res.status(403).json(formatEligibilityError(eligibility));
-    }
-
-    if (eligibility.status === "REQUIRES_APPROVAL") {
       return res.status(403).json(formatEligibilityError(eligibility));
     }
 
@@ -119,10 +116,22 @@ router.post(
   }),
 );
 
-function resolveEnrollmentLevel(
+async function resolveEnrollmentLevel(
+  userId: string,
   requestedLevel: string | undefined,
   courseLevel: string | undefined,
-): EnrollmentLevel {
+): Promise<EnrollmentLevel> {
+  // Fetch user's actual assigned level from the users table
+  const user = await storage.getUser(userId);
+  const userLevel = user?.assigned_level?.toUpperCase() as EnrollmentLevel | undefined;
+
+  // If user has a valid assigned level (from admin review or course completion), use it
+  if (userLevel === "ASSOCIATE" || userLevel === "MEMBER" || userLevel === "FELLOW") {
+    return userLevel;
+  }
+
+  // For users with NONE or no assigned level, default to ASSOCIATE
+  // so they can start the Associate course path and earn their level
   const fallback = courseLevel ? courseLevel.toUpperCase() : "ASSOCIATE";
   const raw = (requestedLevel || fallback).toUpperCase();
   if (raw === "ASSOCIATE" || raw === "MEMBER" || raw === "FELLOW") {

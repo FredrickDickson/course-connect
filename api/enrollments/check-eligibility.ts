@@ -5,8 +5,8 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type { EnrollmentLevel } from "../../shared/enrollmentEligibility";
-import type { User, Course } from "../../shared/schema";
+import type { EnrollmentLevel } from "@shared/enrollmentEligibility";
+import type { User, Course } from "@shared/schema";
 import { checkEligibility } from "../../server/storage/enrollment";
 
 const supabaseAdmin = createClient(

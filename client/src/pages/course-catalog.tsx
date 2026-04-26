@@ -5,8 +5,10 @@ import { Link } from "wouter";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CourseCard from "@/components/course-card";
+import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
+import EnrollmentGateModal from "@/components/enrollment-gate-modal";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   PATHWAY_TYPES, 
   detectCoursePathway,
@@ -17,6 +19,12 @@ import {
 export default function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPathway, setSelectedPathway] = useState<PathwayType | "all">("all");
+  const [selectedLockedCourse, setSelectedLockedCourse] = useState<any>(null);
+  const [isGateModalOpen, setIsGateModalOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // Get user's effective level
+  const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
 
   // Fetch categories from Supabase
   const { data: categoriesData = [] } = useQuery({
@@ -44,10 +52,39 @@ export default function CourseCatalog() {
     },
   });
 
+  // Fetch user's existing enrollments
+  const { data: userEnrollments = [] } = useQuery({
+    queryKey: ["user-enrollments", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("course_id, status")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   const categories = ["all", ...categoriesData.map((cat: any) => cat.id)];
   const categoryNames = {
     all: "All Courses",
     ...Object.fromEntries(categoriesData.map((cat: any) => [cat.id, cat.name])),
+  };
+
+  // Check if user is enrolled in a course
+  const isEnrolled = (courseId: string) => {
+    return userEnrollments.some(e => e.course_id === courseId && e.status === 'ACTIVE');
+  };
+  
+  // Get next course for progression
+  const getNextCourse = (currentLevel: string) => {
+    const levelOrder = ["NONE", "STUDENT", "ASSOCIATE", "MEMBER", "FELLOW"];
+    const currentIndex = levelOrder.indexOf(currentLevel.toUpperCase());
+    const nextLevel = levelOrder[currentIndex + 1];
+    
+    return courses.find(c => c.level?.toUpperCase() === nextLevel);
   };
 
   // Filter courses by category and pathway
@@ -164,15 +201,48 @@ export default function CourseCatalog() {
           {/* Course Grid */}
           {!isLoading && filteredCourses.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
+              {filteredCourses.map((course) => {
+                const status: CourseStatus = isEnrolled(course.id) 
+                  ? "ENROLLED" 
+                  : getCourseStatus(course.level, userLevel);
+                
+                return (
+                  <CourseCardStatus 
+                    key={course.id} 
+                    course={course} 
+                    userLevel={userLevel}
+                    status={status}
+                    onLockedClick={() => {
+                      setSelectedLockedCourse(course);
+                      setIsGateModalOpen(true);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
       </main>
 
       <Footer />
+      
+      {/* Enrollment Gate Modal */}
+      <EnrollmentGateModal
+        isOpen={isGateModalOpen}
+        onClose={() => {
+          setIsGateModalOpen(false);
+          setSelectedLockedCourse(null);
+        }}
+        courseLevel={(selectedLockedCourse?.level || "ASSOCIATE").toUpperCase()}
+        userLevel={userLevel}
+        courseId={selectedLockedCourse?.id}
+        courseTitle={selectedLockedCourse?.title}
+        nextCourse={getNextCourse(userLevel) ? {
+          id: getNextCourse(userLevel)!.id,
+          title: getNextCourse(userLevel)!.title,
+          level: getNextCourse(userLevel)!.level
+        } : undefined}
+      />
     </div>
   );
 }

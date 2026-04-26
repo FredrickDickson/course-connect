@@ -1,15 +1,14 @@
-export type TrackLevel = "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+export type TrackLevel = "NONE" | "ASSOCIATE" | "MEMBER" | "FELLOW";
 
 export type EnrollmentLevel = "ASSOCIATE" | "MEMBER" | "FELLOW";
 
-export type EligibilityStatus = "ELIGIBLE" | "REQUIRES_APPROVAL" | "BLOCKED";
+export type EligibilityStatus = "ELIGIBLE" | "BLOCKED";
 
 export type EligibilityReasonCode =
   | "OK"
   | "MISSING_PREREQ"
   | "ALREADY_ENROLLED"
-  | "OVERQUALIFIED"
-  | "NEEDS_APPROVAL";
+  | "OVERQUALIFIED";
 
 export type EligibilityActionType = "ENROLL" | "APPLY" | "REDIRECT" | "VIEW_ENROLLMENT";
 
@@ -47,4 +46,6 @@ export interface EligibilityResponse {
   ui: EligibilityUI;
   progression: EligibilityProgression;
   existingEnrollmentId?: string;
+  reason?: string;
+  next_step?: "ASSOCIATE" | "MEMBER" | null;
 }

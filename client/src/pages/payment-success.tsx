@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2, PlayCircle, Home } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const [reference, setReference] = useState<string | null>(null);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,10 +52,28 @@ export default function PaymentSuccess() {
   });
 
   useEffect(() => {
-    if (reference) {
+    if (reference && isAuthenticated && !isLoading) {
       verifyPaymentMutation.mutate(reference);
     }
-  }, [reference]);
+  }, [reference, isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Loader2 className="h-16 w-16 text-primary mx-auto mb-4 animate-spin" />
+              <h1 className="text-2xl font-bold mb-2">Loading...</h1>
+              <p className="text-muted-foreground">Please wait while we verify your session.</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!reference) {
     return (

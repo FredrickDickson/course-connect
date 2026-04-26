@@ -30,3 +30,23 @@ Company invoice generation
 User gets instant course access upon payment verification
 Can navigate directly to course learning interface
 Enrollment appears in user dashboard
+
+There's a payment success page at c:\Users\Administrator\Documents\projects\course-connect/client/src/pages/payment-success.tsx.
+Full Paystack Flow:
+
+1. User clicks [PAY] on checkout page
+   ↓
+2. checkout.tsx calls paystack-course-initialize Edge Function
+   ↓
+3. Edge Function creates Paystack transaction with:
+   callback_url: `${APP_URL}/payment-success`
+   ↓
+4. User redirected to Paystack payment page
+   ↓
+5. User completes payment on Paystack
+   ↓
+6. Paystack redirects to: /payment-success?reference=xyz&trxref=xyz
+   ↓
+7. payment-success.tsx page loads, shows success message
+   ↓
+8. Webhook fires (separate) → creates enrollment in background

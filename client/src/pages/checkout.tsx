@@ -142,6 +142,24 @@ export default function Checkout() {
     }
   }, [existingEnrollment, courseId, setLocation]);
 
+  // Load enrollment form data from sessionStorage (if redirected from enrollment-form.tsx)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("enrollment_form_data");
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        if (data.courseId === courseId) {
+          // Pre-populate profile if needed
+          console.log("Loaded enrollment form data:", data);
+          // Clear after reading to prevent stale data
+          sessionStorage.removeItem("enrollment_form_data");
+        }
+      } catch (e) {
+        console.error("Failed to parse enrollment form data:", e);
+      }
+    }
+  }, [courseId]);
+
   const coursePrice = parseFloat(course?.price?.toString() || "0");
   const currency = course?.currency || "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
