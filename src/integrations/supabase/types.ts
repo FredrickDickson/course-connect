@@ -1814,6 +1814,76 @@ export type Database = {
         }
         Relationships: []
       }
+      level_waivers: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          granted_via: string
+          id: string
+          level: string
+          profile_id: string | null
+          status: string
+          track: string
+          updated_at: string | null
+          user_id: string
+          waiver_reason: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          granted_via?: string
+          id?: string
+          level: string
+          profile_id?: string | null
+          status?: string
+          track: string
+          updated_at?: string | null
+          user_id: string
+          waiver_reason?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          granted_via?: string
+          id?: string
+          level?: string
+          profile_id?: string | null
+          status?: string
+          track?: string
+          updated_at?: string | null
+          user_id?: string
+          waiver_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_waivers_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_waivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_waivers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           certificate_url: string | null
@@ -2303,6 +2373,113 @@ export type Database = {
           user_id: string
           whatsapp: string | null
           years_experience: string | null
+          professional_profiles: {
+            Row: {
+              adr_roles: string[]
+              assigned_level: string
+              assigned_level_notes: string | null
+              contact_email: string | null
+              contact_phone: string | null
+              country: string | null
+              created_at: string
+              credentials: Json
+              decision_at: string | null
+              id: string
+              is_archived: boolean
+              is_current: boolean
+              job_title: string | null
+              level_source: Database["public"]["Enums"]["level_source_type"] | null
+              linkedin_url: string | null
+              narrative_summary: string | null
+              organization: string | null
+              practice_areas: string[]
+              profile_version: number
+              qualifications: Json
+              review_notes: string | null
+              review_status: Database["public"]["Enums"]["professional_review_status"]
+              reviewer_id: string | null
+              self_assessed_level: string | null
+              submitted_at: string | null
+              submitted_payload: Json | null
+              track: string
+              timezone: string | null
+              updated_at: string | null
+              user_id: string
+              website_url: string | null
+              years_adr_experience: number
+              years_legal_experience: number
+            }
+            Insert: {
+              adr_roles?: string[]
+              assigned_level?: string
+              assigned_level_notes?: string | null
+              contact_email?: string | null
+              contact_phone?: string | null
+              country?: string | null
+              created_at?: string
+              credentials?: Json
+              decision_at?: string | null
+              id?: string
+              is_archived?: boolean
+              is_current?: boolean
+              job_title?: string | null
+              level_source?: Database["public"]["Enums"]["level_source_type"] | null
+              linkedin_url?: string | null
+              narrative_summary?: string | null
+              organization?: string | null
+              practice_areas?: string[]
+              profile_version?: number
+              qualifications?: Json
+              review_notes?: string | null
+              review_status?: Database["public"]["Enums"]["professional_review_status"]
+              reviewer_id?: string | null
+              self_assessed_level?: string | null
+              submitted_at?: string | null
+              submitted_payload?: Json | null
+              track?: string
+              timezone?: string | null
+              updated_at?: string | null
+              user_id: string
+              website_url?: string | null
+              years_adr_experience?: number
+              years_legal_experience?: number
+            }
+            Update: {
+              adr_roles?: string[]
+              assigned_level?: string
+              assigned_level_notes?: string | null
+              contact_email?: string | null
+              contact_phone?: string | null
+              country?: string | null
+              created_at?: string
+              credentials?: Json
+              decision_at?: string | null
+              id?: string
+              is_archived?: boolean
+              is_current?: boolean
+              job_title?: string | null
+              level_source?: Database["public"]["Enums"]["level_source_type"] | null
+              linkedin_url?: string | null
+              narrative_summary?: string | null
+              organization?: string | null
+              practice_areas?: string[]
+              profile_version?: number
+              qualifications?: Json
+              review_notes?: string | null
+              review_status?: Database["public"]["Enums"]["professional_review_status"]
+              reviewer_id?: string | null
+              self_assessed_level?: string | null
+              submitted_at?: string | null
+              submitted_payload?: Json | null
+              track?: string
+              timezone?: string | null
+              updated_at?: string | null
+              user_id?: string
+              website_url?: string | null
+              years_adr_experience?: number
+              years_legal_experience?: number
+            }
+          }
         }
         Insert: {
           address?: string | null
@@ -3073,6 +3250,9 @@ export type Database = {
           track: string
           updated_at: string | null
           user_id: string
+          waiver_last_granted_at: string | null
+          waiver_metadata: Json
+          waived_levels: string[]
         }
         Insert: {
           created_at?: string | null
@@ -3082,6 +3262,9 @@ export type Database = {
           track: string
           updated_at?: string | null
           user_id: string
+          waiver_last_granted_at?: string | null
+          waiver_metadata?: Json
+          waived_levels?: string[]
         }
         Update: {
           created_at?: string | null
@@ -3091,6 +3274,9 @@ export type Database = {
           track?: string
           updated_at?: string | null
           user_id?: string
+          waiver_last_granted_at?: string | null
+          waiver_metadata?: Json
+          waived_levels?: string[]
         }
         Relationships: [
           {
@@ -3111,6 +3297,7 @@ export type Database = {
       }
       users: {
         Row: {
+          assigned_level: string | null
           bio: string | null
           country: string | null
           created_at: string | null
@@ -3119,6 +3306,8 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          level_source: string | null
+          level_updated_at: string | null
           last_name: string | null
           password: string | null
           pathway_type: string | null
@@ -3131,6 +3320,7 @@ export type Database = {
           years_legal_experience: number | null
         }
         Insert: {
+          assigned_level?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -3139,6 +3329,8 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          level_source?: string | null
+          level_updated_at?: string | null
           last_name?: string | null
           password?: string | null
           pathway_type?: string | null
@@ -3151,6 +3343,7 @@ export type Database = {
           years_legal_experience?: number | null
         }
         Update: {
+          assigned_level?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -3159,6 +3352,8 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          level_source?: string | null
+          level_updated_at?: string | null
           last_name?: string | null
           password?: string | null
           pathway_type?: string | null
@@ -3225,8 +3420,11 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      level_source_type: "DEFAULT" | "EXPEDITED" | "ADMIN" | "MIGRATION"
       membership_level: "associate" | "member" | "fellow"
       membership_status: "pending" | "active" | "expiring" | "expired"
+      professional_document_type: "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFERENCE" | "AWARD" | "OTHER"
+      professional_review_status: "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED"
     }
     CompositeTypes: {
       [_ in never]: never

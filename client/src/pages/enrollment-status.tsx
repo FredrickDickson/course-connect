@@ -17,7 +17,7 @@ import type {
   EligibilityAction,
   EligibilityActionType,
   EligibilityResponse,
-} from "@shared/eligibility-engine";
+} from "@shared/enrollmentEligibility";
 
 export default function EnrollmentStatusPage() {
   const { courseId } = useParams<{ courseId: string }>();

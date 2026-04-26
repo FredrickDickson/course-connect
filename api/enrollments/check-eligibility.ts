@@ -5,17 +5,9 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  evaluateEligibility,
-  type EligibilityEvaluationInput,
-  type EnrollmentLevel,
-  type RecommendedCourse,
-  type TrackLevel,
-} from "../../shared/eligibility-engine";
-import {
-  canApplyExpeditedMember,
-  canApplyExpeditedFellow,
-} from "../../server/storage/eligibility";
+import type { EnrollmentLevel } from "../../shared/enrollmentEligibility";
+import type { User, Course } from "../../shared/schema";
+import { checkEligibility } from "../../server/storage/enrollment";
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -122,11 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user = created;
     }
 
-    const evaluation = await runEligibilityEvaluation({
-      user,
-      course,
-      enrollmentLevel: enrollmentLevel || course.level?.toUpperCase?.() || "ASSOCIATE",
-    });
+    const targetLevel =
+      normalizeEnrollmentLevel(enrollmentLevel || course.level?.toUpperCase?.()) || "ASSOCIATE";
+
+    const evaluation = await checkEligibility(
+      user as User,
+      course as Course,
+      targetLevel,
+    );
 
     return res.status(200).json(evaluation);
 
@@ -139,115 +134,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     return res.status(500).json({ error: 'Internal server error', message: error.message });
   }
-}
-
-async function runEligibilityEvaluation(params: {
-  user: any;
-  course: any;
-  enrollmentLevel: string;
-}) {
-  const track = params.course.track || "ARBITRATION";
-
-  const [trackProgress, existingEnrollment, trackCoursesData, profileRow, memberExpedited, fellowExpedited] = await Promise.all([
-    supabaseAdmin
-      .from("user_track_progress")
-      .select("level")
-      .eq("user_id", params.user.id)
-      .eq("track", track)
-      .maybeSingle(),
-    supabaseAdmin
-      .from("enrollments")
-      .select("id,status,enrollment_type")
-      .eq("user_id", params.user.id)
-      .eq("course_id", params.course.id)
-      .in("status", ["ACTIVE", "PENDING_APPROVAL", "APPROVED"])
-      .maybeSingle(),
-    supabaseAdmin
-      .from("courses")
-      .select("id,title,level,track")
-      .eq("track", track)
-      .in("level", ["associate", "member", "fellow"])
-      .eq("is_published", true)
-      .order("created_at", { ascending: true }),
-    supabaseAdmin
-      .from("profiles")
-      .select("education_level, professional_background, adr_experience, job_title, years_experience")
-      .eq("user_id", params.user.id)
-      .maybeSingle(),
-    canApplyExpeditedMember(params.user.id, track),
-    canApplyExpeditedFellow(params.user.id, track),
-  ]);
-
-  const currentLevel = mapTrackLevel(trackProgress.data?.level);
-  const trackCourses = buildTrackCoursesMap(trackCoursesData.data);
-  const profile: any = profileRow.data || {};
-
-  const evaluationInput: EligibilityEvaluationInput = {
-    user: {
-      years_adr_experience: params.user.years_adr_experience,
-      years_legal_experience: params.user.years_legal_experience,
-      years_experience: profile.years_experience,
-      education_level: profile.education_level,
-      professional_background: profile.professional_background,
-      adr_experience: profile.adr_experience,
-      job_title: profile.job_title,
-      first_name: params.user.first_name,
-      last_name: params.user.last_name,
-      role: params.user.role,
-    },
-    course: {
-      id: params.course.id,
-      title: params.course.title,
-      level: params.course.level,
-      track,
-    },
-    enrollmentLevel: params.enrollmentLevel,
-    currentLevel,
-    existingEnrollment: existingEnrollment.data
-      ? {
-          id: existingEnrollment.data.id,
-          status: existingEnrollment.data.status,
-          type: existingEnrollment.data.enrollment_type,
-        }
-      : undefined,
-    trackCourses,
-    expedited: {
-      member: memberExpedited.canApply
-        ? { canApply: true, eligibilityType: memberExpedited.eligibilityType }
-        : undefined,
-      fellow: fellowExpedited.canApply
-        ? { canApply: true, eligibilityType: fellowExpedited.eligibilityType }
-        : undefined,
-    },
-  };
-
-  return evaluateEligibility(evaluationInput);
-}
-
-function mapTrackLevel(level?: string | null): TrackLevel {
-  if (!level) return "NONE";
-  const normalized = level.toUpperCase();
-  if (normalized === "NONE" || normalized === "STUDENT" || normalized === "ASSOCIATE" || normalized === "MEMBER" || normalized === "FELLOW") {
-    return normalized as TrackLevel;
-  }
-  return "NONE";
-}
-
-function buildTrackCoursesMap(
-  rows?: Array<{ id: string; title: string; level?: string | null }> | null,
-): Partial<Record<EnrollmentLevel, RecommendedCourse>> {
-  if (!rows) return {};
-  return rows.reduce<Partial<Record<EnrollmentLevel, RecommendedCourse>>>((acc, row) => {
-    const normalized = normalizeEnrollmentLevel(row.level);
-    if (normalized && !acc[normalized]) {
-      acc[normalized] = {
-        id: row.id,
-        title: row.title,
-        level: normalized,
-      };
-    }
-    return acc;
-  }, {});
 }
 
 function normalizeEnrollmentLevel(value?: string | null): EnrollmentLevel | null {

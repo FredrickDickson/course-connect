@@ -20,7 +20,7 @@ import {
   PlayCircle,
   CheckCircle,
 } from "lucide-react";
-import type { EligibilityResponse } from "@shared/eligibility-engine";
+import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 
 export default function CourseDetail() {
   const { id } = useParams();

@@ -33,6 +33,7 @@ import Home from "@/pages/home";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
 import Dashboard from "@/pages/dashboard";
+import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
 import VideoPlayer from "@/pages/video-player";
@@ -194,12 +195,13 @@ function Router() {
       <Route path="/payment-success" component={PaymentSuccess} />
 
       {/* Instructor-only routes */}
-      <ProtectedRoute path="/instructor" requiredRole="instructor" component={InstructorDashboard} />
-      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={CreateCourse} />
-      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={CourseCurriculum} />
+      <ProtectedRoute path="/instructor" requiredRole="instructor" component={LazyInstructorDashboard} />
+      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
+      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin" component={AdminDashboard} />
+      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
+      <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>

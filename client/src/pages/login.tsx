@@ -54,6 +54,8 @@ export default function Login() {
         description: t("messages.signInSuccess"),
       });
 
+      const role = (data.user.user_metadata?.role ?? "student").toLowerCase();
+
       // Check if onboarding is completed
       const { data: profileData } = await (supabase as any)
         .from("profiles")
@@ -64,7 +66,7 @@ export default function Login() {
       // If no profile exists or profile is not completed, go to onboarding
       const profileComplete = (profileData as any)?.profile_completed ?? false;
 
-      if (!profileData || !profileComplete) {
+      if (role !== "admin" && (!profileData || !profileComplete)) {
         setLocation("/onboarding");
         return;
       }
@@ -72,18 +74,19 @@ export default function Login() {
       // Redirect based on role or stored destination
       const redirect = sessionStorage.getItem("redirectAfterLogin");
       sessionStorage.removeItem("redirectAfterLogin");
-      
+
+      if (role === "admin") {
+        window.location.href = "/admin";
+        return;
+      }
+
       if (redirect) {
         window.location.href = redirect;
       } else {
-        // Get user role from metadata or default to student
-        const role = data.user.user_metadata?.role || "student";
         const destination =
-          role === "admin"
-            ? "/admin"
-            : role === "instructor"
-              ? "/instructor"
-              : "/dashboard";
+          role === "instructor"
+            ? "/instructor"
+            : "/dashboard";
         window.location.href = destination;
       }
     } catch (err: any) {
