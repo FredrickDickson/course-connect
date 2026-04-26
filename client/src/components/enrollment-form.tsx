@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import type { EligibilityResponse } from "@shared/eligibility-engine";
+import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import {
   ArrowLeft,
   ArrowRight,
@@ -122,6 +122,7 @@ export default function EnrollmentForm({
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
+  const [eligibilityResult, setEligibilityResult] = useState<EligibilityResponse | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const paystackLoaded = useRef(false);
 
@@ -404,6 +405,17 @@ export default function EnrollmentForm({
     return data;
   };
 
+  const formatLevelLabel = (level?: string | null) => {
+    if (!level) return "Not assigned yet";
+    const normalized = level.toString().toUpperCase();
+    if (normalized === "NONE") return "No level assigned";
+    if (normalized === "STUDENT") return "Student";
+    if (normalized === "ASSOCIATE") return "Associate";
+    if (normalized === "MEMBER") return "Member";
+    if (normalized === "FELLOW") return "Fellow";
+    return normalized;
+  };
+
   const handleSubmit = async () => {
     if (!formData.confirmAccurate || !formData.agreeTerms || !formData.consentContact || !formData.understandPayment) {
       toast({ title: "Please accept all agreements", variant: "destructive" });
@@ -412,6 +424,7 @@ export default function EnrollmentForm({
 
     // Check eligibility before enrollment
     try {
+      setEligibilityResult(null);
       const token = (await supabase.auth.getSession()).data.session?.access_token;
       const eligibilityResponse = await fetch("/api/enrollments/check-eligibility", {
         method: "POST",
@@ -430,6 +443,7 @@ export default function EnrollmentForm({
       }
 
       const eligibility: EligibilityResponse = await eligibilityResponse.json();
+      setEligibilityResult(eligibility);
 
       if (eligibility.status !== "ELIGIBLE") {
         toast({
@@ -437,7 +451,6 @@ export default function EnrollmentForm({
           description: eligibility.ui.message,
           variant: eligibility.status === "BLOCKED" ? "destructive" : "default",
         });
-        setLocation(`/enroll/${course.id}/status`);
         return;
       }
     } catch (err: any) {
@@ -469,6 +482,7 @@ export default function EnrollmentForm({
           try {
             const enrollment = await createEnrollment("paystack", response.reference);
             localStorage.removeItem(STORAGE_KEY);
+            setEligibilityResult(null);
             setBookingResult(enrollment);
             setStep(5);
           } catch (err: any) {
@@ -487,6 +501,7 @@ export default function EnrollmentForm({
       try {
         const enrollment = await createEnrollment(formData.paymentMethod);
         localStorage.removeItem(STORAGE_KEY);
+        setEligibilityResult(null);
         setBookingResult(enrollment);
         setStep(5);
       } catch (err: any) {
@@ -1002,6 +1017,34 @@ Enquiries: 0536735535 | 0241022964
               <h2 className="text-lg font-semibold text-foreground">Review & Payment</h2>
               <p className="text-sm text-muted-foreground">Confirm your details and complete payment</p>
             </div>
+
+            {eligibilityResult && eligibilityResult.status !== "ELIGIBLE" && (
+              <Card className={`border ${eligibilityResult.status === "BLOCKED" ? "border-destructive/40 bg-destructive/5" : "border-amber-200 bg-amber-50"}`}>
+                <CardContent className="p-4 flex gap-3">
+                  <Shield className="w-5 h-5 mt-1 text-primary flex-shrink-0" />
+                  <div className="space-y-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{eligibilityResult.ui.title}</p>
+                      <p className="text-sm text-muted-foreground">{eligibilityResult.ui.message}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Current level: <span className="font-medium">{formatLevelLabel(eligibilityResult.progression.currentLevel)}</span>
+                      {" "}• Required level: <span className="font-medium">{formatLevelLabel(eligibilityResult.progression.requiredLevel ?? eligibilityResult.progression.targetLevel)}</span>
+                    </p>
+                    {eligibilityResult.ui.action?.actionTarget && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setLocation(eligibilityResult.ui.action?.actionTarget || "/qualification-pathway")}
+                      >
+                        {eligibilityResult.ui.action.label}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Summary */}
             <Card>

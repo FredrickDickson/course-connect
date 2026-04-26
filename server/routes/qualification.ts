@@ -32,12 +32,11 @@ import {
   getUserQualificationState,
   getEligibilityState,
   canTakeCourse,
-  canApplyExpedited,
   canApplyExpeditedMember,
   canApplyExpeditedFellow,
   canApplyFellowship,
   getAvailablePathwaysForTrack,
-} from "../storage/eligibility";
+} from "../storage/qualificationState";
 import {
   createCertificate,
   getUserCertificates,
@@ -54,6 +53,19 @@ import {
   getUserProgressionHistory,
   checkUpgradeEligibility,
 } from "../storage/progression";
+import {
+  saveProfessionalProfileDraft,
+  getProfessionalProfileByUserId,
+  listProfessionalProfiles,
+  getProfessionalProfileById as fetchProfessionalProfileById,
+  addProfessionalDocument,
+  getProfessionalDocuments,
+  deleteProfessionalDocument,
+  updateProfessionalProfileReview,
+  setUserAssignedLevel,
+} from "../storage/professionalProfiles";
+import type { ProfessionalProfileRecord } from "../storage/professionalProfiles";
+import type { ProfessionalDocument } from "../../shared/schema";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { requireAdmin } from "../middleware/roleProtection";
 import { asyncHandler } from "../middleware/security";
@@ -75,6 +87,128 @@ interface AuthRequest extends Request {
 }
 
 const router = Router();
+
+type TrackType = "ARBITRATION" | "MEDIATION";
+type ReviewStatusType = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED";
+type QualificationLevelType = "NONE" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+type DecisionLevelSource = "EXPEDITED" | "ADMIN" | "DEFAULT" | "MIGRATION";
+type DocumentType = "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFERENCE" | "AWARD" | "OTHER";
+
+const TRACK_VALUES: TrackType[] = ["ARBITRATION", "MEDIATION"];
+const REVIEW_STATUS_VALUES: ReviewStatusType[] = ["DRAFT", "UNDER_REVIEW", "APPROVED", "REJECTED", "MORE_INFO_REQUIRED"];
+const LEVEL_VALUES: QualificationLevelType[] = ["NONE", "ASSOCIATE", "MEMBER", "FELLOW"];
+const DOCUMENT_TYPES: DocumentType[] = ["CV", "CERTIFICATE", "LICENSE", "PORTFOLIO", "REFERENCE", "AWARD", "OTHER"];
+
+interface DecisionMapping {
+  reviewStatus: ReviewStatusType;
+  assignedLevel?: QualificationLevelType;
+  levelSource?: DecisionLevelSource;
+}
+
+function normalizeTrack(value: unknown): TrackType {
+  return value === "MEDIATION" ? "MEDIATION" : "ARBITRATION";
+}
+
+function isReviewStatus(value: unknown): value is ReviewStatusType {
+  return typeof value === "string" && REVIEW_STATUS_VALUES.includes(value as ReviewStatusType);
+}
+
+function isQualificationLevel(value: unknown): value is QualificationLevelType {
+  return typeof value === "string" && LEVEL_VALUES.includes(value as QualificationLevelType);
+}
+
+function isTrackType(value: unknown): value is TrackType {
+  return typeof value === "string" && TRACK_VALUES.includes(value as TrackType);
+}
+
+function isDocumentType(value: unknown): value is DocumentType {
+  return typeof value === "string" && DOCUMENT_TYPES.includes(value as DocumentType);
+}
+
+function mapProfileSummary(profile: ProfessionalProfileRecord & { documents?: ProfessionalDocument[] }) {
+  const experienceYears = Math.max(profile.yearsAdrExperience ?? 0, profile.yearsLegalExperience ?? 0);
+  const confidenceScore = Math.min(100, Math.round((experienceYears / 10) * 100));
+  const userName = [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    id: profile.id,
+    userId: profile.userId,
+    fullName: userName || profile.user?.email || "Unknown",
+    email: profile.user?.email,
+    country: profile.country ?? profile.user?.country,
+    track: profile.track,
+    yearsExperience: experienceYears,
+    selfAssessedLevel: profile.selfAssessedLevel ?? "ASSOCIATE",
+    assignedLevel: profile.assignedLevel,
+    reviewStatus: profile.reviewStatus,
+    submittedAt: profile.submittedAt,
+    confidenceScore,
+    documentsCount: profile.documents ? profile.documents.length : undefined,
+  };
+}
+
+async function getReviewerDisplayName(reviewerId?: string | null) {
+  if (!reviewerId) return undefined;
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("first_name,last_name,email")
+    .eq("id", reviewerId)
+    .maybeSingle();
+
+  if (error || !data) return undefined;
+  const name = [data.first_name, data.last_name].filter(Boolean).join(" ").trim();
+  return name || data.email || undefined;
+}
+
+function buildProfileHistory(profile: ProfessionalProfileRecord, reviewer?: string) {
+  const history = [] as Array<{
+    id: string;
+    status: string;
+    assignedLevel?: string;
+    note?: string | null;
+    reviewer?: string;
+    createdAt: string;
+  }>;
+
+  if (profile.submittedAt) {
+    const submittedTimestamp = new Date(profile.submittedAt).toISOString();
+    history.push({
+      id: `${profile.id}-submitted`,
+      status: "SUBMITTED",
+      note: null,
+      createdAt: submittedTimestamp,
+    });
+  }
+
+  const currentTimestamp = new Date(profile.updatedAt ?? profile.createdAt ?? Date.now()).toISOString();
+  history.push({
+    id: `${profile.id}-current`,
+    status: profile.reviewStatus,
+    assignedLevel: profile.assignedLevel,
+    note: profile.reviewNotes,
+    reviewer,
+    createdAt: currentTimestamp,
+  });
+
+  return history;
+}
+
+function mapDecisionAction(action?: string): DecisionMapping | null {
+  switch (action) {
+    case "REQUEST_INFO":
+      return { reviewStatus: "MORE_INFO_REQUIRED" };
+    case "REJECT":
+      return { reviewStatus: "REJECTED" };
+    case "ASSIGN_ASSOCIATE":
+      return { reviewStatus: "APPROVED", assignedLevel: "ASSOCIATE", levelSource: "EXPEDITED" };
+    case "ASSIGN_MEMBER":
+      return { reviewStatus: "APPROVED", assignedLevel: "MEMBER", levelSource: "EXPEDITED" };
+    case "ASSIGN_FELLOW":
+      return { reviewStatus: "APPROVED", assignedLevel: "FELLOW", levelSource: "EXPEDITED" };
+    default:
+      return null;
+  }
+}
 
 // ============================================================================
 // QUALIFICATION STATUS ENDPOINTS
@@ -111,6 +245,290 @@ router.get(
     const pathways = await getAvailablePathways(userId);
     res.json({ pathways });
   })
+);
+
+// ============================================================================
+// PROFESSIONAL PROFILE ENDPOINTS
+// ============================================================================
+
+router.get(
+  "/professional-profile",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const profile = await getProfessionalProfileByUserId(req.user.id, { includeDocuments: true });
+    res.json(profile ?? null);
+  }),
+);
+
+router.post(
+  "/onboarding/experience",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { hasExperience, track } = req.body ?? {};
+    if (typeof hasExperience !== "boolean") {
+      return res.status(400).json({ error: "hasExperience boolean is required" });
+    }
+
+    const normalizedTrack = normalizeTrack(track);
+
+    if (!hasExperience) {
+      await setUserAssignedLevel(req.user.id, "ASSOCIATE", {
+        track: normalizedTrack,
+        levelSource: "DEFAULT",
+      });
+
+      return res.json({
+        assignedLevel: "ASSOCIATE",
+        levelSource: "DEFAULT",
+        track: normalizedTrack,
+      });
+    }
+
+    return res.json({
+      status: "experience_recorded",
+      track: normalizedTrack,
+    });
+  }),
+);
+
+router.post(
+  "/professional-profile",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const {
+      submit,
+      track,
+      contactEmail,
+      contactPhone,
+      country,
+      timezone,
+      linkedinUrl,
+      websiteUrl,
+      organization,
+      jobTitle,
+      yearsAdrExperience,
+      yearsLegalExperience,
+      practiceAreas,
+      adrRoles,
+      qualifications,
+      credentials,
+      narrativeSummary,
+      selfAssessedLevel,
+      submittedPayload,
+    } = req.body ?? {};
+
+    const payload = {
+      track: normalizeTrack(track),
+      contactEmail,
+      contactPhone,
+      country,
+      timezone,
+      linkedinUrl,
+      websiteUrl,
+      organization,
+      jobTitle,
+      yearsAdrExperience,
+      yearsLegalExperience,
+      practiceAreas,
+      adrRoles,
+      qualifications,
+      credentials,
+      narrativeSummary,
+      selfAssessedLevel,
+      submittedPayload,
+    };
+
+    const profile = await saveProfessionalProfileDraft(req.user.id, payload, { submit: Boolean(submit) });
+    res.json(profile);
+  }),
+);
+
+router.post(
+  "/professional-profile/documents",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const {
+      documentType,
+      fileUrl,
+      originalName,
+      storagePath,
+      mimeType,
+      fileSize,
+      isPrimary,
+      visibility,
+    } = req.body ?? {};
+
+    if (!documentType || !fileUrl) {
+      return res.status(400).json({ error: "documentType and fileUrl are required" });
+    }
+
+    let profile = await getProfessionalProfileByUserId(req.user.id);
+    if (!profile) {
+      profile = await saveProfessionalProfileDraft(req.user.id, {}, { submit: false });
+    }
+
+    const normalizedDocTypeValue = String(documentType).toUpperCase();
+    const normalizedDocType: DocumentType = isDocumentType(normalizedDocTypeValue)
+      ? (normalizedDocTypeValue as DocumentType)
+      : "OTHER";
+
+    const document = await addProfessionalDocument(profile.id, req.user.id, {
+      documentType: normalizedDocType,
+      fileUrl,
+      originalName,
+      storagePath,
+      mimeType,
+      fileSize,
+      isPrimary,
+      visibility,
+    });
+
+    res.status(201).json(document);
+  }),
+);
+
+router.delete(
+  "/professional-profile/documents/:documentId",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { documentId } = req.params;
+    const profile = await getProfessionalProfileByUserId(req.user.id);
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    const { data: documentRow, error } = await supabaseAdmin
+      .from("professional_documents")
+      .select("profile_id")
+      .eq("id", documentId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!documentRow || documentRow.profile_id !== profile.id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    await deleteProfessionalDocument(documentId);
+    res.status(204).send();
+  }),
+);
+
+router.get(
+  "/professional-profiles/stats",
+  requireSupabaseAuth,
+  requireAdmin,
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const [pendingRes, underReviewRes, decisionsRes] = await Promise.all([
+      supabaseAdmin
+        .from("professional_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("is_current", true)
+        .eq("review_status", "DRAFT"),
+      supabaseAdmin
+        .from("professional_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("is_current", true)
+        .eq("review_status", "UNDER_REVIEW"),
+      supabaseAdmin
+        .from("professional_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("is_current", true)
+        .gte("decision_at", startOfDay.toISOString()),
+    ]);
+
+    res.json({
+      pending: pendingRes.count ?? 0,
+      underReview: underReviewRes.count ?? 0,
+      decisionsToday: decisionsRes.count ?? 0,
+    });
+  }),
+);
+
+router.get(
+  "/professional-profiles",
+  requireSupabaseAuth,
+  requireAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { reviewStatus, level, track, q, limit, offset } = req.query;
+
+    const profiles = await listProfessionalProfiles({
+      reviewStatus: isReviewStatus(reviewStatus) ? (reviewStatus as any) : undefined,
+      assignedLevel: isQualificationLevel(level) ? (level as any) : undefined,
+      track: isTrackType(track) ? (track as TrackType) : undefined,
+      search: typeof q === "string" ? q : undefined,
+      limit: typeof limit === "string" ? Number(limit) : undefined,
+      offset: typeof offset === "string" ? Number(offset) : undefined,
+    });
+
+    res.json(profiles.map(mapProfileSummary));
+  }),
+);
+
+router.get(
+  "/professional-profiles/:id",
+  requireSupabaseAuth,
+  requireAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const profile = await fetchProfessionalProfileById(id);
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    const documents = await getProfessionalDocuments(profile.id);
+    const reviewerName = await getReviewerDisplayName(profile.reviewerId);
+
+    res.json({
+      ...mapProfileSummary({ ...profile, documents }),
+      experienceSummary: profile.narrativeSummary,
+      qualificationsSummary: Array.isArray(profile.qualifications)
+        ? profile.qualifications.map((q: any) => (typeof q === "string" ? q : JSON.stringify(q))).join(", ")
+        : undefined,
+      practiceAreas: profile.practiceAreas,
+      adrRoles: profile.adrRoles,
+      documents: documents.map((doc) => ({
+        id: doc.id,
+        type: doc.documentType,
+        fileUrl: doc.fileUrl,
+        fileName: doc.originalName ?? doc.fileUrl,
+        fileSize: doc.fileSize ?? undefined,
+      })),
+      history: buildProfileHistory(profile, reviewerName),
+    });
+  }),
+);
+
+router.post(
+  "/professional-profiles/:id/decision",
+  requireSupabaseAuth,
+  requireAdmin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { action, note } = req.body ?? {};
+
+    const decision = mapDecisionAction(action);
+    if (!decision) {
+      return res.status(400).json({ error: "Invalid action" });
+    }
+
+    const updated = await updateProfessionalProfileReview({
+      profileId: id,
+      reviewerId: req.user.id,
+      reviewStatus: decision.reviewStatus,
+      reviewNotes: note ?? null,
+      assignedLevel: decision.assignedLevel,
+      assignedLevelNotes: decision.assignedLevel ? note ?? null : undefined,
+      levelSource: decision.levelSource,
+    });
+
+    res.json(mapProfileSummary(updated));
+  }),
 );
 
 // ============================================================================

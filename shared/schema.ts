@@ -1,5 +1,26 @@
 import { z } from "zod";
 
+const qualificationLevelEnum = z.enum(["NONE", "ASSOCIATE", "MEMBER", "FELLOW"]);
+const trackLevelEnum = z.enum(["NONE", "STUDENT", "ASSOCIATE", "MEMBER", "FELLOW"]);
+const waiverLevelEnum = z.enum(["ASSOCIATE", "MEMBER", "FELLOW"]);
+const levelSourceEnum = z.enum(["DEFAULT", "EXPEDITED", "ADMIN", "MIGRATION"]);
+const professionalReviewStatusEnum = z.enum([
+  "DRAFT",
+  "UNDER_REVIEW",
+  "APPROVED",
+  "REJECTED",
+  "MORE_INFO_REQUIRED",
+]);
+const professionalDocumentTypeEnum = z.enum([
+  "CV",
+  "CERTIFICATE",
+  "LICENSE",
+  "PORTFOLIO",
+  "REFERENCE",
+  "AWARD",
+  "OTHER",
+]);
+
 // ============================================================================
 // AUTHENTICATION & SESSION SCHEMAS
 // ============================================================================
@@ -26,7 +47,10 @@ export const userSchema = z.object({
   country: z.string().nullable().optional(),
   timezone: z.string().nullable().optional(),
   paystack_customer_code: z.string().nullable().optional(),
-  current_level: z.enum(["NONE", "ASSOCIATE", "MEMBER", "FELLOW"]).default("NONE"),
+  current_level: qualificationLevelEnum.default("NONE"),
+  assigned_level: qualificationLevelEnum.default("NONE"),
+  level_source: levelSourceEnum.nullable().optional(),
+  level_updated_at: z.date().nullable().optional(),
   pathway_type: z.enum(["STANDARD", "EXPEDITED", "HYBRID"]).nullable().optional(),
   eligibility_flags: z.record(z.boolean()).default({}),
   years_adr_experience: z.number().default(0),
@@ -335,8 +359,11 @@ export const trackProgressSchema = z.object({
   id: z.string().uuid(),
   userId: z.string(),
   track: z.enum(["ARBITRATION", "MEDIATION"]),
-  level: z.enum(["NONE", "STUDENT", "ASSOCIATE", "MEMBER", "FELLOW"]).default("NONE"),
+  level: trackLevelEnum.default("NONE"),
   pathway: z.enum(["STANDARD", "EXPEDITED", "HYBRID"]).nullable().optional(),
+  waivedLevels: z.array(waiverLevelEnum).default([]),
+  waiverMetadata: z.record(z.any()).default({}),
+  waiverLastGrantedAt: z.date().nullable().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -383,6 +410,79 @@ export const certificateSchema = z.object({
   isRevoked: z.boolean().default(false),
   revokedAt: z.date().nullable().optional(),
   revokedReason: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const professionalProfileSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string(),
+  track: z.enum(["ARBITRATION", "MEDIATION"]).default("ARBITRATION"),
+  contactEmail: z.string().email().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  timezone: z.string().nullable().optional(),
+  linkedinUrl: z.string().url().nullable().optional(),
+  websiteUrl: z.string().url().nullable().optional(),
+  organization: z.string().nullable().optional(),
+  jobTitle: z.string().nullable().optional(),
+  yearsAdrExperience: z.number().min(0).default(0),
+  yearsLegalExperience: z.number().min(0).default(0),
+  practiceAreas: z.array(z.string()).default([]),
+  adrRoles: z.array(z.string()).default([]),
+  qualifications: z.array(z.any()).default([]),
+  credentials: z.array(z.any()).default([]),
+  narrativeSummary: z.string().nullable().optional(),
+  selfAssessedLevel: z.enum(["ASSOCIATE", "MEMBER", "FELLOW"]).nullable().optional(),
+  reviewStatus: professionalReviewStatusEnum.default("DRAFT"),
+  reviewNotes: z.string().nullable().optional(),
+  reviewerId: z.string().nullable().optional(),
+  submittedAt: z.date().nullable().optional(),
+  decisionAt: z.date().nullable().optional(),
+  assignedLevel: qualificationLevelEnum.default("NONE"),
+  levelSource: levelSourceEnum.default("DEFAULT"),
+  assignedLevelNotes: z.string().nullable().optional(),
+  submittedPayload: z.any().nullable().optional(),
+  profileVersion: z.number().default(1),
+  isCurrent: z.boolean().default(true),
+  isArchived: z.boolean().default(false),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const professionalDocumentSchema = z.object({
+  id: z.string().uuid(),
+  profileId: z.string(),
+  uploadedBy: z.string(),
+  documentType: professionalDocumentTypeEnum,
+  fileUrl: z.string().url(),
+  originalName: z.string().nullable().optional(),
+  storagePath: z.string().nullable().optional(),
+  mimeType: z.string().nullable().optional(),
+  fileSize: z.number().nullable().optional(),
+  status: z.enum(["PENDING", "APPROVED", "REJECTED", "ARCHIVED"]).default("PENDING"),
+  visibility: z.enum(["PRIVATE", "REVIEWERS", "ADMIN", "PUBLIC"]).default("PRIVATE"),
+  isPrimary: z.boolean().default(false),
+  reviewerId: z.string().nullable().optional(),
+  reviewNotes: z.string().nullable().optional(),
+  uploadedAt: z.date().optional(),
+  reviewedAt: z.date().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const levelWaiverSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string(),
+  profileId: z.string().nullable().optional(),
+  track: z.enum(["ARBITRATION", "MEDIATION"]),
+  level: waiverLevelEnum,
+  grantedVia: z.enum(["ADMIN", "EXPEDITED", "LEGACY", "AUTOMATION"]).default("ADMIN"),
+  grantedBy: z.string().nullable().optional(),
+  grantedAt: z.date().optional(),
+  expiresAt: z.date().nullable().optional(),
+  waiverReason: z.string().nullable().optional(),
+  status: z.enum(["GRANTED", "REVOKED"]).default("GRANTED"),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -550,6 +650,9 @@ export type InstructorApplication = z.infer<typeof instructorApplicationSchema>;
 export type ExpeditedApplication = z.infer<typeof expeditedApplicationSchema>;
 export type ApplicationDocument = z.infer<typeof applicationDocumentSchema>;
 export type QualificationAssessment = z.infer<typeof qualificationAssessmentSchema>;
+export type ProfessionalProfile = z.infer<typeof professionalProfileSchema>;
+export type ProfessionalDocument = z.infer<typeof professionalDocumentSchema>;
+export type LevelWaiver = z.infer<typeof levelWaiverSchema>;
 
 // Multi-track qualification types
 export type TrackProgress = z.infer<typeof trackProgressSchema>;
@@ -703,6 +806,30 @@ export const insertCourseCompletionRecordSchema = courseCompletionRecordSchema.o
   updatedAt: true,
 });
 
+export const insertProfessionalProfileSchema = professionalProfileSchema.omit({
+  id: true,
+  track: true,
+  profileVersion: true,
+  isCurrent: true,
+  isArchived: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProfessionalDocumentSchema = professionalDocumentSchema.omit({
+  id: true,
+  uploadedAt: true,
+  reviewedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLevelWaiverSchema = levelWaiverSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
@@ -743,6 +870,9 @@ export type InsertStudentMembership = z.infer<typeof insertStudentMembershipSche
 export type InsertCourseCompletionRecord = z.infer<
   typeof insertCourseCompletionRecordSchema
 >;
+export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
+export type InsertProfessionalDocument = z.infer<typeof insertProfessionalDocumentSchema>;
+export type InsertLevelWaiver = z.infer<typeof insertLevelWaiverSchema>;
 
 export const insertCategorySchema = categorySchema.omit({
   id: true,

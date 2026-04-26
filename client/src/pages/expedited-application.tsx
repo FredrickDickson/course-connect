@@ -9,14 +9,71 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Link } from "wouter";
-import { useState } from "react";
-import { FileText, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { FileText, AlertCircle, ArrowLeft, Loader2, Trash2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+type ServerDocumentType = "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFERENCE" | "AWARD" | "OTHER";
+type DocumentUploadType = ServerDocumentType | "DEGREE" | "TRANSCRIPT";
 
 interface DocumentUpload {
   file: File;
-  type: "certificate" | "degree" | "transcript" | "cv" | "other";
+  type: DocumentUploadType;
 }
+
+interface ExistingDocument {
+  id: string;
+  documentType: ServerDocumentType;
+  fileUrl: string;
+  originalName?: string | null;
+  fileSize?: number | null;
+}
+
+type ReviewStatus = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED";
+
+const DOCUMENT_LABELS: Record<DocumentUploadType | ServerDocumentType, string> = {
+  CV: "CV / Resume",
+  CERTIFICATE: "Professional Certificate",
+  DEGREE: "Degree Certificate",
+  TRANSCRIPT: "Academic Transcript",
+  LICENSE: "License / Accreditation",
+  PORTFOLIO: "Portfolio",
+  REFERENCE: "Professional Reference",
+  AWARD: "Award / Recognition",
+  OTHER: "Supporting Document",
+};
+
+const DOCUMENT_TYPE_MAP: Record<DocumentUploadType, ServerDocumentType> = {
+  CV: "CV",
+  CERTIFICATE: "CERTIFICATE",
+  DEGREE: "CERTIFICATE",
+  TRANSCRIPT: "CERTIFICATE",
+  LICENSE: "LICENSE",
+  PORTFOLIO: "PORTFOLIO",
+  REFERENCE: "REFERENCE",
+  AWARD: "AWARD",
+  OTHER: "OTHER",
+};
+
+const STATUS_MESSAGES: Partial<Record<ReviewStatus, { title: string; description: string; tone: "info" | "success" | "warning" }>> = {
+  UNDER_REVIEW: {
+    title: "Your profile is under review",
+    description: "Our admissions team is validating your experience. You can continue learning while we finalize the upgrade.",
+    tone: "info",
+  },
+  APPROVED: {
+    title: "Profile approved",
+    description: "Congrats! Your qualifications have been verified. Watch for an email confirming your upgraded level.",
+    tone: "success",
+  },
+  MORE_INFO_REQUIRED: {
+    title: "More information requested",
+    description: "Check your email for the reviewer’s note and resubmit the requested details to continue.",
+    tone: "warning",
+  },
+};
+
+const STORAGE_BUCKET = "expedited-documents";
 
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -30,7 +87,11 @@ export default function ExpeditedApplication() {
   const [experienceSummary, setExperienceSummary] = useState("");
   const [qualificationsSummary, setQualificationsSummary] = useState("");
   const [documents, setDocuments] = useState<DocumentUpload[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<ExistingDocument[]>([]);
+  const [profileStatus, setProfileStatus] = useState<ReviewStatus | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [progressMessage, setProgressMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -50,19 +111,87 @@ export default function ExpeditedApplication() {
     setDocuments(documents.filter((_, i) => i !== index));
   };
 
-  const hasCv = documents.some((d) => d.type === "cv");
+  const hasCvOnFile =
+    documents.some((d) => d.type === "CV") ||
+    existingDocuments.some((doc) => doc.documentType === "CV");
+
+  const loadProfile = useCallback(async () => {
+    setIsLoadingProfile(true);
+    setErrorMessage("");
+    try {
+      const headers = await authHeader();
+      const response = await fetch("/api/qualification/professional-profile", { headers });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setProfileStatus(null);
+          setExistingDocuments([]);
+          return;
+        }
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to load professional profile");
+      }
+
+      const profile = await response.json();
+      if (!profile) {
+        setProfileStatus(null);
+        setExistingDocuments([]);
+        return;
+      }
+
+      setProfileStatus(profile.reviewStatus ?? null);
+      if (profile.track === "MEDIATION" || profile.track === "ARBITRATION") {
+        setTrack(profile.track);
+      }
+      setTargetLevel(profile.selfAssessedLevel ?? null);
+      setExperienceSummary(profile.narrativeSummary ?? "");
+      if (Array.isArray(profile.qualifications) && profile.qualifications.length > 0) {
+        setQualificationsSummary(profile.qualifications.join("\n"));
+      }
+      setExistingDocuments(profile.documents ?? []);
+    } catch (error: any) {
+      console.error("Failed to load profile", error);
+      setErrorMessage(error?.message || "Unable to load your professional profile.");
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const handleRemoveExistingDocument = async (documentId: string) => {
+    setErrorMessage("");
+    try {
+      const headers = await authHeader();
+      const resp = await fetch(`/api/qualification/professional-profile/documents/${documentId}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (!resp.ok) {
+        const errJson = await resp.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to delete document");
+      }
+      setExistingDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    } catch (error: any) {
+      console.error("Failed to delete document", error);
+      setErrorMessage(error?.message || "Could not delete the selected document.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setProgressMessage("");
+    setSuccessMessage("");
 
     if (!targetLevel) {
       setErrorMessage("Please select a target level.");
       return;
     }
-    if (!hasCv) {
-      setErrorMessage("A CV / Resume is required.");
+    if (!hasCvOnFile) {
+      setErrorMessage("Please upload at least one CV / Resume.");
       return;
     }
     if (!experienceSummary.trim() || !qualificationsSummary.trim()) {
@@ -80,37 +209,39 @@ export default function ExpeditedApplication() {
       }
       const headers = { ...(await authHeader()), "Content-Type": "application/json" };
 
-      // 1. Create application in DRAFT
-      setProgressMessage("Creating application...");
-      const applyResp = await fetch("/api/qualification/expedited/apply", {
+      setProgressMessage("Saving professional profile...");
+      const profileResp = await fetch("/api/qualification/professional-profile", {
         method: "POST",
         headers,
         body: JSON.stringify({
+          submit: true,
           track,
-          targetLevel,
-          experienceSummary,
-          qualificationsSummary,
+          narrativeSummary: experienceSummary,
+          qualifications: qualificationsSummary ? [qualificationsSummary] : [],
+          selfAssessedLevel: targetLevel,
+          submittedPayload: {
+            targetLevel,
+            experienceSummary,
+            qualificationsSummary,
+          },
         }),
       });
-      const applyJson = await applyResp.json().catch(() => ({}));
-      if (!applyResp.ok) {
-        throw new Error(
-          applyJson.reason || applyJson.error || "Failed to create application",
-        );
+      const profileJson = await profileResp.json().catch(() => ({}));
+      if (!profileResp.ok) {
+        throw new Error(profileJson.reason || profileJson.error || "Failed to save profile");
       }
-      const applicationId: string = applyJson.id;
 
-      // 2. Upload each document to Supabase Storage, then register on the app
+      // Upload new documents (existing ones stay on file)
       for (let i = 0; i < documents.length; i++) {
         const doc = documents[i];
         setProgressMessage(
           `Uploading document ${i + 1} of ${documents.length}: ${doc.file.name}`,
         );
         const safeName = doc.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `${userId}/${applicationId}/${Date.now()}_${safeName}`;
+        const path = `${userId}/${Date.now()}_${safeName}`;
 
         const { error: uploadErr } = await supabase.storage
-          .from("expedited-documents")
+          .from(STORAGE_BUCKET)
           .upload(path, doc.file, {
             cacheControl: "3600",
             upsert: false,
@@ -119,46 +250,102 @@ export default function ExpeditedApplication() {
         if (uploadErr) {
           throw new Error(`Failed to upload ${doc.file.name}: ${uploadErr.message}`);
         }
+        const { data: publicUrlData } = supabase.storage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(path);
 
-        const regResp = await fetch(
-          `/api/qualification/expedited/applications/${applicationId}/documents`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              documentType: doc.type,
-              fileUrl: path,
-              fileName: doc.file.name,
-              fileSize: doc.file.size,
-            }),
-          },
-        );
-        if (!regResp.ok) {
-          const errJson = await regResp.json().catch(() => ({}));
-          throw new Error(
-            errJson.error || `Failed to register ${doc.file.name} on application`,
-          );
+        const docResp = await fetch(`/api/qualification/professional-profile/documents`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            documentType: DOCUMENT_TYPE_MAP[doc.type] ?? "OTHER",
+            fileUrl: publicUrlData?.publicUrl || path,
+            storagePath: path,
+            originalName: doc.file.name,
+            fileSize: doc.file.size,
+          }),
+        });
+        const docJson = await docResp.json().catch(() => ({}));
+        if (!docResp.ok) {
+          throw new Error(docJson.error || `Failed to register ${doc.file.name}`);
         }
       }
 
-      // 3. Initialize Paystack payment and redirect
-      setProgressMessage("Redirecting to secure checkout...");
-      const payResp = await fetch(
-        `/api/qualification/expedited/applications/${applicationId}/pay`,
-        { method: "POST", headers },
+      setSuccessMessage(
+        "Profile submitted successfully! Our admissions team will review your experience and contact you shortly.",
       );
-      const payJson = await payResp.json().catch(() => ({}));
-      if (!payResp.ok || !payJson.authorization_url) {
-        throw new Error(payJson.error || "Failed to initialize payment");
-      }
-
-      window.location.href = payJson.authorization_url;
+      setDocuments([]);
+      setProgressMessage("");
+      await loadProfile();
     } catch (err: any) {
       console.error("Expedited submission failed:", err);
       setErrorMessage(err?.message || "Failed to submit application. Please try again.");
+    } finally {
       setIsSubmitting(false);
       setProgressMessage("");
     }
+  };
+
+  const renderStatusBanner = () => {
+    if (!profileStatus) return null;
+    const config = STATUS_MESSAGES[profileStatus];
+    if (!config) return null;
+
+    const toneClasses =
+      config.tone === "success"
+        ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+        : config.tone === "warning"
+          ? "bg-amber-50 border-amber-200 text-amber-900"
+          : "bg-blue-50 border-blue-200 text-blue-900";
+
+    return (
+      <Card className={`${toneClasses} border`}> 
+        <CardContent className="p-4">
+          <p className="text-sm font-semibold">{config.title}</p>
+          <p className="text-sm mt-1 opacity-90">{config.description}</p>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderExistingDocuments = () => {
+    if (existingDocuments.length === 0) return null;
+    return (
+      <div className="space-y-2">
+        <Label>Documents on file</Label>
+        <div className="space-y-2">
+          {existingDocuments.map((doc) => (
+            <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/70 rounded-lg">
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">{doc.originalName || "Supporting document"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {DOCUMENT_LABELS[doc.documentType]}
+                    {doc.fileSize ? ` • ${(doc.fileSize / 1024).toFixed(1)} KB` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
+                    View <ExternalLink className="w-3 h-3" />
+                  </a>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveExistingDocument(doc.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -199,6 +386,7 @@ export default function ExpeditedApplication() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {renderStatusBanner()}
                     <div className="grid md:grid-cols-2 gap-4">
                       <Button
                         type="button"
@@ -341,8 +529,9 @@ export default function ExpeditedApplication() {
                           id="cv-upload"
                           type="file"
                           accept=".pdf,.doc,.docx"
-                          onChange={(e) => handleFileUpload(e, "cv")}
+                          onChange={(e) => handleFileUpload(e, "CV")}
                           className="cursor-pointer"
+                          disabled={isSubmitting}
                         />
                       </div>
                       <div className="space-y-2">
@@ -351,8 +540,9 @@ export default function ExpeditedApplication() {
                           id="certificate-upload"
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, "certificate")}
+                          onChange={(e) => handleFileUpload(e, "CERTIFICATE")}
                           className="cursor-pointer"
+                          disabled={isSubmitting}
                         />
                       </div>
                       <div className="space-y-2">
@@ -361,8 +551,9 @@ export default function ExpeditedApplication() {
                           id="degree-upload"
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, "degree")}
+                          onChange={(e) => handleFileUpload(e, "DEGREE")}
                           className="cursor-pointer"
+                          disabled={isSubmitting}
                         />
                       </div>
                       <div className="space-y-2">
@@ -371,16 +562,18 @@ export default function ExpeditedApplication() {
                           id="transcript-upload"
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, "transcript")}
+                          onChange={(e) => handleFileUpload(e, "TRANSCRIPT")}
                           className="cursor-pointer"
+                          disabled={isSubmitting}
                         />
                       </div>
                     </div>
 
-                    {/* Uploaded Documents List */}
+                    {renderExistingDocuments()}
+
                     {documents.length > 0 && (
                       <div className="space-y-2">
-                        <Label>Uploaded Documents</Label>
+                        <Label>Documents to upload ({documents.length})</Label>
                         <div className="space-y-2">
                           {documents.map((doc, index) => (
                             <div
@@ -398,13 +591,14 @@ export default function ExpeditedApplication() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-xs">
-                                  {doc.type}
+                                  {DOCUMENT_LABELS[doc.type]}
                                 </Badge>
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => removeDocument(index)}
+                                  disabled={isSubmitting}
                                 >
                                   Remove
                                 </Button>
@@ -427,6 +621,14 @@ export default function ExpeditedApplication() {
                   </Card>
                 )}
 
+                {successMessage && (
+                  <Card className="border-emerald-500/20 bg-emerald-500/5">
+                    <CardContent className="p-4 text-sm text-emerald-800">
+                      {successMessage}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {progressMessage && (
                   <Card className="border-primary/20 bg-primary/5">
                     <CardContent className="p-4 flex items-center gap-3">
@@ -441,16 +643,16 @@ export default function ExpeditedApplication() {
                   <Button
                     type="submit"
                     size="lg"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isLoadingProfile}
                     className="min-w-[220px]"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
+                        Submitting...
                       </>
                     ) : (
-                      "Submit & Continue to Payment"
+                      "Submit for Review"
                     )}
                   </Button>
                 </div>

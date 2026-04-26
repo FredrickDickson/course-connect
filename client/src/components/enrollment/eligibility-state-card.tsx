@@ -12,7 +12,7 @@ import type {
   EligibilityAction,
   EligibilityActionType,
   EligibilityResponse,
-} from "@shared/eligibility-engine";
+} from "@shared/enrollmentEligibility";
 import {
   AlertTriangle,
   ArrowRightCircle,

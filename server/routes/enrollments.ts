@@ -14,7 +14,7 @@ import {
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
-import type { EligibilityResponse, EnrollmentLevel } from "@shared/eligibility-engine";
+import type { EligibilityResponse, EnrollmentLevel } from "@shared/enrollmentEligibility";
 import { send400Error, validateRequiredFields } from "../middleware/error-fixes";
 
 interface AuthRequest extends Request {

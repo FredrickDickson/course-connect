@@ -28,6 +28,12 @@ export function useAuthGuard() {
       return;
     }
 
+    if (user?.role === "admin") {
+      setGuardReady(true);
+      setBioDataCompleted(true);
+      return;
+    }
+
     const checkProfile = async () => {
       const { data: profile } = await supabase
         .from("profiles")

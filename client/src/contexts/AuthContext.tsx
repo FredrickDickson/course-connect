@@ -42,18 +42,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user && user.id === currentAuthUser.id) return user;
     
     console.log("Fetching profile for user:", currentAuthUser.id);
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("status, full_name, part, avatar_url, country, timezone, created_at")
-      .eq("user_id", currentAuthUser.id)
-      .maybeSingle();
+    const [{ data: profile, error: profileError }, { data: userRow, error: userError }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("status, full_name, part, avatar_url, country, timezone, created_at")
+        .eq("user_id", currentAuthUser.id)
+        .maybeSingle(),
+      supabase
+        .from("users")
+        .select("role")
+        .eq("id", currentAuthUser.id)
+        .maybeSingle(),
+    ]);
 
-    if (error) {
-      console.error("Profile fetch error:", error);
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
+    }
+
+    if (userError) {
+      console.error("User role fetch error:", userError);
     }
 
     const profileData = profile as any;
     const nameParts = (profileData?.full_name || "").split(" ");
+    const metadataRole = currentAuthUser.user_metadata?.role
+      ? String(currentAuthUser.user_metadata.role).toLowerCase()
+      : null;
+    const userTableRole = userRow?.role ? String(userRow.role).toLowerCase() : null;
+    const derivedRole = metadataRole || userTableRole || profileData?.status || "student";
 
     return {
       id: currentAuthUser.id,
@@ -61,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firstName: nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
       lastName: nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profileData?.status || "active",
+      role: derivedRole,
       membershipLevel: profileData?.part || null,
       country: profileData?.country || "",
       timezone: profileData?.timezone || "",

@@ -18,7 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Upload } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+
+import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Sparkles, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +32,7 @@ import { toast } from "sonner";
 import { COUNTRIES } from "@/lib/countries";
 
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 
 import { Calendar } from "@/components/ui/calendar";
 
@@ -91,7 +95,73 @@ const EXPERIENCE_OPTIONS = [
 
 ];
 
+const EXPERIENCE_YEARS_MAP: Record<string, number> = {
 
+  "None": 0,
+
+  "Less than 2 years": 1,
+
+  "2–5 years": 3,
+
+  "5–10 years": 7,
+
+  "10+ years": 12,
+
+};
+
+type ExperienceChoice = "undecided" | "yes" | "no";
+
+type ReviewStatus = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED";
+
+interface ProfessionalProfileStatus {
+
+  id: string;
+
+  reviewStatus: ReviewStatus;
+
+  assignedLevel?: string | null;
+
+  submittedAt?: string | null;
+
+}
+
+const REVIEW_STATUS_COPY: Record<Exclude<ReviewStatus, "DRAFT">, { title: string; description: string; variant?: "default" | "destructive" }> = {
+
+  UNDER_REVIEW: {
+
+    title: "Professional profile under review",
+
+    description: "You already have Associate access. Our admissions team typically reviews submissions within 48 hours.",
+
+  },
+
+  APPROVED: {
+
+    title: "Profile approved",
+
+    description: "You’ve been upgraded based on your experience. Head to your dashboard to see newly unlocked courses.",
+
+  },
+
+  REJECTED: {
+
+    title: "Profile reviewed",
+
+    description: "We couldn’t upgrade you this time, but you can continue through the Associate track and build evidence for a future review.",
+
+    variant: "destructive",
+
+  },
+
+  MORE_INFO_REQUIRED: {
+
+    title: "More information requested",
+
+    description: "Please check your email for the reviewer’s note and re-submit the requested details when ready.",
+
+  },
+
+};
 
 const REFERRAL_SOURCES = [
 
@@ -140,6 +210,10 @@ export default function Onboarding() {
   const [dateOfBirthOpen, setDateOfBirthOpen] = useState(false);
 
 
+
+  const [experienceChoice, setExperienceChoice] = useState<ExperienceChoice>("undecided");
+  const [profileStatus, setProfileStatus] = useState<ProfessionalProfileStatus | null>(null);
+  const [isExperienceSubmitting, setIsExperienceSubmitting] = useState(false);
 
   const [form, setForm] = useState({
 
@@ -190,13 +264,75 @@ export default function Onboarding() {
     return ((match?.code || "GH").toUpperCase() as Country);
   }, [form.country]);
 
+  const experienceYearsValue = useMemo(() => {
+    if (!form.years_experience) return null;
+    return EXPERIENCE_YEARS_MAP[form.years_experience] ?? null;
+  }, [form.years_experience]);
+
   const today = new Date();
   const oldestAllowedDob = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
   const youngestAllowedDob = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
   const dobDate = form.date_of_birth ? new Date(form.date_of_birth) : undefined;
   const isDobValid = dobDate instanceof Date && !isNaN(dobDate?.getTime() || NaN);
 
+  const nonDraftReviewStatus =
 
+    profileStatus?.reviewStatus && profileStatus.reviewStatus !== "DRAFT"
+
+      ? (profileStatus.reviewStatus as Exclude<ReviewStatus, "DRAFT">)
+
+      : null;
+
+  const experienceChoiceLocked = Boolean(nonDraftReviewStatus);
+
+  const canResetExperience = experienceChoice !== "undecided" && !experienceChoiceLocked;
+
+  const showProfessionalForm = experienceChoice === "yes";
+
+  const reviewStatusCopy = nonDraftReviewStatus ? REVIEW_STATUS_COPY[nonDraftReviewStatus] : null;
+
+  const resetExperienceFlow = () => {
+
+    if (experienceChoiceLocked) return;
+
+    setExperienceChoice("undecided");
+
+    setProfileStatus(null);
+
+  };
+
+  const fetchProfileStatus = async () => {
+
+    try {
+
+      const res = await apiRequest("GET", "/api/qualification/professional-profile");
+
+      const data = await res.json();
+      setProfileStatus(data ?? null);
+
+      if (data?.reviewStatus) {
+
+        if (data.reviewStatus !== "DRAFT" || experienceChoice === "undecided") {
+
+          setExperienceChoice("yes");
+
+        }
+
+      }
+
+    } catch (err) {
+
+      console.error("Failed to fetch professional profile", err);
+
+    }
+
+  };
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      setLocation("/admin");
+    }
+  }, [user?.role, setLocation]);
 
   // Load existing profile data
 
@@ -219,7 +355,6 @@ export default function Onboarding() {
           .maybeSingle();
 
 
-
         if (error) {
 
           console.error("Error loading profile:", error);
@@ -229,8 +364,6 @@ export default function Onboarding() {
           return;
 
         }
-
-
 
         const d = data as any;
 
@@ -311,6 +444,7 @@ export default function Onboarding() {
     };
 
     load();
+    fetchProfileStatus();
 
   }, [user]);
 
@@ -406,9 +540,99 @@ export default function Onboarding() {
 
 
 
+  const handleExperienceSelection = async (choice: ExperienceChoice) => {
+
+    if (!user || isExperienceSubmitting) return;
+
+    if (choice === experienceChoice && (choice !== "no" || experienceChoiceLocked)) {
+
+      return;
+
+    }
+
+    const previousChoice = experienceChoice;
+
+    setExperienceChoice(choice);
+
+    setIsExperienceSubmitting(true);
+
+    try {
+
+      await apiRequest("POST", "/api/qualification/onboarding/experience", {
+
+        hasExperience: choice === "yes",
+
+      });
+
+
+
+      if (choice === "no") {
+
+        await supabase.from("profiles").update({ profile_completed: true }).eq("user_id", user.id);
+
+        await supabase.from("activity_log").insert({
+
+          user_id: user.id,
+
+          event_type: "onboarding_completed",
+
+          description: "Completed onboarding without prior ADR experience",
+
+          metadata: { level: "associate", source: "experience_gate" },
+
+        });
+
+        toast.success("You're all set with Associate access! Redirecting you to the dashboard.");
+
+        const redirect = sessionStorage.getItem("redirectAfterLogin");
+
+        sessionStorage.removeItem("redirectAfterLogin");
+
+        setLocation(redirect || "/dashboard");
+
+        return;
+
+      }
+
+
+
+      if (choice === "yes") {
+
+        toast.success("Great! Share a few professional details so we can review your profile.");
+
+        await fetchProfileStatus();
+
+      }
+
+    } catch (err) {
+
+      console.error("Failed to handle experience choice", err);
+
+      setExperienceChoice(previousChoice);
+
+      toast.error(err instanceof Error ? err.message : "We couldn't save your choice. Please try again.");
+
+    } finally {
+
+      setIsExperienceSubmitting(false);
+
+    }
+
+  };
+
+
+
   const saveStep2 = async () => {
 
     if (!user) return;
+
+    if (experienceChoice !== "yes") {
+
+      toast.error("Please confirm that you have ADR / legal experience first.");
+
+      return;
+
+    }
 
     if (!form.job_title || !form.organisation || !form.professional_background || !form.highest_qualification || !form.years_experience || !form.referral_source) {
 
@@ -454,27 +678,63 @@ export default function Onboarding() {
 
 
 
-      // Log activity
+      const profileResponse = await apiRequest("POST", "/api/qualification/professional-profile", {
+
+        submit: true,
+
+        contactEmail: form.email,
+
+        contactPhone: form.phone,
+
+        country: form.country,
+
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+        linkedinUrl: form.linkedin_url || undefined,
+
+        organization: form.organisation,
+
+        jobTitle: form.job_title,
+
+        yearsAdrExperience: experienceYearsValue,
+
+        yearsLegalExperience: experienceYearsValue,
+
+        qualifications: form.highest_qualification ? [form.highest_qualification] : undefined,
+
+        submittedPayload: {
+
+          ...form,
+
+          years_experience_value: experienceYearsValue,
+
+        },
+
+      });
+
+      const professionalProfile = await profileResponse.json();
+
+      setProfileStatus(professionalProfile);
 
       await supabase.from("activity_log").insert({
 
         user_id: user.id,
 
-        event_type: "profile_completed",
+        event_type: "professional_profile_submitted",
 
-        description: "Profile onboarding completed",
+        description: "Submitted professional profile for expedited review",
 
-        metadata: { level: "associate" },
+        metadata: {
+
+          reviewStatus: professionalProfile?.reviewStatus ?? "UNKNOWN",
+
+        },
 
       });
 
+      toast.success("Profile submitted! You'll keep Associate access while we review your experience.");
 
-
-      toast.success("Profile complete! Welcome to CIMA Learn.");
-
-      
-
-      // Redirect to stored destination or dashboard
+      await fetchProfileStatus();
 
       const redirect = sessionStorage.getItem("redirectAfterLogin");
 
@@ -950,239 +1210,413 @@ export default function Onboarding() {
 
         {step === 2 && (
 
-          <Card className="transition-shadow duration-200 hover:shadow-lg">
+          <div className="space-y-6">
 
-            <CardHeader>
+            <Card className="transition-shadow duration-200 hover:shadow-lg">
 
-              <div className="flex items-center gap-3">
+              <CardHeader>
 
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                <div className="flex items-center gap-3">
 
-                  <Briefcase className="w-5 h-5 text-primary" aria-hidden="true" />
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                </div>
+                    <ShieldCheck className="w-5 h-5 text-primary" aria-hidden="true" />
 
-                <div>
+                  </div>
 
-                  <CardTitle>Professional Background</CardTitle>
+                  <div>
 
-                  <CardDescription>Help us understand your experience</CardDescription>
+                    <CardTitle>Do you already have ADR / legal experience?</CardTitle>
 
-                </div>
+                    <CardDescription>Answer to unlock the right onboarding path.</CardDescription>
 
-              </div>
-
-            </CardHeader>
-
-            <CardContent className="space-y-5">
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                <div className="space-y-2">
-
-                  <Label htmlFor="job-title" className="text-sm font-medium">Job Title *</Label>
-
-                  <Input
-
-                    id="job-title"
-
-                    value={form.job_title}
-
-                    onChange={e => updateField("job_title", e.target.value)}
-
-                    placeholder="e.g. Legal Counsel"
-
-                    className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-
-                  />
+                  </div>
 
                 </div>
 
-                <div className="space-y-2">
+              </CardHeader>
 
-                  <Label htmlFor="organisation" className="text-sm font-medium">Organisation / Employer *</Label>
+              <CardContent className="space-y-4">
 
-                  <Input
+                <p className="text-sm text-muted-foreground">Selecting <strong>Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong>No</strong> grants instant Associate access so you can start learning right away.</p>
 
-                    id="organisation"
+                <div className="grid gap-3 sm:grid-cols-2">
 
-                    value={form.organisation}
+                  <Button
 
-                    onChange={e => updateField("organisation", e.target.value)}
+                    type="button"
 
-                    placeholder="e.g. Accra Law Chambers"
+                    variant="outline"
 
-                    className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={cn(
 
-                  />
+                      "h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 border-dashed",
 
-                </div>
+                      experienceChoice === "no" ? "border-destructive bg-destructive/10 text-destructive" : "border-muted-foreground/40"
 
-              </div>
+                    )}
 
+                    onClick={() => handleExperienceSelection("no")}
 
+                    disabled={isExperienceSubmitting || experienceChoiceLocked}
 
-              <div className="space-y-2">
+                  >
 
-                <Label htmlFor="professional-background" className="text-sm font-medium">Professional Background *</Label>
+                    <div className="flex items-center gap-2 text-sm font-medium">
 
-                <Select value={form.professional_background} onValueChange={(v: string) => updateField("professional_background", v)}>
+                      {isExperienceSubmitting && experienceChoice === "no" ? (
 
-                  <SelectTrigger id="professional-background" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select background" /></SelectTrigger>
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
 
-                  <SelectContent className="max-h-60">
+                      ) : (
 
-                    {PROFESSIONAL_BACKGROUNDS.map(bg => (
+                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
 
-                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                      )}
 
-                    ))}
+                      <span>No, I'm getting started</span>
 
-                  </SelectContent>
+                    </div>
 
-                </Select>
+                    <p className="text-xs text-muted-foreground">We'll grant Associate-level content immediately so you can explore the core pathway.</p>
 
-              </div>
+                  </Button>
 
+                  <Button
 
+                    type="button"
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    className="h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1"
 
-                <div className="space-y-2">
+                    onClick={() => handleExperienceSelection("yes")}
 
-                  <Label htmlFor="qualification" className="text-sm font-medium">Highest Qualification *</Label>
+                    disabled={isExperienceSubmitting}
 
-                  <Select value={form.highest_qualification} onValueChange={(v: string) => updateField("highest_qualification", v)}>
+                  >
 
-                    <SelectTrigger id="qualification" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select qualification" /></SelectTrigger>
+                    <div className="flex items-center gap-2 text-sm font-medium">
 
-                    <SelectContent className="max-h-60">
+                      {isExperienceSubmitting && experienceChoice === "yes" ? (
 
-                      {QUALIFICATIONS.map(q => (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
 
-                        <SelectItem key={q} value={q}>{q}</SelectItem>
+                      ) : (
 
-                      ))}
+                        <Sparkles className="h-4 w-4" aria-hidden="true" />
 
-                    </SelectContent>
+                      )}
 
-                  </Select>
+                      <span>Yes, I have ADR / legal experience</span>
 
-                </div>
+                    </div>
 
-                <div className="space-y-2">
+                    <p className="text-xs text-primary">Submit a quick professional profile. You'll keep Associate access while we review.</p>
 
-                  <Label htmlFor="experience" className="text-sm font-medium">Years of Legal / ADR Experience *</Label>
-
-                  <Select value={form.years_experience} onValueChange={(v: string) => updateField("years_experience", v)}>
-
-                    <SelectTrigger id="experience" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select experience" /></SelectTrigger>
-
-                    <SelectContent className="max-h-60">
-
-                      {EXPERIENCE_OPTIONS.map(exp => (
-
-                        <SelectItem key={exp} value={exp}>{exp}</SelectItem>
-
-                      ))}
-
-                    </SelectContent>
-
-                  </Select>
+                  </Button>
 
                 </div>
 
-              </div>
+                {experienceChoiceLocked && reviewStatusCopy && (
+
+                  <p className="text-xs text-muted-foreground">
+
+                    Your answer is locked while your profile is {reviewStatusCopy.title.toLowerCase()}.
+
+                  </p>
+
+                )}
+
+                {canResetExperience && (
+
+                  <Button
+
+                    type="button"
+
+                    variant="ghost"
+
+                    size="sm"
+
+                    className="px-0 text-muted-foreground"
+
+                    onClick={resetExperienceFlow}
+
+                  >
+
+                    Change my answer
+
+                  </Button>
+
+                )}
+
+              </CardContent>
+
+            </Card>
+
+            {showProfessionalForm && (
+
+              <Card className="transition-shadow duration-200 hover:shadow-lg">
+
+                <CardHeader>
+
+                  <div className="flex items-center gap-3">
+
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+
+                      <Briefcase className="w-5 h-5 text-primary" aria-hidden="true" />
+
+                    </div>
+
+                    <div>
+
+                      <CardTitle>Professional Background</CardTitle>
+
+                      <CardDescription>Help us understand your experience</CardDescription>
+
+                    </div>
+
+                  </div>
+
+                </CardHeader>
+
+                <CardContent className="space-y-5">
+
+                  {reviewStatusCopy ? (
+
+                    <Alert variant={reviewStatusCopy.variant ?? "default"}>
+
+                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+
+                      <AlertTitle>{reviewStatusCopy.title}</AlertTitle>
+
+                      <AlertDescription>{reviewStatusCopy.description}</AlertDescription>
+
+                    </Alert>
+
+                  ) : (
+
+                    <Alert className="border border-dashed">
+
+                      <Sparkles className="h-4 w-4" aria-hidden="true" />
+
+                      <AlertTitle>Associate access unlocked instantly</AlertTitle>
+
+                      <AlertDescription>Submit these details so our admissions team can review you for Mentor or Fellow access while you keep progressing.</AlertDescription>
+
+                    </Alert>
+
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <div className="space-y-2">
+
+                      <Label htmlFor="job-title" className="text-sm font-medium">Job Title *</Label>
+
+                      <Input
+
+                        id="job-title"
+
+                        value={form.job_title}
+
+                        onChange={e => updateField("job_title", e.target.value)}
+
+                        placeholder="e.g. Legal Counsel"
+
+                        className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+                      />
+
+                    </div>
+
+                    <div className="space-y-2">
+
+                      <Label htmlFor="organisation" className="text-sm font-medium">Organisation / Employer *</Label>
+
+                      <Input
+
+                        id="organisation"
+
+                        value={form.organisation}
+
+                        onChange={e => updateField("organisation", e.target.value)}
+
+                        placeholder="e.g. Accra Law Chambers"
+
+                        className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+                      />
+
+                    </div>
+
+                  </div>
 
 
 
-              <div className="space-y-2">
+                  <div className="space-y-2">
 
-                <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn Profile URL (optional)</Label>
+                    <Label htmlFor="professional-background" className="text-sm font-medium">Professional Background *</Label>
 
-                <Input
+                    <Select value={form.professional_background} onValueChange={(v: string) => updateField("professional_background", v)}>
 
-                  id="linkedin"
+                      <SelectTrigger id="professional-background" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select background" /></SelectTrigger>
 
-                  value={form.linkedin_url}
+                      <SelectContent className="max-h-60">
 
-                  onChange={e => updateField("linkedin_url", e.target.value)}
+                        {PROFESSIONAL_BACKGROUNDS.map(bg => (
 
-                  placeholder="https://linkedin.com/in/yourname"
+                          <SelectItem key={bg} value={bg}>{bg}</SelectItem>
 
-                  className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        ))}
 
-                />
+                      </SelectContent>
 
-              </div>
+                    </Select>
 
-
-
-              <div className="space-y-2">
-
-                <Label htmlFor="referral" className="text-sm font-medium">How did you hear about CIMA? *</Label>
-
-                <Select value={form.referral_source} onValueChange={(v: string) => updateField("referral_source", v)}>
-
-                  <SelectTrigger id="referral" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select source" /></SelectTrigger>
-
-                  <SelectContent className="max-h-60">
-
-                    {REFERRAL_SOURCES.map(src => (
-
-                      <SelectItem key={src} value={src}>{src}</SelectItem>
-
-                    ))}
-
-                  </SelectContent>
-
-                </Select>
-
-              </div>
+                  </div>
 
 
 
-              <div className="flex gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                <Button 
+                    <div className="space-y-2">
 
-                  className="flex-1 min-h-[44px] border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                      <Label htmlFor="qualification" className="text-sm font-medium">Highest Qualification *</Label>
 
-                  onClick={() => setStep(1)}
+                      <Select value={form.highest_qualification} onValueChange={(v: string) => updateField("highest_qualification", v)}>
 
-                  aria-label="Go back to personal information step"
+                        <SelectTrigger id="qualification" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select qualification" /></SelectTrigger>
 
-                >
+                        <SelectContent className="max-h-60">
 
-                  <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+                          {QUALIFICATIONS.map(q => (
 
-                  Back
+                            <SelectItem key={q} value={q}>{q}</SelectItem>
 
-                </Button>
+                          ))}
 
-                <Button 
+                        </SelectContent>
 
-                  onClick={saveStep2} 
+                      </Select>
 
-                  className="flex-1 min-h-[44px] transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                    </div>
 
-                  disabled={isSaving}
+                    <div className="space-y-2">
 
-                  aria-label="Complete profile and finish onboarding"
+                      <Label htmlFor="experience" className="text-sm font-medium">Years of Legal / ADR Experience *</Label>
 
-                >
+                      <Select value={form.years_experience} onValueChange={(v: string) => updateField("years_experience", v)}>
 
-                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : <CheckCircle className="w-4 h-4 mr-2" aria-hidden="true" />}
+                        <SelectTrigger id="experience" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select experience" /></SelectTrigger>
 
-                  Complete My Profile
+                        <SelectContent className="max-h-60">
 
-                </Button>
+                          {EXPERIENCE_OPTIONS.map(exp => (
 
-              </div>
+                            <SelectItem key={exp} value={exp}>{exp}</SelectItem>
 
-            </CardContent>
+                          ))}
 
-          </Card>
+                        </SelectContent>
+
+                      </Select>
+
+                    </div>
+
+                  </div>
+
+
+
+                  <div className="space-y-2">
+
+                    <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn Profile URL (optional)</Label>
+
+                    <Input
+
+                      id="linkedin"
+
+                      value={form.linkedin_url}
+
+                      onChange={e => updateField("linkedin_url", e.target.value)}
+
+                      placeholder="https://linkedin.com/in/yourname"
+
+                      className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+                    />
+
+                  </div>
+
+
+
+                  <div className="space-y-2">
+
+                    <Label htmlFor="referral" className="text-sm font-medium">How did you hear about CIMA? *</Label>
+
+                    <Select value={form.referral_source} onValueChange={(v: string) => updateField("referral_source", v)}>
+
+                      <SelectTrigger id="referral" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select source" /></SelectTrigger>
+
+                      <SelectContent className="max-h-60">
+
+                        {REFERRAL_SOURCES.map(src => (
+
+                          <SelectItem key={src} value={src}>{src}</SelectItem>
+
+                        ))}
+
+                      </SelectContent>
+
+                    </Select>
+
+                  </div>
+
+
+
+                  <div className="flex gap-3">
+
+                    <Button 
+
+                      className="flex-1 min-h-[44px] border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+
+                      onClick={() => setStep(1)}
+
+                      aria-label="Go back to personal information step"
+
+                    >
+
+                      <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+
+                      Back
+
+                    </Button>
+
+                    <Button 
+
+                      onClick={saveStep2} 
+
+                      className="flex-1 min-h-[44px] transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+
+                      disabled={isSaving}
+
+                      aria-label="Submit professional profile for review"
+
+                    >
+
+                      {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : <CheckCircle className="w-4 h-4 mr-2" aria-hidden="true" />}
+
+                      Submit for review
+
+                    </Button>
+
+                  </div>
+
+                </CardContent>
+
+              </Card>
+
+            )}
+
+          </div>
 
         )}
 

@@ -78,7 +78,7 @@ export {
   createFellowshipApplication,
   updateEnrollmentStatus,
 } from "./enrollment";
-export type { EligibilityResponse, EligibilityStatus } from "@shared/eligibility-engine";
+export type { EligibilityResponse, EligibilityStatus } from "@shared/enrollmentEligibility";
 
 // Re-export all quiz operations
 export {
@@ -138,6 +138,20 @@ export {
   submitQualificationAssessment,
   updateUserQualificationLevel,
 } from "./qualification";
+
+export {
+  saveProfessionalProfileDraft,
+  getProfessionalProfileByUserId,
+  getProfessionalProfileById,
+  listProfessionalProfiles,
+  addProfessionalDocument,
+  getProfessionalDocuments,
+  deleteProfessionalDocument,
+  updateProfessionalProfileReview,
+  grantLevelWaiver,
+  revokeLevelWaiver,
+  getLevelWaiversForUser,
+} from "./professionalProfiles";
 
 // Re-export types
 export type { IStorage } from "./types";
