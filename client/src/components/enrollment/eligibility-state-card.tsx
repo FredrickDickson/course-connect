@@ -34,12 +34,6 @@ const STATUS_META: Record<EligibilityResponse["status"], {
     icon: CheckCircle2,
     iconClass: "text-emerald-600",
   },
-  REQUIRES_APPROVAL: {
-    badge: "Needs Approval",
-    badgeClass: "text-amber-600 border-amber-100 bg-amber-50",
-    icon: ShieldCheck,
-    iconClass: "text-amber-500",
-  },
   BLOCKED: {
     badge: "Action Required",
     badgeClass: "text-red-600 border-red-100 bg-red-50",

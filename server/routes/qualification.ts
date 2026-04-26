@@ -271,21 +271,12 @@ router.post(
 
     const normalizedTrack = normalizeTrack(track);
 
-    if (!hasExperience) {
-      await setUserAssignedLevel(req.user.id, "ASSOCIATE", {
-        track: normalizedTrack,
-        levelSource: "DEFAULT",
-      });
-
-      return res.json({
-        assignedLevel: "ASSOCIATE",
-        levelSource: "DEFAULT",
-        track: normalizedTrack,
-      });
-    }
-
+    // Record the experience choice but don't assign any level
+    // Users earn their level through course completion (Associate → Member → Fellow)
+    // or through admin review (expedited path)
     return res.json({
       status: "experience_recorded",
+      hasExperience,
       track: normalizedTrack,
     });
   }),

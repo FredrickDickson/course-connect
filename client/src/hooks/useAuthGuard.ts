@@ -35,16 +35,23 @@ export function useAuthGuard() {
     }
 
     const checkProfile = async () => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("profile_completed")
+      // Check if user has a professional profile
+      const { data: profProfile } = await supabase
+        .from("professional_profiles")
+        .select("review_status")
         .eq("user_id", user.id)
+        .eq("is_current", true)
         .maybeSingle();
 
-      const completed = profile?.profile_completed ?? false;
-      setBioDataCompleted(completed);
+      // Onboarding is complete ONLY if:
+      // - Profile exists AND has been submitted (not in DRAFT)
+      // New users (no profile) MUST go through onboarding first
+      const isOnboardingComplete = profProfile != null && profProfile.review_status !== "DRAFT";
 
-      if (!completed && location !== "/onboarding") {
+      setBioDataCompleted(isOnboardingComplete);
+
+      // Redirect to onboarding if they haven't started or completed submission
+      if (!isOnboardingComplete && location !== "/onboarding") {
         setLocation("/onboarding");
         return;
       }

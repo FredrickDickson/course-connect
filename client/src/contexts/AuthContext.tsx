@@ -10,6 +10,8 @@ interface UserProfile {
   profileImageUrl: string;
   role: string;
   membershipLevel: string | null;
+  assignedLevel: string | null;
+  currentLevel: string | null;
   bio?: string;
   country?: string;
   timezone?: string;
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
       supabase
         .from("users")
-        .select("role")
+        .select("role, assigned_level, current_level")
         .eq("id", currentAuthUser.id)
         .maybeSingle(),
     ]);
@@ -79,6 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
       role: derivedRole,
       membershipLevel: profileData?.part || null,
+      assignedLevel: userRow?.assigned_level || null,
+      currentLevel: userRow?.current_level || null,
       country: profileData?.country || "",
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",

@@ -227,16 +227,8 @@ export default function EnrollmentForm({
     }
   }, [formData.phone, formData.sameAsPhone]);
 
-  // Load Paystack
-  useEffect(() => {
-    if (!paystackLoaded.current) {
-      const s = document.createElement("script");
-      s.src = "https://js.paystack.co/v1/inline.js";
-      s.async = true;
-      document.body.appendChild(s);
-      paystackLoaded.current = true;
-    }
-  }, []);
+  // Note: Paystack inline script removed - using unified checkout flow instead
+  // Redirects to /checkout/:courseId for payment processing
 
   // Auto-detect programme from course title
   useEffect(() => {
@@ -422,7 +414,7 @@ export default function EnrollmentForm({
       return;
     }
 
-    // Check eligibility before enrollment
+    // Unified eligibility check via API
     try {
       setEligibilityResult(null);
       const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -463,52 +455,27 @@ export default function EnrollmentForm({
       return;
     }
 
-    // Save full profile before enrollment
+    // Save full profile before redirecting to checkout
     await saveProfile();
 
-    if (formData.paymentMethod === "paystack") {
-      if (!window.PaystackPop) {
-        toast({ title: "Payment system loading, please wait...", variant: "destructive" });
-        return;
-      }
-      setIsSubmitting(true);
-
-      const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+    // Store form data in sessionStorage for checkout page to use
+    sessionStorage.setItem("enrollment_form_data", JSON.stringify({
+      courseId: course.id,
+      ticketName,
+      totalPrice,
+      formData: {
         email: formData.email,
-        amount: totalPrice * 100,
-        currency: "GHS",
-        callback: async (response: any) => {
-          try {
-            const enrollment = await createEnrollment("paystack", response.reference);
-            localStorage.removeItem(STORAGE_KEY);
-            setEligibilityResult(null);
-            setBookingResult(enrollment);
-            setStep(5);
-          } catch (err: any) {
-            toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
-          }
-          setIsSubmitting(false);
-        },
-        onClose: () => {
-          setIsSubmitting(false);
-          toast({ title: "Payment cancelled", variant: "destructive" });
-        },
-      });
-      handler.openIframe();
-    } else {
-      setIsSubmitting(true);
-      try {
-        const enrollment = await createEnrollment(formData.paymentMethod);
-        localStorage.removeItem(STORAGE_KEY);
-        setEligibilityResult(null);
-        setBookingResult(enrollment);
-        setStep(5);
-      } catch (err: any) {
-        toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
+        fullName: formData.fullName,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        country: formData.country,
+        institution: formData.institution,
+        programme: formData.programme,
       }
-      setIsSubmitting(false);
-    }
+    }));
+
+    // Redirect to unified checkout flow (replaces inline Paystack popup)
+    setLocation(`/checkout/${course.id}`);
   };
 
   const stepLabels = [

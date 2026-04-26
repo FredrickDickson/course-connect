@@ -9,6 +9,8 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import MembershipCard from "@/components/dashboard/membership-card";
 import ProgressionBanner from "@/components/dashboard/progression-banner";
+import ProgressionLadder from "@/components/dashboard/progression-ladder";
+import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebration";
 import EnrolledCoursesGrid from "@/components/dashboard/enrolled-courses-grid";
 import RecommendedCourses from "@/components/dashboard/recommended-courses";
 import { Link, useLocation } from "wouter";
@@ -123,7 +125,22 @@ export default function Dashboard() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Left col */}
             <div className="lg:col-span-2 space-y-6">
-              <ProgressionBanner />
+              <ProgressionLadder
+                userLevel={(user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as any}
+                pathway="arbitration"
+                completedLevels={enrollments
+                  .filter((e: any) => e.status === 'COMPLETED' || Number(e.progress) >= 100)
+                  .map((e: any) => e.course?.level?.toLowerCase())
+                  .filter(Boolean)}
+                currentCourse={enrollments.find((e: any) => 
+                  e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100
+                ) ? {
+                  id: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.id,
+                  title: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.title,
+                  progress: Number(enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).progress || 0),
+                  level: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.level
+                } : null}
+              />
 
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -138,6 +155,7 @@ export default function Dashboard() {
 
             {/* Right sidebar */}
             <div className="space-y-6">
+              <LevelUpgradeCelebration />
               <MembershipCard />
               <RecommendedCourses enrolledCourseIds={enrolledCourseIds} />
 

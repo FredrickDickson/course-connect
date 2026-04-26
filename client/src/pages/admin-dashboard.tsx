@@ -20,7 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import AdminMembershipTable from "@/components/admin-membership-table";
-import AdminEnrollmentsTable from "@/components/admin-enrollments-table";
+import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
 
           {/* Enrollments Tab */}
           <TabsContent value="enrollments">
-            <AdminEnrollmentsTable />
+            <AdminEnrollmentsUnified />
           </TabsContent>
 
           {/* Courses Tab — Enhanced with capacity bars */}
