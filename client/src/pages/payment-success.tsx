@@ -32,10 +32,19 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
-        const enrolledCourseId = response?.data?.metadata?.courseId;
+        // Server returns { success, data: paystackTransaction }
+        // where paystackTransaction.metadata.courseId is set during checkout init.
+        const tx = response?.data;
+        const enrolledCourseId =
+          tx?.metadata?.courseId ||
+          tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
+
         if (enrolledCourseId) {
-          setLocation(`/learn/${enrolledCourseId}/1`);
+          setLocation(`/course/${enrolledCourseId}`);
+          return;
         }
+
+        setLocation('/dashboard');
       }
     },
   });
@@ -124,7 +133,9 @@ export default function PaymentSuccess() {
   }
 
   const paymentData = verifyPaymentMutation.data?.data;
-  const courseId = paymentData?.metadata?.courseId;
+  const finalCourseId =
+    paymentData?.metadata?.courseId ||
+    paymentData?.data?.metadata?.courseId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -172,9 +183,9 @@ export default function PaymentSuccess() {
             </div>
 
             <div className="flex gap-4 justify-center pt-6">
-              {courseId ? (
+              {finalCourseId ? (
                 <>
-                  <Link href={`/learn/${courseId}/1`}>
+                  <Link href={`/course/${finalCourseId}`}>
                     <Button size="lg" className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-5 w-5 mr-2" />
                       Start Learning

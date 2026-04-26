@@ -86,8 +86,13 @@ export interface ExpeditedEligibility {
 export interface EligibilityUserSnapshot {
   years_adr_experience?: number | null;
   years_legal_experience?: number | null;
+  years_experience?: string | null;
   has_llm_degree?: boolean | null;
   bar_admission_number?: string | null;
+  education_level?: string | null;
+  professional_background?: string | null;
+  adr_experience?: string | null;
+  job_title?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   role?: string | null;
@@ -138,8 +143,9 @@ export function evaluateEligibility(input: EligibilityEvaluationInput): Eligibil
       return buildEligibleResponse(input.course, targetLevel, currentLevel);
     }
 
-    const hasExperience = hasProfessionalExperience(input.user);
-    if (input.course.track === "MEDIATION" && hasExperience) {
+    const hasLawWaiver = hasLawDegreeOrPractice(input.user);
+    const hasMediationTraining = hasBasicMediationTraining(input.user);
+    if (input.course.track === "MEDIATION" && hasLawWaiver && hasMediationTraining) {
       return buildEligibleResponse(input.course, targetLevel, currentLevel);
     }
 
@@ -199,6 +205,41 @@ function normalizeEnrollmentLevel(level?: string | null): EnrollmentLevel | null
 
 function hasProfessionalExperience(user: EligibilityEvaluationInput["user"]): boolean {
   return (user.years_adr_experience ?? 0) >= 3 || (user.years_legal_experience ?? 0) >= 3;
+}
+
+function hasLawDegreeOrPractice(user: EligibilityEvaluationInput["user"]): boolean {
+  const education = normalizeFreeText(user.education_level);
+  const background = normalizeFreeText(user.professional_background);
+  const title = normalizeFreeText(user.job_title);
+
+  return Boolean(
+    (user.has_llm_degree ?? false) ||
+      (user.years_legal_experience ?? 0) >= 5 ||
+      containsAny(education, ["law", "llb", "ll.m", "llm", "jd", "juris"]) ||
+      containsAny(background, ["law", "legal", "advocate", "lawyer", "attorney", "counsel", "solicitor", "barrister"]) ||
+      containsAny(title, ["lawyer", "attorney", "legal", "counsel", "solicitor", "barrister"])
+  );
+}
+
+function hasBasicMediationTraining(user: EligibilityEvaluationInput["user"]): boolean {
+  const adrExperience = normalizeFreeText(user.adr_experience);
+  const background = normalizeFreeText(user.professional_background);
+  const education = normalizeFreeText(user.education_level);
+
+  return Boolean(
+    (user.years_adr_experience ?? 0) > 0 ||
+      containsAny(adrExperience, ["mediation", "mediat", "adr", "arbitration", "conflict resolution"]) ||
+      containsAny(background, ["mediation", "mediat", "adr", "arbitration", "conflict resolution"]) ||
+      containsAny(education, ["mediation", "adr", "conflict resolution"])
+  );
+}
+
+function normalizeFreeText(value?: string | null): string {
+  return (value || "").trim().toLowerCase();
+}
+
+function containsAny(value: string, needles: string[]): boolean {
+  return needles.some((needle) => value.includes(needle));
 }
 
 function buildEligibleResponse(
