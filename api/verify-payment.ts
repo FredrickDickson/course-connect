@@ -109,7 +109,8 @@ async function logActivity(
   const activityData = {
     user_id: userId,
     event_type: "course_enrolled",
-    event_data: {
+    description: `Enrolled in course: ${courseName}`,
+    metadata: {
       course_id: courseId,
       course_name: courseName,
       enrollment_id: enrollmentId,
