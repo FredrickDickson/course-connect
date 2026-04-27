@@ -7,14 +7,6 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "functions": {
-    "api/enrollments/check-eligibility.ts": {
-      "includeFiles": ["shared/**/*", "server/**/*"]
-    },
-    "api/verify-payment.ts": {
-      "includeFiles": ["shared/**/*", "server/**/*"]
-    }
-  },
   "rewrites": [
     {
       "source": "/api/verify-payment",
