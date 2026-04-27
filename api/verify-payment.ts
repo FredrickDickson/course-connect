@@ -7,20 +7,13 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
-
 /**
  * Verify Paystack payment
  */
-async function verifyPayment(reference: string) {
+async function verifyPayment(reference: string, paystackSecretKey: string) {
   const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${paystackSecretKey}`,
     },
   });
 
@@ -40,7 +33,8 @@ async function createOrder(
   userId: string,
   courseId: string,
   paymentData: any,
-  metadata: any
+  metadata: any,
+  supabaseAdmin: any
 ) {
   const orderData = {
     user_id: userId,
@@ -74,6 +68,7 @@ async function createEnrollment(
   userId: string,
   courseId: string,
   enrollmentLevel: string,
+  supabaseAdmin: any
 ) {
   // Payment details are recorded on the orders table; enrollments only tracks
   // access state. Do NOT add payment_* columns here — they don't exist on
@@ -104,7 +99,8 @@ async function logActivity(
   courseName: string,
   enrollmentId: string,
   paymentReference: string,
-  metadata: any
+  metadata: any,
+  supabaseAdmin: any
 ) {
   const activityData = {
     user_id: userId,
@@ -134,7 +130,7 @@ async function logActivity(
 /**
  * Update course enrollment count
  */
-async function updateCourseEnrollmentCount(courseId: string) {
+async function updateCourseEnrollmentCount(courseId: string, supabaseAdmin: any) {
   const { data: course } = await supabaseAdmin
     .from("courses")
     .select("enrollment_count")
@@ -154,7 +150,7 @@ async function updateCourseEnrollmentCount(courseId: string) {
 /**
  * Verify JWT token from Supabase
  */
-async function verifyAuth(authHeader: string): Promise<{ userId: string; email: string }> {
+async function verifyAuth(authHeader: string, supabaseAdmin: any): Promise<{ userId: string; email: string }> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new Error('No authorization header');
   }
@@ -178,6 +174,13 @@ async function verifyAuth(authHeader: string): Promise<{ userId: string; email: 
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Initialize clients inside handler to avoid module-level env var issues
+  const supabaseAdmin = createClient(
+    process.env.VITE_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
+
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -194,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Verify authentication
     const authHeader = req.headers.authorization || '';
-    const { userId } = await verifyAuth(authHeader);
+    const { userId } = await verifyAuth(authHeader, supabaseAdmin);
 
     const { reference } = req.body;
 
@@ -203,7 +206,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Verify payment with Paystack
-    const paymentData = await verifyPayment(reference);
+    const paymentData = await verifyPayment(reference, PAYSTACK_SECRET_KEY);
 
     if (!paymentData.data?.status || paymentData.data.status !== 'success') {
       return res.status(400).json({ 
@@ -242,13 +245,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Create order record
-    await createOrder(userId, courseId, paymentData.data, metadata);
+    await createOrder(userId, courseId, paymentData.data, metadata, supabaseAdmin);
 
     // Create enrollment (payment details live on the orders row)
     const enrollment = await createEnrollment(
       userId,
       courseId,
       enrollmentLevel,
+      supabaseAdmin,
     );
 
     // Log activity
@@ -258,11 +262,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       metadata.courseName || 'Unknown Course',
       enrollment.id,
       paymentData.data.reference,
-      metadata
+      metadata,
+      supabaseAdmin
     );
 
     // Update course enrollment count
-    await updateCourseEnrollmentCount(courseId);
+    await updateCourseEnrollmentCount(courseId, supabaseAdmin);
 
     return res.json({
       success: true,
