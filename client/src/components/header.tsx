@@ -30,7 +30,7 @@ export default function Header() {
     { name: t('nav.courses'), href: "/courses", icon: GraduationCap, authRequired: true },
     { name: t('nav.dashboard'), href: "/dashboard", icon: User, authRequired: true },
     { name: "Instructor", href: "/instructor", icon: Presentation, authRequired: true, instructorOnly: true },
-    { name: "Community", href: "/community", icon: MessageSquare, authRequired: true },
+    // { name: "Community", href: "/community", icon: MessageSquare, authRequired: true },
   ];
 
   const isActivePath = (path: string) => {
