@@ -9,6 +9,18 @@
   },
   "rewrites": [
     {
+      "source": "/api/verify-payment",
+      "destination": "/api/verify-payment.ts"
+    },
+    {
+      "source": "/api/videos/validate",
+      "destination": "/api/videos/validate.ts"
+    },
+    {
+      "source": "/api/enrollments/check-eligibility",
+      "destination": "/api/enrollments/check-eligibility.ts"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

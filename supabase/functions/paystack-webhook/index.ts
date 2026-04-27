@@ -4,6 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
@@ -15,11 +16,16 @@ Deno.serve(async (req: Request) => {
     const signature = req.headers.get("x-paystack-signature");
     const body = await req.text();
     
-    // For production, verify the signature
-    // const hash = crypto.subtle.digest("SHA512", body + PAYSTACK_SECRET_KEY);
-    // if (signature !== hash) {
-    //   return new Response("Invalid signature", { status: 401 });
-    // }
+    // Verify the webhook signature for security
+    const encoder = new TextEncoder();
+    const data = encoder.encode(body + PAYSTACK_SECRET_KEY);
+    const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    if (signature !== hashHex) {
+      return new Response("Invalid signature", { status: 401 });
+    }
 
     const event = JSON.parse(body);
 
@@ -252,8 +258,37 @@ async function sendWelcomeEmail(supabase: any, user: any, course: any, context: 
 
   const template = templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
 
-  // This would integrate with your email service (SendGrid, etc.)
-  console.log(`Sending ${template} email to ${user.email} for course ${course.title}`);
+  // Send actual email via Resend
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "CIMA Learn <noreply@cima-learn.vercel.app>",
+        to: user.email,
+        subject: `Welcome to ${course.title} - ${context.enrollmentLevel} Enrollment`,
+        html: generateWelcomeEmailHTML(user, course, context.enrollmentLevel),
+        tags: [
+          { name: "type", value: "welcome" },
+          { name: "course", value: String(course.id) },
+          { name: "level", value: context.enrollmentLevel }
+        ]
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Resend API error: ${error}`);
+    }
+
+    console.log(`Welcome email sent to ${user.email} for course ${course.title}`);
+  } catch (error) {
+    console.error("Failed to send welcome email:", error);
+    // Don't throw - email failure shouldn't break the enrollment flow
+  }
   
   // Log email activity
   await supabase.from("activity_log").insert({
@@ -265,6 +300,43 @@ async function sendWelcomeEmail(supabase: any, user: any, course: any, context: 
       course_name: course.title,
     },
   });
+}
+
+function generateWelcomeEmailHTML(user: any, course: any, level: string) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to ${course.title}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #1a365d;">Welcome to CIMA Learn, ${user.first_name || 'Student'}!</h2>
+    
+    <p>You've successfully enrolled in <strong>${course.title}</strong> at the <strong>${level}</strong> level.</p>
+    
+    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #2d3748;">What's Next?</h3>
+      <ul>
+        <li>Access your course materials in your dashboard</li>
+        <li>Join the community discussions</li>
+        <li>Start with the first module</li>
+      </ul>
+    </div>
+    
+    <p><a href="https://cima-learn.vercel.app/dashboard" 
+          style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+      Go to Dashboard
+    </a></p>
+    
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+    <p style="font-size: 12px; color: #718096;">
+      If you have questions, reply to this email or contact support.
+    </p>
+  </div>
+</body>
+</html>`;
 }
 
 async function addCommunityAccess(supabase: any, user: any, course: any, context: any) {
@@ -279,12 +351,13 @@ async function addCommunityAccess(supabase: any, user: any, course: any, context
 
   // This would integrate with your community platform (Discord, Slack, etc.)
   for (const channel of communityChannels) {
-    await supabase.from("community_memberships").insert({
+    // Use upsert to ignore duplicates based on user_id and channel_name
+    await supabase.from("community_memberships").upsert({
       user_id: context.userId,
       channel_name: channel,
       course_id: context.courseId,
       joined_at: new Date().toISOString(),
-    }).ignore(); // Ignore duplicates
+    }, { onConflict: 'user_id,channel_name' });
   }
 
   // Log community access
