@@ -167,7 +167,10 @@ export default function Profile() {
   // Save basic info
   const saveBasicMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { error } = await (supabase as any)
+      const fullName = `${data.firstName} ${data.lastName}`.trim();
+      
+      // Update users table
+      const { error: userError } = await (supabase as any)
         .from("users")
         .update({
           first_name: data.firstName,
@@ -178,7 +181,19 @@ export default function Profile() {
           updated_at: new Date().toISOString(),
         })
         .eq("id", user!.id);
-      if (error) throw error;
+      if (userError) throw userError;
+
+      // Update profiles table (full_name, country, timezone)
+      const { error: profileError } = await (supabase as any)
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          country: data.country,
+          timezone: data.timezone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user!.id);
+      if (profileError) throw profileError;
     },
     onSuccess: () => {
       toast({ title: "Personal info updated" });
