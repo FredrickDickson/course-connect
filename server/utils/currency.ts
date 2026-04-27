@@ -7,10 +7,11 @@ export interface ExchangeRates {
   USD_TO_GHS: number;
 }
 
-// Fixed rate for MVP - update this periodically
-// You can also integrate with an exchange rate API later
+// Exchange rate from environment variable
+const usdToGhsRate = parseFloat(process.env.USD_TO_GHS_RATE || "15.50");
+
 export const EXCHANGE_RATES: ExchangeRates = {
-  USD_TO_GHS: 11, // 1 USD = 15.50 GHS (update as needed)
+  USD_TO_GHS: usdToGhsRate,
 };
 
 /**

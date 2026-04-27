@@ -7,7 +7,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("VITE_APP_URL") || "http://localhost:5173";
 
 // Exchange rate for USD to GHS conversion
-const USD_TO_GHS_RATE = 15.50; // Update this rate as needed
+const USD_TO_GHS_RATE = parseFloat(Deno.env.get("USD_TO_GHS_RATE") || "15.50");
 
 /**
  * Convert USD amount to GHS
