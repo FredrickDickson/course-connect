@@ -5,14 +5,205 @@
 
 import { createClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type { EnrollmentLevel } from "@shared/enrollmentEligibility";
-import type { User, Course } from "@shared/schema";
-import { checkEligibility } from "../../server/storage/enrollment";
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
+
+// Inlined eligibility logic to avoid cross-directory imports
+const LEVEL_ORDER: Record<string, number> = {
+  NONE: 0,
+  ASSOCIATE: 1,
+  MEMBER: 2,
+  FELLOW: 3,
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  NONE: "No level assigned",
+  ASSOCIATE: "Associate (Part I)",
+  MEMBER: "Member (Part II)",
+  FELLOW: "Fellow",
+};
+
+const ACTIVE_ENROLLMENT_STATUSES = new Set([
+  "ACTIVE",
+  "PENDING_APPROVAL",
+  "APPROVED",
+]);
+
+const DEFAULT_TRACK = "ARBITRATION";
+
+function normalizeTrackLevel(level?: string | null): string {
+  if (!level) return "NONE";
+  const normalized = level.toUpperCase();
+  if (
+    normalized === "NONE" ||
+    normalized === "ASSOCIATE" ||
+    normalized === "MEMBER" ||
+    normalized === "FELLOW"
+  ) {
+    return normalized;
+  }
+  return "NONE";
+}
+
+function getBlockingMessage(userLevel: string, courseLevel: string): string {
+  if (courseLevel === "MEMBER") {
+    return "You must complete Associate (Part I) first";
+  }
+  if (courseLevel === "FELLOW") {
+    return "You must complete Member (Part II) first";
+  }
+  return "You are not eligible for this course yet";
+}
+
+function getNextStep(courseLevel: string): "ASSOCIATE" | "MEMBER" | null {
+  if (courseLevel === "MEMBER") {
+    return "ASSOCIATE";
+  }
+  if (courseLevel === "FELLOW") {
+    return "MEMBER";
+  }
+  return null;
+}
+
+function normalizeEnrollmentLevel(level?: string | null): string {
+  if (!level) return "ASSOCIATE";
+  const normalized = level.toUpperCase();
+  if (normalized === "ASSOCIATE" || normalized === "MEMBER" || normalized === "FELLOW") {
+    return normalized;
+  }
+  return "ASSOCIATE";
+}
+
+function resolveTrack(track?: string | null): string {
+  return track === "ARBITRATION" || track === "MEDIATION" ? track : DEFAULT_TRACK;
+}
+
+function levelLabel(level?: string): string {
+  if (!level) return "Unassigned";
+  return LEVEL_LABELS[level] ?? level;
+}
+
+async function getEnrollment(userId: string, courseId: string): Promise<any> {
+  const { data, error } = await supabaseAdmin
+    .from("enrollments")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("course_id", courseId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function checkEligibility(
+  user: any,
+  course: any,
+  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW",
+): Promise<any> {
+  const track = resolveTrack(course.track);
+  const currentLevel = normalizeTrackLevel(
+    (user.assigned_level ?? user.current_level) as string | null,
+  );
+  const requiredLevel = normalizeEnrollmentLevel(
+    (course.level as string | null) ?? enrollmentLevel,
+  );
+  const progressionBase: any = {
+    track,
+    currentLevel,
+    targetLevel: requiredLevel,
+  };
+
+  const existingEnrollment = await getEnrollment(user.id, course.id);
+  if (
+    existingEnrollment &&
+    ACTIVE_ENROLLMENT_STATUSES.has(
+      (existingEnrollment.status ?? "ACTIVE").toUpperCase(),
+    )
+  ) {
+    return {
+      status: "BLOCKED",
+      reasonCode: "ALREADY_ENROLLED",
+      existingEnrollmentId: existingEnrollment.id,
+      ui: {
+        title: "You're already enrolled",
+        message: "Head to your dashboard to continue learning.",
+        action: {
+          label: "Go to dashboard",
+          actionType: "VIEW_ENROLLMENT",
+          actionTarget: "/dashboard",
+        },
+      },
+      progression: progressionBase,
+    };
+  }
+
+  const userIndex = LEVEL_ORDER[currentLevel];
+  const courseIndex = LEVEL_ORDER[requiredLevel];
+
+  // Rule 1: Anyone can take Associate (entry point)
+  if (requiredLevel === "ASSOCIATE") {
+    return {
+      status: "ELIGIBLE",
+      reasonCode: "OK",
+      ui: {
+        title: "You're cleared to enroll",
+        message: `Continue to checkout to confirm your seat for ${course.title ?? "this course"}.`,
+        action: {
+          label: "Continue to checkout",
+          actionType: "ENROLL",
+          actionTarget: `/checkout/${course.id}`,
+        },
+      },
+      progression: progressionBase,
+    };
+  }
+
+  // Rule 2: Must have completed previous level (userIndex >= courseIndex - 1)
+  if (userIndex < courseIndex - 1) {
+    const blockingMessage = getBlockingMessage(currentLevel, requiredLevel);
+    const nextStep = getNextStep(requiredLevel);
+
+    return {
+      status: "BLOCKED",
+      reasonCode: "MISSING_PREREQ",
+      ui: {
+        title: `Complete ${nextStep} first`,
+        message: `${blockingMessage}. Complete the ${levelLabel(nextStep!)} pathway to unlock this course.`,
+        action: {
+          label: nextStep === "ASSOCIATE" ? "Start with Associate" : "Continue to Member",
+          actionType: "REDIRECT",
+          actionTarget: "/qualification-pathway",
+        },
+      },
+      progression: {
+        ...progressionBase,
+        requiredLevel: nextStep || undefined,
+      },
+      reason: blockingMessage,
+      next_step: nextStep,
+    };
+  }
+
+  // Pure progression model - no approval gates
+  // If user has completed the previous level, they can enroll
+  return {
+    status: "ELIGIBLE",
+    reasonCode: "OK",
+    ui: {
+      title: "You're cleared to enroll",
+      message: `Continue to checkout to confirm your seat for ${course.title ?? "this course"}.`,
+      action: {
+        label: "Continue to checkout",
+        actionType: "ENROLL",
+        actionTarget: `/checkout/${course.id}`,
+      },
+    },
+    progression: progressionBase,
+  };
+}
 
 /**
  * Check if user is eligible to enroll in a course
@@ -118,9 +309,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       normalizeEnrollmentLevel(enrollmentLevel || course.level?.toUpperCase?.()) || "ASSOCIATE";
 
     const evaluation = await checkEligibility(
-      user as User,
-      course as Course,
-      targetLevel,
+      user,
+      course,
+      targetLevel as "ASSOCIATE" | "MEMBER" | "FELLOW",
     );
 
     return res.status(200).json(evaluation);
@@ -134,13 +325,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     return res.status(500).json({ error: 'Internal server error', message: error.message });
   }
-}
-
-function normalizeEnrollmentLevel(value?: string | null): EnrollmentLevel | null {
-  if (!value) return null;
-  const upper = value.toUpperCase();
-  if (upper === "ASSOCIATE" || upper === "MEMBER" || upper === "FELLOW") {
-    return upper;
-  }
-  return null;
 }
