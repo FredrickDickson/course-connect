@@ -81,7 +81,7 @@ async function updateTrackProgress(
 ): Promise<boolean> {
   // Check if track progress exists
   const { data: existing } = await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .select("*")
     .eq("user_id", userId)
     .eq("track", track)
@@ -90,7 +90,7 @@ async function updateTrackProgress(
   if (existing) {
     // Update existing progress
     const { error } = await supabaseAdmin
-      .from("user_track_progress")
+      .from("track_progress")
       .update({
         level: newLevel,
         pathway,
@@ -102,7 +102,7 @@ async function updateTrackProgress(
   } else {
     // Create new track progress
     const { error } = await supabaseAdmin
-      .from("user_track_progress")
+      .from("track_progress")
       .insert({
         user_id: userId,
         track,
@@ -324,7 +324,7 @@ export async function handleFellowshipApproval(
 }> {
   // Check if user is already at Member level
   const { data: trackProgress } = await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .select("level, pathway")
     .eq("user_id", userId)
     .eq("track", track)
@@ -413,7 +413,7 @@ export async function checkUpgradeEligibility(
   message?: string;
 }> {
   const { data: trackProgress } = await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .select("level")
     .eq("user_id", userId)
     .eq("track", track)

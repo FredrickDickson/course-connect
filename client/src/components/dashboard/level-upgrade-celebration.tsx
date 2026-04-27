@@ -27,6 +27,7 @@ export default function LevelUpgradeCelebration() {
     level: string;
     decisionAt: string;
     isNew: boolean;
+    track?: string;
   } | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -34,48 +35,57 @@ export default function LevelUpgradeCelebration() {
     if (!user?.id) return;
 
     const checkForUpgrade = async () => {
-      // Check for recent level upgrade in professional_profiles
-      const { data: profile } = await supabase
-        .from("professional_profiles")
-        .select("assigned_level, review_status, decision_at")
-        .eq("user_id", user.id)
-        .eq("is_current", true)
-        .maybeSingle();
+      // Check for recent level upgrade in track_progress table
+      const { data: trackProgressList } = await supabase
+        .from("track_progress")
+        .select("*")
+        .eq("user_id", user.id);
 
-      if (!profile || profile.review_status !== "APPROVED" || !profile.assigned_level) {
+      if (!trackProgressList || trackProgressList.length === 0) {
         return;
       }
 
-      const assignedLevel = profile.assigned_level as string;
-      
-      // Check if we've already shown this celebration
-      const storageKey = `${STORAGE_KEY_PREFIX}${user.id}-${assignedLevel}`;
-      const alreadyShown = localStorage.getItem(storageKey);
-      
-      if (alreadyShown) {
-        return;
+      // Find the most recent upgrade across both tracks
+      let latestUpgrade: any = null;
+      let latestTrack: string | null = null;
+
+      for (const tp of trackProgressList) {
+        if (tp.level === "NONE") continue;
+
+        const storageKey = `${STORAGE_KEY_PREFIX}${user.id}-${tp.track}-${tp.level}`;
+        const alreadyShown = localStorage.getItem(storageKey);
+        
+        if (alreadyShown) continue;
+
+        const updatedAt = tp.updated_at ? new Date(tp.updated_at) : null;
+        const now = new Date();
+        const isRecent = updatedAt 
+          ? (now.getTime() - updatedAt.getTime()) < 7 * 24 * 60 * 60 * 1000 
+          : true;
+
+        if (!latestUpgrade || (updatedAt && (!latestUpgrade.decisionAt || updatedAt > new Date(latestUpgrade.decisionAt)))) {
+          latestUpgrade = {
+            level: tp.level,
+            decisionAt: tp.updated_at || now.toISOString(),
+            isNew: isRecent,
+          };
+          latestTrack = tp.track;
+        }
       }
 
-      // Check if this is a recent upgrade (within last 7 days) or first time seeing it
-      const decisionAt = profile.decision_at ? new Date(profile.decision_at) : null;
-      const now = new Date();
-      const isRecent = decisionAt 
-        ? (now.getTime() - decisionAt.getTime()) < 7 * 24 * 60 * 60 * 1000 
-        : true;
-
-      if (assignedLevel !== "NONE") {
+      if (latestUpgrade && latestTrack) {
         setUpgradeInfo({
-          level: assignedLevel,
-          decisionAt: profile.decision_at || now.toISOString(),
-          isNew: isRecent,
+          ...latestUpgrade,
+          track: latestTrack,
         });
 
         // Trigger confetti for recent upgrades
-        if (isRecent) {
+        if (latestUpgrade.isNew) {
           triggerConfetti();
         }
 
         // Mark as shown
+        const storageKey = `${STORAGE_KEY_PREFIX}${user.id}-${latestTrack}-${latestUpgrade.level}`;
         localStorage.setItem(storageKey, "true");
       }
     };
@@ -156,6 +166,11 @@ export default function LevelUpgradeCelebration() {
               <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
                 Level Upgrade
               </span>
+              {upgradeInfo.track && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  {upgradeInfo.track}
+                </span>
+              )}
             </div>
             
             <h3 className="text-lg font-bold text-gray-900 mb-1">
