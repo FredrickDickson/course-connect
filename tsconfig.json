@@ -37,6 +37,7 @@
   "include": [
     "client/src/**/*",
     "shared/**/*",
-    "server/**/*"
+    "server/**/*",
+    "api/**/*"
   ]
 }
