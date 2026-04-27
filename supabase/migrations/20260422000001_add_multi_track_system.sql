@@ -2,11 +2,11 @@
 -- Implements the logic from full logic.md for Arbitration and Mediation tracks
 
 -- ============================================================================
--- 1. USER TRACK PROGRESS TABLE
+-- 1. TRACK PROGRESS TABLE
 -- Stores track-specific progression for each user
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS user_track_progress (
+CREATE TABLE IF NOT EXISTS track_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   track TEXT NOT NULL CHECK (track IN ('ARBITRATION', 'MEDIATION')),
@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS user_track_progress (
 );
 
 -- Add indexes for performance
-CREATE INDEX IF NOT EXISTS idx_user_track_progress_user_id ON user_track_progress(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_track_progress_track ON user_track_progress(track);
-CREATE INDEX IF NOT EXISTS idx_user_track_progress_level ON user_track_progress(level);
+CREATE INDEX IF NOT EXISTS idx_track_progress_user_id ON track_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_track_progress_track ON track_progress(track);
+CREATE INDEX IF NOT EXISTS idx_track_progress_level ON track_progress(level);
 
 -- ============================================================================
 -- 2. CERTIFICATES TABLE
@@ -157,8 +157,8 @@ $$ LANGUAGE plpgsql;
 -- 7. ADD UPDATED_AT TRIGGERS TO NEW TABLES
 -- ============================================================================
 
-CREATE TRIGGER update_user_track_progress_updated_at
-  BEFORE UPDATE ON user_track_progress
+CREATE TRIGGER update_track_progress_updated_at
+  BEFORE UPDATE ON track_progress
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
@@ -186,24 +186,24 @@ CREATE TRIGGER update_course_completion_records_updated_at
 -- 8. ENABLE ROW LEVEL SECURITY (RLS)
 -- ============================================================================
 
-ALTER TABLE user_track_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE track_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fellowship_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE student_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE course_completion_records ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- 9. RLS POLICIES FOR USER_TRACK_PROGRESS
+-- 9. RLS POLICIES FOR TRACK_PROGRESS
 -- ============================================================================
 
 -- Users can view their own track progress
 CREATE POLICY "Users can view own track progress"
-  ON user_track_progress FOR SELECT
+  ON track_progress FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Admins can view all track progress
 CREATE POLICY "Admins can view all track progress"
-  ON user_track_progress FOR SELECT
+  ON track_progress FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -214,17 +214,17 @@ CREATE POLICY "Admins can view all track progress"
 
 -- Users can insert their own track progress
 CREATE POLICY "Users can insert own track progress"
-  ON user_track_progress FOR INSERT
+  ON track_progress FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own track progress
 CREATE POLICY "Users can update own track progress"
-  ON user_track_progress FOR UPDATE
+  ON track_progress FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Admins can update all track progress
 CREATE POLICY "Admins can update track progress"
-  ON user_track_progress FOR UPDATE
+  ON track_progress FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM users
@@ -381,7 +381,7 @@ CREATE POLICY "System can insert course completion records"
 -- ============================================================================
 
 -- Initialize arbitration track for existing users based on current_level
-INSERT INTO user_track_progress (user_id, track, level, pathway)
+INSERT INTO track_progress (user_id, track, level, pathway)
 SELECT 
   id as user_id,
   'ARBITRATION' as track,
@@ -392,7 +392,7 @@ WHERE current_level IS NOT NULL
 ON CONFLICT (user_id, track) DO NOTHING;
 
 -- Initialize mediation track as NONE for all existing users
-INSERT INTO user_track_progress (user_id, track, level)
+INSERT INTO track_progress (user_id, track, level)
 SELECT 
   id as user_id,
   'MEDIATION' as track,
@@ -404,15 +404,15 @@ ON CONFLICT (user_id, track) DO NOTHING;
 -- 15. ADD COMMENTS FOR DOCUMENTATION
 -- ============================================================================
 
-COMMENT ON TABLE user_track_progress IS 'Stores track-specific qualification progression for Arbitration and Mediation tracks';
+COMMENT ON TABLE track_progress IS 'Stores track-specific qualification progression for Arbitration and Mediation tracks';
 COMMENT ON TABLE certificates IS 'Stores issued certificates with track, level, pathway, and verification information';
 COMMENT ON TABLE fellowship_applications IS 'Stores fellowship applications separate from expedited member applications';
 COMMENT ON TABLE student_memberships IS 'Tracks student membership applications and verification status';
 COMMENT ON TABLE course_completion_records IS 'Tracks course completions with assessment results and certificate linkage';
 
-COMMENT ON COLUMN user_track_progress.track IS 'Qualification track: ARBITRATION or MEDIATION';
-COMMENT ON COLUMN user_track_progress.level IS 'Qualification level: NONE, STUDENT, ASSOCIATE, MEMBER, or FELLOW';
-COMMENT ON COLUMN user_track_progress.pathway IS 'Pathway type: STANDARD, EXPEDITED, or HYBRID (for mixed progression)';
+COMMENT ON COLUMN track_progress.track IS 'Qualification track: ARBITRATION or MEDIATION';
+COMMENT ON COLUMN track_progress.level IS 'Qualification level: NONE, STUDENT, ASSOCIATE, MEMBER, or FELLOW';
+COMMENT ON COLUMN track_progress.pathway IS 'Pathway type: STANDARD, EXPEDITED, or HYBRID (for mixed progression)';
 
 COMMENT ON COLUMN certificates.track IS 'Track for this certificate: ARBITRATION or MEDIATION';
 COMMENT ON COLUMN certificates.level IS 'Qualification level: ASSOCIATE, MEMBER, or FELLOW';

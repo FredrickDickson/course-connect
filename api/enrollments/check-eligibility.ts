@@ -98,15 +98,36 @@ async function getEnrollment(userId: string, courseId: string): Promise<any> {
   return data;
 }
 
+async function getTrackLevel(userId: string, track: string): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from("track_progress")
+    .select("level")
+    .eq("user_id", userId)
+    .eq("track", track)
+    .maybeSingle();
+  
+  if (error || !data) {
+    // Initialize track_progress if missing
+    await supabaseAdmin
+      .from("track_progress")
+      .insert({
+        user_id: userId,
+        track: track,
+        level: "NONE"
+      });
+    return "NONE";
+  }
+  
+  return normalizeTrackLevel(data.level);
+}
+
 async function checkEligibility(
   user: any,
   course: any,
   enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW",
 ): Promise<any> {
   const track = resolveTrack(course.track);
-  const currentLevel = normalizeTrackLevel(
-    (user.assigned_level ?? user.current_level) as string | null,
-  );
+  const currentLevel = await getTrackLevel(user.id, track);
   const requiredLevel = normalizeEnrollmentLevel(
     (course.level as string | null) ?? enrollmentLevel,
   );
@@ -129,7 +150,7 @@ async function checkEligibility(
       existingEnrollmentId: existingEnrollment.id,
       ui: {
         title: "You're already enrolled",
-        message: "Head to your dashboard to continue learning.",
+        message: `Head to your dashboard to continue your ${track.toLowerCase()} pathway.`,
         action: {
           label: "Go to dashboard",
           actionType: "VIEW_ENROLLMENT",
@@ -143,14 +164,14 @@ async function checkEligibility(
   const userIndex = LEVEL_ORDER[currentLevel];
   const courseIndex = LEVEL_ORDER[requiredLevel];
 
-  // Rule 1: Anyone can take Associate (entry point)
+  // Rule 1: Anyone can take Associate (entry point) in ANY track
   if (requiredLevel === "ASSOCIATE") {
     return {
       status: "ELIGIBLE",
       reasonCode: "OK",
       ui: {
         title: "You're cleared to enroll",
-        message: `Continue to checkout to confirm your seat for ${course.title ?? "this course"}.`,
+        message: `Start your ${track.toLowerCase()} journey with ${course.title}.`,
         action: {
           label: "Continue to checkout",
           actionType: "ENROLL",
@@ -161,7 +182,7 @@ async function checkEligibility(
     };
   }
 
-  // Rule 2: Must have completed previous level (userIndex >= courseIndex - 1)
+  // Rule 2: Must have completed previous level in THIS track
   if (userIndex < courseIndex - 1) {
     const blockingMessage = getBlockingMessage(currentLevel, requiredLevel);
     const nextStep = getNextStep(requiredLevel);
@@ -170,8 +191,8 @@ async function checkEligibility(
       status: "BLOCKED",
       reasonCode: "MISSING_PREREQ",
       ui: {
-        title: `Complete ${nextStep} first`,
-        message: `${blockingMessage}. Complete the ${levelLabel(nextStep!)} pathway to unlock this course.`,
+        title: `Complete ${nextStep} in ${track} first`,
+        message: `${blockingMessage} in the ${track.toLowerCase()} track. Complete the ${levelLabel(nextStep!)} pathway to unlock this course.`,
         action: {
           label: nextStep === "ASSOCIATE" ? "Start with Associate" : "Continue to Member",
           actionType: "REDIRECT",
@@ -187,14 +208,13 @@ async function checkEligibility(
     };
   }
 
-  // Pure progression model - no approval gates
-  // If user has completed the previous level, they can enroll
+  // Eligible - has completed previous level in THIS track
   return {
     status: "ELIGIBLE",
     reasonCode: "OK",
     ui: {
       title: "You're cleared to enroll",
-      message: `Continue to checkout to confirm your seat for ${course.title ?? "this course"}.`,
+      message: `Continue your ${track.toLowerCase()} progression with ${course.title}.`,
       action: {
         label: "Continue to checkout",
         actionType: "ENROLL",

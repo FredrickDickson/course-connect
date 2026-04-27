@@ -202,6 +202,7 @@ export default function CourseDetail() {
           <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
+                <Badge variant="secondary" className="bg-white/20 text-white">{course.track}</Badge>
                 <Badge variant="secondary" className="bg-white/20 text-white">{course.level}</Badge>
                 {course.category && (
                   <Badge variant="secondary" className="bg-white/20 text-white">{course.category.name}</Badge>
