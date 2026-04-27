@@ -7,12 +7,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import MembershipCard from "@/components/dashboard/membership-card";
-import ProgressionBanner from "@/components/dashboard/progression-banner";
-import ProgressionLadder from "@/components/dashboard/progression-ladder";
 import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebration";
 import EnrolledCoursesGrid from "@/components/dashboard/enrolled-courses-grid";
 import RecommendedCourses from "@/components/dashboard/recommended-courses";
+import { TrackCard } from "@/components/dashboard/track-card";
 import { Link, useLocation } from "wouter";
 import { BookOpen, Trophy, Heart, Award, GraduationCap } from "lucide-react";
 
@@ -56,11 +54,27 @@ export default function Dashboard() {
     queryKey: ["certificates", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("certifications")
+        .from("certificates")
         .select("*, course:courses(id, title)")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .eq("is_revoked", false);
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: userQualificationState } = useQuery({
+    queryKey: ["userQualificationState", user?.id],
+    queryFn: async () => {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const response = await fetch("/api/qualifications/get-user-state", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch qualification state");
+      return response.json();
     },
     enabled: !!user,
   });
@@ -125,22 +139,25 @@ export default function Dashboard() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Left col */}
             <div className="lg:col-span-2 space-y-6">
-              <ProgressionLadder
-                userLevel={(user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as any}
-                pathway="arbitration"
-                completedLevels={enrollments
-                  .filter((e: any) => e.status === 'COMPLETED' || Number(e.progress) >= 100)
-                  .map((e: any) => e.course?.level?.toLowerCase())
-                  .filter(Boolean)}
-                currentCourse={enrollments.find((e: any) => 
-                  e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100
-                ) ? {
-                  id: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.id,
-                  title: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.title,
-                  progress: Number(enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).progress || 0),
-                  level: enrollments.find((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100).course.level
-                } : null}
-              />
+              {/* Track Cards */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <TrackCard
+                  track="ARBITRATION"
+                  level={userQualificationState?.tracks?.arbitration?.level || "NONE"}
+                  pathway={userQualificationState?.tracks?.arbitration?.pathway || null}
+                  certificates={userQualificationState?.tracks?.arbitration?.certificates || []}
+                  enrollments={userQualificationState?.tracks?.arbitration?.enrollments || []}
+                  color="#1e40af"
+                />
+                <TrackCard
+                  track="MEDIATION"
+                  level={userQualificationState?.tracks?.mediation?.level || "NONE"}
+                  pathway={userQualificationState?.tracks?.mediation?.pathway || null}
+                  certificates={userQualificationState?.tracks?.mediation?.certificates || []}
+                  enrollments={userQualificationState?.tracks?.mediation?.enrollments || []}
+                  color="#059669"
+                />
+              </div>
 
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -156,7 +173,6 @@ export default function Dashboard() {
             {/* Right sidebar */}
             <div className="space-y-6">
               <LevelUpgradeCelebration />
-              <MembershipCard />
               <RecommendedCourses enrolledCourseIds={enrolledCourseIds} />
 
               {/* Certificates */}
@@ -174,17 +190,30 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {certificates.map((cert: any) => (
-                        <div key={cert.id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
-                          <GraduationCap className="w-4 h-4 text-accent flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{cert.course?.title}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(cert.issued_at).toLocaleDateString()}
-                            </p>
+                      {certificates.map((cert: any) => {
+                        const trackColor = cert.track === "ARBITRATION" ? "#1e40af" : "#059669";
+                        return (
+                          <div key={cert.id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                              style={{ backgroundColor: trackColor }}
+                            >
+                              {cert.post_nominal?.[0] || "C"}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
+                                  {cert.track}
+                                </span>
+                                <p className="text-xs font-semibold">{cert.post_nominal}</p>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                {cert.level} • {new Date(cert.issued_at).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
