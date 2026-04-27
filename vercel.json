@@ -9,10 +9,10 @@
   },
   "functions": {
     "api/enrollments/check-eligibility.ts": {
-      "includeFiles": "shared/**/*"
+      "includeFiles": ["shared/**/*", "server/**/*"]
     },
     "api/verify-payment.ts": {
-      "includeFiles": "shared/**/*"
+      "includeFiles": ["shared/**/*", "server/**/*"]
     }
   },
   "rewrites": [
