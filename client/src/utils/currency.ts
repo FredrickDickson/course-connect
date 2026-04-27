@@ -4,7 +4,7 @@
  */
 
 // Exchange rate for USD to GHS conversion (should match server)
-const USD_TO_GHS_RATE = 11; // Update this rate as needed
+const USD_TO_GHS_RATE = parseFloat(import.meta.env.VITE_USD_TO_GHS_RATE || "15.50");
 
 /**
  * Convert USD amount to GHS

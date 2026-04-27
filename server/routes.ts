@@ -1434,7 +1434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
       // Convert USD to GHS for Paystack (Ghana merchant requires GHS)
-      const USD_TO_GHS_RATE = 15.50; // Should be configurable via env var
+      const USD_TO_GHS_RATE = parseFloat(process.env.USD_TO_GHS_RATE || "15.50");
       const amountUSD = parseFloat(course.price);
       const amountGHS = Math.round(amountUSD * USD_TO_GHS_RATE * 100); // Convert to pesewas
 
