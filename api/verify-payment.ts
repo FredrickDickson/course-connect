@@ -205,7 +205,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verify payment with Paystack
     const paymentData = await verifyPayment(reference);
 
-    if (!paymentData.status || paymentData.status !== 'success') {
+    if (!paymentData.data?.status || paymentData.data.status !== 'success') {
       return res.status(400).json({ 
         success: false, 
         error: 'Payment not successful' 
@@ -213,7 +213,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Get payment metadata
-    const metadata = paymentData.data.metadata;
+    const metadata = paymentData.data?.metadata || {};
     const courseId = metadata?.courseId;
     const enrollmentLevel = metadata?.enrollmentLevel || 'ASSOCIATE';
 

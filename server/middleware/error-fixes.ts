@@ -109,7 +109,7 @@ export const validators = {
       return { isValid: false, error: "Enrollment level is required" };
     }
     
-    const validLevels = ["basic", "premium", "vip"];
+    const validLevels = ["ASSOCIATE", "MEMBER", "FELLOW"];
     if (!validLevels.includes(enrollmentLevel)) {
       return { 
         isValid: false, 
