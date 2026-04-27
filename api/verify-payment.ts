@@ -175,11 +175,23 @@ async function verifyAuth(authHeader: string, supabaseAdmin: any): Promise<{ use
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Initialize clients inside handler to avoid module-level env var issues
-  const supabaseAdmin = createClient(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-  const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey || !paystackKey) {
+    console.error('Missing environment variables:', {
+      supabaseUrl: !!supabaseUrl,
+      supabaseServiceKey: !!supabaseServiceKey,
+      paystackKey: !!paystackKey,
+    });
+    return res.status(500).json({ 
+      error: 'Server configuration error', 
+      message: 'Required environment variables are missing' 
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -206,7 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Verify payment with Paystack
-    const paymentData = await verifyPayment(reference, PAYSTACK_SECRET_KEY);
+    const paymentData = await verifyPayment(reference, paystackKey);
 
     if (!paymentData.data?.status || paymentData.data.status !== 'success') {
       return res.status(400).json({ 
