@@ -4,14 +4,9 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { componentTagger } from "lovable-tagger";
 
-// @ts-ignore - Type mismatch doesn't affect build
 export default defineConfig(async ({ mode }) => ({
   plugins: [
-    react({ 
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+    react(),
     runtimeErrorOverlay(),
     mode === "development" && componentTagger(),
     ...(process.env.NODE_ENV !== "production" &&
@@ -38,12 +33,24 @@ export default defineConfig(async ({ mode }) => ({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
-          'vendor-query': ['@tanstack/react-query', '@tanstack/query-core'],
-          'vendor-ui': ['@radix-ui/react-accordion', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'vendor-editor': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-link', '@tiptap/extension-image'],
-          'vendor-misc': ['framer-motion', 'date-fns', 'clsx', 'tailwind-merge'],
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@tanstack/react-query') || id.includes('@tanstack/query-core')) {
+              return 'vendor-query';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('@tiptap')) {
+              return 'vendor-editor';
+            }
+            if (id.includes('framer-motion') || id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'vendor-misc';
+            }
+          }
         },
       },
     },
