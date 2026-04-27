@@ -260,13 +260,6 @@ export type Database = {
             foreignKeyName: "certificates_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "certificates_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -298,6 +291,13 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "certifications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "certifications_course_id_fkey"
             columns: ["course_id"]
@@ -460,15 +460,15 @@ export type Database = {
             foreignKeyName: "course_completion_records_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "courses"
+            referencedRelation: "course_catalog_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "course_completion_records_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "course_completion_records_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "course_completion_records_user_id_fkey"
@@ -479,100 +479,95 @@ export type Database = {
           },
         ]
       }
-      course_enrollments: {
+      course_enrollments_archive: {
         Row: {
           address: string | null
           admin_notes: string | null
-          booking_ref: string
+          archived_at: string | null
+          booking_ref: string | null
           confirmed_at: string | null
           country: string | null
           course_id: string | null
-          created_at: string
-          currency: string
-          email: string
-          full_name: string
-          id: string
+          created_at: string | null
+          currency: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
           institution: string | null
           invoice_expiry_date: string | null
           pathway: string | null
           pathway_detected_at: string | null
-          payment_method: string
-          payment_status: string
+          payment_method: string | null
+          payment_status: string | null
           paystack_reference: string | null
           personal_statement: string | null
           phone: string | null
           profile_snapshot: Json | null
           programme_selected: string | null
-          ticket_price: number
-          ticket_type: string
+          ticket_price: number | null
+          ticket_type: string | null
           user_id: string | null
           whatsapp: string | null
         }
         Insert: {
           address?: string | null
           admin_notes?: string | null
-          booking_ref: string
+          archived_at?: string | null
+          booking_ref?: string | null
           confirmed_at?: string | null
           country?: string | null
           course_id?: string | null
-          created_at?: string
-          currency?: string
-          email: string
-          full_name: string
-          id?: string
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
           institution?: string | null
           invoice_expiry_date?: string | null
           pathway?: string | null
           pathway_detected_at?: string | null
-          payment_method?: string
-          payment_status?: string
+          payment_method?: string | null
+          payment_status?: string | null
           paystack_reference?: string | null
           personal_statement?: string | null
           phone?: string | null
           profile_snapshot?: Json | null
           programme_selected?: string | null
-          ticket_price?: number
-          ticket_type?: string
+          ticket_price?: number | null
+          ticket_type?: string | null
           user_id?: string | null
           whatsapp?: string | null
         }
         Update: {
           address?: string | null
           admin_notes?: string | null
-          booking_ref?: string
+          archived_at?: string | null
+          booking_ref?: string | null
           confirmed_at?: string | null
           country?: string | null
           course_id?: string | null
-          created_at?: string
-          currency?: string
-          email?: string
-          full_name?: string
-          id?: string
+          created_at?: string | null
+          currency?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
           institution?: string | null
           invoice_expiry_date?: string | null
           pathway?: string | null
           pathway_detected_at?: string | null
-          payment_method?: string
-          payment_status?: string
+          payment_method?: string | null
+          payment_status?: string | null
           paystack_reference?: string | null
           personal_statement?: string | null
           phone?: string | null
           profile_snapshot?: Json | null
           programme_selected?: string | null
-          ticket_price?: number
-          ticket_type?: string
+          ticket_price?: number | null
+          ticket_type?: string | null
           user_id?: string | null
           whatsapp?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       course_resources: {
         Row: {
@@ -615,6 +610,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "course_resources_course_id_courses_id_fk"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "course_resources_course_id_courses_id_fk"
             columns: ["course_id"]
@@ -715,6 +717,13 @@ export type Database = {
             foreignKeyName: "course_waitlist_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_waitlist_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
@@ -722,11 +731,15 @@ export type Database = {
       }
       courses: {
         Row: {
+          address: string | null
           associate_price: number | null
           avg_rating: number | null
           category_id: string | null
+          city: string | null
           cohort_id: string | null
+          country: string | null
           course_status: string | null
+          course_type: string | null
           created_at: string | null
           currency: string | null
           description: string | null
@@ -744,11 +757,13 @@ export type Database = {
           member_price: number | null
           pathway: string | null
           pathway_tags: string[] | null
+          postal_code: string | null
           price: number
           promo_video_url: string | null
           qualification_level: string | null
           rating_count: number | null
           requires_approval: boolean | null
+          schedule_details: Json | null
           start_date: string | null
           subtitle: string | null
           tags: string[] | null
@@ -762,11 +777,15 @@ export type Database = {
           venue: string | null
         }
         Insert: {
+          address?: string | null
           associate_price?: number | null
           avg_rating?: number | null
           category_id?: string | null
+          city?: string | null
           cohort_id?: string | null
+          country?: string | null
           course_status?: string | null
+          course_type?: string | null
           created_at?: string | null
           currency?: string | null
           description?: string | null
@@ -784,11 +803,13 @@ export type Database = {
           member_price?: number | null
           pathway?: string | null
           pathway_tags?: string[] | null
+          postal_code?: string | null
           price: number
           promo_video_url?: string | null
           qualification_level?: string | null
           rating_count?: number | null
           requires_approval?: boolean | null
+          schedule_details?: Json | null
           start_date?: string | null
           subtitle?: string | null
           tags?: string[] | null
@@ -802,11 +823,15 @@ export type Database = {
           venue?: string | null
         }
         Update: {
+          address?: string | null
           associate_price?: number | null
           avg_rating?: number | null
           category_id?: string | null
+          city?: string | null
           cohort_id?: string | null
+          country?: string | null
           course_status?: string | null
+          course_type?: string | null
           created_at?: string | null
           currency?: string | null
           description?: string | null
@@ -824,11 +849,13 @@ export type Database = {
           member_price?: number | null
           pathway?: string | null
           pathway_tags?: string[] | null
+          postal_code?: string | null
           price?: number
           promo_video_url?: string | null
           qualification_level?: string | null
           rating_count?: number | null
           requires_approval?: boolean | null
+          schedule_details?: Json | null
           start_date?: string | null
           subtitle?: string | null
           tags?: string[] | null
@@ -848,13 +875,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "courses_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "courses_instructor_id_fkey"
@@ -898,6 +918,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "discussions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "discussions_course_id_fkey"
             columns: ["course_id"]
@@ -991,6 +1018,13 @@ export type Database = {
             foreignKeyName: "enrollments_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
@@ -1065,22 +1099,8 @@ export type Database = {
             foreignKeyName: "expedited_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "expedited_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expedited_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "expedited_applications_user_id_fkey"
@@ -1111,6 +1131,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "favorites_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "favorites_course_id_fkey"
             columns: ["course_id"]
@@ -1189,22 +1216,8 @@ export type Database = {
             foreignKeyName: "fellowship_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "fellowship_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fellowship_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "fellowship_applications_user_id_fkey"
@@ -1261,6 +1274,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "forum_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_boards_course_edition_id_fkey"
+            columns: ["course_edition_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
             referencedColumns: ["id"]
           },
           {
@@ -1814,76 +1834,6 @@ export type Database = {
         }
         Relationships: []
       }
-      level_waivers: {
-        Row: {
-          created_at: string | null
-          expires_at: string | null
-          granted_at: string
-          granted_by: string | null
-          granted_via: string
-          id: string
-          level: string
-          profile_id: string | null
-          status: string
-          track: string
-          updated_at: string | null
-          user_id: string
-          waiver_reason: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          expires_at?: string | null
-          granted_at?: string
-          granted_by?: string | null
-          granted_via?: string
-          id?: string
-          level: string
-          profile_id?: string | null
-          status?: string
-          track: string
-          updated_at?: string | null
-          user_id: string
-          waiver_reason?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          expires_at?: string | null
-          granted_at?: string
-          granted_by?: string | null
-          granted_via?: string
-          id?: string
-          level?: string
-          profile_id?: string | null
-          status?: string
-          track?: string
-          updated_at?: string | null
-          user_id?: string
-          waiver_reason?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "level_waivers_granted_by_fkey"
-            columns: ["granted_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "level_waivers_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "professional_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "level_waivers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       members: {
         Row: {
           certificate_url: string | null
@@ -1958,13 +1908,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
@@ -2069,6 +2012,13 @@ export type Database = {
             foreignKeyName: "modules_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
@@ -2079,10 +2029,12 @@ export type Database = {
           amount: number
           amount_ghs: number | null
           amount_usd: number | null
+          booking_ref: string | null
           charged_currency: string | null
           course_id: string | null
           created_at: string | null
           currency: string | null
+          enrollment_metadata: Json | null
           exchange_rate: number | null
           id: string
           original_currency: string | null
@@ -2094,10 +2046,12 @@ export type Database = {
           amount: number
           amount_ghs?: number | null
           amount_usd?: number | null
+          booking_ref?: string | null
           charged_currency?: string | null
           course_id?: string | null
           created_at?: string | null
           currency?: string | null
+          enrollment_metadata?: Json | null
           exchange_rate?: number | null
           id?: string
           original_currency?: string | null
@@ -2109,10 +2063,12 @@ export type Database = {
           amount?: number
           amount_ghs?: number | null
           amount_usd?: number | null
+          booking_ref?: string | null
           charged_currency?: string | null
           course_id?: string | null
           created_at?: string | null
           currency?: string | null
+          enrollment_metadata?: Json | null
           exchange_rate?: number | null
           id?: string
           original_currency?: string | null
@@ -2121,6 +2077,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_course_id_fkey"
             columns: ["course_id"]
@@ -2373,113 +2336,6 @@ export type Database = {
           user_id: string
           whatsapp: string | null
           years_experience: string | null
-          professional_profiles: {
-            Row: {
-              adr_roles: string[]
-              assigned_level: string
-              assigned_level_notes: string | null
-              contact_email: string | null
-              contact_phone: string | null
-              country: string | null
-              created_at: string
-              credentials: Json
-              decision_at: string | null
-              id: string
-              is_archived: boolean
-              is_current: boolean
-              job_title: string | null
-              level_source: Database["public"]["Enums"]["level_source_type"] | null
-              linkedin_url: string | null
-              narrative_summary: string | null
-              organization: string | null
-              practice_areas: string[]
-              profile_version: number
-              qualifications: Json
-              review_notes: string | null
-              review_status: Database["public"]["Enums"]["professional_review_status"]
-              reviewer_id: string | null
-              self_assessed_level: string | null
-              submitted_at: string | null
-              submitted_payload: Json | null
-              track: string
-              timezone: string | null
-              updated_at: string | null
-              user_id: string
-              website_url: string | null
-              years_adr_experience: number
-              years_legal_experience: number
-            }
-            Insert: {
-              adr_roles?: string[]
-              assigned_level?: string
-              assigned_level_notes?: string | null
-              contact_email?: string | null
-              contact_phone?: string | null
-              country?: string | null
-              created_at?: string
-              credentials?: Json
-              decision_at?: string | null
-              id?: string
-              is_archived?: boolean
-              is_current?: boolean
-              job_title?: string | null
-              level_source?: Database["public"]["Enums"]["level_source_type"] | null
-              linkedin_url?: string | null
-              narrative_summary?: string | null
-              organization?: string | null
-              practice_areas?: string[]
-              profile_version?: number
-              qualifications?: Json
-              review_notes?: string | null
-              review_status?: Database["public"]["Enums"]["professional_review_status"]
-              reviewer_id?: string | null
-              self_assessed_level?: string | null
-              submitted_at?: string | null
-              submitted_payload?: Json | null
-              track?: string
-              timezone?: string | null
-              updated_at?: string | null
-              user_id: string
-              website_url?: string | null
-              years_adr_experience?: number
-              years_legal_experience?: number
-            }
-            Update: {
-              adr_roles?: string[]
-              assigned_level?: string
-              assigned_level_notes?: string | null
-              contact_email?: string | null
-              contact_phone?: string | null
-              country?: string | null
-              created_at?: string
-              credentials?: Json
-              decision_at?: string | null
-              id?: string
-              is_archived?: boolean
-              is_current?: boolean
-              job_title?: string | null
-              level_source?: Database["public"]["Enums"]["level_source_type"] | null
-              linkedin_url?: string | null
-              narrative_summary?: string | null
-              organization?: string | null
-              practice_areas?: string[]
-              profile_version?: number
-              qualifications?: Json
-              review_notes?: string | null
-              review_status?: Database["public"]["Enums"]["professional_review_status"]
-              reviewer_id?: string | null
-              self_assessed_level?: string | null
-              submitted_at?: string | null
-              submitted_payload?: Json | null
-              track?: string
-              timezone?: string | null
-              updated_at?: string | null
-              user_id?: string
-              website_url?: string | null
-              years_adr_experience?: number
-              years_legal_experience?: number
-            }
-          }
         }
         Insert: {
           address?: string | null
@@ -3056,15 +2912,15 @@ export type Database = {
             foreignKeyName: "reviews_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "courses"
+            referencedRelation: "course_catalog_view"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reviews_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "reviews_user_id_fkey"
@@ -3147,22 +3003,8 @@ export type Database = {
             foreignKeyName: "student_memberships_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "student_memberships_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_memberships_verified_by_fkey"
-            columns: ["verified_by"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "student_memberships_verified_by_fkey"
@@ -3250,9 +3092,6 @@ export type Database = {
           track: string
           updated_at: string | null
           user_id: string
-          waiver_last_granted_at: string | null
-          waiver_metadata: Json
-          waived_levels: string[]
         }
         Insert: {
           created_at?: string | null
@@ -3262,9 +3101,6 @@ export type Database = {
           track: string
           updated_at?: string | null
           user_id: string
-          waiver_last_granted_at?: string | null
-          waiver_metadata?: Json
-          waived_levels?: string[]
         }
         Update: {
           created_at?: string | null
@@ -3274,18 +3110,8 @@ export type Database = {
           track?: string
           updated_at?: string | null
           user_id?: string
-          waiver_last_granted_at?: string | null
-          waiver_metadata?: Json
-          waived_levels?: string[]
         }
         Relationships: [
-          {
-            foreignKeyName: "user_track_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "pathway_dashboard"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "user_track_progress_user_id_fkey"
             columns: ["user_id"]
@@ -3297,7 +3123,6 @@ export type Database = {
       }
       users: {
         Row: {
-          assigned_level: string | null
           bio: string | null
           country: string | null
           created_at: string | null
@@ -3306,8 +3131,6 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
-          level_source: string | null
-          level_updated_at: string | null
           last_name: string | null
           password: string | null
           pathway_type: string | null
@@ -3320,7 +3143,6 @@ export type Database = {
           years_legal_experience: number | null
         }
         Insert: {
-          assigned_level?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -3329,8 +3151,6 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
-          level_source?: string | null
-          level_updated_at?: string | null
           last_name?: string | null
           password?: string | null
           pathway_type?: string | null
@@ -3343,7 +3163,6 @@ export type Database = {
           years_legal_experience?: number | null
         }
         Update: {
-          assigned_level?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -3352,8 +3171,6 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
-          level_source?: string | null
-          level_updated_at?: string | null
           last_name?: string | null
           password?: string | null
           pathway_type?: string | null
@@ -3369,6 +3186,122 @@ export type Database = {
       }
     }
     Views: {
+      course_catalog_view: {
+        Row: {
+          address: string | null
+          associate_price: number | null
+          avg_rating: number | null
+          category_id: string | null
+          category_name: string | null
+          city: string | null
+          cohort_id: string | null
+          country: string | null
+          course_status: string | null
+          course_type: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          duration_hours: number | null
+          end_date: string | null
+          enquiry_phone_1: string | null
+          enquiry_phone_2: string | null
+          enrollment_count: number | null
+          fellow_price: number | null
+          id: string | null
+          instructor_id: string | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          level: string | null
+          member_price: number | null
+          pathway: string | null
+          pathway_tags: string[] | null
+          postal_code: string | null
+          price: number | null
+          promo_video_url: string | null
+          qualification_level: string | null
+          rating_count: number | null
+          requires_approval: boolean | null
+          schedule_details: Json | null
+          start_date: string | null
+          subtitle: string | null
+          tags: string[] | null
+          template_id: string | null
+          thumbnail_url: string | null
+          ticket_types: Json | null
+          title: string | null
+          total_capacity: number | null
+          track: string | null
+          updated_at: string | null
+          venue: string | null
+          venue_details: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "course_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_enrollments_legacy: {
+        Row: {
+          address: string | null
+          admin_notes: string | null
+          booking_ref: string | null
+          confirmed_at: string | null
+          country: string | null
+          course_id: string | null
+          created_at: string | null
+          currency: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          institution: string | null
+          invoice_expiry_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          paystack_reference: string | null
+          personal_statement: string | null
+          phone: string | null
+          programme_selected: string | null
+          ticket_price: number | null
+          ticket_type: string | null
+          user_id: string | null
+          whatsapp: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_catalog_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pathway_analytics: {
         Row: {
           avg_progress: number | null
@@ -3376,24 +3309,6 @@ export type Database = {
           current_level: string | null
           pathway: string | null
           user_count: number | null
-        }
-        Relationships: []
-      }
-      pathway_dashboard: {
-        Row: {
-          arbitration_enrollments: number | null
-          arbitration_post_nominal: string | null
-          current_level: Database["public"]["Enums"]["membership_level"] | null
-          current_post_nominal: string | null
-          email: string | null
-          first_name: string | null
-          last_name: string | null
-          mediation_enrollments: number | null
-          mediation_post_nominal: string | null
-          primary_pathway: string | null
-          total_certificates: number | null
-          total_enrollments: number | null
-          user_id: string | null
         }
         Relationships: []
       }
@@ -3420,11 +3335,8 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      level_source_type: "DEFAULT" | "EXPEDITED" | "ADMIN" | "MIGRATION"
       membership_level: "associate" | "member" | "fellow"
       membership_status: "pending" | "active" | "expiring" | "expired"
-      professional_document_type: "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFERENCE" | "AWARD" | "OTHER"
-      professional_review_status: "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED"
     }
     CompositeTypes: {
       [_ in never]: never
