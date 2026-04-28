@@ -786,7 +786,7 @@ export default function Onboarding() {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-6 px-3 sm:py-8 sm:px-4">
 
       <div className="max-w-2xl mx-auto">
 
@@ -854,11 +854,11 @@ export default function Onboarding() {
 
                 </Avatar>
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
 
-                  <p className="font-medium text-foreground">{form.full_name}</p>
+                  <p className="font-medium text-foreground truncate">{form.full_name}</p>
 
-                  <p className="text-sm text-muted-foreground">{form.email}</p>
+                  <p className="text-sm text-muted-foreground truncate">{form.email}</p>
 
                 </div>
 
@@ -898,7 +898,7 @@ export default function Onboarding() {
 
                     </PopoverTrigger>
 
-                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                    <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm overflow-hidden p-0" align="start">
 
                       <Calendar
 
@@ -938,7 +938,7 @@ export default function Onboarding() {
 
                   <Label htmlFor="gender-select" className="text-sm font-medium">Gender *</Label>
 
-                  <div className="flex gap-2" role="group" aria-labelledby="gender-select">
+                  <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="gender-select">
 
                     {GENDERS.map(g => (
 
@@ -950,7 +950,7 @@ export default function Onboarding() {
 
                         className={cn(
 
-                          "flex-1 min-h-[44px] transition-all duration-200 cursor-pointer",
+                          "w-full min-h-[44px] whitespace-normal text-xs sm:text-sm px-2 transition-all duration-200 cursor-pointer",
 
                           form.gender === g.value
 
@@ -1250,7 +1250,7 @@ export default function Onboarding() {
 
                     className={cn(
 
-                      "h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 border-dashed",
+                      "h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 border-dashed whitespace-normal",
 
                       experienceChoice === "no" ? "border-destructive bg-destructive/10 text-destructive" : "border-muted-foreground/40"
 
@@ -1278,7 +1278,7 @@ export default function Onboarding() {
 
                     </div>
 
-                    <p className="text-xs text-muted-foreground">We'll grant Associate-level content immediately so you can explore the core pathway.</p>
+                    <p className="text-xs text-muted-foreground break-words whitespace-normal">We'll grant Associate-level content immediately so you can explore the core pathway.</p>
 
                   </Button>
 
@@ -1286,7 +1286,7 @@ export default function Onboarding() {
 
                     type="button"
 
-                    className="h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1"
+                    className="h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 whitespace-normal"
 
                     onClick={() => handleExperienceSelection("yes")}
 
@@ -1310,7 +1310,7 @@ export default function Onboarding() {
 
                     </div>
 
-                    <p className="text-xs text-primary">Submit a quick professional profile. You'll keep Associate access while we review.</p>
+                    <p className="text-xs text-primary break-words whitespace-normal">Submit a quick professional profile. You'll keep Associate access while we review.</p>
 
                   </Button>
 
@@ -1572,7 +1572,7 @@ export default function Onboarding() {
 
 
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col-reverse sm:flex-row gap-3">
 
                     <Button 
 
