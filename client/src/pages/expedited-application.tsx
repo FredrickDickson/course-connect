@@ -7,11 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { Link } from "wouter";
 import { useCallback, useEffect, useState } from "react";
 import { FileText, AlertCircle, ArrowLeft, Loader2, Trash2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { COUNTRIES } from "@/lib/countries";
+import { cn } from "@/lib/utils";
 
 type ServerDocumentType = "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFERENCE" | "AWARD" | "OTHER";
 type DocumentUploadType = ServerDocumentType | "DEGREE" | "TRANSCRIPT";
@@ -75,6 +78,32 @@ const STATUS_MESSAGES: Partial<Record<ReviewStatus, { title: string; description
 
 const STORAGE_BUCKET = "expedited-documents";
 
+const PROFESSION_OPTIONS = [
+  "Lawyer",
+  "Judge",
+  "Mediator / Arbitrator",
+  "Academic",
+  "Engineer",
+  "Architect",
+  "Business Executive",
+  "Consultant",
+  "Public Servant",
+  "Other",
+];
+
+const POST_QUAL_EXPERIENCE_OPTIONS = [
+  "0-2 years",
+  "3-5 years",
+  "5-10 years",
+  "10-20 years",
+  "20+ years",
+];
+
+function parseYearsFromBucket(bucket: string): number {
+  const match = bucket.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -94,6 +123,19 @@ export default function ExpeditedApplication() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [progressMessage, setProgressMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Professional Identity
+  const [primaryProfession, setPrimaryProfession] = useState("");
+  const [currentOrganization, setCurrentOrganization] = useState("");
+  const [yearsPostQualification, setYearsPostQualification] = useState("");
+  const [countryOfPractice, setCountryOfPractice] = useState("");
+
+  // Arbitration & Mediation Triage
+  const [hasLawDegree, setHasLawDegree] = useState<boolean | null>(null);
+  const [hasLlm, setHasLlm] = useState<boolean | null>(null);
+  const [llmAdrFocus, setLlmAdrFocus] = useState<boolean | null>(null);
+  const [hasPriorAdrTraining, setHasPriorAdrTraining] = useState<boolean | null>(null);
+  const [adrTrainingInstitution, setAdrTrainingInstitution] = useState("");
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -132,7 +174,7 @@ export default function ExpeditedApplication() {
         throw new Error(errJson.error || "Failed to load professional profile");
       }
 
-      const profile = await response.json();
+      const profile = await response.json().catch(() => null);
       if (!profile) {
         setProfileStatus(null);
         setExistingDocuments([]);
@@ -149,6 +191,19 @@ export default function ExpeditedApplication() {
         setQualificationsSummary(profile.qualifications.join("\n"));
       }
       setExistingDocuments(profile.documents ?? []);
+
+      // Restore professional identity fields
+      if (profile.submittedPayload?.primaryProfession) setPrimaryProfession(profile.submittedPayload.primaryProfession);
+      if (profile.submittedPayload?.currentOrganization) setCurrentOrganization(profile.submittedPayload.currentOrganization);
+      if (profile.submittedPayload?.yearsPostQualification) setYearsPostQualification(profile.submittedPayload.yearsPostQualification);
+      if (profile.submittedPayload?.countryOfPractice) setCountryOfPractice(profile.submittedPayload.countryOfPractice);
+
+      // Restore triage fields
+      if (typeof profile.submittedPayload?.hasLawDegree === "boolean") setHasLawDegree(profile.submittedPayload.hasLawDegree);
+      if (typeof profile.submittedPayload?.hasLlm === "boolean") setHasLlm(profile.submittedPayload.hasLlm);
+      if (typeof profile.submittedPayload?.llmAdrFocus === "boolean") setLlmAdrFocus(profile.submittedPayload.llmAdrFocus);
+      if (typeof profile.submittedPayload?.hasPriorAdrTraining === "boolean") setHasPriorAdrTraining(profile.submittedPayload.hasPriorAdrTraining);
+      if (profile.submittedPayload?.adrTrainingInstitution) setAdrTrainingInstitution(profile.submittedPayload.adrTrainingInstitution);
     } catch (error: any) {
       console.error("Failed to load profile", error);
       setErrorMessage(error?.message || "Unable to load your professional profile.");
@@ -198,6 +253,42 @@ export default function ExpeditedApplication() {
       setErrorMessage("Please fill in both experience and qualifications summaries.");
       return;
     }
+    if (!primaryProfession.trim()) {
+      setErrorMessage("Please select your primary profession.");
+      return;
+    }
+    if (!currentOrganization.trim()) {
+      setErrorMessage("Please enter your current organization.");
+      return;
+    }
+    if (!yearsPostQualification) {
+      setErrorMessage("Please select your years of post-qualification experience.");
+      return;
+    }
+    if (!countryOfPractice) {
+      setErrorMessage("Please select your country of practice.");
+      return;
+    }
+    if (hasLawDegree === null) {
+      setErrorMessage("Please indicate whether you hold a law degree.");
+      return;
+    }
+    if (hasLlm === null) {
+      setErrorMessage("Please indicate whether you hold an LLM.");
+      return;
+    }
+    if (hasLlm && llmAdrFocus === null) {
+      setErrorMessage("Please indicate if your LLM focused on ADR or International Arbitration.");
+      return;
+    }
+    if (hasPriorAdrTraining === null) {
+      setErrorMessage("Please indicate whether you have completed ADR training.");
+      return;
+    }
+    if (hasPriorAdrTraining && !adrTrainingInstitution.trim()) {
+      setErrorMessage("Please specify the institution where you completed ADR training.");
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -223,6 +314,15 @@ export default function ExpeditedApplication() {
             targetLevel,
             experienceSummary,
             qualificationsSummary,
+            primaryProfession,
+            currentOrganization,
+            yearsPostQualification,
+            countryOfPractice,
+            hasLawDegree,
+            hasLlm,
+            llmAdrFocus,
+            hasPriorAdrTraining,
+            adrTrainingInstitution,
           },
         }),
       });
@@ -353,9 +453,11 @@ export default function ExpeditedApplication() {
       <Header />
 
       {/* Header */}
-      <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-12">
+      <section className="bg-[#8b0000] text-white py-12 relative overflow-hidden">
+        {/* Decorative gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
         <ScrollReveal direction="up" distance={40} duration={0.7}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link href="/qualification-pathway">
               <Button variant="ghost" className="text-white/70 hover:text-white mb-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -477,6 +579,190 @@ export default function ExpeditedApplication() {
                           48-hour assessment for senior professionals with 7+ years ADR or 10+ legal experience
                         </p>
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Professional Identity */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Professional Identity</CardTitle>
+                    <CardDescription>
+                      Your basic professional background for jurisdictional context
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="primary-profession">Primary Profession *</Label>
+                      <Select value={primaryProfession} onValueChange={setPrimaryProfession} disabled={isSubmitting}>
+                        <SelectTrigger id="primary-profession">
+                          <SelectValue placeholder="Select your profession" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROFESSION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="current-organization">Current Firm / Organization *</Label>
+                      <Input
+                        id="current-organization"
+                        placeholder="e.g., ABC Law Firm, XYZ University"
+                        value={currentOrganization}
+                        onChange={(e) => setCurrentOrganization(e.target.value)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="years-post-qual">Years of Post-Qualification Experience *</Label>
+                      <Select value={yearsPostQualification} onValueChange={setYearsPostQualification} disabled={isSubmitting}>
+                        <SelectTrigger id="years-post-qual">
+                          <SelectValue placeholder="Select years of experience" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {POST_QUAL_EXPERIENCE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="country-of-practice">Country of Practice *</Label>
+                      <Select value={countryOfPractice} onValueChange={setCountryOfPractice} disabled={isSubmitting}>
+                        <SelectTrigger id="country-of-practice">
+                          <SelectValue placeholder="Select your country" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {COUNTRIES.map((country) => (
+                            <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Arbitration & Mediation Triage */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Arbitration & Mediation Triage</CardTitle>
+                    <CardDescription>
+                      Qualifications assessment for expedited placement
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <Label>Do you hold a Law Degree (LLB, BL, or JD)? *</Label>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant={hasLawDegree === true ? "default" : "outline"}
+                          onClick={() => setHasLawDegree(true)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={hasLawDegree === false ? "default" : "outline"}
+                          onClick={() => setHasLawDegree(false)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          No
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>Do you hold an LLM (Master of Laws)in ADR? *</Label>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant={hasLlm === true ? "default" : "outline"}
+                          onClick={() => setHasLlm(true)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={hasLlm === false ? "default" : "outline"}
+                          onClick={() => setHasLlm(false)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          No
+                        </Button>
+                      </div>
+                      {hasLlm && (
+                        <div className="space-y-3 mt-3 p-4 bg-muted/50 rounded-lg">
+                          <Label>Was your LLM focused on ADR or International Arbitration?</Label>
+                          <div className="flex gap-3">
+                            <Button
+                              type="button"
+                              variant={llmAdrFocus === true ? "default" : "outline"}
+                              onClick={() => setLlmAdrFocus(true)}
+                              disabled={isSubmitting}
+                              className="flex-1"
+                            >
+                              Yes
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={llmAdrFocus === false ? "default" : "outline"}
+                              onClick={() => setLlmAdrFocus(false)}
+                              disabled={isSubmitting}
+                              className="flex-1"
+                            >
+                              No
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>Have you completed any previous ADR training? *</Label>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant={hasPriorAdrTraining === true ? "default" : "outline"}
+                          onClick={() => setHasPriorAdrTraining(true)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={hasPriorAdrTraining === false ? "default" : "outline"}
+                          onClick={() => setHasPriorAdrTraining(false)}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        >
+                          No
+                        </Button>
+                      </div>
+                      {hasPriorAdrTraining && (
+                        <div className="space-y-2 mt-3">
+                          <Label htmlFor="adr-institution">Please specify the institution *</Label>
+                          <Input
+                            id="adr-institution"
+                            placeholder="e.g., CIArb, AAA, LCIA"
+                            value={adrTrainingInstitution}
+                            onChange={(e) => setAdrTrainingInstitution(e.target.value)}
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

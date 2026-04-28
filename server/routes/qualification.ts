@@ -483,6 +483,7 @@ router.get(
         : undefined,
       practiceAreas: profile.practiceAreas,
       adrRoles: profile.adrRoles,
+      submittedPayload: profile.submittedPayload,
       documents: documents.map((doc) => ({
         id: doc.id,
         type: doc.documentType,
