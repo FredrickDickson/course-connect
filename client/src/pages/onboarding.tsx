@@ -214,6 +214,7 @@ export default function Onboarding() {
   const [experienceChoice, setExperienceChoice] = useState<ExperienceChoice>("undecided");
   const [profileStatus, setProfileStatus] = useState<ProfessionalProfileStatus | null>(null);
   const [isExperienceSubmitting, setIsExperienceSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
 
@@ -454,7 +455,14 @@ export default function Onboarding() {
 
     setForm(prev => ({ ...prev, [field]: value }));
 
-    
+    // Clear error for this field as user fixes it
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
 
     // Handle phone number updates - sync with WhatsApp if sameAsPhone is checked
 
@@ -474,19 +482,84 @@ export default function Onboarding() {
 
   };
 
+  const STEP1_LABELS: Record<string, string> = {
+    date_of_birth: "Date of Birth",
+    gender: "Gender",
+    nationality: "Nationality",
+    country: "Country of Residence",
+    city: "City",
+    phone: "Phone Number",
+    address: "Current Address",
+  };
+
+  const STEP2_LABELS: Record<string, string> = {
+    job_title: "Job Title",
+    organisation: "Organisation / Employer",
+    professional_background: "Professional Background",
+    highest_qualification: "Highest Qualification",
+    years_experience: "Years of Legal / ADR Experience",
+    referral_source: "How did you hear about CIMA?",
+  };
+
+  const validateStep1 = () => {
+    const next: Record<string, string> = {};
+    for (const key of Object.keys(STEP1_LABELS)) {
+      if (!(form as any)[key]) {
+        next[key] = `${STEP1_LABELS[key]} is required`;
+      }
+    }
+    return next;
+  };
+
+  const validateStep2 = () => {
+    const next: Record<string, string> = {};
+    for (const key of Object.keys(STEP2_LABELS)) {
+      if (!(form as any)[key]) {
+        next[key] = `${STEP2_LABELS[key]} is required`;
+      }
+    }
+    return next;
+  };
+
+  const scrollToFirstError = (errorKeys: string[]) => {
+    if (typeof document === "undefined" || errorKeys.length === 0) return;
+    const idMap: Record<string, string> = {
+      date_of_birth: "date-of-birth",
+      gender: "gender-select",
+      nationality: "nationality",
+      country: "country",
+      city: "city",
+      phone: "phone",
+      address: "address",
+      job_title: "job-title",
+      organisation: "organisation",
+      professional_background: "professional-background",
+      highest_qualification: "qualification",
+      years_experience: "experience",
+      referral_source: "referral",
+    };
+    const firstId = idMap[errorKeys[0]];
+    if (!firstId) return;
+    const el = document.getElementById(firstId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
 
 
   const saveStep1 = async () => {
 
     if (!user) return;
 
-    if (!form.date_of_birth || !form.gender || !form.nationality || !form.country || !form.city || !form.phone || !form.address) {
-
-      toast.error("Please fill in all required fields");
-
+    const validationErrors = validateStep1();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please complete the highlighted fields");
+      scrollToFirstError(Object.keys(validationErrors));
       return;
-
     }
+    setErrors({});
 
     setIsSaving(true);
 
@@ -634,13 +707,14 @@ export default function Onboarding() {
 
     }
 
-    if (!form.job_title || !form.organisation || !form.professional_background || !form.highest_qualification || !form.years_experience || !form.referral_source) {
-
-      toast.error("Please fill in all required fields");
-
+    const validationErrors = validateStep2();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please complete the highlighted fields");
+      scrollToFirstError(Object.keys(validationErrors));
       return;
-
     }
+    setErrors({});
 
     setIsSaving(true);
 
@@ -882,11 +956,15 @@ export default function Onboarding() {
 
                         data-empty={!isDobValid}
 
+                        aria-invalid={!!errors.date_of_birth}
+
                         className={cn(
 
                           "w-full justify-start text-left font-normal",
 
-                          "data-[empty=true]:text-muted-foreground"
+                          "data-[empty=true]:text-muted-foreground",
+
+                          errors.date_of_birth && "border-destructive focus-visible:ring-destructive"
 
                         )}
 
@@ -932,13 +1010,24 @@ export default function Onboarding() {
 
                   </Popover>
 
+                  {errors.date_of_birth && (
+                    <p className="text-xs text-destructive" role="alert">{errors.date_of_birth}</p>
+                  )}
+
                 </Field>
 
                 <div className="space-y-2">
 
                   <Label htmlFor="gender-select" className="text-sm font-medium">Gender *</Label>
 
-                  <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="gender-select">
+                  <div
+                    className={cn(
+                      "grid grid-cols-3 gap-2 rounded-md",
+                      errors.gender && "ring-1 ring-destructive p-1"
+                    )}
+                    role="group"
+                    aria-labelledby="gender-select"
+                  >
 
                     {GENDERS.map(g => (
 
@@ -974,6 +1063,10 @@ export default function Onboarding() {
 
                   </div>
 
+                  {errors.gender && (
+                    <p className="text-xs text-destructive" role="alert">{errors.gender}</p>
+                  )}
+
                 </div>
 
               </div>
@@ -988,7 +1081,7 @@ export default function Onboarding() {
 
                   <Select value={form.nationality} onValueChange={(v: string) => updateField("nationality", v)}>
 
-                    <SelectTrigger id="nationality" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select nationality" /></SelectTrigger>
+                    <SelectTrigger id="nationality" aria-invalid={!!errors.nationality} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.nationality && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select nationality" /></SelectTrigger>
 
                     <SelectContent className="max-h-80">
 
@@ -1001,6 +1094,10 @@ export default function Onboarding() {
                     </SelectContent>
 
                   </Select>
+
+                  {errors.nationality && (
+                    <p className="text-xs text-destructive" role="alert">{errors.nationality}</p>
+                  )}
 
                 </div>
 
@@ -1010,7 +1107,7 @@ export default function Onboarding() {
 
                   <Select value={form.country} onValueChange={(v: string) => updateField("country", v)}>
 
-                    <SelectTrigger id="country" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectTrigger id="country" aria-invalid={!!errors.country} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.country && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select country" /></SelectTrigger>
 
                     <SelectContent className="max-h-80">
 
@@ -1023,6 +1120,10 @@ export default function Onboarding() {
                     </SelectContent>
 
                   </Select>
+
+                  {errors.country && (
+                    <p className="text-xs text-destructive" role="alert">{errors.country}</p>
+                  )}
 
                 </div>
 
@@ -1044,9 +1145,15 @@ export default function Onboarding() {
 
                   placeholder="e.g. Accra"
 
-                  className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-invalid={!!errors.city}
+
+                  className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.city && "border-destructive focus-visible:ring-destructive")}
 
                 />
+
+                {errors.city && (
+                  <p className="text-xs text-destructive" role="alert">{errors.city}</p>
+                )}
 
               </div>
 
@@ -1058,21 +1165,27 @@ export default function Onboarding() {
 
                   <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
 
-                  <PhoneInput
+                  <div className={cn(errors.phone && "rounded-md ring-1 ring-destructive")}>
+                    <PhoneInput
 
-                    id="phone"
+                      id="phone"
 
-                    defaultCountry={phoneDefaultCountry}
+                      defaultCountry={phoneDefaultCountry}
 
-                    value={form.phone}
+                      value={form.phone}
 
-                    onChange={(value) => updateField("phone", value || "")}
+                      onChange={(value) => updateField("phone", value || "")}
 
-                    placeholder="Enter phone number"
+                      placeholder="Enter phone number"
 
-                    className="min-h-[44px]"
+                      className="min-h-[44px]"
 
-                  />
+                    />
+                  </div>
+
+                  {errors.phone && (
+                    <p className="text-xs text-destructive" role="alert">{errors.phone}</p>
+                  )}
 
                   <p className="text-xs text-muted-foreground">We’ll use this number for SMS updates about your application.</p>
 
@@ -1170,9 +1283,15 @@ export default function Onboarding() {
 
                   rows={2}
 
-                  className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  aria-invalid={!!errors.address}
+
+                  className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none", errors.address && "border-destructive focus-visible:ring-destructive")}
 
                 />
+
+                {errors.address && (
+                  <p className="text-xs text-destructive" role="alert">{errors.address}</p>
+                )}
 
                 <p className="text-xs text-muted-foreground text-right" aria-live="polite">{form.address.length}/200</p>
 
@@ -1226,7 +1345,7 @@ export default function Onboarding() {
 
                   <div>
 
-                    <CardTitle>Do you already have ADR / legal experience?</CardTitle>
+                    <CardTitle>Do you already have ADR experience?</CardTitle>
 
                     <CardDescription>Answer to unlock the right onboarding path.</CardDescription>
 
@@ -1306,7 +1425,7 @@ export default function Onboarding() {
 
                       )}
 
-                      <span>Yes, I have ADR / legal experience</span>
+                      <span>Yes, I have ADR  experience</span>
 
                     </div>
 
@@ -1422,9 +1541,15 @@ export default function Onboarding() {
 
                         placeholder="e.g. Legal Counsel"
 
-                        className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-invalid={!!errors.job_title}
+
+                        className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.job_title && "border-destructive focus-visible:ring-destructive")}
 
                       />
+
+                      {errors.job_title && (
+                        <p className="text-xs text-destructive" role="alert">{errors.job_title}</p>
+                      )}
 
                     </div>
 
@@ -1442,9 +1567,15 @@ export default function Onboarding() {
 
                         placeholder="e.g. Accra Law Chambers"
 
-                        className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-invalid={!!errors.organisation}
+
+                        className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.organisation && "border-destructive focus-visible:ring-destructive")}
 
                       />
+
+                      {errors.organisation && (
+                        <p className="text-xs text-destructive" role="alert">{errors.organisation}</p>
+                      )}
 
                     </div>
 
@@ -1458,7 +1589,7 @@ export default function Onboarding() {
 
                     <Select value={form.professional_background} onValueChange={(v: string) => updateField("professional_background", v)}>
 
-                      <SelectTrigger id="professional-background" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select background" /></SelectTrigger>
+                      <SelectTrigger id="professional-background" aria-invalid={!!errors.professional_background} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.professional_background && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select background" /></SelectTrigger>
 
                       <SelectContent className="max-h-60">
 
@@ -1472,6 +1603,10 @@ export default function Onboarding() {
 
                     </Select>
 
+                    {errors.professional_background && (
+                      <p className="text-xs text-destructive" role="alert">{errors.professional_background}</p>
+                    )}
+
                   </div>
 
 
@@ -1484,7 +1619,7 @@ export default function Onboarding() {
 
                       <Select value={form.highest_qualification} onValueChange={(v: string) => updateField("highest_qualification", v)}>
 
-                        <SelectTrigger id="qualification" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select qualification" /></SelectTrigger>
+                        <SelectTrigger id="qualification" aria-invalid={!!errors.highest_qualification} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.highest_qualification && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select qualification" /></SelectTrigger>
 
                         <SelectContent className="max-h-60">
 
@@ -1498,6 +1633,10 @@ export default function Onboarding() {
 
                       </Select>
 
+                      {errors.highest_qualification && (
+                        <p className="text-xs text-destructive" role="alert">{errors.highest_qualification}</p>
+                      )}
+
                     </div>
 
                     <div className="space-y-2">
@@ -1506,7 +1645,7 @@ export default function Onboarding() {
 
                       <Select value={form.years_experience} onValueChange={(v: string) => updateField("years_experience", v)}>
 
-                        <SelectTrigger id="experience" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select experience" /></SelectTrigger>
+                        <SelectTrigger id="experience" aria-invalid={!!errors.years_experience} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.years_experience && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select experience" /></SelectTrigger>
 
                         <SelectContent className="max-h-60">
 
@@ -1519,6 +1658,10 @@ export default function Onboarding() {
                         </SelectContent>
 
                       </Select>
+
+                      {errors.years_experience && (
+                        <p className="text-xs text-destructive" role="alert">{errors.years_experience}</p>
+                      )}
 
                     </div>
 
@@ -1554,7 +1697,7 @@ export default function Onboarding() {
 
                     <Select value={form.referral_source} onValueChange={(v: string) => updateField("referral_source", v)}>
 
-                      <SelectTrigger id="referral" className="transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><SelectValue placeholder="Select source" /></SelectTrigger>
+                      <SelectTrigger id="referral" aria-invalid={!!errors.referral_source} className={cn("transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", errors.referral_source && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Select source" /></SelectTrigger>
 
                       <SelectContent className="max-h-60">
 
@@ -1567,6 +1710,10 @@ export default function Onboarding() {
                       </SelectContent>
 
                     </Select>
+
+                    {errors.referral_source && (
+                      <p className="text-xs text-destructive" role="alert">{errors.referral_source}</p>
+                    )}
 
                   </div>
 
