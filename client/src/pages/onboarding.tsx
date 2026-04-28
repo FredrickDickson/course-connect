@@ -1538,15 +1538,7 @@ export default function Onboarding() {
 
                   ) : (
 
-                    <Alert className="border border-dashed">
-
-                      <Sparkles className="h-4 w-4" aria-hidden="true" />
-
-                      <AlertTitle>Associate access unlocked instantly</AlertTitle>
-
-                      <AlertDescription>Submit these details so our admissions team can review you for Mentor or Fellow access while you keep progressing.</AlertDescription>
-
-                    </Alert>
+                    null
 
                   )}
 

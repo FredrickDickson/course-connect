@@ -315,18 +315,18 @@ export default function ExpeditedApplication() {
         <Label>Documents on file</Label>
         <div className="space-y-2">
           {existingDocuments.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/70 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FileText className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">{doc.originalName || "Supporting document"}</p>
+            <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/70 rounded-lg">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{doc.originalName || "Supporting document"}</p>
                   <p className="text-xs text-muted-foreground">
                     {DOCUMENT_LABELS[doc.documentType]}
                     {doc.fileSize ? ` • ${(doc.fileSize / 1024).toFixed(1)} KB` : ""}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button variant="outline" size="sm" asChild>
                   <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
                     View <ExternalLink className="w-3 h-3" />
@@ -376,10 +376,10 @@ export default function ExpeditedApplication() {
               </div>
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 break-words">
               Detailed Application
             </h1>
-            <p className="text-lg text-white/70 max-w-2xl">
+            <p className="text-base sm:text-lg text-white/70 max-w-2xl">
               Submit these details so our admissions team can review you for Member or Fellow access. You'll keep your Associate access while we review.
             </p>
           </div>
@@ -387,7 +387,7 @@ export default function ExpeditedApplication() {
       </section>
 
       {/* Application Form */}
-      <section className="py-16">
+      <section className="py-10 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up" distance={25} duration={0.6}>
               <form onSubmit={handleSubmit} className="space-y-8">
@@ -401,35 +401,35 @@ export default function ExpeditedApplication() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {renderStatusBanner()}
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                       <Button
                         type="button"
                         variant={track === "ARBITRATION" ? "default" : "outline"}
-                        className={`h-auto p-6 flex flex-col items-start gap-2 ${
+                        className={`h-auto p-4 sm:p-6 flex flex-col items-start gap-2 whitespace-normal text-left ${
                           track === "ARBITRATION" ? "border-primary" : ""
                         }`}
                         onClick={() => setTrack("ARBITRATION")}
                       >
                         <span className="font-bold">Arbitration</span>
-                        <p className="text-sm text-left opacity-70">
+                        <p className="text-sm text-left opacity-70 break-words whitespace-normal">
                           CIMArb pathway (ACIMArb → MCIMArb → FCIMArb)
                         </p>
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-auto p-6 flex flex-col items-start gap-2 opacity-60 cursor-not-allowed"
+                        className="h-auto p-4 sm:p-6 flex flex-col items-start gap-2 whitespace-normal text-left opacity-60 cursor-not-allowed"
                         disabled
                       >
                         <span className="font-bold">Mediation</span>
-                        <p className="text-sm text-left opacity-70">
+                        <p className="text-sm text-left opacity-70 break-words whitespace-normal">
                           Expedited routes are not available for this track yet.
                         </p>
                       </Button>
                     </div>
                     <Alert className="bg-blue-50 border-blue-200">
                       <AlertDescription className="text-sm text-blue-900">
-                        Need expedited consideration for Mediation? Our team can review exceptional cases manually. Contact admissions after submitting your standard application.
+                        Need expedited consideration for Mediation? Our team can review exceptional cases manually. Contact <a href="mailto:info@thecima.org" className="underline">info@thecima.org</a> after submitting your standard application.
                       </AlertDescription>
                     </Alert>
                   </CardContent>
@@ -444,36 +444,36 @@ export default function ExpeditedApplication() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                       <Button
                         type="button"
                         variant={targetLevel === "MEMBER" ? "default" : "outline"}
-                        className={`h-auto p-6 flex flex-col items-start gap-3 ${
+                        className={`h-auto p-4 sm:p-6 flex flex-col items-start gap-3 whitespace-normal text-left ${
                           targetLevel === "MEMBER" ? "border-primary" : ""
                         }`}
                         onClick={() => setTargetLevel("MEMBER")}
                       >
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          <span className="font-bold">Member (MCIMArb)</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <FileText className="w-5 h-5 flex-shrink-0" />
+                          <span className="font-bold break-words">Member (MCIMArb)</span>
                         </div>
-                        <p className="text-sm text-left opacity-70">
+                        <p className="text-sm text-left opacity-70 break-words whitespace-normal">
                           14-day assessment for experienced professionals with 3+ years ADR or legal experience
                         </p>
                       </Button>
                       <Button
                         type="button"
                         variant={targetLevel === "FELLOW" ? "default" : "outline"}
-                        className={`h-auto p-6 flex flex-col items-start gap-3 ${
+                        className={`h-auto p-4 sm:p-6 flex flex-col items-start gap-3 whitespace-normal text-left ${
                           targetLevel === "FELLOW" ? "border-primary" : ""
                         }`}
                         onClick={() => setTargetLevel("FELLOW")}
                       >
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          <span className="font-bold">Fellow (FCIMArb)</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <FileText className="w-5 h-5 flex-shrink-0" />
+                          <span className="font-bold break-words">Fellow (FCIMArb)</span>
                         </div>
-                        <p className="text-sm text-left opacity-70">
+                        <p className="text-sm text-left opacity-70 break-words whitespace-normal">
                           48-hour assessment for senior professionals with 7+ years ADR or 10+ legal experience
                         </p>
                       </Button>
@@ -536,7 +536,7 @@ export default function ExpeditedApplication() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="cv-upload">CV / Resume *</Label>
                         <Input
@@ -592,18 +592,18 @@ export default function ExpeditedApplication() {
                           {documents.map((doc, index) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted rounded-lg"
                             >
-                              <div className="flex items-center gap-3">
-                                <FileText className="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm font-medium">{doc.file.name}</p>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{doc.file.name}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {(doc.file.size / 1024).toFixed(2)} KB
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="outline" className="text-xs">
                                   {DOCUMENT_LABELS[doc.type]}
                                 </Badge>
@@ -658,7 +658,7 @@ export default function ExpeditedApplication() {
                     type="submit"
                     size="lg"
                     disabled={isSubmitting || isLoadingProfile}
-                    className="min-w-[220px]"
+                    className="w-full sm:w-auto sm:min-w-[220px]"
                   >
                     {isSubmitting ? (
                       <>
