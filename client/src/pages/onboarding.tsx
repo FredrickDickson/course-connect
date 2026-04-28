@@ -288,7 +288,8 @@ export default function Onboarding() {
 
   const canResetExperience = experienceChoice !== "undecided" && !experienceChoiceLocked;
 
-  const showProfessionalForm = experienceChoice === "yes";
+  // Inline professional form removed — "yes" path now redirects to /expedited-application (Step 3).
+  const showProfessionalForm = false;
 
   const reviewStatusCopy = nonDraftReviewStatus ? REVIEW_STATUS_COPY[nonDraftReviewStatus] : null;
 
@@ -617,7 +618,15 @@ export default function Onboarding() {
 
     if (!user || isExperienceSubmitting) return;
 
-    if (choice === experienceChoice && (choice !== "no" || experienceChoiceLocked)) {
+    // Re-clicking "yes" when already yes: scroll to the form instead of silent no-op.
+    if (choice === "yes" && experienceChoice === "yes") {
+      setTimeout(() => {
+        document.getElementById("professional-form-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      return;
+    }
+
+    if (choice === "no" && experienceChoice === "no" && experienceChoiceLocked) {
 
       return;
 
@@ -671,9 +680,13 @@ export default function Onboarding() {
 
       if (choice === "yes") {
 
-        toast.success("Great! Share a few professional details so we can review your profile.");
+        toast.success("Great! Continuing to step 3 — your detailed application.");
 
         await fetchProfileStatus();
+
+        setLocation("/expedited-application?from=onboarding");
+
+        return;
 
       }
 
@@ -1359,6 +1372,18 @@ export default function Onboarding() {
 
                 <p className="text-sm text-muted-foreground">Selecting <strong>Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong>No</strong> grants instant Associate access so you can start learning right away.</p>
 
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">Associate access unlocked instantly</p>
+                      <p className="text-sm text-muted-foreground">
+                        Submit these details so our admissions team can review you for Member or Fellow access while you keep progressing.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid gap-3 sm:grid-cols-2">
 
                   <Button
@@ -1429,7 +1454,7 @@ export default function Onboarding() {
 
                     </div>
 
-                    <p className="text-xs text-primary break-words whitespace-normal">Submit a quick professional profile. You'll keep Associate access while we review.</p>
+                    <p className="text-xs text-primary-foreground/90 break-words whitespace-normal">Submit a quick professional profile. You'll keep Associate access while we review.</p>
 
                   </Button>
 
@@ -1473,7 +1498,7 @@ export default function Onboarding() {
 
             {showProfessionalForm && (
 
-              <Card className="transition-shadow duration-200 hover:shadow-lg">
+              <Card id="professional-form-card" className="transition-shadow duration-200 hover:shadow-lg">
 
                 <CardHeader>
 

@@ -353,20 +353,34 @@ export default function ExpeditedApplication() {
       <Header />
 
       {/* Header */}
-      <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-16">
+      <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-12">
         <ScrollReveal direction="up" distance={40} duration={0.7}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link href="/qualification-pathway">
-              <Button variant="ghost" className="text-white/70 hover:text-white mb-6">
+              <Button variant="ghost" className="text-white/70 hover:text-white mb-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Qualification Pathways
+                Back
               </Button>
             </Link>
+
+            {/* Step indicator */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-white/80">Step 3 of 3</span>
+                <span className="text-sm text-white/60">Detailed Application</span>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-1.5 flex-1 rounded-full bg-white/80" />
+                <div className="h-1.5 flex-1 rounded-full bg-white/80" />
+                <div className="h-1.5 flex-1 rounded-full bg-white/80" />
+              </div>
+            </div>
+
             <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-              Expedited Application
+              Detailed Application
             </h1>
             <p className="text-lg text-white/70 max-w-2xl">
-              Apply for expedited membership or fellowship based on your professional experience and qualifications.
+              Submit these details so our admissions team can review you for Member or Fellow access. You'll keep your Associate access while we review.
             </p>
           </div>
         </ScrollReveal>
