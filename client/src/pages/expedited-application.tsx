@@ -450,15 +450,15 @@ export default function ExpeditedApplication() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
-      {/* Header */}
+      {/* Header component hidden - navigation removed */}
+      
+      {/* Hero Section */}
       <section className="bg-[#8b0000] text-white py-12 relative overflow-hidden">
         {/* Decorative gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
         <ScrollReveal direction="up" distance={40} duration={0.7}>
           <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link href="/qualification-pathway">
+            <Link href="/onboarding">
               <Button variant="ghost" className="text-white/70 hover:text-white mb-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -681,7 +681,7 @@ export default function ExpeditedApplication() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label>Do you hold an LLM (Master of Laws)in ADR? *</Label>
+                      <Label>Do you hold an LLM (Master of Laws)? *</Label>
                       <div className="flex gap-3">
                         <Button
                           type="button"
