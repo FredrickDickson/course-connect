@@ -13,7 +13,7 @@ CREATE TABLE public.members (
   email TEXT NOT NULL,
   phone TEXT,
   country TEXT,
-  membership_level membership_level NOT NULL DEFAULT 'associate',
+  membership_level membership_level,
   member_id TEXT NOT NULL UNIQUE,
   status membership_status NOT NULL DEFAULT 'pending',
   post_nominal TEXT,

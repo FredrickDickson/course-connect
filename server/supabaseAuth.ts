@@ -64,24 +64,42 @@ export async function requireSupabaseAuth(req: Request, res: Response, next: Nex
       const firstName = nameParts[0] || user.email?.split("@")[0] || "User";
       const lastName = nameParts.slice(1).join(" ") || "";
 
-      try {
-        localUser = await storage.upsertUser({
-          id: user.id,
-          email: user.email!,
-          firstName,
-          lastName,
-          profileImageUrl: user.user_metadata?.avatar_url || null,
-          role: "student", // Default role
-          createdAt: new Date(),
+      const nowIso = new Date().toISOString();
+      const insertPayload = {
+        id: user.id,
+        email: user.email!.toLowerCase(),
+        first_name: firstName,
+        last_name: lastName,
+        profile_image_url: user.user_metadata?.avatar_url || null,
+        role: "student",
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from("users")
+        .insert(insertPayload)
+        .select()
+        .single();
+
+      if (insertErr) {
+        console.error("[AUTH] Failed to auto-provision user:", {
+          code: insertErr.code,
+          message: insertErr.message,
+          details: insertErr.details,
+          hint: insertErr.hint,
         });
-        console.log(`[AUTH] Auto-provisioned new user record: ${user.email} (${user.id})`);
-      } catch (provisionErr) {
-        console.error("[AUTH] Failed to auto-provision user:", provisionErr);
-        // We attempt to fetch one more time in case of race condition
+        // Race-condition fallback: another request may have created the row
         localUser = await storage.getUser(user.id);
         if (!localUser) {
-           return res.status(500).json({ message: "Failed to synchronize user data" });
+          return res.status(500).json({
+            message: "Failed to synchronize user data",
+            error: insertErr.message,
+          });
         }
+      } else {
+        localUser = inserted as any;
+        console.log(`[AUTH] Auto-provisioned new user record: ${user.email} (${user.id})`);
       }
     }
 
@@ -89,7 +107,7 @@ export async function requireSupabaseAuth(req: Request, res: Response, next: Nex
     (req as any).user = {
       ...user,
       claims: { sub: user.id }, // Maintain compatibility with existing code
-      role: localUser.role || 'student'
+      role: localUser?.role || 'student'
     };
     
     next();

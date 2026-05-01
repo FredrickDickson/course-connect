@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2, PlayCircle, Home } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const [reference, setReference] = useState<string | null>(null);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -20,20 +22,58 @@ export default function PaymentSuccess() {
 
   const verifyPaymentMutation = useMutation({
     mutationFn: async (ref: string) => {
-      return await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      const res = await apiRequest('POST', '/api/verify-payment', { reference: ref });
+      return await res.json();
     },
-    onSuccess: (response: any) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+    onSuccess: async (response: any) => {
+      if (response?.success) {
+        // Invalidate every enrollment-related cache so gated pages unlock immediately
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] }),
+          queryClient.invalidateQueries({ queryKey: ['enrollment-check'] }),
+          queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
+        ]);
+
+        // Server returns { success, data: paystackTransaction }
+        // where paystackTransaction.metadata.courseId is set during checkout init.
+        const tx = response?.data;
+        const enrolledCourseId =
+          tx?.metadata?.courseId ||
+          tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
+
+        if (enrolledCourseId) {
+          setLocation(`/course/${enrolledCourseId}`);
+          return;
+        }
+
+        setLocation('/dashboard');
       }
     },
   });
 
   useEffect(() => {
-    if (reference) {
+    if (reference && isAuthenticated && !isLoading) {
       verifyPaymentMutation.mutate(reference);
     }
-  }, [reference]);
+  }, [reference, isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Loader2 className="h-16 w-16 text-primary mx-auto mb-4 animate-spin" />
+              <h1 className="text-2xl font-bold mb-2">Loading...</h1>
+              <p className="text-muted-foreground">Please wait while we verify your session.</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!reference) {
     return (
@@ -113,7 +153,9 @@ export default function PaymentSuccess() {
   }
 
   const paymentData = verifyPaymentMutation.data?.data;
-  const courseId = paymentData?.metadata?.courseId;
+  const finalCourseId =
+    paymentData?.metadata?.courseId ||
+    paymentData?.data?.metadata?.courseId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,9 +203,9 @@ export default function PaymentSuccess() {
             </div>
 
             <div className="flex gap-4 justify-center pt-6">
-              {courseId ? (
+              {finalCourseId ? (
                 <>
-                  <Link href={`/course/${courseId}/learn`}>
+                  <Link href={`/course/${finalCourseId}`}>
                     <Button size="lg" className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-5 w-5 mr-2" />
                       Start Learning

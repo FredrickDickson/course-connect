@@ -238,7 +238,7 @@
         "from": "info@thecima.org",
         "to": "={{ $json.user_email }}",
         "subject": "Payment Failed - Try Again",
-        "html": "<h2>Payment Failed</h2><p>Dear {{ $json.user_name }},</p><p>Your payment for <strong>{{ $json.course_name }}</strong> failed.</p><p><strong>Amount:</strong> GHS {{ $json.amount }}</p><p><strong>Reference:</strong> {{ $json.reference }}</p><p>You can try again using the link below or choose bank transfer as an alternative.</p><p><a href='https://cima.learn/courses/{{ $json.data.metadata.course_edition_id }}'>Try Payment Again</a></p><p>If you continue to experience issues, please contact us at 0536735535 or 0241022964.</p><p>Thank you for your patience.</p><p>The CIMA Team</p>",
+        "html": "<h2>Payment Failed</h2><p>Dear {{ $json.user_name }},</p><p>Your payment for <strong>{{ $json.course_name }}</strong> failed.</p><p><strong>Amount:</strong> GHS {{ $json.amount }}</p><p><strong>Reference:</strong> {{ $json.reference }}</p><p>You can try again using the link below.</p><p><a href='https://cima.learn/courses/{{ $json.data.metadata.course_edition_id }}'>Try Payment Again</a></p><p>If you continue to experience issues, please contact us at 0536735535 or 0241022964.</p><p>Thank you for your patience.</p><p>The CIMA Team</p>",
         "options": {}
       },
       "id": "resend-failed-email",

@@ -1,0 +1,6 @@
+{
+  "watch": ["server", "shared"],
+  "ext": "ts,json",
+  "ignore": ["client/**", "node_modules/**", "dist/**", "supabase/**", "migrations/**", "**/*.test.ts"],
+  "delay": "1000"
+}

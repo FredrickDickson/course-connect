@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import AdminMembershipTable from "@/components/admin-membership-table";
-import AdminEnrollmentsTable from "@/components/admin-enrollments-table";
+import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
@@ -273,6 +274,9 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2 mt-3 sm:mt-0">
+            <Button asChild size="sm" variant="secondary">
+              <Link href="/admin/expedited">Expedited Reviews</Link>
+            </Button>
             <AdminNotifications />
             <Badge variant="outline" className="text-xs">
               <AlertCircle className="w-3 h-3 mr-1" />
@@ -312,7 +316,7 @@ export default function AdminDashboard() {
 
           {/* Enrollments Tab */}
           <TabsContent value="enrollments">
-            <AdminEnrollmentsTable />
+            <AdminEnrollmentsUnified />
           </TabsContent>
 
           {/* Courses Tab — Enhanced with capacity bars */}

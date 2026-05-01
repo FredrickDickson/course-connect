@@ -165,7 +165,7 @@ export default function GlobalMAProgram() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Advanced techniques for resolving valuation disputes and damage calculations in complex M&A scenarios.
+                    Fellow-level techniques for resolving valuation disputes and damage calculations in complex M&A scenarios.
                   </p>
                 </CardContent>
               </Card>

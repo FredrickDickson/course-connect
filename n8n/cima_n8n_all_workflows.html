@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CIMA — n8n Workflow Library (All 27)</title>
+<title>CIMA — n8n Workflow Library (All 39)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -335,8 +335,6 @@ body {
   .header-left { padding: 2rem; }
 }
 
-.wf-flow-section {}
-.wf-detail-section {}
 
 .section-micro-label {
   font-size: 9px;
@@ -373,7 +371,6 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-.detail-block {}
 .detail-label {
   font-size: 9px;
   text-transform: uppercase;
@@ -464,7 +461,7 @@ footer {
       <h1 class="header-title">n8n Workflow<br>Library</h1>
       <p class="header-sub">Complete automation reference for enrollment, membership, grading, AI agents, community, and admin operations.</p>
       <div class="header-stats">
-        <div class="stat"><span class="stat-num">27</span><span class="stat-label">Workflows</span></div>
+        <div class="stat"><span class="stat-num">39</span><span class="stat-label">Workflows</span></div>
         <div class="stat"><span class="stat-num">7</span><span class="stat-label">New</span></div>
         <div class="stat"><span class="stat-num">6</span><span class="stat-label">Categories</span></div>
         <div class="stat"><span class="stat-num">~$5</span><span class="stat-label">/ month</span></div>
@@ -517,13 +514,13 @@ footer {
 <!-- NAV -->
 <nav class="cat-nav">
   <div class="cat-nav-inner">
-    <button class="cat-btn active" onclick="showCat('all')">All workflows <span class="cnt">27</span></button>
+    <button class="cat-btn active" onclick="showCat('all')">All workflows <span class="cnt">39</span></button>
     <button class="cat-btn" onclick="showCat('enrollment')">Enrollment <span class="cnt">6</span></button>
     <button class="cat-btn" onclick="showCat('membership')">Membership <span class="cnt">7</span></button>
     <button class="cat-btn" onclick="showCat('courses')">Courses <span class="cnt">4</span></button>
     <button class="cat-btn" onclick="showCat('community')">Community <span class="cnt">3</span></button>
     <button class="cat-btn" onclick="showCat('admin')">Admin <span class="cnt">5</span></button>
-    <button class="cat-btn" onclick="showCat('new')">New additions <span class="cnt">7</span> <span class="new-dot"></span></button>
+    <button class="cat-btn" onclick="showCat('new')">New additions <span class="cnt">13</span> <span class="new-dot"></span></button>
   </div>
 </nav>
 
@@ -1274,12 +1271,449 @@ Email: {{body}}"</span>
   <div class="workflow is-new"><div class="wf-grid"><div class="wf-num-bar">27</div><div><div class="wf-header"><span class="wf-name">AI assignment feedback agent — private qualitative feedback <span class="new-star">NEW</span></span><div class="wf-meta"><span class="badge b-ai">Claude</span><span class="badge b-new">AI Agent</span></div></div><div class="wf-body"><div class="wf-flow-section"><div class="section-micro-label">Purpose</div><div class="detail-val">Separate from WF22's scoring. Focuses on qualitative improvement — what the student did well, where they fell short, concrete suggested rewrites. Delivered privately to dashboard and by email. Feels like a personal tutor.</div></div><div class="wf-detail-section"><div class="section-micro-label">Feedback structure</div><div class="detail-val">Strengths · Gaps · Suggested rewrites · Model answer excerpt</div></div></div></div></div></div>
 </div>
 
+<!-- PHASE: INSTRUCTOR & REVENUE -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 6 · Instructor &amp; Revenue</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 28–30</span>
+  </div>
+
+  <!-- WF 28 -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">28</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Instructor application notification workflow</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Insert</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">New application submitted</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: admin notification</div><div class="flow-arr">→</div>
+              <div class="node n-action">Slack: admin alert</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait for review</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Status changed?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: approval/rejection email</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Approved?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Update user role to instructor</div><div class="flow-arr">→</div>
+              <div class="node n-output">Send onboarding sequence</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Triggers</div>
+            <div class="detail-val">Supabase webhook on instructor_applications INSERT and UPDATE</div>
+          </div>
+          <div class="wf-desc">Automates the entire instructor application process. Notifies admins immediately of new applications, sends approval/rejection emails to applicants, updates user roles upon approval, and triggers instructor onboarding sequence.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 29 -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">29</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Instructor payout calculation &amp; processing</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Monthly</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: 1st of month 9am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Calculate instructor revenue</div><div class="flow-arr">→</div>
+              <div class="node n-action">Generate payout records</div><div class="flow-arr">→</div>
+              <div class="node n-action">Supabase: insert payouts</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: payout summary</div><div class="flow-arr">→</div>
+              <div class="node n-action">Slack: admin notification</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 7 days</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Unpaid?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: payment reminder</div><div class="flow-arr">→</div>
+              <div class="node n-output">Mark as overdue</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Revenue calculation</div>
+            <div class="detail-val">70% revenue share for instructors, calculated from completed enrollments in previous month</div>
+          </div>
+          <div class="wf-desc">Monthly automated payout calculation. Calculates instructor revenue shares, generates payout records, sends payout summaries to instructors, admin notifications, and follows up on unpaid payouts.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 30 -->
+  <div class="workflow is-new"><div class="priority-bar teal"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">30</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Assignment deadline &amp; grading reminders</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Hourly</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: every hour</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query upcoming deadlines</div><div class="flow-arr">→</div>
+              <div class="node n-cond">24h before?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: deadline reminder</div><div class="flow-arr">→</div>
+              <div class="node n-cond">1h before?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: urgent reminder</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query ungraded submissions</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: grading reminder</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log reminder sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Reminder schedule</div>
+            <div class="detail-val">24 hours before, 1 hour before, and overdue notifications for both students and instructors</div>
+          </div>
+          <div class="wf-desc">Automated assignment deadline reminders for students and grading reminders for instructors. Ensures assignments are submitted on time and graded promptly.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: USER ENGAGEMENT -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 7 · User Engagement</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 31–33</span>
+  </div>
+
+  <!-- WF 31 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">31</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">User onboarding &amp; welcome sequence</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Insert</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">New user registered</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: welcome email</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 1 day</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Profile incomplete?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: profile completion nudge</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 3 days</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: course recommendations</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 7 days</div><div class="flow-arr">→</div>
+              <div class="node n-output">Resend: platform tour</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Welcome sequence</div>
+            <div class="detail-val">Day 0: Welcome, Day 1: Profile nudge, Day 3: Course recommendations, Day 7: Platform tour</div>
+          </div>
+          <div class="wf-desc">Automated onboarding sequence for new users. Welcome email, profile completion nudges, personalized course recommendations, and platform tour to improve user engagement.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 32 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">32</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Email verification reminders</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Daily</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: daily 10am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query unverified users</div><div class="flow-arr">→</div>
+              <div class="node n-cond">1 day old?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: first reminder</div><div class="flow-arr">→</div>
+              <div class="node n-cond">3 days old?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: second reminder</div><div class="flow-arr">→</div>
+              <div class="node n-cond">7 days old?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: final reminder</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log reminder sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Reminder schedule</div>
+            <div class="detail-val">Day 1, Day 3, Day 7 after registration</div>
+          </div>
+          <div class="wf-desc">Automated email verification reminders for users who haven't verified their email address. Improves conversion rates and ensures users can access full platform features.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 33 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">33</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Certificate expiry reminders</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Daily</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: daily 9am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query expiring certificates</div><div class="flow-arr">→</div>
+              <div class="node n-cond">30 days before?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: expiry notice</div><div class="flow-arr">→</div>
+              <div class="node n-cond">7 days before?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: urgent reminder</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Expired today?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: expiry notification</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log reminder sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Reminder timing</div>
+            <div class="detail-val">30 days, 7 days before expiry, and on expiry date</div>
+          </div>
+          <div class="wf-desc">Automated certificate expiry reminders. Notifies users before their certificates expire to encourage renewal and maintain their professional credentials.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: COURSE OPERATIONS -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 8 · Course Operations</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 34–36</span>
+  </div>
+
+  <!-- WF 34 -->
+  <div class="workflow is-new"><div class="priority-bar blue"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">34</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Course publishing notifications</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">is_published → true</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query interested users</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: course launch notification</div><div class="flow-arr">→</div>
+              <div class="node n-action">Slack: admin notification</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log notification sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Target audience</div>
+            <div class="detail-val">Users who have favorited the course, enrolled in similar courses, or shown interest in the category</div>
+          </div>
+          <div class="wf-desc">Notifies relevant users when a new course is published. Targets users who have shown interest in similar courses or categories to maximize enrollment.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 35 -->
+  <div class="workflow is-new"><div class="priority-bar blue"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">35</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Course content update alerts</span>
+          <div class="wf-meta"><span class="badge b-db">Supabase Update</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Lesson/module updated</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query enrolled students</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: content update notification</div><div class="flow-arr">→</div>
+              <div class="node n-action">In-app notification</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log notification sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Update types</div>
+            <div class="detail-val">New lessons, updated content, new resources, modified assessments</div>
+          </div>
+          <div class="wf-desc">Notifies enrolled students when course content is updated. Keeps students informed of new materials and improvements to their enrolled courses.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 36 -->
+  <div class="workflow is-new"><div class="priority-bar blue"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">36</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Quiz deadline reminders</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Hourly</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: every hour</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query quiz deadlines</div><div class="flow-arr">→</div>
+              <div class="node n-cond">24h before?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: deadline reminder</div><div class="flow-arr">→</div>
+              <div class="node n-cond">At limit?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: attempt limit warning</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Overdue?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: overdue notice</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log reminder sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Reminder types</div>
+            <div class="detail-val">Deadline reminders, attempt limit warnings, overdue notifications</div>
+          </div>
+          <div class="wf-desc">Automated quiz deadline reminders and attempt limit warnings. Ensures students complete assessments on time and are aware of their remaining attempts.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE: COMMUNITY & RETENTION -->
+<div class="phase">
+  <div class="phase-label">
+    <span class="phase-name">Phase 9 · Community &amp; Retention</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">WF 37–39</span>
+  </div>
+
+  <!-- WF 37 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">37</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Inactive user re-engagement</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Weekly</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: weekly Monday 9am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query inactive users</div><div class="flow-arr">→</div>
+              <div class="node n-cond">30 days inactive?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: we miss you email</div><div class="flow-arr">→</div>
+              <div class="node n-cond">60 days inactive?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: special offer</div><div class="flow-arr">→</div>
+              <div class="node n-cond">90 days inactive?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: final offer</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log engagement attempt</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Win-back sequence</div>
+            <div class="detail-val">30 days: gentle reminder, 60 days: special offer, 90 days: final offer</div>
+          </div>
+          <div class="wf-desc">Automated re-engagement campaigns for inactive users. Gradually increasing incentives to bring users back to the platform.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 38 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">38</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Forum unanswered question reminders</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Daily</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: daily 11am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query unanswered questions</div><div class="flow-arr">→</div>
+              <div class="node n-cond">24h old?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Identify relevant instructors</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: answer request</div><div class="flow-arr">→</div>
+              <div class="node n-cond">48h old?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Slack: community admin alert</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log reminder sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Escalation</div>
+            <div class="detail-val">24h: notify instructors, 48h: notify community admins</div>
+          </div>
+          <div class="wf-desc">Ensures forum questions get answered. Notifies relevant instructors after 24 hours and escalates to community admins after 48 hours.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WF 39 -->
+  <div class="workflow is-new"><div class="priority-bar gold"></div>
+    <div class="wf-grid">
+      <div class="wf-num-bar">39</div>
+      <div>
+        <div class="wf-header">
+          <span class="wf-name">Review collection automation</span>
+          <div class="wf-meta"><span class="badge b-cron">Cron: Daily</span><span class="badge b-new">New</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-flow-section">
+            <div class="section-micro-label">Node flow</div>
+            <div class="flow-nodes">
+              <div class="node n-trigger">Cron: daily 8am</div><div class="flow-arr">→</div>
+              <div class="node n-action">Query completed courses</div><div class="flow-arr">→</div>
+              <div class="node n-cond">7 days since completion?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Check if review exists</div><div class="flow-arr">→</div>
+              <div class="node n-cond">No review?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: review request</div><div class="flow-arr">→</div>
+              <div class="node n-wait">Wait 3 days</div><div class="flow-arr">→</div>
+              <div class="node n-cond">Still no review?</div><div class="flow-arr">→</div>
+              <div class="node n-action">Resend: gentle reminder</div><div class="flow-arr">→</div>
+              <div class="node n-output">Log request sent</div>
+            </div>
+          </div>
+          <div class="wf-detail-section">
+            <div class="section-micro-label">Timing</div>
+            <div class="detail-val">7 days after course completion, follow-up after 3 more days</div>
+          </div>
+          <div class="wf-desc">Automated review collection from students who have completed courses. Increases review volume and provides valuable feedback for course improvement.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <footer>
-  <span>CIMA Learn · n8n Workflow Library · 27 workflows · 6 categories</span>
+  <span>CIMA Learn · n8n Workflow Library · 39 workflows · 9 categories</span>
   <span>Stack: Supabase · Paystack · Resend · Claude / GPT-4o · Slack · WhatsApp Business API</span>
-  <span>Self-hosted n8n: ~$5–10/month · vs Zapier equivalent: ~$100+/month</span>
+  <span>Self-hosted n8n: ~$8–15/month · vs Zapier equivalent: ~$100+/month</span>
 </footer>
 
 <script>

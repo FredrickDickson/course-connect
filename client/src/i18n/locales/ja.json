@@ -54,9 +54,9 @@
     "no_courses_found": "コースが見つかりません",
     "try_different_filter": "別のカテゴリーまたは検索語を試してください",
     "level": {
-      "beginner": "初級",
-      "intermediate": "中級",
-      "advanced": "上級"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "期間",
     "lessons": "レッスン",
@@ -127,6 +127,11 @@
     "retry": "再試行",
     "save": "保存",
     "cancel": "キャンセル",
+    "level": {
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
+    },
     "delete": "削除",
     "edit": "編集",
     "create": "作成",

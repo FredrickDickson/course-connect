@@ -38,6 +38,12 @@ const POST_NOMINALS: Record<string, string> = {
   fellow: "FCIMArb",
 };
 
+const PART_LABELS: Record<string, string> = {
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
+};
+
 // Default renewal fees per level (admin-configurable in future)
 const RENEWAL_FEES: Record<string, number> = {
   associate: 3500,
@@ -134,7 +140,7 @@ export default function RenewMembership() {
     );
   }
 
-  const level = membership.membership_level;
+  const level = membership.part;
   const renewalFee = RENEWAL_FEES[level] || 5000;
   const isExpired = membership.status === "expired";
   const postNominal = POST_NOMINALS[level] || membership.post_nominal || "";
@@ -292,9 +298,9 @@ export default function RenewMembership() {
                   <span className="text-muted-foreground">Member ID</span>
                   <span className="font-mono font-bold">{membership.member_id}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Level</span>
-                  <span className="font-medium">{postNominal}</span>
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-gray-500">Current Part</span>
+                  <span className="font-bold text-gray-900">{PART_LABELS[level] || level}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">New Issue Date</span>
@@ -363,6 +369,25 @@ export default function RenewMembership() {
         {/* Member Info */}
         <Card className="mb-6">
           <CardContent className="p-6">
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {[/* eslint-disable @typescript-eslint/no-unused-vars */
+                { label: "Part I", value: "associate", post: "ACIMArb" },
+                { label: "Part II", value: "member", post: "MCIMArb" },
+                { label: "Part III", value: "fellow", post: "FCIMArb" },
+              ].map((p) => (
+                <div
+                  key={p.value}
+                  className={`p-3 rounded-lg border-2 text-center transition-all ${
+                    level === p.value
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                      : "border-muted bg-muted/20 opacity-40"
+                  }`}
+                >
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{p.label}</p>
+                  <p className="text-lg font-bold text-gray-900">{p.post}</p>
+                </div>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Member</p>

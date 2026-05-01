@@ -154,9 +154,9 @@ export default function CommunityMyPosts() {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={user?.avatar_url} />
+                        <AvatarImage src={user?.profileImageUrl} />
                         <AvatarFallback>
-                          {user?.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
+                          {[user?.firstName, user?.lastName].filter(Boolean).map((n) => n?.[0]).join('').toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">

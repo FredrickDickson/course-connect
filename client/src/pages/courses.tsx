@@ -45,7 +45,7 @@ export default function Courses() {
     queryFn: async () => {
       const { data, error } = await supabase.from("categories").select("*");
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
   });
 
@@ -80,7 +80,7 @@ export default function Courses() {
           .select("id")
           .eq("slug", category)
           .maybeSingle();
-        if (catData) query = query.eq("category_id", catData.id);
+        if (catData) query = query.eq("category_id", (catData as any).id);
       }
 
       if (level && level !== "all") {
@@ -198,9 +198,9 @@ export default function Courses() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="associate">Part I (Associate)</SelectItem>
+                  <SelectItem value="member">Part II (Member)</SelectItem>
+                  <SelectItem value="fellow">Part III (Fellow)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -323,7 +323,7 @@ export default function Courses() {
       </section>
 
       {/* Featured Courses Section */}
-      <section className="py-12 bg-muted/30">
+      <section className="hidden md:block py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">

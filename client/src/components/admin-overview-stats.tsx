@@ -303,19 +303,19 @@ export default function AdminOverviewStats() {
                 <Legend />
                 <Bar
                   dataKey="associate"
-                  name="Associate"
+                  name="Part I (Associate)"
                   fill="hsl(var(--primary))"
                   radius={[2, 2, 0, 0]}
                 />
                 <Bar
                   dataKey="member"
-                  name="Member"
+                  name="Part II (Member)"
                   fill="hsl(var(--primary) / 0.6)"
                   radius={[2, 2, 0, 0]}
                 />
                 <Bar
                   dataKey="fellow"
-                  name="Fellow"
+                  name="Part III (Fellow)"
                   fill="#d97706"
                   radius={[2, 2, 0, 0]}
                 />
@@ -359,7 +359,7 @@ export default function AdminOverviewStats() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
-              Associate vs Fellow vs Member Split
+              Part I vs Part III vs Part II Split
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -372,19 +372,19 @@ export default function AdminOverviewStats() {
                 <Legend />
                 <Bar
                   dataKey="associate"
-                  name="Associate"
+                  name="Part I (Associate)"
                   stackId="a"
                   fill="hsl(var(--primary))"
                 />
                 <Bar
                   dataKey="member"
-                  name="Member"
+                  name="Part II (Member)"
                   stackId="a"
                   fill="hsl(var(--primary) / 0.5)"
                 />
                 <Bar
                   dataKey="fellow"
-                  name="Fellow"
+                  name="Part III (Fellow)"
                   stackId="a"
                   fill="#d97706"
                 />
@@ -468,7 +468,7 @@ export default function AdminOverviewStats() {
                   ))}
                 </tr>
                 <tr className="border-b">
-                  <td className="p-3">Associate Tickets</td>
+                  <td className="p-3">Part I (Associate) Tickets</td>
                   {yoyData.map((y) => (
                     <td key={y.year} className="p-3 text-right">
                       {y.associate}
@@ -476,7 +476,7 @@ export default function AdminOverviewStats() {
                   ))}
                 </tr>
                 <tr className="border-b">
-                  <td className="p-3">Member Tickets</td>
+                  <td className="p-3">Part II (Member) Tickets</td>
                   {yoyData.map((y) => (
                     <td key={y.year} className="p-3 text-right">
                       {y.member}
@@ -484,7 +484,7 @@ export default function AdminOverviewStats() {
                   ))}
                 </tr>
                 <tr className="border-b">
-                  <td className="p-3">Fellow Tickets</td>
+                  <td className="p-3">Part III (Fellow) Tickets</td>
                   {yoyData.map((y) => (
                     <td key={y.year} className="p-3 text-right">
                       {y.fellow}

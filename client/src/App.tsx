@@ -25,12 +25,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
 import Dashboard from "@/pages/dashboard";
+import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
 import VideoPlayer from "@/pages/video-player";
@@ -55,6 +58,7 @@ import FCIMarbFellowship from "@/pages/fcrimarb-fellowship";
 import Certification from "@/pages/certification";
 import Resources from "@/pages/resources";
 import QualificationPathway from "@/pages/qualification-pathway";
+import ExpeditedApplication from "@/pages/expedited-application";
 import VerifyMember from "@/pages/verify-member";
 import RenewMembership from "@/pages/renew-membership";
 import CommunityForum from "@/pages/community-forum";
@@ -69,6 +73,7 @@ import PaymentSuccess from "@/pages/payment-success";
 import VerifyEmail from "@/pages/verify-email";
 import Onboarding from "@/pages/onboarding";
 import AuthCallback from "@/pages/auth-callback";
+import EnrollmentStatus from "@/pages/enrollment-status";
 
 // Lazy loaded components - heavy/role-gated pages
 const InstructorDashboard = lazy(() => import("@/pages/instructor-dashboard"));
@@ -185,15 +190,18 @@ function Router() {
       <ProtectedRoute path="/community/my-posts" component={CommunityMyPosts} />
       <ProtectedRoute path="/community/notifications" component={CommunityNotifications} />
       <ProtectedRoute path="/checkout/:courseId" component={Checkout} />
+      <ProtectedRoute path="/enroll/:courseId/status" component={EnrollmentStatus} />
+      <ProtectedRoute path="/expedited-application" component={ExpeditedApplication} />
       <Route path="/payment-success" component={PaymentSuccess} />
 
       {/* Instructor-only routes */}
-      <ProtectedRoute path="/instructor" requiredRole="instructor" component={InstructorDashboard} />
-      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={CreateCourse} />
-      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={CourseCurriculum} />
+      <ProtectedRoute path="/instructor" requiredRole="instructor" component={LazyInstructorDashboard} />
+      <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
+      <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin" component={AdminDashboard} />
+      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
+      <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>
@@ -211,6 +219,8 @@ function App() {
           </TooltipProvider>
         </LanguageProvider>
       </AuthProvider>
+      <Analytics />
+      <SpeedInsights />
     </QueryClientProvider>
   );
 }

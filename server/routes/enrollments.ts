@@ -1,13 +1,22 @@
 /**
  * Enrollments Routes - /api/enrollments/* endpoints
+ * Implements eligibility-driven enrollment flow
  */
 
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { storage } from "../storage";
+import { getQualificationStatus } from "../storage/qualification";
+import { 
+  checkEligibility, 
+  createEnrollment,
+} from "../storage/enrollment";
+import { getProfessionalProfileByUserId } from "../storage/professionalProfiles";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { asyncHandler } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
+import type { EligibilityResponse, EnrollmentLevel } from "@shared/enrollmentEligibility";
+import { send400Error, validateRequiredFields } from "../middleware/error-fixes";
 
 interface AuthRequest extends Request {
   user: {
@@ -33,29 +42,111 @@ interface CertEntry {
 
 const router = Router();
 
-// Enroll in a course
+// Check eligibility before enrollment
+router.post(
+  "/check-eligibility",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user.claims.sub;
+    const { courseId, enrollmentLevel } = req.body;
+
+    // Enhanced validation with better error messages
+    const validation = validateRequiredFields(req, ['courseId']);
+    if (!validation.isValid) {
+      return send400Error(res, validation.error.message, validation.error);
+    }
+
+    const course = await storage.getCourseById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
+    const eligibility = await checkEligibility(user, course, resolvedLevel);
+    res.json(eligibility);
+  }),
+);
+
+// Enroll in a course with eligibility check
 router.post(
   "/",
   requireSupabaseAuth,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
-    const enrollmentData = insertEnrollmentSchema.parse({
-      ...req.body,
-      userId,
-    });
+    const { courseId, enrollmentLevel } = req.body;
 
-    const isEnrolled = await storage.isUserEnrolled(
-      userId,
-      enrollmentData.courseId || "",
-    );
-    if (isEnrolled) {
-      return res.status(400).json({ message: "Already enrolled in this course" });
+    // Enhanced validation with better error messages
+    const validation = validateRequiredFields(req, ['courseId']);
+    if (!validation.isValid) {
+      return send400Error(res, validation.error.message, validation.error);
     }
 
-    const enrollment = await storage.enrollUser(enrollmentData);
+    const course = await storage.getCourseById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check eligibility
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
+    const eligibility = await checkEligibility(user, course, resolvedLevel);
+
+    if (eligibility.status === "BLOCKED") {
+      return res.status(403).json(formatEligibilityError(eligibility));
+    }
+
+    // Direct enrollment
+    const enrollment = await createEnrollment(
+      userId,
+      courseId,
+      resolvedLevel,
+      "COURSE",
+    );
+
     res.json(enrollment);
   }),
 );
+
+async function resolveEnrollmentLevel(
+  userId: string,
+  requestedLevel: string | undefined,
+  courseLevel: string | undefined,
+): Promise<EnrollmentLevel> {
+  // Fetch user's actual assigned level from the users table
+  const user = await storage.getUser(userId);
+  const userLevel = user?.assigned_level?.toUpperCase() as EnrollmentLevel | undefined;
+
+  // If user has a valid assigned level (from admin review or course completion), use it
+  if (userLevel === "ASSOCIATE" || userLevel === "MEMBER" || userLevel === "FELLOW") {
+    return userLevel;
+  }
+
+  // For users with NONE or no assigned level, default to ASSOCIATE
+  // so they can start the Associate course path and earn their level
+  const fallback = courseLevel ? courseLevel.toUpperCase() : "ASSOCIATE";
+  const raw = (requestedLevel || fallback).toUpperCase();
+  if (raw === "ASSOCIATE" || raw === "MEMBER" || raw === "FELLOW") {
+    return raw;
+  }
+  return "ASSOCIATE";
+}
+
+function formatEligibilityError(eligibility: EligibilityResponse) {
+  return {
+    message: eligibility.ui.message,
+    ui: eligibility.ui,
+    progression: eligibility.progression,
+  };
+}
 
 // Get my enrollments
 router.get(

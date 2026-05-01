@@ -4,6 +4,11 @@
  * Content: Professional / Corrected spelling
  */
 import jsPDF from "jspdf";
+import { 
+  PATHWAY_TYPES, 
+  PATHWAY_CONFIG,
+  type PathwayType 
+} from "../../../shared/pathways";
 
 export interface CertificateData {
   fullName: string;
@@ -11,25 +16,20 @@ export interface CertificateData {
   memberId: string;
   issueDate: string;
   expiryDate: string;
+  pathway?: PathwayType; // Optional pathway for post-nominals
 }
 
-const LEVEL_LABELS: Record<string, { title: string; description: string; postNominal: string }> = {
-  associate: {
-    title: "Certificate of\nMembership",
-    description: "is an Associate Member of the Center",
-    postNominal: "ACIMArb",
-  },
-  member: {
-    title: "Certificate of\nMembership",
-    description: "is a Member of the Center",
-    postNominal: "MCIMArb",
-  },
-  fellow: {
-    title: "Certificate of\nFellowship",
-    description: "is a Fellow of the Center",
-    postNominal: "FCIMArb",
-  },
-};
+// Get level labels based on pathway
+function getLevelLabels(level: string, pathway: PathwayType = PATHWAY_TYPES.ARBITRATION) {
+  const config = PATHWAY_CONFIG[pathway];
+  return {
+    title: level === "fellow" ? "Certificate of\nFellowship" : "Certificate of\nMembership",
+    description: level === "associate" ? "is an Associate Member of the Center" :
+                 level === "member" ? "is a Member of the Center" :
+                 "is a Fellow of the Center",
+    postNominal: config.postNominals[level as keyof typeof config.postNominals]
+  };
+}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -63,7 +63,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pw = 210;
   const cx = pw / 2;
-  const level = LEVEL_LABELS[data.membershipLevel];
+  const level = getLevelLabels(data.membershipLevel, data.pathway || PATHWAY_TYPES.ARBITRATION);
 
   const [crestBytes, sealBytes, sigBytes] = await Promise.all([
     loadImageRaw("/images/cima_crest.png"),

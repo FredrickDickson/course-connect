@@ -1,0 +1,616 @@
+﻿{
+  "name": "WF42 - LinkedIn Enhanced (With Image)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-morning",
+      "name": "Cron - Morning (9:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 12 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-midday",
+      "name": "Cron - Midday (12:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 450],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 17 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-evening",
+      "name": "Cron - Evening (5:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 600],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "morning",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['ADR', 'Tech News'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-morning-data",
+      "name": "Set Morning Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "midday",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['Current Affairs', 'ADR'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-midday-data",
+      "name": "Set Midday Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 450]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "evening",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['AI', 'Cybersecurity'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-evening-data",
+      "name": "Set Evening Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $credentials.googleApi.apiKey }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ $credentials.googleApi.searchEngineId }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ 'Significant 2026 update in ' + $json.topic }}"
+            },
+            {
+              "name": "num",
+              "value": "3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "researcher",
+      "name": "Researcher - Google Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 450]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $credentials.googleApi.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"System Instructions: You are a high-level ghostwriter for a Partner-level executive in International Arbitration and Legal Tech. Your goal is to produce content that exudes 'Trust & Prestige.'\\n\\nCore Persona:\\n- Voice: Academic yet practical, authoritative, and visionary.\\n- Vocabulary: Use high-value terms like strategic imperative, institutional framework, jurisdictional nuance, precedent-setting, and digital transformation.\\n- Formatting: Clean, scannable, and 'Elite Institutional' (minimal emojis, clear headers).\\n\\nInput Variables:\\n- News/Context: {{ $json.items.map(item => item.title + ': ' + item.snippet).join('\\\\n') }}\\n- Content Type: {{ $json.type }}\\n- Primary Topic: {{ $json.topic }}\\n\\nTask:\\n1. The Hook: Start with a bold, sober observation about the industry. No emojis in the first line.\\n2. The Analysis: Break down the impact of the news using the 'Rule of Three.' Three concise points explaining why this matters for global recognition.\\n3. The CIMA Connection: Subtly tie the insight back to the importance of professional certification and global standards in ADR.\\n4. Call to Action: End with a sophisticated inquiry directed at other industry leaders.\\n\\nStrict Constraints:\\n- No 'AI-isms' (e.g., 'In the rapidly evolving landscape...').\\n- Max 3,000 characters.\\n- Max 3 hashtags: #ADR #LegalTech #CIMA.\\n- Use British English (e.g., recognised, organisation, centre).\\n\\nTime slot: {{ $json.timeSlot }}\\n\\nWrite the LinkedIn post now.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "writer",
+      "name": "Writer - Google Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 450]
+    },
+    {
+      "parameters": {
+        "url": "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "huggingFaceApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\": \"A hyper-realistic, wide-angle cinematic shot of a prestigious legal center. Lighting is moody with Deep Crimson Red and Achievement Amber accents. Minimalist glass furniture, soft focus on an international flag in the background. 8k, professional architectural photography, elite institutional atmosphere.\"\n}",
+        "options": {}
+      },
+      "id": "artist",
+      "name": "Artist - Hugging Face Image Gen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "name": "={{ $now.format('yyyy-MM-dd') }}-{{ $json.timeSlot }}-{{ $json.topic }}-enhanced.txt",
+        "content": "={{ $json.candidates[0].content.parts[0].text }}",
+        "driveId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list"
+        }
+      },
+      "id": "google-drive-save",
+      "name": "Google Drive - Save Post",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 450]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts Enhanced",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Date": "={{ $now.format('yyyy-MM-dd') }}",
+            "Time Slot": "={{ $json.timeSlot }}",
+            "Topic": "={{ $json.topic }}",
+            "Post Content": "={{ $json.candidates[0].content.parts[0].text }}",
+            "Image URL": "={{ $json.image }}",
+            "Status": "Draft",
+            "Type": "={{ $json.type }}"
+          }
+        }
+      },
+      "id": "google-sheets-log",
+      "name": "Google Sheets - Log Post",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1450, 450]
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "LinkedIn Post Approval",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Post Content",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Image URL",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Approval Decision",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "optionLabel": "Approve & Publish",
+                    "optionValue": "approve"
+                  },
+                  {
+                    "optionLabel": "Reject",
+                    "optionValue": "reject"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Comments (optional)",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "manual-approval",
+      "name": "Manual Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1650, 450]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Approval Decision'] }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "approved"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Approval Decision'] }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "rejected"
+            }
+          ]
+        }
+      },
+      "id": "switch-approval",
+      "name": "Switch - Approval Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [1850, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "standard",
+        "resource": "post",
+        "operation": "create",
+        "postAs": "person",
+        "person": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "text": "={{ $json.candidates[0].content.parts[0].text }}",
+        "media": {
+          "mediaType": "image",
+          "url": "={{ $json.image }}"
+        }
+      },
+      "id": "linkedin-publish",
+      "name": "LinkedIn - Publish Post",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [2050, 350]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts Enhanced",
+        "lookupColumn": "Date",
+        "lookupValue": "={{ $now.format('yyyy-MM-dd') }}",
+        "updateKey": "Status",
+        "updateValue": "Published"
+      },
+      "id": "google-sheets-update-approved",
+      "name": "Google Sheets - Update Status (Approved)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2250, 350]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts Enhanced",
+        "lookupColumn": "Date",
+        "lookupValue": "={{ $now.format('yyyy-MM-dd') }}",
+        "updateKey": "Status",
+        "updateValue": "Rejected"
+      },
+      "id": "google-sheets-update-rejected",
+      "name": "Google Sheets - Update Status (Rejected)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2250, 550]
+    }
+  ],
+  "connections": {
+    "Cron - Morning (9:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Set Morning Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Midday (12:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Midday Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Evening (5:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Evening Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Morning Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Google Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Midday Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Google Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Evening Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Google Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Researcher - Google Search": {
+      "main": [
+        [
+          {
+            "node": "Writer - Google Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer - Google Gemini": {
+      "main": [
+        [
+          {
+            "node": "Artist - Hugging Face Image Gen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Artist - Hugging Face Image Gen": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save Post": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log Post": {
+      "main": [
+        [
+          {
+            "node": "Manual Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Approval": {
+      "main": [
+        [
+          {
+            "node": "Switch - Approval Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Approval Decision": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Update Status (Rejected)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn - Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Update Status (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

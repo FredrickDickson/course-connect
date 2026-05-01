@@ -31,6 +31,30 @@ export default defineConfig(async ({ mode }) => ({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@tanstack/react-query') || id.includes('@tanstack/query-core')) {
+              return 'vendor-query';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('@tiptap')) {
+              return 'vendor-editor';
+            }
+            if (id.includes('framer-motion') || id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'vendor-misc';
+            }
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     host: "::",
@@ -41,6 +65,12 @@ export default defineConfig(async ({ mode }) => ({
     fs: {
       strict: true,
       deny: ["**/.*"],
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 }));

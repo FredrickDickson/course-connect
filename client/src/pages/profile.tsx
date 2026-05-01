@@ -70,9 +70,9 @@ const EXPERIENCE_LEVELS = [
 
 const ADR_OPTIONS = [
   { value: "none", label: "None" },
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+  { value: "associate", label: "Part I (Associate)" },
+  { value: "member", label: "Part II (Member)" },
+  { value: "fellow", label: "Part III (Fellow)" },
 ];
 
 export default function Profile() {
@@ -166,8 +166,11 @@ export default function Profile() {
 
   // Save basic info
   const saveBasicMutation = useMutation({
-    mutationFn: async (data: typeof basicForm) => {
-      const { error } = await supabase
+    mutationFn: async (data: any) => {
+      const fullName = `${data.firstName} ${data.lastName}`.trim();
+      
+      // Update users table
+      const { error: userError } = await (supabase as any)
         .from("users")
         .update({
           first_name: data.firstName,
@@ -178,7 +181,19 @@ export default function Profile() {
           updated_at: new Date().toISOString(),
         })
         .eq("id", user!.id);
-      if (error) throw error;
+      if (userError) throw userError;
+
+      // Update profiles table (full_name, country, timezone)
+      const { error: profileError } = await (supabase as any)
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          country: data.country,
+          timezone: data.timezone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user!.id);
+      if (profileError) throw profileError;
     },
     onSuccess: () => {
       toast({ title: "Personal info updated" });
@@ -269,7 +284,7 @@ export default function Profile() {
                     <h1 className="text-2xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
                     {memberRecord && (
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline">{memberRecord.post_nominal || memberRecord.membership_level}</Badge>
+                        <Badge variant="outline">{memberRecord.post_nominal || memberRecord.part}</Badge>
                         <span className="text-xs text-muted-foreground">Member ID: {memberRecord.member_id}</span>
                       </div>
                     )}

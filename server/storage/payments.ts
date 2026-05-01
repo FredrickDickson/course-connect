@@ -28,6 +28,12 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
     currency: order.currency,
     status: order.status,
     paystack_reference: order.paystackReference,
+    // Add currency conversion fields if available
+    ...(order.amountUsd && { amount_usd: order.amountUsd }),
+    ...(order.amountGhs && { amount_ghs: order.amountGhs }),
+    ...(order.exchangeRate && { exchange_rate: order.exchangeRate }),
+    ...(order.originalCurrency && { original_currency: order.originalCurrency }),
+    ...(order.chargedCurrency && { charged_currency: order.chargedCurrency }),
   };
   const { data, error } = await supabaseAdmin
     .from("orders")

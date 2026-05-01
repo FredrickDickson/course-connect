@@ -140,7 +140,7 @@ export default function FCIMarbFellowship() {
           <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" staggerDelay={0.1} threshold={0.15}>
             {[
               { icon: FileText, title: "Award Writing", desc: "Master the art of drafting enforceable arbitral awards that meet international standards." },
-              { icon: Scale, title: "Mediation / Settlement & Consent Awards II", desc: "Advanced techniques for settlement facilitation and consent award drafting." },
+              { icon: Scale, title: "Mediation / Settlement & Consent Awards II", desc: "Fellow-level techniques for settlement facilitation and consent award drafting." },
               { icon: BookOpen, title: "Dissertation in Arbitration & ADR", desc: "Original research contribution to the field of international arbitration." },
               { icon: Globe, title: "Arbitral Practice in New Markets", desc: "Emerging jurisdictions, investment treaty arbitration, and cross-border challenges." },
               { icon: Users, title: "Peer Interview", desc: "Professional assessment by a panel of senior CIMA Fellows and practitioners." },
@@ -295,13 +295,13 @@ export default function FCIMarbFellowship() {
                   <TableRow>
                     <TableCell className="font-medium text-muted-foreground">Member</TableCell>
                     <TableCell><span className="text-muted-foreground">MCIMArb</span></TableCell>
-                    <TableCell className="text-muted-foreground">Intermediate; can participate in arbitral process</TableCell>
+                    <TableCell className="text-muted-foreground">Member-level; can participate in arbitral process</TableCell>
                     <TableCell className="text-muted-foreground">Arbitration Practitioner</TableCell>
                   </TableRow>
                   <TableRow className="bg-primary/5">
                     <TableCell className="font-bold text-foreground">Fellow</TableCell>
                     <TableCell><span className="text-primary font-bold">FCIMArb</span></TableCell>
-                    <TableCell className="font-medium text-foreground">Advanced; meets global standards to sit as arbitrator</TableCell>
+                    <TableCell className="font-medium text-foreground">Fellow-level; meets global standards to sit as arbitrator</TableCell>
                     <TableCell><span className="text-amber-600 font-bold">Certified International Arbitrator</span></TableCell>
                   </TableRow>
                 </TableBody>

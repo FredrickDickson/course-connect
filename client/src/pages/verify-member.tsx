@@ -11,7 +11,7 @@ import cimaLogo from "@/assets/cima-logo.png";
 
 interface MemberVerification {
   full_name: string;
-  membership_level: string;
+  part: string;
   status: string;
   issue_date: string;
   expiry_date: string;
@@ -19,10 +19,10 @@ interface MemberVerification {
   post_nominal: string;
 }
 
-const LEVEL_LABEL: Record<string, string> = {
-  associate: "Associate Member (ACIMArb)",
-  member: "Member (MCIMArb)",
-  fellow: "Fellow (FCIMArb)",
+const PART_LABEL: Record<string, string> = {
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
 };
 
 function formatDate(d: string) {
@@ -40,8 +40,8 @@ export default function VerifyMember() {
     if (!memberId) return;
     (async () => {
       const { data, error } = await supabase
-        .from("members" as any)
-        .select("full_name, membership_level, status, issue_date, expiry_date, member_id, post_nominal")
+        .from("members")
+        .select("full_name, part, status, issue_date, expiry_date, member_id, post_nominal")
         .eq("member_id", memberId)
         .maybeSingle();
       if (error || !data) {
@@ -114,9 +114,9 @@ export default function VerifyMember() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-sm text-gray-500">Membership Level</p>
+                  <p className="text-sm text-gray-500">Membership Part</p>
                   <p className="text-lg font-medium text-primary">
-                    {LEVEL_LABEL[member.membership_level] || member.membership_level}
+                    {PART_LABEL[member.part] || member.part}
                   </p>
                 </div>
 

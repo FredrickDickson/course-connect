@@ -84,7 +84,7 @@ export const securityMiddleware = [
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.paystack.co", "https://va.vercel-scripts.com"],
         mediaSrc: ["'self'", "blob:", "https:"],
         connectSrc: [
           "'self'",
@@ -92,7 +92,10 @@ export const securityMiddleware = [
           "wss:",
           "ws://localhost:*",
           "http://localhost:*",
+          "https://api.paystack.co",
+          "https://emvibxbcrvritkwkguya.supabase.co",
         ],
+        workerSrc: ["'self'", "blob:"],
       },
     },
   }),
@@ -100,7 +103,7 @@ export const securityMiddleware = [
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
-        : ["http://localhost:3000", "http://localhost:5000"],
+        : ["http://localhost:3000", "http://localhost:5000", "http://localhost:5173"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -140,8 +143,8 @@ export const courseValidation = [
     .isFloat({ min: 0 })
     .withMessage("Price must be a valid positive number"),
   body("level")
-    .isIn(["beginner", "intermediate", "advanced"])
-    .withMessage("Level must be beginner, intermediate, or advanced"),
+    .isIn(["associate", "member", "fellow"])
+    .withMessage("Level must be associate, member, or fellow"),
   body("categoryId")
     .optional()
     .isUUID()
@@ -199,8 +202,8 @@ export const searchValidation = [
     .withMessage("Category must be alphanumeric"),
   query("level")
     .optional()
-    .isIn(["beginner", "intermediate", "advanced"])
-    .withMessage("Level must be beginner, intermediate, or advanced"),
+    .isIn(["associate", "member", "fellow"])
+    .withMessage("Level must be associate, member, or fellow"),
 ];
 
 export const uuidValidation = [

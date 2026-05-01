@@ -10,7 +10,7 @@
  */
 
 import type { Express, Request, Response } from 'express';
-import { supabase } from './supabaseAuth';
+import { supabase, requireSupabaseAuth } from './supabaseAuth';
 import { storage } from './storage';
 import { authLimiter, asyncHandler } from './middleware/security';
 
@@ -270,7 +270,7 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // GET CURRENT USER
   // ============================================================================
-  app.get('/api/auth/me', asyncHandler(async (req: AuthRequest, res: Response) => {
+  app.get('/api/auth/me', requireSupabaseAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       

@@ -1,0 +1,728 @@
+{
+  "name": "WF40 - LinkedIn Content Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-morning",
+      "name": "Cron - Morning (9:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 12 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-midday",
+      "name": "Cron - Midday (12:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 450],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 17 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-evening",
+      "name": "Cron - Evening (5:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 600],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.timeSlot }}",
+                    "rightValue": "morning",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "morning"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.timeSlot }}",
+                    "rightValue": "midday",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "midday"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.timeSlot }}",
+                    "rightValue": "evening",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "evening"
+            }
+          ]
+        }
+      },
+      "id": "switch-time-slot",
+      "name": "Switch - Time Slot",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [450, 450]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "morning",
+              "type": "string"
+            },
+            {
+              "name": "topicCategory",
+              "value": "={{ ['ADR', 'Tech News'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-morning-data",
+      "name": "Set Morning Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "midday",
+              "type": "string"
+            },
+            {
+              "name": "topicCategory",
+              "value": "={{ ['Current Affairs', 'ADR'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-midday-data",
+      "name": "Set Midday Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 450]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "evening",
+              "type": "string"
+            },
+            {
+              "name": "topicCategory",
+              "value": "={{ ['AI', 'Cybersecurity'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-evening-data",
+      "name": "Set Evening Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $credentials.googleApi.apiKey }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ $credentials.googleApi.searchEngineId }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ 'Latest developments in ' + $json.topicCategory + ' ' + $now.format('MMMM yyyy') }}"
+            },
+            {
+              "name": "num",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "google-search",
+      "name": "Google Search API - Topic Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 450]
+    },
+    {
+      "parameters": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $credentials.googleApi.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"You are Mohammed Talib, a Partner at Pinsent Masons (Hong Kong) and a Fellow of CIMA (FCIMArb). Your writing style is:\\n- Tone: Highly authoritative, academic yet practical, elite institutional\\n- Format: Structured with numbered lists or clear headings\\n- Topics: Alternative Dispute Resolution (ADR), international arbitration trends, legal tech, cross-border commercial disputes\\n\\nWrite LinkedIn posts (150-300 words) that establish thought leadership in international arbitration and legal technology. Use professional hashtags at the end.\\n\\nBased on these {{ $json.topicCategory }} developments from Google Search, write a LinkedIn post in my style:\\n\\n{{ $json.items.map(item => item.title + ': ' + item.snippet).join('\\n') }}\\n\\nTopic: {{ $json.topicCategory }}\\nTime slot: {{ $json.timeSlot }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "gemini-content-gen",
+      "name": "Google Gemini - Generate Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "name": "={{ $now.format('yyyy-MM-dd') }}-{{ $json.timeSlot }}-{{ $json.topicCategory }}.txt",
+        "content": "={{ $json.candidates[0].content.parts[0].text }}",
+        "driveId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list"
+        }
+      },
+      "id": "google-drive-save",
+      "name": "Google Drive - Save Post",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "search",
+        "name": "CIMA-Marketing-Automation",
+        "driveId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list"
+        }
+      },
+      "id": "google-drive-find-folder",
+      "name": "Google Drive - Find Marketing Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Date": "={{ $now.format('yyyy-MM-dd') }}",
+            "Time Slot": "={{ $json.timeSlot }}",
+            "Topic": "={{ $json.topicCategory }}",
+            "Post Content": "={{ $json.candidates[0].content.parts[0].text }}",
+            "Keywords/Tags": "={{ $json.topicCategory }}, #InternationalArbitration, #LegalTech, #ADR",
+            "Status": "Draft",
+            "Engagement Link": "",
+            "Likes": "",
+            "Shares": "",
+            "Comments": ""
+          }
+        }
+      },
+      "id": "google-sheets-log",
+      "name": "Google Sheets - Log Post",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1450, 450]
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "LinkedIn Post Approval",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Post Content",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Approval Decision",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "optionLabel": "Approve & Publish",
+                    "optionValue": "approve"
+                  },
+                  {
+                    "optionLabel": "Reject",
+                    "optionValue": "reject"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Comments (optional)",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "manual-approval",
+      "name": "Manual Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1650, 450]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Approval Decision'] }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "approved"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['Approval Decision'] }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "rejected"
+            }
+          ]
+        }
+      },
+      "id": "switch-approval",
+      "name": "Switch - Approval Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [1850, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "standard",
+        "resource": "post",
+        "operation": "create",
+        "postAs": "person",
+        "person": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "text": "={{ $json.candidates[0].content.parts[0].text }}"
+      },
+      "id": "linkedin-publish",
+      "name": "LinkedIn - Publish Post",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [2050, 350]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts",
+        "lookupColumn": "Date",
+        "lookupValue": "={{ $now.format('yyyy-MM-dd') }}",
+        "updateKey": "Status",
+        "updateValue": "Published"
+      },
+      "id": "google-sheets-update-approved",
+      "name": "Google Sheets - Update Status (Approved)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2250, 350]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts",
+        "lookupColumn": "Date",
+        "lookupValue": "={{ $now.format('yyyy-MM-dd') }}",
+        "updateKey": "Status",
+        "updateValue": "Rejected"
+      },
+      "id": "google-sheets-update-rejected",
+      "name": "Google Sheets - Update Status (Rejected)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2250, 550]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "notificationMessage",
+              "value": "=LinkedIn post for {{ $json.timeSlot }} has been {{ $json['Approval Decision'] === 'approve' ? 'published' : 'rejected' }}.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-notification",
+      "name": "Set Notification Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2450, 450]
+    }
+  ],
+  "connections": {
+    "Cron - Morning (9:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Set Morning Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Midday (12:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Midday Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Evening (5:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Evening Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Morning Data": {
+      "main": [
+        [
+          {
+            "node": "Switch - Time Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Midday Data": {
+      "main": [
+        [
+          {
+            "node": "Switch - Time Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Evening Data": {
+      "main": [
+        [
+          {
+            "node": "Switch - Time Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Time Slot": {
+      "main": [
+        [
+          {
+            "node": "Google Search API - Topic Research",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Search API - Topic Research",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Search API - Topic Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search API - Topic Research": {
+      "main": [
+        [
+          {
+            "node": "Google Gemini - Generate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini - Generate Content": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save Post": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log Post": {
+      "main": [
+        [
+          {
+            "node": "Manual Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Approval": {
+      "main": [
+        [
+          {
+            "node": "Switch - Approval Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Approval Decision": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets - Update Status (Rejected)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn - Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Update Status (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Update Status (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Set Notification Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Update Status (Rejected)": {
+      "main": [
+        [
+          {
+            "node": "Set Notification Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
