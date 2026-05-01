@@ -64,6 +64,8 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 import { ObjectPermission } from "./objectAcl";
 
+import enrollmentsRouter from "./routes/enrollments";
+
 import {
 
   insertCourseSchema,
@@ -156,19 +158,20 @@ const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Apply security middleware in production only
-
-  if (process.env.NODE_ENV === "production") {
-
-    app.use(securityMiddleware);
-
-  }
+  // Apply security middleware (CORS, helmet, etc.)
+  app.use(securityMiddleware);
 
 
 
   // Serve uploaded files
 
   app.use("/uploads", express.static("uploads"));
+
+
+
+  // Mount enrollment routes with eligibility check
+
+  app.use("/api/enrollments", enrollmentsRouter);
 
 
 
@@ -209,19 +212,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             exists: true,
 
             user: {
-
               id: user.id,
-
               email: user.email,
-
-              firstName: user.firstName,
-
-              lastName: user.lastName,
-
+              firstName: user.first_name,
+              lastName: user.last_name,
               role: user.role,
-
             },
-
           });
 
         } else {
@@ -372,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         ...user,
 
-        profileImageUrl: imageUrl,
+        profile_image_url: imageUrl,
 
       });
 
@@ -764,103 +760,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // ============================================================================
-
-  // ENROLLMENT ROUTES
-
-  // ============================================================================
-
-
-
-  app.post(
-
-    "/api/enrollments",
-
-    requireSupabaseAuth,
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const userId = req.user.claims.sub;
-
-      const enrollmentData = insertEnrollmentSchema.parse({
-
-        ...req.body,
-
-        userId,
-
-      });
-
-
-
-      const isEnrolled = await storage.isUserEnrolled(
-
-        userId,
-
-        enrollmentData.courseId || "",
-
-      );
-
-      if (isEnrolled) {
-
-        return res
-
-          .status(400)
-
-          .json({ message: "Already enrolled in this course" });
-
-      }
-
-
-
-      const enrollment = await storage.enrollUser(enrollmentData);
-
-      res.json(enrollment);
-
-    }),
-
-  );
-
-
-
-  app.get(
-
-    "/api/enrollments",
-
-    requireSupabaseAuth,
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const userId = req.user.claims.sub;
-
-      const enrollments = await storage.getUserEnrollments(userId);
-
-      res.json(enrollments);
-
-    }),
-
-  );
-
-
-
-  app.get(
-
-    "/api/enrollments/check/:courseId",
-
-    requireSupabaseAuth,
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const userId = req.user.claims.sub;
-
-      const { courseId } = req.params;
-
-      const enrollment = await storage.getEnrollment(userId, courseId);
-
-      res.json({ isEnrolled: !!enrollment, enrollment });
-
-    }),
-
-  );
 
 
 
@@ -1534,23 +1433,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-      const amount = Math.round(parseFloat(course.price) * 100);
+      // Convert USD to GHS for Paystack (Ghana merchant requires GHS)
+      const USD_TO_GHS_RATE = parseFloat(process.env.USD_TO_GHS_RATE || "15.50");
+      const amountUSD = parseFloat(course.price);
+      const amountGHS = Math.round(amountUSD * USD_TO_GHS_RATE * 100); // Convert to pesewas
 
       const reference = `course_${courseId}_${userId}_${Date.now()}`;
 
-
-
       const paymentData = {
-
         email: user.email,
-
-        amount,
-
-        currency: course.currency,
+        amount: amountGHS,
+        currency: "GHS",
 
         reference,
 
-        callback_url: `${req.protocol}://${req.get("host")}/payment-success`,
+        callback_url: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/payment-success`,
 
         metadata: {
 
@@ -1712,6 +1609,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const { reference, metadata } = event.data;
 
+          // ----------------------------------------------------------------
+          // Expedited application payment: flip status draft -> submitted
+          // ----------------------------------------------------------------
+          if (metadata?.expeditedApplicationId) {
+            const { markApplicationPaid } = await import(
+              "./storage/qualification"
+            );
+            const updated = await markApplicationPaid(reference);
+            if (!updated) {
+              console.error(
+                "Failed to mark expedited application paid for reference",
+                reference,
+              );
+              return res
+                .status(500)
+                .json({ message: "Expedited payment reconciliation failed" });
+            }
+            console.log(
+              `Expedited application ${updated.id} marked submitted after payment ${reference}`,
+            );
+            return res.json({ received: true, kind: "expedited" });
+          }
+
           const { courseId, userId } = metadata;
 
 
@@ -1738,7 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           await storage.updateOrderByReference(reference, "completed");
 
-          await storage.enrollUser({ userId, courseId, progress: "0" });
+          await storage.enrollUser({ userId, courseId, progress: "0", enrollmentType: "COURSE", status: "ACTIVE" });
 
         }
 
@@ -1826,7 +1746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await storage.updateOrderByReference(reference, "completed");
 
-        await storage.enrollUser({ userId, courseId, progress: "0" });
+        await storage.enrollUser({ userId, courseId, progress: "0", enrollmentType: "COURSE", status: "ACTIVE" });
 
 
 

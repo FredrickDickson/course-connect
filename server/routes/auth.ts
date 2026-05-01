@@ -57,7 +57,7 @@ router.post(
 
     const updatedUser = await storage.upsertUser({
       ...user,
-      profileImageUrl: imageUrl,
+      profile_image_url: imageUrl,
     });
 
     res.json({

@@ -54,9 +54,9 @@
     "no_courses_found": "कोई कोर्स नहीं मिला",
     "try_different_filter": "कोई अन्य श्रेणी या खोज शब्द आजमाएं",
     "level": {
-      "beginner": "शुरुआती",
-      "intermediate": "मध्यम",
-      "advanced": "उन्नत"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "अवधि",
     "lessons": "पाठ",

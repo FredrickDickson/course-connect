@@ -21,6 +21,8 @@ import {
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const ALL_COUNTRIES = RPNInput.getCountries();
+
 type PhoneInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'onChange' | 'value'
@@ -28,15 +30,31 @@ type PhoneInputProps = Omit<
   Omit<RPNInput.Props<typeof RPNInput.default>, 'onChange'> & {
     onChange?: (value: string) => void;
   };
+
 const PhoneInput = React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
-  ({ className, onChange, ...props }, ref) => {
+  ({
+    className,
+    onChange,
+    defaultCountry = 'GH',
+    international = true,
+    countryCallingCodeEditable = false,
+    countries,
+    ...props
+  }, ref) => {
     return (
       <RPNInput.default
         ref={ref}
-        className={cn('flex', className)}
+        className={cn(
+          'PhoneInput inline-flex h-12 w-full items-center rounded-2xl border border-input bg-muted/40 pr-3 text-base shadow-sm transition focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20 disabled:opacity-60',
+          className
+        )}
         flagComponent={FlagComponent}
         countrySelectComponent={CountrySelect}
         inputComponent={InputComponent}
+        countries={countries ?? ALL_COUNTRIES}
+        defaultCountry={defaultCountry as RPNInput.Country}
+        international={international}
+        countryCallingCodeEditable={countryCallingCodeEditable}
         onChange={(value) => onChange?.(value || '')}
         {...props}
       />
@@ -49,7 +67,7 @@ const InputComponent = React.forwardRef<HTMLInputElement, React.InputHTMLAttribu
   ({ className, ...props }, ref) => (
     <input
       className={cn(
-        'rounded-e-lg rounded-s-none px-2 bg-background text-foreground outline-none ',
+        'h-full w-full flex-1 border-0 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-40',
         className
       )}
       {...props}
@@ -86,7 +104,11 @@ const CountrySelect = ({
       <PopoverTrigger asChild>
         <Button
           type='button'
-          className={cn('flex gap-1 rounded-e-none rounded-s-lg px-3 border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground')}
+          variant='ghost'
+          className={cn(
+            'h-full min-h-[48px] rounded-s-2xl rounded-e-none border-0 border-r border-input/70 bg-transparent px-3 text-sm text-foreground hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0',
+            disabled && 'bg-muted'
+          )}
           disabled={disabled}
         >
           <FlagComponent country={value} countryName={value} />
@@ -144,7 +166,7 @@ const FlagComponent = ({ country, countryName }: RPNInput.FlagProps) => {
   const Flag = flags[country];
 
   return (
-    <span className='bg-foreground/20 flex h-4 w-6 overflow-hidden rounded-sm'>
+    <span className='bg-foreground/20 flex h-4 w-6 items-center justify-center overflow-hidden rounded-sm'>
       {Flag && <Flag title={countryName} />}
     </span>
   );

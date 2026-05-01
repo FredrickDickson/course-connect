@@ -54,9 +54,9 @@
     "no_courses_found": "Tidak ada kursus ditemukan",
     "try_different_filter": "Coba kategori atau kata kunci pencarian lain",
     "level": {
-      "beginner": "Pemula",
-      "intermediate": "Menengah",
-      "advanced": "Lanjutan"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Durasi",
     "lessons": "Pelajaran",

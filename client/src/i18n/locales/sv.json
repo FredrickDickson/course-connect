@@ -54,9 +54,9 @@
     "no_courses_found": "Inga kurser hittades",
     "try_different_filter": "Prova en annan kategori eller sökterm",
     "level": {
-      "beginner": "Nybörjare",
-      "intermediate": "Medel",
-      "advanced": "Avancerad"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Varaktighet",
     "lessons": "Lektioner",

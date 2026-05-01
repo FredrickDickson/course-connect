@@ -3,6 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Star, Users, Clock, Crown, ShoppingCart } from "lucide-react";
+import { 
+  detectCoursePathway, 
+  getPathwayConfig,
+  type PathwayType 
+} from "../../../shared/pathways";
 
 interface CourseCardProps {
   course: {
@@ -26,20 +31,33 @@ interface CourseCardProps {
       name: string;
     };
     is_featured?: boolean;
+    tags?: string[];
   };
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
-  const defaultThumbnail = course.level === 'advanced'
+  // Detect pathway for this course
+  const coursePathway = detectCoursePathway({
+    title: course.title,
+    tags: course.tags || []
+  });
+  const pathwayConfig = getPathwayConfig(coursePathway);
+
+  const defaultThumbnail = course.level === 'fellow'
     ? "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
     : course.category?.name?.toLowerCase().includes('mediation')
       ? "https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
       : "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300";
 
   const levelColors = {
-    beginner: "bg-secondary/10 text-secondary",
-    intermediate: "bg-green-100 text-green-700",
-    advanced: "bg-accent/10 text-accent"
+    associate: "bg-secondary/10 text-secondary",
+    member: "bg-green-100 text-green-700",
+    fellow: "bg-accent/10 text-accent"
+  };
+
+  const pathwayColors = {
+    arbitration: "bg-blue-100 text-blue-700",
+    mediation: "bg-green-100 text-green-700"
   };
 
   return (
@@ -64,7 +82,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           </Badge>
         )}
         <Badge
-          className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.beginner}`}
+          className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
           data-testid="level-badge"
         >
           {course.level}
@@ -79,11 +97,19 @@ export default function CourseCard({ course }: CourseCardProps) {
               {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
             </span>
           </div>
-          {course.category && (
-            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-bold bg-secondary/20" data-testid="category-badge">
-              {course.category.name}
+          <div className="flex items-center space-x-2">
+            <Badge 
+              className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
+              data-testid="pathway-badge"
+            >
+              {pathwayConfig.name}
             </Badge>
-          )}
+            {course.category && (
+              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-bold bg-secondary/20" data-testid="category-badge">
+                {course.category.name}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1" data-testid="course-title">

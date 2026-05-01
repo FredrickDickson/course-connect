@@ -31,6 +31,13 @@ export default function AuthCallback() {
 
         if (sessionData.session) {
           console.log("Auth callback: User authenticated:", sessionData.session.user.id);
+          const role = (sessionData.session.user.user_metadata?.role ?? "student").toLowerCase();
+
+          if (role === "admin") {
+            console.log("Auth callback: Admin detected, redirecting to admin dashboard");
+            setLocation("/admin");
+            return;
+          }
           
           // Check if onboarding is completed
           const { data: profileData, error: profileError } = await supabase

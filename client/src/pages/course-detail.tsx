@@ -6,13 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import TicketWidget from "@/components/ticket-widget";
-import EnrollmentForm from "@/components/enrollment-form";
 import { Link, useLocation } from "wouter";
 import {
   Star,
@@ -22,15 +20,13 @@ import {
   PlayCircle,
   CheckCircle,
 } from "lucide-react";
+import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 
 export default function CourseDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [showEnrollmentForm, setShowEnrollmentForm] = useState(false);
-  const [ticketSelections, setTicketSelections] = useState<Record<string, number>>({});
 
   const { data: course, isLoading } = useQuery<any>({
     queryKey: ["course", id],
@@ -103,9 +99,49 @@ export default function CourseDetail() {
     ];
   })();
 
-  const handleRegister = (selections: Record<string, number>) => {
-    setTicketSelections(selections);
-    setShowEnrollmentForm(true);
+  const handleEnroll = async () => {
+    if (!user) {
+      setLocation(`/login?redirect=/course/${id}`);
+      return;
+    }
+
+    // Check eligibility before proceeding
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch("/api/enrollments/check-eligibility", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ courseId: id }),
+      });
+
+      if (response.status === 401) {
+        setLocation(`/login?redirect=/course/${id}`);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to verify eligibility");
+      }
+
+      const eligibility: EligibilityResponse = await response.json();
+
+      if (eligibility.status === "ELIGIBLE") {
+        setLocation(`/checkout/${id}`);
+        return;
+      }
+
+      toast.info(eligibility.ui.title, {
+        description: eligibility.ui.message,
+      });
+      setLocation(`/enroll/${id}/status`);
+    } catch (error) {
+      toast.error('Failed to check eligibility. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -160,22 +196,13 @@ export default function CourseDetail() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Enrollment Form Modal */}
-      {showEnrollmentForm && (
-        <EnrollmentForm
-          course={course}
-          ticketSelections={ticketSelections}
-          ticketTypes={ticketTypes}
-          onClose={() => { setShowEnrollmentForm(false); setLocation("/courses"); }}
-        />
-      )}
-
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
+                <Badge variant="secondary" className="bg-white/20 text-white">{course.track}</Badge>
                 <Badge variant="secondary" className="bg-white/20 text-white">{course.level}</Badge>
                 {course.category && (
                   <Badge variant="secondary" className="bg-white/20 text-white">{course.category.name}</Badge>
@@ -207,7 +234,7 @@ export default function CourseDetail() {
               </div>
             </div>
 
-            {/* Ticket Widget replaces old price card */}
+            {/* Enroll Card */}
             <div className="lg:col-span-1">
               {isEnrolled ? (
                 <Card className="bg-white shadow-lg">
@@ -222,14 +249,20 @@ export default function CourseDetail() {
                   </CardContent>
                 </Card>
               ) : (
-                <TicketWidget
-                  ticketTypes={ticketTypes}
-                  courseTitle={course.title}
-                  courseId={course.id}
-                  enrolledCount={enrollmentCount as number}
-                  totalCapacity={course.total_capacity}
-                  onRegister={handleRegister}
-                />
+                <Card className="bg-white shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-1">Course Price</p>
+                      <p className="text-3xl font-bold text-primary">{course.currency || 'USD'} {parseFloat(course.price || '0').toFixed(2)}</p>
+                    </div>
+                    <Button className="w-full" size="lg" onClick={handleEnroll}>
+                      Enroll Now
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-3 text-center">
+                      Secure checkout · Instant access
+                    </p>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </div>

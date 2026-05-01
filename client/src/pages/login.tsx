@@ -36,35 +36,25 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Set the session in Supabase client
-      if (data.session?.accessToken) {
-        await supabase.auth.setSession({
-          access_token: data.session.accessToken,
-          refresh_token: data.session.refreshToken,
-        });
+      if (!data.user || !data.session) {
+        throw new Error('Login failed');
       }
 
       toast({
         title: t("auth.welcomeBack"),
         description: t("messages.signInSuccess"),
       });
+
+      const role = (data.user.user_metadata?.role ?? "student").toLowerCase();
 
       // Check if onboarding is completed
       const { data: profileData } = await (supabase as any)
@@ -76,7 +66,7 @@ export default function Login() {
       // If no profile exists or profile is not completed, go to onboarding
       const profileComplete = (profileData as any)?.profile_completed ?? false;
 
-      if (!profileData || !profileComplete) {
+      if (role !== "admin" && (!profileData || !profileComplete)) {
         setLocation("/onboarding");
         return;
       }
@@ -84,18 +74,20 @@ export default function Login() {
       // Redirect based on role or stored destination
       const redirect = sessionStorage.getItem("redirectAfterLogin");
       sessionStorage.removeItem("redirectAfterLogin");
-      
+
+      if (role === "admin") {
+        window.location.href = "/admin";
+        return;
+      }
+
       if (redirect) {
-        window.location.assign(redirect);
+        window.location.href = redirect;
       } else {
-        const role = data.user.role || "student";
         const destination =
-          role === "admin"
-            ? "/admin"
-            : role === "instructor"
-              ? "/instructor"
-              : "/dashboard";
-        window.location.assign(destination);
+          role === "instructor"
+            ? "/instructor"
+            : "/dashboard";
+        window.location.href = destination;
       }
     } catch (err: any) {
       setError(err.message || t("common.error"));

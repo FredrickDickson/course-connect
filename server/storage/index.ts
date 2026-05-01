@@ -71,6 +71,15 @@ export {
   getStudentDownloadableResources,
 } from "./enrollments";
 
+// Re-export new enrollment eligibility functions
+export {
+  checkEligibility,
+  createEnrollment,
+  createFellowshipApplication,
+  updateEnrollmentStatus,
+} from "./enrollment";
+export type { EligibilityResponse, EligibilityStatus } from "@shared/enrollmentEligibility";
+
 // Re-export all quiz operations
 export {
   createQuiz,
@@ -116,6 +125,33 @@ export {
   updateInstructorApplication,
   getAdminStats,
 } from "./payments";
+
+// Re-export all qualification operations
+export {
+  getQualificationStatus,
+  getAvailablePathways,
+  createExpeditedApplication,
+  getUserExpeditedApplications,
+  getExpeditedApplicationById,
+  hasPendingApplication,
+  uploadApplicationDocument,
+  submitQualificationAssessment,
+  updateUserQualificationLevel,
+} from "./qualification";
+
+export {
+  saveProfessionalProfileDraft,
+  getProfessionalProfileByUserId,
+  getProfessionalProfileById,
+  listProfessionalProfiles,
+  addProfessionalDocument,
+  getProfessionalDocuments,
+  deleteProfessionalDocument,
+  updateProfessionalProfileReview,
+  grantLevelWaiver,
+  revokeLevelWaiver,
+  getLevelWaiversForUser,
+} from "./professionalProfiles";
 
 // Re-export types
 export type { IStorage } from "./types";

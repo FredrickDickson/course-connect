@@ -54,9 +54,9 @@
     "no_courses_found": "Курси не знайдено",
     "try_different_filter": "Спробуйте іншу категорію або пошуковий запит",
     "level": {
-      "beginner": "Початковий",
-      "intermediate": "Середній",
-      "advanced": "Просунутий"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Тривалість",
     "lessons": "Уроки",

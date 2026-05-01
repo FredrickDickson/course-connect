@@ -119,12 +119,12 @@ export default function Contact() {
 
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
+            {/*
             <Card>
               <CardHeader>
                 <CardTitle>Send us a Message</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Success Message */}
                 {submitStatus === "success" && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3">
                     <i className="fas fa-check-circle text-green-600 text-xl"></i>
@@ -139,7 +139,6 @@ export default function Contact() {
                   </div>
                 )}
 
-                {/* Error Message */}
                 {submitStatus === "error" && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
                     <i className="fas fa-exclamation-circle text-red-600 text-xl"></i>
@@ -153,7 +152,6 @@ export default function Contact() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Name and Email Fields */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
@@ -189,7 +187,6 @@ export default function Contact() {
                     </div>
                   </div>
 
-                  {/* Subject Field */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Subject *
@@ -207,7 +204,6 @@ export default function Contact() {
                     />
                   </div>
 
-                  {/* Message Field */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Message *
@@ -226,7 +222,6 @@ export default function Contact() {
                     />
                   </div>
 
-                  {/* Submit Button */}
                   <Button
                     type="submit"
                     className="w-full"
@@ -248,6 +243,7 @@ export default function Contact() {
                 </form>
               </CardContent>
             </Card>
+            */}
 
             {/* Contact Information */}
             <div className="space-y-8 lg:col-span-2">

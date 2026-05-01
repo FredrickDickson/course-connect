@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,9 @@ interface UserProfile {
   lastName: string;
   profileImageUrl: string;
   role: string;
+  membershipLevel: string | null;
+  assignedLevel: string | null;
+  currentLevel: string | null;
   bio?: string;
   country?: string;
   timezone?: string;
@@ -34,85 +37,101 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const profileFetchedRef = useRef<string | null>(null);
 
   const fetchUserProfile = useCallback(async (currentAuthUser: User): Promise<UserProfile> => {
-    const { data: profile, error } = await supabase
-      .from("users")
-      .select("role, first_name, last_name, profile_image_url, bio, country, timezone, created_at")
-      .eq("id", currentAuthUser.id)
-      .maybeSingle();
+    // Avoid redundant fetches for the same user if we already have data
+    if (user && user.id === currentAuthUser.id) return user;
+    
+    console.log("Fetching profile for user:", currentAuthUser.id);
+    const [{ data: profile, error: profileError }, { data: userRow, error: userError }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("status, full_name, part, avatar_url, country, timezone, created_at")
+        .eq("user_id", currentAuthUser.id)
+        .maybeSingle(),
+      supabase
+        .from("users")
+        .select("role, assigned_level, current_level")
+        .eq("id", currentAuthUser.id)
+        .maybeSingle(),
+    ]);
 
-    if (error) {
-      console.error("Profile fetch error:", error);
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
     }
+
+    if (userError) {
+      console.error("User role fetch error:", userError);
+    }
+
+    const profileData = profile as any;
+    const nameParts = (profileData?.full_name || "").split(" ");
+    const metadataRole = currentAuthUser.user_metadata?.role
+      ? String(currentAuthUser.user_metadata.role).toLowerCase()
+      : null;
+    const userTableRole = userRow?.role ? String(userRow.role).toLowerCase() : null;
+    const derivedRole = metadataRole || userTableRole || profileData?.status || "student";
 
     return {
       id: currentAuthUser.id,
       email: currentAuthUser.email || "",
-      firstName: profile?.first_name || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
-      lastName: profile?.last_name || currentAuthUser.user_metadata?.last_name || "",
-      profileImageUrl: profile?.profile_image_url || currentAuthUser.user_metadata?.avatar_url || "",
-      role: profile?.role || "student",
-      bio: profile?.bio || "",
-      country: profile?.country || "",
-      timezone: profile?.timezone || "",
-      createdAt: profile?.created_at || "",
+      firstName: nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      lastName: nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
+      profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
+      role: derivedRole,
+      membershipLevel: profileData?.part || null,
+      assignedLevel: userRow?.assigned_level || null,
+      currentLevel: userRow?.current_level || null,
+      country: profileData?.country || "",
+      timezone: profileData?.timezone || "",
+      createdAt: profileData?.created_at || "",
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
-    let refreshInterval: NodeJS.Timeout | null = null;
+    let authInitialized = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
-
-      console.log("Auth state change:", { event: _event, userId: session?.user?.id, email: session?.user?.email });
-      setAuthUser(session?.user ?? null);
+      
+      console.log("Auth event:", event, "User:", session?.user?.id);
+      
+      // Only update authUser if it actually changed to avoid downstream re-renders
+      setAuthUser(prev => {
+        if (prev?.id === session?.user?.id) return prev;
+        return session?.user ?? null;
+      });
+      
       setIsAuthReady(true);
+      authInitialized = true;
     });
 
-    const getSessionWithRetry = async () => {
+    const getInitialSession = async () => {
       try {
+        if (authInitialized) return;
+
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (!isMounted) return;
-        setAuthUser(session?.user ?? null);
+        if (error) throw error;
+
+        if (session) {
+          setAuthUser(session.user);
+        }
         setIsAuthReady(true);
       } catch (err) {
-        console.error('Session retrieval error:', err);
         if (!isMounted) return;
         setAuthUser(null);
         setIsAuthReady(true);
       }
     };
 
-    getSessionWithRetry();
-
-    // Manual token refresh with longer interval (30 minutes) to avoid rate limiting
-    const startManualRefresh = () => {
-      if (refreshInterval) clearInterval(refreshInterval);
-      
-      refreshInterval = setInterval(async () => {
-        if (!isMounted) return;
-        
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            // Only refresh if we have a session
-            await supabase.auth.refreshSession();
-          }
-        } catch (err) {
-          console.error('Manual refresh error:', err);
-        }
-      }, 30 * 60 * 1000); // 30 minutes
-    };
-
-    startManualRefresh();
+    getInitialSession();
 
     return () => {
       isMounted = false;
-      if (refreshInterval) clearInterval(refreshInterval);
       subscription.unsubscribe();
     };
   }, []);
@@ -120,31 +139,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    if (!isAuthReady) {
-      return () => {
-        isMounted = false;
-      };
+    if (!isAuthReady || !authUser) {
+      if (!authUser) {
+        setUser(null);
+        profileFetchedRef.current = null;
+      }
+      return;
     }
 
-    if (!authUser) {
-      setUser(null);
-      setIsProfileLoading(false);
-      return () => {
-        isMounted = false;
-      };
+    // Prevent redundant fetches for the same user ID within this session
+    if (profileFetchedRef.current === authUser.id) {
+      return;
     }
 
-    setIsProfileLoading(true);
+    const loadProfile = async () => {
+      setIsProfileLoading(true);
+      try {
+        const nextUser = await fetchUserProfile(authUser);
+        if (isMounted) {
+          setUser(nextUser);
+          profileFetchedRef.current = authUser.id;
+        }
+      } finally {
+        if (isMounted) {
+          setIsProfileLoading(false);
+        }
+      }
+    };
 
-    void fetchUserProfile(authUser)
-      .then((nextUser) => {
-        if (!isMounted) return;
-        setUser(nextUser);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsProfileLoading(false);
-      });
+    loadProfile();
 
     return () => {
       isMounted = false;

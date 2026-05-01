@@ -1,7 +1,7 @@
 import { Route, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 type ProtectedRouteProps = {
     path: string;
@@ -16,14 +16,18 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
     const { user, isLoading, isAuthenticated, hasRole } = useAuth();
     const [, setLocation] = useLocation();
-    const [shouldRedirect, setShouldRedirect] = useState<string | null>(null);
 
     useEffect(() => {
-        if (shouldRedirect) {
-            setLocation(shouldRedirect);
-            setShouldRedirect(null);
+        if (!isLoading && !isAuthenticated) {
+            setLocation("/login");
+        } else if (!isLoading && isAuthenticated && requiredRole && !hasRole(requiredRole)) {
+            if (user?.role !== "admin") {
+                if (requiredRole === "admin" || (requiredRole === "instructor" && user?.role === "student")) {
+                    setLocation("/");
+                }
+            }
         }
-    }, [shouldRedirect, setLocation]);
+    }, [isLoading, isAuthenticated, user, requiredRole, hasRole, setLocation]);
 
     return (
         <Route path={path}>
@@ -37,16 +41,11 @@ export function ProtectedRoute({
                 }
 
                 if (!isAuthenticated) {
-                    setShouldRedirect("/login");
                     return null;
                 }
 
-                if (requiredRole && !hasRole(requiredRole)) {
-                    // If they are an instructor but route needs admin, or student but route needs instructor
-                    // Redirect to their respective dashboards or home
-                    if (user?.role === "admin") return <Component params={params} />;
+                if (requiredRole && !hasRole(requiredRole) && user?.role !== "admin") {
                     if (requiredRole === "admin" || (requiredRole === "instructor" && user?.role === "student")) {
-                        setShouldRedirect("/");
                         return null;
                     }
                 }

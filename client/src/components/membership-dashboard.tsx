@@ -23,9 +23,9 @@ const POST_NOMINALS: Record<string, string> = {
 };
 
 const LEVEL_LABELS: Record<string, string> = {
-  associate: "Associate",
-  member: "Member",
-  fellow: "Fellow",
+  associate: "Part I (Associate)",
+  member: "Part II (Member)",
+  fellow: "Part III (Fellow)",
 };
 
 const NEXT_LEVEL: Record<string, { level: string; label: string }> = {
@@ -117,11 +117,11 @@ export default function MembershipDashboard() {
   }
 
   const daysLeft = membership.expiry_date ? getDaysUntilExpiry(membership.expiry_date) : null;
-  const nextLevel = NEXT_LEVEL[membership.membership_level];
+  const nextLevel = NEXT_LEVEL[membership.part];
 
   const certData = {
     fullName: membership.full_name,
-    membershipLevel: membership.membership_level as "associate" | "member" | "fellow",
+    membershipLevel: membership.part as "associate" | "member" | "fellow",
     memberId: membership.member_id,
     issueDate: membership.issue_date || new Date().toISOString(),
     expiryDate: membership.expiry_date || new Date().toISOString(),
@@ -149,13 +149,13 @@ export default function MembershipDashboard() {
           {/* Level & Post-Nominal */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Membership Level</p>
+              <p className="text-sm text-muted-foreground">Membership Part</p>
               <p className="text-lg font-semibold">
-                {LEVEL_LABELS[membership.membership_level] || membership.membership_level}
+                {LEVEL_LABELS[membership.part] || membership.part}
               </p>
             </div>
             <Badge variant="outline" className="text-primary border-primary font-bold text-base px-3 py-1">
-              {POST_NOMINALS[membership.membership_level] || membership.post_nominal}
+              {POST_NOMINALS[membership.part] || membership.post_nominal}
             </Badge>
           </div>
 

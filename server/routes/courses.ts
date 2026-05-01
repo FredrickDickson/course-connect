@@ -25,12 +25,13 @@ const router = Router();
 router.get(
   "/",
   asyncHandler(async (req: Request, res: Response) => {
-    const { category, search, level, featured } = req.query;
+    const { category, search, level, featured, pathway } = req.query;
     const courses = await storage.getCourses({
       category: category as string,
       search: search as string,
       level: level as string,
       featured: featured === "true" ? true : featured === "false" ? false : undefined,
+      pathway: pathway as string,
     });
     res.json(courses);
   }),

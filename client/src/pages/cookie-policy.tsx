@@ -131,7 +131,8 @@ export default function CookiePolicy() {
                 <p className="text-foreground font-medium">
                   {t("legal.dataProtectionOfficer")}
                 </p>
-                <p className="text-muted-foreground">privacy@thecima.org</p>
+                {/* <p className="text-muted-foreground">privacy@thecima.org</p> */}
+                <p className="text-muted-foreground">info@thecima.org</p>
                 <p className="text-muted-foreground">
                   Oxford Science Park, John Eccles House
                   <br />

@@ -195,7 +195,7 @@ export default function Programs() {
                           <li>• Use of FCIMArb post-nominal letters</li>
                           <li>• Priority placement on arbitrator panels</li>
                           <li>• Exclusive networking events</li>
-                          <li>• Advanced practice opportunities</li>
+                          <li>• Fellow-level practice opportunities</li>
                           <li>• Mentorship programs</li>
                         </ul>
                       </div>
@@ -234,7 +234,7 @@ export default function Programs() {
                 <Card className="hover:shadow-lg transition-shadow" data-testid="course-mediation">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-secondary/10 text-secondary">Beginner</Badge>
+                      <Badge className="bg-secondary/10 text-secondary">Part I (Associate)</Badge>
                       <div className="flex items-center space-x-1 text-sm">
                         <i className="fas fa-star text-accent"></i>
                         <span className="text-muted-foreground">4.8 (156)</span>
@@ -261,7 +261,7 @@ export default function Programs() {
                 <Card className="hover:shadow-lg transition-shadow" data-testid="course-arbitration">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-accent/10 text-accent">Advanced</Badge>
+                      <Badge className="bg-accent/10 text-accent">Part III (Fellow)</Badge>
                       <div className="flex items-center space-x-1 text-sm">
                         <i className="fas fa-star text-accent"></i>
                         <span className="text-muted-foreground">4.9 (89)</span>
@@ -269,7 +269,7 @@ export default function Programs() {
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">International Arbitration</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Advanced strategies for complex cross-border commercial disputes.
+                      Fellow-level strategies for complex cross-border commercial disputes.
                     </p>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -288,7 +288,7 @@ export default function Programs() {
                 <Card className="hover:shadow-lg transition-shadow" data-testid="course-ethics">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-green-100 text-green-700">Intermediate</Badge>
+                      <Badge className="bg-green-100 text-green-700">Part II (Member)</Badge>
                       <div className="flex items-center space-x-1 text-sm">
                         <i className="fas fa-star text-accent"></i>
                         <span className="text-muted-foreground">4.7 (124)</span>
@@ -388,7 +388,7 @@ export default function Programs() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <i className="fas fa-check text-green-600"></i>
-                          <span>Advanced Case Management</span>
+                          <span>Fellow-level Case Management</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <i className="fas fa-check text-green-600"></i>
@@ -420,7 +420,7 @@ export default function Programs() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <i className="fas fa-check text-green-600"></i>
-                          <span>Advanced Practice Methods</span>
+                          <span>Fellow-level Practice Methods</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <i className="fas fa-check text-green-600"></i>
@@ -449,7 +449,7 @@ export default function Programs() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Start Your ADR Journey?</h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of professionals who have advanced their careers with CIMA's internationally recognized programs.
+            Join thousands of professionals who have elevated their careers with CIMA's internationally recognized programs.
           </p>
           <div className="space-x-4">
             <Button 

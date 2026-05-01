@@ -19,6 +19,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { convertUSDtoGHS, formatCurrency, convertPayment } from "@/utils/currency";
 import {
   ArrowLeft,
   ArrowRight,
@@ -63,6 +64,10 @@ export default function Checkout() {
   const [bookingResult, setBookingResult] = useState<any>(null);
   const paystackLoaded = useRef(false);
   const [isPaystackReady, setIsPaystackReady] = useState(false);
+  const [isCompanyInvoice, setIsCompanyInvoice] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+  const [vatId, setVatId] = useState("");
 
   // Load course
   const { data: course, isLoading: courseLoading } = useQuery<any>({
@@ -137,84 +142,79 @@ export default function Checkout() {
     }
   }, [existingEnrollment, courseId, setLocation]);
 
+  // Load enrollment form data from sessionStorage (if redirected from enrollment-form.tsx)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("enrollment_form_data");
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        if (data.courseId === courseId) {
+          // Pre-populate profile if needed
+          console.log("Loaded enrollment form data:", data);
+          // Clear after reading to prevent stale data
+          sessionStorage.removeItem("enrollment_form_data");
+        }
+      } catch (e) {
+        console.error("Failed to parse enrollment form data:", e);
+      }
+    }
+  }, [courseId]);
+
   const coursePrice = parseFloat(course?.price?.toString() || "0");
   const currency = course?.currency || "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
+  
+  // Convert USD to GHS for display
+  const paymentConversion = convertPayment(coursePrice);
+  const amountGHS = paymentConversion.amountGHS;
 
-  const handlePaystackPayment = () => {
-    if (!window.PaystackPop) {
-      toast.error("Payment system is loading. Please wait a moment.");
-      return;
-    }
+  const handlePaystackPayment = async () => {
     if (!user || !course) return;
 
     setIsProcessing(true);
 
-    const handler = window.PaystackPop.setup({
-      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-      email: user.email || "",
-      amount: Math.round(coursePrice * 100),
-      currency,
-      metadata: {
-        courseId: course.id,
-        courseName: course.title,
-        userId: user.id,
-      },
-      callback: async (response: any) => {
-        try {
-          // Create enrollment
-          const { data: enrollment, error: enrollError } = await supabase
-            .from("enrollments")
-            .insert({
-              course_id: course.id,
-              user_id: user.id,
-              progress: 0,
-            })
-            .select()
-            .single();
+    try {
+      // Initialize transaction via Edge Function
+      const initResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-course-initialize`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: course.id,
+          userId: user.id,
+          enrollmentLevel: course.level?.toUpperCase() || 'ASSOCIATE',
+          paymentType: isCompanyInvoice ? "company_invoice" : "individual",
+          ...(isCompanyInvoice && {
+            companyName,
+            companyEmail,
+            vatId,
+          }),
+          amount: coursePrice,
+          currency,
+          email: user.email || "",
+        }),
+      });
 
-          if (enrollError) throw enrollError;
+      const initData = await initResponse.json();
 
-          // Log activity
-          await (supabase as any).from("activity_log").insert({
-            user_id: user.id,
-            event_type: "course_enrolled",
-            description: `Enrolled in ${course.title}`,
-            metadata: {
-              course_id: course.id,
-              payment_ref: response.reference,
-              amount: coursePrice,
-              currency,
-            },
-          });
+      if (!initResponse.ok || !initData.success) {
+        const detailMsg = initData?.details?.message;
+        throw new Error(detailMsg || initData.error || "Failed to initialize payment");
+      }
 
-          // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ["enrollment-check", courseId, user.id] });
-          queryClient.invalidateQueries({ queryKey: ["enrollments"] });
-
-          setBookingResult({
-            reference: response.reference,
-            amount: coursePrice,
-            currency,
-            courseName: course.title,
-            enrolledAt: new Date().toISOString(),
-          });
-          setStep("confirm");
-        } catch (err: any) {
-          toast.error("Enrollment failed: " + err.message);
-        }
-        setIsProcessing(false);
-      },
-      onClose: () => {
-        setIsProcessing(false);
-        toast.info("Payment window closed. You can try again.");
-      },
-    });
-
-    handler.openIframe();
+      // Open Paystack popup with the authorization URL
+      window.location.href = initData.authorization_url;
+    } catch (error: any) {
+      console.error("Payment initialization error:", error);
+      toast.error(error?.message || "Failed to initialize payment. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
-  const handleBankTransfer = async () => {
+  // TODO: Work on bank transfer later
+  /* const handleBankTransfer = async () => {
     if (!user || !course) return;
     setIsProcessing(true);
     try {
@@ -257,7 +257,7 @@ export default function Checkout() {
       toast.error("Registration failed: " + err.message);
     }
     setIsProcessing(false);
-  };
+  }; */
 
   const handleProceedToPayment = () => {
     setStep("pay");
@@ -267,7 +267,9 @@ export default function Checkout() {
     if (paymentMethod === "paystack") {
       handlePaystackPayment();
     } else {
-      handleBankTransfer();
+      // TODO: Work on bank transfer later
+      // handleBankTransfer();
+      toast.error("Bank transfer is currently unavailable.");
     }
   };
 
@@ -464,6 +466,63 @@ export default function Checkout() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Company Invoice Option - TODO: Work on this later */}
+                {/* <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold">Invoice My Company</h4>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={isCompanyInvoice}
+                          onChange={(e) => setIsCompanyInvoice(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                    {isCompanyInvoice && (
+                      <div className="space-y-3 mt-4">
+                        <div>
+                          <Label htmlFor="companyName" className="text-sm">Company Name</Label>
+                          <input
+                            id="companyName"
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="ABC Corporation"
+                            required={isCompanyInvoice}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="companyEmail" className="text-sm">Billing Email</Label>
+                          <input
+                            id="companyEmail"
+                            type="email"
+                            value={companyEmail}
+                            onChange={(e) => setCompanyEmail(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="billing@company.com"
+                            required={isCompanyInvoice}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="vatId" className="text-sm">VAT/Tax ID (Optional)</Label>
+                          <input
+                            id="vatId"
+                            type="text"
+                            value={vatId}
+                            onChange={(e) => setVatId(e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
+                            placeholder="VAT123456789"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card> */}
               </div>
 
               {/* Order summary sticky */}
@@ -476,7 +535,11 @@ export default function Checkout() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Course Price</span>
-                        <span>{currency} {coursePrice.toFixed(2)}</span>
+                        <span>{formatCurrency(coursePrice, 'USD')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">You'll be charged</span>
+                        <span className="font-semibold text-primary">{formatCurrency(amountGHS, 'GHS')}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Processing Fee</span>
@@ -484,9 +547,24 @@ export default function Checkout() {
                       </div>
                     </div>
                     <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-lg font-bold">
+                        <span>Total</span>
+                        <div className="text-right">
+                          <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            (~{formatCurrency(amountGHS, 'GHS')} will be charged)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span>
+                            Price shown in USD. You will be charged in Ghana Cedis (GHS) at current exchange rate.
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleProceedToPayment}>
                       Proceed to Payment
@@ -542,8 +620,8 @@ export default function Checkout() {
                     </div>
                   </Label>
 
-                  {/* Bank transfer option */}
-                  <Label
+                  {/* Bank transfer option - TODO: Work on this later */}
+                  {/* <Label
                     htmlFor="method-bank"
                     className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
                       paymentMethod === "bank_transfer"
@@ -562,10 +640,11 @@ export default function Checkout() {
                       </p>
                       <Badge variant="outline" className="mt-2 text-xs">Manual · 1-3 days</Badge>
                     </div>
-                  </Label>
+                  </Label> */}
                 </RadioGroup>
 
-                {paymentMethod === "bank_transfer" && (
+                {/* Bank transfer details - TODO: Work on this later */}
+                {/* {paymentMethod === "bank_transfer" && (
                   <Card className="border-amber-200 bg-amber-50">
                     <CardContent className="p-4 text-sm text-amber-900 space-y-2">
                       <p className="font-semibold">Bank Transfer Details:</p>
@@ -575,7 +654,7 @@ export default function Checkout() {
                       <p className="mt-2 text-xs">Include your full name as the reference.</p>
                     </CardContent>
                   </Card>
-                )}
+                )} */}
               </div>
 
               {/* Price summary */}
@@ -600,32 +679,45 @@ export default function Checkout() {
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span className="text-primary">{currency} {coursePrice.toFixed(2)}</span>
+                      <div className="text-right">
+                        <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
+                        <div className="text-sm font-normal text-muted-foreground">
+                          ({formatCurrency(amountGHS, 'GHS')} charged)
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setStep("review")} className="flex-1">
-                        <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" onClick={() => setStep("review")} className="w-full">
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back
                       </Button>
                       <Button
                         onClick={handleConfirmPayment}
                         disabled={isProcessing || (paymentMethod === "paystack" && !isPaystackReady)}
-                        className="flex-[2]"
                         size="lg"
+                        className="w-full h-12 text-base font-semibold"
+                        aria-label={
+                          isProcessing
+                            ? "Processing payment"
+                            : paymentMethod === "paystack" && !isPaystackReady
+                              ? "Loading payment system"
+                              : `Pay ${formatCurrency(amountGHS, 'GHS')} for ${course.title}`
+                        }
                       >
                         {isProcessing ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Processing...
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing Payment
                           </>
                         ) : paymentMethod === "paystack" && !isPaystackReady ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Loading...
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Loading Payment
                           </>
                         ) : (
                           <>
-                            {paymentMethod === "paystack" ? "Pay Now" : "Submit Registration"}
+                            <CreditCard className="w-5 h-5 mr-2" />
+                            {paymentMethod === "paystack" ? `Pay ${formatCurrency(amountGHS, 'GHS')}` : "Submit Registration"}
                           </>
                         )}
                       </Button>
@@ -693,7 +785,8 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {bookingResult.paymentMethod === "bank_transfer" && (
+            {/* TODO: Work on bank transfer later */}
+            {/* {bookingResult.paymentMethod === "bank_transfer" && (
               <Card className="text-left border-amber-200 bg-amber-50">
                 <CardContent className="p-4 text-sm text-amber-900 space-y-1">
                   <p className="font-semibold">Complete your payment:</p>
@@ -702,7 +795,7 @@ export default function Checkout() {
                   <p className="text-xs mt-2">Your spot is held for 5 business days.</p>
                 </CardContent>
               </Card>
-            )}
+            )} */}
 
             {/* What's Next */}
             <Card className="text-left border-primary/20">

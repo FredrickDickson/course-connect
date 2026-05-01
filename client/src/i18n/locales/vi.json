@@ -54,9 +54,9 @@
     "no_courses_found": "Không tìm thấy khóa học",
     "try_different_filter": "Thử danh mục hoặc từ khóa tìm kiếm khác",
     "level": {
-      "beginner": "Cơ Bản",
-      "intermediate": "Trung Cấp",
-      "advanced": "Nâng Cao"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Thời Lượng",
     "lessons": "Bài Học",

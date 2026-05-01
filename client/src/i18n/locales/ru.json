@@ -54,9 +54,9 @@
     "no_courses_found": "Курсы не найдены",
     "try_different_filter": "Попробуйте другую категорию или поисковый запрос",
     "level": {
-      "beginner": "Начальный",
-      "intermediate": "Средний",
-      "advanced": "Продвинутый"
+      "associate": "Part I (Associate)",
+      "member": "Part II (Member)",
+      "fellow": "Part III (Fellow)"
     },
     "duration": "Длительность",
     "lessons": "Уроки",

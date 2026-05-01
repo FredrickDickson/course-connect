@@ -18,6 +18,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import {
   ArrowLeft,
   ArrowRight,
@@ -100,9 +102,9 @@ const EXPERIENCE_LEVELS = [
 
 const ADR_EXPERIENCE_OPTIONS = [
   { value: "none", label: "None" },
-  { value: "beginner", label: "Beginner — Studied ADR or attended short courses" },
-  { value: "intermediate", label: "Intermediate — Participated in or observed proceedings" },
-  { value: "advanced", label: "Advanced — Served as arbitrator/mediator or counsel" },
+  { value: "associate", label: "Part I (Associate) — Studied ADR or attended short courses" },
+  { value: "member", label: "Part II (Member) — Participated in or observed proceedings" },
+  { value: "fellow", label: "Part III (Fellow) — Served as arbitrator/mediator or counsel" },
 ];
 
 const STORAGE_KEY = "cima-enrollment-form-v2";
@@ -115,10 +117,12 @@ export default function EnrollmentForm({
 }: EnrollmentFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   // Step 0 = Quick Start, Steps 1-4 = main form, Step 5 = success
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
+  const [eligibilityResult, setEligibilityResult] = useState<EligibilityResponse | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const paystackLoaded = useRef(false);
 
@@ -223,16 +227,8 @@ export default function EnrollmentForm({
     }
   }, [formData.phone, formData.sameAsPhone]);
 
-  // Load Paystack
-  useEffect(() => {
-    if (!paystackLoaded.current) {
-      const s = document.createElement("script");
-      s.src = "https://js.paystack.co/v1/inline.js";
-      s.async = true;
-      document.body.appendChild(s);
-      paystackLoaded.current = true;
-    }
-  }, []);
+  // Note: Paystack inline script removed - using unified checkout flow instead
+  // Redirects to /checkout/:courseId for payment processing
 
   // Auto-detect programme from course title
   useEffect(() => {
@@ -401,56 +397,85 @@ export default function EnrollmentForm({
     return data;
   };
 
+  const formatLevelLabel = (level?: string | null) => {
+    if (!level) return "Not assigned yet";
+    const normalized = level.toString().toUpperCase();
+    if (normalized === "NONE") return "No level assigned";
+    if (normalized === "STUDENT") return "Student";
+    if (normalized === "ASSOCIATE") return "Associate";
+    if (normalized === "MEMBER") return "Member";
+    if (normalized === "FELLOW") return "Fellow";
+    return normalized;
+  };
+
   const handleSubmit = async () => {
     if (!formData.confirmAccurate || !formData.agreeTerms || !formData.consentContact || !formData.understandPayment) {
       toast({ title: "Please accept all agreements", variant: "destructive" });
       return;
     }
 
-    // Save full profile before enrollment
-    await saveProfile();
+    // Unified eligibility check via API
+    try {
+      setEligibilityResult(null);
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const eligibilityResponse = await fetch("/api/enrollments/check-eligibility", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          courseId: course.id,
+          enrollmentLevel: ticketName.toUpperCase(),
+        }),
+      });
 
-    if (formData.paymentMethod === "paystack") {
-      if (!window.PaystackPop) {
-        toast({ title: "Payment system loading, please wait...", variant: "destructive" });
+      if (!eligibilityResponse.ok) {
+        throw new Error("Unable to verify eligibility");
+      }
+
+      const eligibility: EligibilityResponse = await eligibilityResponse.json();
+      setEligibilityResult(eligibility);
+
+      if (eligibility.status !== "ELIGIBLE") {
+        toast({
+          title: eligibility.ui.title,
+          description: eligibility.ui.message,
+          variant: eligibility.status === "BLOCKED" ? "destructive" : "default",
+        });
         return;
       }
-      setIsSubmitting(true);
-
-      const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: formData.email,
-        amount: totalPrice * 100,
-        currency: "GHS",
-        callback: async (response: any) => {
-          try {
-            const enrollment = await createEnrollment("paystack", response.reference);
-            localStorage.removeItem(STORAGE_KEY);
-            setBookingResult(enrollment);
-            setStep(5);
-          } catch (err: any) {
-            toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
-          }
-          setIsSubmitting(false);
-        },
-        onClose: () => {
-          setIsSubmitting(false);
-          toast({ title: "Payment cancelled", variant: "destructive" });
-        },
+    } catch (err: any) {
+      console.error("Eligibility check failed:", err);
+      toast({
+        title: "Eligibility check failed",
+        description: err.message || "Please try again.",
+        variant: "destructive",
       });
-      handler.openIframe();
-    } else {
-      setIsSubmitting(true);
-      try {
-        const enrollment = await createEnrollment(formData.paymentMethod);
-        localStorage.removeItem(STORAGE_KEY);
-        setBookingResult(enrollment);
-        setStep(5);
-      } catch (err: any) {
-        toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
-      }
-      setIsSubmitting(false);
+      return;
     }
+
+    // Save full profile before redirecting to checkout
+    await saveProfile();
+
+    // Store form data in sessionStorage for checkout page to use
+    sessionStorage.setItem("enrollment_form_data", JSON.stringify({
+      courseId: course.id,
+      ticketName,
+      totalPrice,
+      formData: {
+        email: formData.email,
+        fullName: formData.fullName,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        country: formData.country,
+        institution: formData.institution,
+        programme: formData.programme,
+      }
+    }));
+
+    // Redirect to unified checkout flow (replaces inline Paystack popup)
+    setLocation(`/checkout/${course.id}`);
   };
 
   const stepLabels = [
@@ -959,6 +984,34 @@ Enquiries: 0536735535 | 0241022964
               <h2 className="text-lg font-semibold text-foreground">Review & Payment</h2>
               <p className="text-sm text-muted-foreground">Confirm your details and complete payment</p>
             </div>
+
+            {eligibilityResult && eligibilityResult.status !== "ELIGIBLE" && (
+              <Card className={`border ${eligibilityResult.status === "BLOCKED" ? "border-destructive/40 bg-destructive/5" : "border-amber-200 bg-amber-50"}`}>
+                <CardContent className="p-4 flex gap-3">
+                  <Shield className="w-5 h-5 mt-1 text-primary flex-shrink-0" />
+                  <div className="space-y-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{eligibilityResult.ui.title}</p>
+                      <p className="text-sm text-muted-foreground">{eligibilityResult.ui.message}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Current level: <span className="font-medium">{formatLevelLabel(eligibilityResult.progression.currentLevel)}</span>
+                      {" "}• Required level: <span className="font-medium">{formatLevelLabel(eligibilityResult.progression.requiredLevel ?? eligibilityResult.progression.targetLevel)}</span>
+                    </p>
+                    {eligibilityResult.ui.action?.actionTarget && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setLocation(eligibilityResult.ui.action?.actionTarget || "/qualification-pathway")}
+                      >
+                        {eligibilityResult.ui.action.label}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Summary */}
             <Card>
