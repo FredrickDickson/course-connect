@@ -1,0 +1,556 @@
+﻿{
+  "name": "WF41 - LinkedIn Enhanced (No Image - Auto-Publish)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-morning",
+      "name": "Cron - Morning (9:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 12 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-midday",
+      "name": "Cron - Midday (12:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 450],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 17 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-evening",
+      "name": "Cron - Evening (5:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 600],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "morning",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['ADR', 'Tech News'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-morning-data",
+      "name": "Set Morning Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "midday",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['Current Affairs', 'ADR'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-midday-data",
+      "name": "Set Midday Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 450]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "evening",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['AI', 'Cybersecurity'][Math.floor(Math.random() * 2)] }}",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-evening-data",
+      "name": "Set Evening Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "5fd944814af044ca84ec43af56ebdb7f"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.topic + ' 2026' }}"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "pageSize",
+              "value": "3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "researcher-newsapi",
+      "name": "Researcher - NewsAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 350]
+    },
+    {
+      "parameters": {
+        "url": "https://www.searchapi.io/api/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "duckduckgo"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.topic + ' 2026' }}"
+            },
+            {
+              "name": "api_key",
+              "value": "6meJGZgoHdevZFet6qYM3p8j"
+            },
+            {
+              "name": "num",
+              "value": "3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "researcher-ddg-searchapi",
+      "name": "Researcher - DuckDuckGo (SearchAPI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 550]
+    },
+    {
+      "parameters": {
+        "url": "https://api.duckduckgo.com/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.topic + ' 2026' }}"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "researcher-ddg-direct",
+      "name": "Researcher - DuckDuckGo (Direct)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 650]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3
+      },
+      "id": "merge-results",
+      "name": "Merge Research Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [850, 450]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a high-level ghostwriter for a Partner-level executive in International Arbitration and Legal Tech. Your goal is to produce content that exudes 'Trust & Prestige.'\\n\\nCore Persona:\\n- Voice: Academic yet practical, authoritative, and visionary.\\n- Vocabulary: Use high-value terms like strategic imperative, institutional framework, jurisdictional nuance, precedent-setting, and digital transformation.\\n- Formatting: Clean, scannable, and 'Elite Institutional' (minimal emojis, clear headers).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Input Variables:\\n- News/Context: {{ $json[0].articles ? $json[0].articles.map(item => item.title + ': ' + item.description).join('\\\\n') : '' }} {{ $json[1].organic_results ? $json[1].organic_results.map(item => item.title + ': ' + item.snippet).join('\\\\n') : '' }} {{ $json[2].RelatedTopics ? $json[2].RelatedTopics.filter(t => t.Text).map(t => t.Text).join('\\\\n') : '' }}\\n- Content Type: {{ $json[0].type }}\\n- Primary Topic: {{ $json[0].topic }}\\n\\nTask:\\n1. The Hook: Start with a bold, sober observation about the industry. No emojis in the first line.\\n2. The Analysis: Break down the impact of the news using the 'Rule of Three.' Three concise points explaining why this matters for global recognition.\\n3. The CIMA Connection: Subtly tie the insight back to the importance of professional certification and global standards in ADR.\\n4. Call to Action: End with a sophisticated inquiry directed at other industry leaders.\\n\\nStrict Constraints:\\n- No 'AI-isms' (e.g., 'In the rapidly evolving landscape...').\\n- Max 3,000 characters.\\n- Max 3 hashtags: #ADR #LegalTech #CIMA.\\n- Use British English (e.g., recognised, organisation, centre).\\n\\nTime slot: {{ $json[0].timeSlot }}\\n\\nWrite the LinkedIn post now.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "writer",
+      "name": "Writer - Groq Llama 3.3 70B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "createFromText",
+        "name": "={{ $now.format('yyyy-MM-dd') }}_{{ $json[0].topic.replace(/\\s+/g, '-') }}_Post.txt",
+        "content": "={{ $json.choices[0].message.content }}",
+        "driveId": {
+          "__rl": true,
+          "value": "root",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        }
+      },
+      "id": "google-drive-save",
+      "name": "Google Drive - Save Post",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 450]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": "LinkedIn Posts Enhanced",
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Generation Date": "={{ $now.format('yyyy-MM-dd HH:mm') }}",
+            "Target Date": "={{ $json[0].targetDate }}",
+            "Topic": "={{ $json[0].topic }}",
+            "Post Content": "={{ $json.choices[0].message.content }}",
+            "Asset Link": "",
+            "Status": "Published",
+            "Source URL": "={{ $json[0].articles ? $json[0].articles[0].url : $json[1].organic_results ? $json[1].organic_results[0].link : $json[2].RelatedTopics ? $json[2].RelatedTopics.filter(t => t.FirstURL)[0].FirstURL : '' }}"
+          }
+        }
+      },
+      "id": "google-sheets-log",
+      "name": "Google Sheets - Log Post",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1450, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "standard",
+        "resource": "post",
+        "operation": "create",
+        "postAs": "person",
+        "person": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "text": "={{ $json.choices[0].message.content }}"
+      },
+      "id": "linkedin-publish",
+      "name": "LinkedIn - Publish Post",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [1650, 450]
+    }
+  ],
+  "connections": {
+    "Cron - Morning (9:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Set Morning Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Midday (12:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Midday Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Evening (5:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Evening Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Morning Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - NewsAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (SearchAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (Direct)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Midday Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - NewsAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (SearchAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (Direct)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Evening Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - NewsAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (SearchAPI)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Researcher - DuckDuckGo (Direct)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Researcher - NewsAPI": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Researcher - DuckDuckGo (SearchAPI)": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Researcher - DuckDuckGo (Direct)": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge Research Results": {
+      "main": [
+        [
+          {
+            "node": "Writer - Groq Llama 3.3 70B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer - Groq Llama 3.3 70B": {
+      "main": [
+        [
+          {
+            "node": "Google Drive - Save Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Save Post": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log Post": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
