@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Menu, X, User, BookOpen, GraduationCap, MessageSquare, LogOut, Presentation } from "lucide-react";
+import { Menu, X, User, BookOpen, GraduationCap, MessageSquare, LogOut, Presentation, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +16,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import NotificationBell from "@/components/notification-bell";
-import cimaLogo from "@/assets/cima-logo.png";
+import SearchModal from "@/components/search-modal";
+import ExploreDropdown from "@/components/explore-dropdown";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [location] = useLocation();
   const { user, isAuthenticated, isInstructor } = useAuth();
   const { t } = useLanguage();
@@ -110,11 +112,6 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
-            <img 
-              src={cimaLogo} 
-              alt="CIMA Logo" 
-              className="h-12 w-auto"
-            />
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary">CIMA Learn</h1>
               <p className="text-xs text-muted-foreground -mt-1">Professional ADR Education</p>
@@ -158,6 +155,17 @@ export default function Header() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
+            {/* Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0"
+              onClick={() => setIsSearchOpen(true)}
+              data-testid="search-button"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+
             {/* Language Switcher - temporarily disabled */}
             {/* <LanguageSwitcher /> */}
             
@@ -203,11 +211,6 @@ export default function Header() {
                   {/* Mobile Header */}
                   <div className="flex items-center justify-between pb-4 border-b">
                     <div className="flex items-center space-x-3">
-                      <img 
-                        src={cimaLogo} 
-                        alt="CIMA Logo" 
-                        className="h-10 w-auto"
-                      />
                       <div>
                         <h2 className="font-bold text-primary">CIMA Learn</h2>
                         <p className="text-xs text-muted-foreground">Professional ADR Education</p>
@@ -324,6 +327,8 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 }

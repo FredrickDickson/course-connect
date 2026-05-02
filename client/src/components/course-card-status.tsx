@@ -40,9 +40,14 @@ interface CourseCardStatusProps {
     end_date?: string;
     venue?: string;
     city?: string;
+    track?: string;
   };
   userLevel?: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
   status: CourseStatus;
+  eligibility?: {
+    status: "eligible" | "upgrade-required" | "enrolled" | "unknown";
+    label: string;
+  };
   onLockedClick?: () => void;
 }
 
@@ -70,6 +75,7 @@ export default function CourseCardStatus({
   course, 
   userLevel = "NONE",
   status,
+  eligibility,
   onLockedClick 
 }: CourseCardStatusProps) {
   const coursePathway = detectCoursePathway({
@@ -120,9 +126,9 @@ export default function CourseCardStatus({
     LOCKED: {
       badge: { text: "Locked", class: "bg-gray-100 text-gray-600 border-gray-200" },
       buttonVariant: "outline" as const,
-      buttonText: "Locked",
+      buttonText: "View Requirements",
       buttonIcon: Lock,
-      buttonClass: "border-gray-300 text-gray-400 cursor-not-allowed",
+      buttonClass: "border-gray-300 text-gray-700 hover:bg-gray-50",
       overlay: "bg-gray-900/5"
     },
     ENROLLED: {
@@ -140,9 +146,10 @@ export default function CourseCardStatus({
   return (
     <Card
       className={`group hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500 ease-in-out overflow-hidden border-primary/5 hover:border-primary/20 relative ${
-        status === "LOCKED" ? "opacity-75" : ""
+        status === "LOCKED" ? "opacity-75 cursor-pointer" : ""
       }`}
       data-testid={`course-card-${course.id}`}
+      onClick={status === "LOCKED" ? () => window.location.href = `/course/${course.id}` : undefined}
     >
       {/* Locked overlay */}
       {config.overlay && (
@@ -224,6 +231,35 @@ export default function CourseCardStatus({
           {course.title}
         </h3>
 
+        {/* Eligibility badge */}
+        {eligibility && eligibility.status !== "unknown" && (
+          <div className="mb-2">
+            <Badge
+              variant={
+                eligibility.status === "eligible"
+                  ? "default"
+                  : eligibility.status === "enrolled"
+                  ? "secondary"
+                  : "outline"
+              }
+              className={
+                eligibility.status === "eligible"
+                  ? "bg-green-500 text-white"
+                  : eligibility.status === "enrolled"
+                  ? "bg-blue-500 text-white"
+                  : ""
+              }
+            >
+              {eligibility.label}
+            </Badge>
+            {eligibility.status === "upgrade-required" && course.track && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Complete Associate in {course.track} to unlock
+              </p>
+            )}
+          </div>
+        )}
+
         <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed" data-testid="course-description">
           {course.subtitle || course.description || "Master industry-standard ADR skills with our specialized certification track."}
         </p>
@@ -292,7 +328,10 @@ export default function CourseCardStatus({
             <Button
               variant={config.buttonVariant}
               className={config.buttonClass}
-              onClick={onLockedClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                onLockedClick?.();
+              }}
               data-testid="locked-course-button"
             >
               <config.buttonIcon className="w-4 h-4 mr-2" />

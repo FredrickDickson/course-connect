@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,16 +30,65 @@ import {
   Clock,
   Star,
   Users,
+  X,
 } from "lucide-react";
+import { Link } from "wouter";
+
+interface Suggestion {
+  type: "course" | "category";
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  url: string;
+}
 
 export default function Courses() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [level, setLevel] = useState("");
+  const [trackFilter, setTrackFilter] = useState<"all" | "ARBITRATION" | "MEDIATION">("all");
+  const [showEligibleOnly, setShowEligibleOnly] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState("");
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user's track progress
+  const { data: trackProgress = {} } = useQuery({
+    queryKey: ["track-progress", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data, error } = await supabase
+        .from("track_progress")
+        .select("track, level")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      const progress: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        progress[row.track] = row.level || "NONE";
+      });
+      return progress;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch user's existing enrollments
+  const { data: userEnrollments = [] } = useQuery({
+    queryKey: ["user-enrollments", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("course_id, status")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -49,6 +99,102 @@ export default function Courses() {
     },
   });
 
+  // Autocomplete suggestions
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["search-suggestions", search],
+    queryFn: async () => {
+      if (!search || search.length < 2) return [];
+
+      const [coursesResult, categoriesResult] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("id, title, subtitle")
+          .eq("is_published", true)
+          .ilike("title", `%${search}%`)
+          .limit(5),
+        supabase
+          .from("categories")
+          .select("id, name")
+          .ilike("name", `%${search}%`)
+          .limit(3),
+      ]);
+
+      const courseSuggestions: Suggestion[] = (coursesResult.data || []).map(c => ({
+        type: "course",
+        id: c.id,
+        title: c.title,
+        subtitle: c.subtitle,
+        url: `/course/${c.id}`,
+      }));
+
+      const categorySuggestions: Suggestion[] = (categoriesResult.data || []).map(c => ({
+        type: "category",
+        id: c.id,
+        title: c.name,
+        url: `/courses?category=${c.id}`,
+      }));
+
+      return [...courseSuggestions, ...categorySuggestions];
+    },
+    enabled: search.length >= 2,
+  });
+
+  // Close autocomplete when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowAutocomplete(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setShowAutocomplete(value.length >= 2);
+  };
+
+  const handleSuggestionClick = (suggestion: Suggestion) => {
+    setSearch(suggestion.title);
+    setShowAutocomplete(false);
+    window.location.href = suggestion.url;
+  };
+
+  // Eligibility checking helper
+  const checkCourseEligibility = (course: any): { status: "eligible" | "upgrade-required" | "enrolled" | "unknown"; label: string } => {
+    if (!user?.id) return { status: "unknown", label: "Sign in to check" };
+    
+    const courseTrack = course.track || "ARBITRATION";
+    const userTrackLevel = trackProgress[courseTrack] || "NONE";
+    const courseLevel = (course.level || "associate").toUpperCase();
+    
+    const LEVEL_ORDER = { NONE: 0, ASSOCIATE: 1, MEMBER: 2, FELLOW: 3 };
+    const userIndex = LEVEL_ORDER[userTrackLevel as keyof typeof LEVEL_ORDER] || 0;
+    const courseIndex = LEVEL_ORDER[courseLevel as keyof typeof LEVEL_ORDER] || 1;
+    
+    // Check if enrolled
+    const isEnrolled = userEnrollments.some(
+      (e: any) => e.course_id === course.id && e.status === "ACTIVE"
+    );
+    if (isEnrolled) return { status: "enrolled", label: "Enrolled" };
+    
+    // Anyone can take Associate
+    if (courseLevel === "ASSOCIATE") {
+      return { status: "eligible", label: "Eligible" };
+    }
+    
+    // Must have completed previous level
+    if (userIndex >= courseIndex - 1) {
+      return { status: "eligible", label: "Eligible" };
+    }
+    
+    // Show what level is needed
+    const requiredLevel = courseIndex === 2 ? "Associate" : "Member";
+    return { status: "upgrade-required", label: `Requires ${requiredLevel}` };
+  };
+
   const { data: courses = [], isLoading } = useQuery({
     queryKey: [
       "courses_filtered",
@@ -56,6 +202,8 @@ export default function Courses() {
         search,
         category: category === "all" ? "" : category,
         level: level === "all" ? "" : level,
+        trackFilter,
+        showEligibleOnly,
         sortBy,
         priceRange: priceRange === "all" ? "" : priceRange,
       },
@@ -87,6 +235,10 @@ export default function Courses() {
         query = query.eq("level", level);
       }
 
+      if (trackFilter !== "all") {
+        query = query.eq("track", trackFilter);
+      }
+
       // Sort logic
       if (sortBy === "newest")
         query = query.order("created_at", { ascending: false });
@@ -99,7 +251,29 @@ export default function Courses() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      let filteredData = data || [];
+      
+      // Filter by eligibility if toggle is on
+      if (showEligibleOnly && user?.id) {
+        filteredData = filteredData.filter(course => {
+          const eligibility = checkCourseEligibility(course);
+          return eligibility.status === "eligible";
+        });
+      }
+      
+      // Sort by eligibility: eligible first, then upgrade-required, then enrolled
+      if (user?.id) {
+        filteredData.sort((a: any, b: any) => {
+          const aElig = checkCourseEligibility(a);
+          const bElig = checkCourseEligibility(b);
+          
+          const priority = { eligible: 0, "upgrade-required": 1, enrolled: 2, unknown: 3 };
+          return priority[aElig.status as keyof typeof priority] - priority[bElig.status as keyof typeof priority];
+        });
+      }
+      
+      return filteredData;
     },
   });
 
@@ -161,17 +335,57 @@ export default function Courses() {
       {/* Advanced Search & Filters */}
       <section className="py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto mb-8">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+          {/* Search Bar with Autocomplete */}
+          <div className="relative max-w-2xl mx-auto mb-8" ref={searchContainerRef}>
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 z-10" />
             <Input
               data-testid="input-search"
               type="text"
               placeholder="Search courses, topics, or instructors..."
-              className="pl-12 pr-4 py-3 text-lg border-0 bg-white shadow-md rounded-xl focus:ring-2 focus:ring-primary/20"
+              className="pl-12 pr-10 py-3 text-lg border-0 bg-white shadow-md rounded-xl focus:ring-2 focus:ring-primary/20"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => search.length >= 2 && setShowAutocomplete(true)}
             />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setShowAutocomplete(false);
+                }}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Autocomplete Dropdown */}
+            {showAutocomplete && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={`${suggestion.type}-${suggestion.id}`}
+                    type="button"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-accent transition-colors text-left border-b last:border-b-0"
+                  >
+                    <div className="mt-0.5 text-muted-foreground">
+                      {suggestion.type === "course" ? (
+                        <BookOpen className="w-4 h-4" />
+                      ) : (
+                        <Filter className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{suggestion.title}</p>
+                      {suggestion.subtitle && (
+                        <p className="text-sm text-muted-foreground truncate">{suggestion.subtitle}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Filter Row */}
@@ -204,6 +418,17 @@ export default function Courses() {
                 </SelectContent>
               </Select>
 
+              <Select onValueChange={(value: any) => setTrackFilter(value)} value={trackFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Track" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tracks</SelectItem>
+                  <SelectItem value="ARBITRATION">Arbitration</SelectItem>
+                  <SelectItem value="MEDIATION">Mediation</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Select onValueChange={setPriceRange} data-testid="select-price">
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Price Range" />
@@ -230,6 +455,17 @@ export default function Courses() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Eligibility Toggle */}
+            {user && (
+              <Button
+                variant={showEligibleOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowEligibleOnly(!showEligibleOnly)}
+              >
+                {showEligibleOnly ? "All Courses" : "Eligible Only"}
+              </Button>
+            )}
 
             {/* Right View Controls */}
             <div className="flex items-center gap-2">
@@ -262,7 +498,10 @@ export default function Courses() {
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Search: "{search}"
                   <button
-                    onClick={() => setSearch("")}
+                    onClick={() => {
+                      setSearch("");
+                      setShowAutocomplete(false);
+                    }}
                     className="ml-1 hover:text-destructive"
                   >
                     ×
@@ -309,6 +548,7 @@ export default function Courses() {
                 size="sm"
                 onClick={() => {
                   setSearch("");
+                  setShowAutocomplete(false);
                   setCategory("all");
                   setLevel("all");
                   setPriceRange("all");
@@ -487,6 +727,7 @@ export default function Courses() {
                   variant="outline"
                   onClick={() => {
                     setSearch("");
+                    setShowAutocomplete(false);
                     setCategory("");
                     setLevel("");
                     setPriceRange("");
@@ -510,9 +751,11 @@ export default function Courses() {
                   : "space-y-6"
               }
             >
-              {courses.map((course: any) =>
-                viewMode === "grid" ? (
-                  <CourseCard key={course.id} course={course} />
+              {courses.map((course: any) => {
+                const eligibility = checkCourseEligibility(course);
+                
+                return viewMode === "grid" ? (
+                  <CourseCard key={course.id} course={course} eligibility={eligibility} />
                 ) : (
                   <Card
                     key={course.id}
@@ -536,9 +779,31 @@ export default function Courses() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-lg group-hover:text-primary transition-colors truncate">
-                                {course.title}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors truncate">
+                                  {course.title}
+                                </h3>
+                                {eligibility.status !== "unknown" && (
+                                  <Badge
+                                    variant={
+                                      eligibility.status === "eligible"
+                                        ? "default"
+                                        : eligibility.status === "enrolled"
+                                        ? "secondary"
+                                        : "outline"
+                                    }
+                                    className={
+                                      eligibility.status === "eligible"
+                                        ? "bg-green-500 text-white"
+                                        : eligibility.status === "enrolled"
+                                        ? "bg-blue-500 text-white"
+                                        : ""
+                                    }
+                                  >
+                                    {eligibility.label}
+                                  </Badge>
+                                )}
+                              </div>
                               {course.subtitle && (
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
                                   {course.subtitle}
@@ -579,8 +844,8 @@ export default function Courses() {
                       </div>
                     </CardContent>
                   </Card>
-                ),
-              )}
+                );
+              })}
             </div>
           )}
         </div>

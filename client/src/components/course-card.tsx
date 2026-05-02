@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Star, Users, Clock, Crown, ShoppingCart } from "lucide-react";
+import { Star, Users, Clock, Crown, ShoppingCart, Lock } from "lucide-react";
 import { 
   detectCoursePathway, 
   getPathwayConfig,
@@ -33,9 +33,13 @@ interface CourseCardProps {
     is_featured?: boolean;
     tags?: string[];
   };
+  eligibility?: {
+    status: "eligible" | "upgrade-required" | "enrolled" | "unknown";
+    label: string;
+  };
 }
 
-export default function CourseCard({ course }: CourseCardProps) {
+export default function CourseCard({ course, eligibility }: CourseCardProps) {
   // Detect pathway for this course
   const coursePathway = detectCoursePathway({
     title: course.title,
@@ -60,11 +64,16 @@ export default function CourseCard({ course }: CourseCardProps) {
     mediation: "bg-green-100 text-green-700"
   };
 
+  const isLocked = eligibility?.status === "upgrade-required";
+
   return (
-    <Card
-      className="group hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500 ease-in-out overflow-hidden border-primary/5 hover:border-primary/20"
-      data-testid={`course-card-${course.id}`}
-    >
+    <Link href={`/course/${course.id}`}>
+      <Card
+        className={`group hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500 ease-in-out overflow-hidden border-primary/5 hover:border-primary/20 ${
+          isLocked ? "opacity-75" : ""
+        }`}
+        data-testid={`course-card-${course.id}`}
+      >
       <div className="relative">
         <img
           src={course.thumbnail_url || defaultThumbnail}
@@ -81,12 +90,24 @@ export default function CourseCard({ course }: CourseCardProps) {
             Featured
           </Badge>
         )}
+        {isLocked && (
+          <div className="absolute inset-0 bg-gray-500/20 z-10 pointer-events-none" />
+        )}
         <Badge
           className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
           data-testid="level-badge"
         >
           {course.level}
         </Badge>
+        {isLocked && (
+          <Badge
+            className="absolute bottom-4 left-4 bg-gray-100 text-gray-700 border border-gray-300 shadow-lg backdrop-blur-sm"
+            data-testid="locked-badge"
+          >
+            <Lock className="w-3 h-3 mr-1" />
+            {eligibility?.label || "Locked"}
+          </Badge>
+        )}
       </div>
 
       <CardContent className="p-6">
@@ -99,6 +120,26 @@ export default function CourseCard({ course }: CourseCardProps) {
             </span>
           </div> */}
           <div className="flex items-center space-x-2">
+            {eligibility && eligibility.status !== "unknown" && (
+              <Badge
+                variant={
+                  eligibility.status === "eligible"
+                    ? "default"
+                    : eligibility.status === "enrolled"
+                    ? "secondary"
+                    : "outline"
+                }
+                className={
+                  eligibility.status === "eligible"
+                    ? "bg-green-500 text-white text-[10px] uppercase tracking-wider font-bold"
+                    : eligibility.status === "enrolled"
+                    ? "bg-blue-500 text-white text-[10px] uppercase tracking-wider font-bold"
+                    : "text-[10px] uppercase tracking-wider font-bold"
+                }
+              >
+                {eligibility.label}
+              </Badge>
+            )}
             <Badge 
               className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
               data-testid="pathway-badge"
@@ -156,17 +197,28 @@ export default function CourseCard({ course }: CourseCardProps) {
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{course.currency}</div>
             )}
           </div>
-          <Link href={`/course/${course.id}`}>
-            <Button
-              className="bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-primary/20"
-              data-testid="view-course-button"
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Enroll Now
-            </Button>
-          </Link>
+            {isLocked ? (
+              <Button
+                className="bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-not-allowed"
+                disabled
+                data-testid="locked-course-button"
+                onClick={(e) => e.preventDefault()}
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                {eligibility?.label || "Locked"}
+              </Button>
+            ) : (
+              <Button
+                className="bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-105 transition-all duration-300 shadow-md hover:shadow-primary/20"
+                data-testid="view-course-button"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Enroll Now
+              </Button>
+            )}
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </Link>
   );
 }
