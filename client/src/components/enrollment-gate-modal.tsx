@@ -217,21 +217,6 @@ export default function EnrollmentGateModal({
             </div>
           </div>
 
-          {/* Expedited path option */}
-          {isBlocked && (
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <h5 className="text-sm font-medium text-primary mb-1">Have prior ADR experience?</h5>
-              <p className="text-xs text-muted-foreground mb-3">
-                You may qualify for expedited membership through our assessment program.
-              </p>
-              <Link href="/qualification-pathway">
-                <Button variant="outline" size="sm" className="w-full">
-                  <GraduationCap className="w-4 h-4 mr-2" />
-                  Check Expedited Options
-                </Button>
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* Footer actions */}
