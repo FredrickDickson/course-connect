@@ -282,25 +282,6 @@ export default function ProgressionLadder({
         </div>
 
         {/* Expedited option */}
-        {userLevel === "ASSOCIATE" && (
-          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-start gap-3">
-              <GraduationCap className="w-5 h-5 text-primary mt-0.5" />
-              <div className="flex-1">
-                <h5 className="text-sm font-medium text-primary">Fast-track your progress</h5>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Have prior ADR experience? You may qualify for expedited assessment.
-                </p>
-                <Link href="/qualification-pathway">
-                  <Button variant="link" size="sm" className="h-auto p-0 text-xs mt-2">
-                    Check eligibility
-                    <ExternalLink className="w-3 h-3 ml-1" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
