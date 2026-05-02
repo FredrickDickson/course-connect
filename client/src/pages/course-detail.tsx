@@ -25,6 +25,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
+import { calculateEligibilityClientSide } from "@shared/enrollmentEligibility";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -91,13 +92,24 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
-  // Check eligibility on page load
+  // Check eligibility on page load - use client-side calculation for instant feedback
   const { data: eligibility, isLoading: eligibilityLoading, error: eligibilityError } = useQuery<EligibilityResponse>({
     queryKey: ["course-eligibility", id, user?.id],
     queryFn: async () => {
       console.log("Checking eligibility for course:", id, "user:", user?.id);
-      if (!user?.id) return { status: "ELIGIBLE", reason: "GUEST", ui: { title: "", message: "" }, actions: [] };
+      if (!user?.id) return { status: "ELIGIBLE", reasonCode: "OK", ui: { title: "", message: "" }, progression: { track: "ARBITRATION", currentLevel: "NONE", targetLevel: "ASSOCIATE" } };
       
+      // Use client-side calculation first for instant feedback
+      const clientSideResult = calculateEligibilityClientSide(
+        course?.track || null,
+        course?.level || null,
+        trackProgress,
+        !!enrollment
+      );
+      
+      console.log("Client-side eligibility result:", clientSideResult);
+      
+      // API call as fallback/validation
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
@@ -115,7 +127,8 @@ export default function CourseDetail() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Eligibility check failed:", response.status, errorText);
-        throw new Error("Unable to verify eligibility");
+        // Return client-side result on API error
+        return clientSideResult;
       }
 
       const result = await response.json();
@@ -123,7 +136,7 @@ export default function CourseDetail() {
       console.log("Eligibility progression:", result.progression);
       return result;
     },
-    enabled: !!id && !!user,
+    enabled: !!id && !!user && !!course,
     retry: false,
   });
 
@@ -260,13 +273,15 @@ export default function CourseDetail() {
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Locked State Banner */}
-          {user && eligibility && eligibility.status !== "ELIGIBLE" && (
+          {/* Locked State Banner - show immediately while loading for logged-in users */}
+          {user && (eligibilityLoading || (eligibility && eligibility.status !== "ELIGIBLE")) && (
             <Alert className="mb-6 bg-white/10 border-white/20 text-white backdrop-blur-sm">
               <Lock className="h-4 w-4" />
-              <AlertTitle className="text-white font-semibold">This course is currently locked</AlertTitle>
+              <AlertTitle className="text-white font-semibold">
+                {eligibility?.status === "ELIGIBLE" ? "You're cleared to enroll" : "This course is currently locked"}
+              </AlertTitle>
               <AlertDescription className="text-white/90">
-                {eligibility.ui.message}
+                {eligibility?.ui.message || "Checking your eligibility..."}
               </AlertDescription>
             </Alert>
           )}
@@ -321,7 +336,7 @@ export default function CourseDetail() {
                     </Link>
                   </CardContent>
                 </Card>
-              ) : user && eligibility && eligibility.status !== "ELIGIBLE" ? (
+              ) : user && (eligibilityLoading || (eligibility && eligibility.status !== "ELIGIBLE")) ? (
                 <Card className="bg-white shadow-lg">
                   <CardContent className="p-6">
                     <div className="mb-4">
@@ -353,7 +368,7 @@ export default function CourseDetail() {
                     </div>
                     <Button className="w-full" size="lg" disabled variant="outline">
                       <Lock className="w-4 h-4 mr-2" />
-                      Locked
+                      {eligibilityLoading ? "Checking eligibility..." : "Locked"}
                     </Button>
                   </CardContent>
                 </Card>
