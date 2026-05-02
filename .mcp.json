@@ -6,6 +6,13 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "n8n-mcp": {
+      "type": "http",
+      "url": "http://localhost:5678/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiYTI1Y2Y2OS00MjQ2LTRlMWMtYWZiNy04NDg1YjA4OTQzMGQiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjhiN2U5NWU2LWUxMmEtNDIwZC1iOWYwLTg1ZDBiODBlYWJlYyIsImlhdCI6MTc3NzU4Mjk1NH0.FLXVEZVWh4Y9eWUxo68O5ND83kK1Dv8XcYEE1Hx4vEA"
+      }
     }
   }
 }

@@ -258,30 +258,25 @@ async function sendWelcomeEmail(supabase: any, user: any, course: any, context: 
 
   const template = templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
 
-  // Send actual email via Resend
+  // Send email via send-email Edge Function
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "CIMA Learn <noreply@cima-learn.vercel.app>",
         to: user.email,
         subject: `Welcome to ${course.title} - ${context.enrollmentLevel} Enrollment`,
         html: generateWelcomeEmailHTML(user, course, context.enrollmentLevel),
-        tags: [
-          { name: "type", value: "welcome" },
-          { name: "course", value: String(course.id) },
-          { name: "level", value: context.enrollmentLevel }
-        ]
+        from: "CIMA Learn <noreply@thecima.org>",
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Resend API error: ${error}`);
+      throw new Error(`Email function error: ${error}`);
     }
 
     console.log(`Welcome email sent to ${user.email} for course ${course.title}`);

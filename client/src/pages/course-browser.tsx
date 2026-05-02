@@ -34,7 +34,7 @@ function getLevelLabel(level: string | null): string {
 export default function CourseBrowser() {
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
-  const [formatFilter, setFormatFilter] = useState("all");
+  // Removed format filter - all courses are online only
 
   const { data: courses = [], isLoading } = useQuery<any[]>({
     queryKey: ["courses-browser", search, levelFilter],
@@ -78,7 +78,7 @@ export default function CourseBrowser() {
     enabled: courseIds.length > 0,
   });
 
-  const hasFilters = search || levelFilter !== "all" || formatFilter !== "all";
+  const hasFilters = search || levelFilter !== "all";
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +88,7 @@ export default function CourseBrowser() {
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl lg:text-4xl font-bold mb-2">All Courses</h1>
-          <p className="text-primary-foreground/80">{courses.length} upcoming cohorts available</p>
+          <p className="text-primary-foreground/80">{courses.length} online courses available</p>
         </div>
       </section>
 
@@ -116,19 +116,8 @@ export default function CourseBrowser() {
                 <SelectItem value="fellow">Part III (Fellow)</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={formatFilter} onValueChange={setFormatFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Formats</SelectItem>
-                <SelectItem value="hybrid">Hybrid</SelectItem>
-                <SelectItem value="virtual">Virtual</SelectItem>
-                <SelectItem value="in-person">In-Person</SelectItem>
-              </SelectContent>
-            </Select>
             {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setLevelFilter("all"); setFormatFilter("all"); }}>
+              <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setLevelFilter("all"); }}>
                 <X className="w-4 h-4 mr-1" /> Clear
               </Button>
             )}
@@ -157,7 +146,7 @@ export default function CourseBrowser() {
               <p className="text-xl text-muted-foreground mb-2">No courses match your filters.</p>
               <p className="text-muted-foreground mb-6">Try removing a filter or check back soon.</p>
               {hasFilters && (
-                <Button variant="outline" onClick={() => { setSearch(""); setLevelFilter("all"); setFormatFilter("all"); }}>
+                <Button variant="outline" onClick={() => { setSearch(""); setLevelFilter("all"); }}>
                   Clear filters
                 </Button>
               )}
@@ -190,11 +179,7 @@ export default function CourseBrowser() {
                           <span className="text-white font-bold text-lg">Sold Out</span>
                         </div>
                       )}
-                      {course.cohort_id && (
-                        <Badge variant="secondary" className="absolute top-3 right-3 bg-black/30 text-white border-0 text-xs">
-                          {course.cohort_id}
-                        </Badge>
-                      )}
+                      {/* Cohort badge removed - courses are online only */}
                     </div>
 
                     <CardContent className="p-5 space-y-3">
@@ -222,10 +207,7 @@ export default function CourseBrowser() {
                         <span className="font-bold text-lg text-foreground">
                           {course.currency || "GHS"} {Number(course.price).toLocaleString()}
                         </span>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3.5 h-3.5" />
-                          {isSoldOut ? "Sold out" : `${spotsLeft} spots left`}
-                        </div>
+                        {/* Spots left display removed */}
                       </div>
 
                       <Link href={`/course/${course.id}`}>

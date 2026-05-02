@@ -4,7 +4,7 @@ Complete automation infrastructure for CIMA Learn platform enrollment, membershi
 
 ## Overview
 
-39 workflows organized into 9 implementation phases, covering all critical business operations for the CIMA course platform.
+40 workflows organized into 10 implementation phases, covering all critical business operations for the CIMA course platform.
 
 ## Implementation Phases
 
@@ -77,6 +77,16 @@ Community engagement and user retention
 - **WF38**: Forum unanswered question reminders
 - **WF39**: Review collection automation
 
+### Phase 10: Marketing Automation (Week 10)
+Brand growth and LinkedIn content automation
+
+- **WF40**: LinkedIn content automation - 3x daily posts with AI-generated content in Mohammed Talib's style, Google Search research, Google Drive/Sheets storage, manual approval workflow
+  - **Location**: `/linkedin-automation/wf40-linkedin-content-automation.json` (separate folder for marketing workflows)
+- **WF41**: LinkedIn Enhanced (No Image) - Enhanced ghostwriter prompt with elite institutional tone, Google Search research, Google Gemini content generation, Google Drive/Sheets storage, manual approval workflow
+  - **Location**: `/linkedin-automation/wf41-linkedin-enhanced-no-image.json`
+- **WF42**: LinkedIn Enhanced (With Image) - Enhanced ghostwriter prompt with elite institutional tone, Google Search research, Google Gemini content generation, Hugging Face image generation, Google Drive/Sheets storage, manual approval workflow
+  - **Location**: `/linkedin-automation/wf42-linkedin-enhanced-with-image.json`
+
 ## Required Credentials
 
 ### Services
@@ -85,8 +95,12 @@ Community engagement and user retention
 - **Resend**: API key for email sending
 - **Slack**: Bot token for admin notifications
 - **WhatsApp Business**: API for group invites and alerts
-- **OpenAI**: API key for AI moderation and grading
-- **Google Sheets**: For monthly reports (optional)
+- **Google AI API**: Free API key for AI moderation and grading (Phase 10)
+- **Google Search API**: Free API key for topic research (Phase 10)
+- **Hugging Face API**: Free API key for image generation (WF42 - optional)
+- **Google Sheets**: For monthly reports (optional) and post logging (Phase 10)
+- **LinkedIn API**: For posting content to personal profile (Phase 10)
+- **Google Drive**: For storing post drafts and content (Phase 10)
 
 ### Setup Instructions
 

@@ -75,6 +75,47 @@ const ADR_OPTIONS = [
   { value: "fellow", label: "Part III (Fellow)" },
 ];
 
+const TIMEZONES = [
+  "UTC-12:00 (Baker Island)",
+  "UTC-11:00 (American Samoa)",
+  "UTC-10:00 (Hawaii)",
+  "UTC-09:30 (Marquesas Islands)",
+  "UTC-09:00 (Alaska)",
+  "UTC-08:00 (Pacific Time)",
+  "UTC-07:00 (Mountain Time)",
+  "UTC-06:00 (Central Time)",
+  "UTC-05:00 (Eastern Time)",
+  "UTC-04:00 (Atlantic Time)",
+  "UTC-03:30 (Newfoundland)",
+  "UTC-03:00 (Buenos Aires)",
+  "UTC-02:00 (Fernando de Noronha)",
+  "UTC-01:00 (Azores)",
+  "UTC+00:00 (London, Dublin)",
+  "UTC+01:00 (Central European Time)",
+  "UTC+02:00 (Eastern European Time)",
+  "UTC+03:00 (Moscow, Istanbul)",
+  "UTC+03:30 (Tehran)",
+  "UTC+04:00 (Dubai, Baku)",
+  "UTC+04:30 (Kabul)",
+  "UTC+05:00 (Karachi, Tashkent)",
+  "UTC+05:30 (India, Sri Lanka)",
+  "UTC+05:45 (Nepal)",
+  "UTC+06:00 (Dhaka, Almaty)",
+  "UTC+06:30 (Yangon)",
+  "UTC+07:00 (Bangkok, Jakarta)",
+  "UTC+08:00 (Beijing, Singapore)",
+  "UTC+08:30 (Pyongyang)",
+  "UTC+09:00 (Tokyo, Seoul)",
+  "UTC+09:30 (Adelaide)",
+  "UTC+10:00 (Sydney, Melbourne)",
+  "UTC+10:30 (Lord Howe Island)",
+  "UTC+11:00 (Solomon Islands)",
+  "UTC+12:00 (Auckland, Fiji)",
+  "UTC+12:45 (Chatham Islands)",
+  "UTC+13:00 (Samoa)",
+  "UTC+14:00 (Line Islands)",
+];
+
 export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -83,7 +124,7 @@ export default function Profile() {
   const [isEditingProfessional, setIsEditingProfessional] = useState(false);
 
   const [basicForm, setBasicForm] = useState({
-    firstName: "", lastName: "", bio: "", country: "", timezone: "",
+    firstName: "", middleName: "", lastName: "", bio: "", country: "", timezone: "",
   });
 
   const [profForm, setProfForm] = useState({
@@ -139,6 +180,7 @@ export default function Profile() {
     if (user) {
       setBasicForm({
         firstName: user.firstName || "",
+        middleName: user.middleName || "",
         lastName: user.lastName || "",
         bio: user.bio || "",
         country: user.country || "",
@@ -167,13 +209,14 @@ export default function Profile() {
   // Save basic info
   const saveBasicMutation = useMutation({
     mutationFn: async (data: any) => {
-      const fullName = `${data.firstName} ${data.lastName}`.trim();
-      
+      const fullName = `${data.firstName} ${data.middleName} ${data.lastName}`.trim().replace(/\s+/g, " ");
+
       // Update users table
       const { error: userError } = await (supabase as any)
         .from("users")
         .update({
           first_name: data.firstName,
+          middle_name: data.middleName || null,
           last_name: data.lastName,
           bio: data.bio,
           country: data.country,
@@ -281,7 +324,7 @@ export default function Profile() {
               <div className="flex-1">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
+                    <h1 className="text-2xl font-bold text-foreground">{user.firstName} {user.middleName} {user.lastName}</h1>
                     {memberRecord && (
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline">{memberRecord.post_nominal || memberRecord.part}</Badge>
@@ -344,20 +387,28 @@ export default function Profile() {
                     <Button size="sm" onClick={() => saveBasicMutation.mutate(basicForm)} disabled={saveBasicMutation.isPending}>
                       <Save className="h-3.5 w-3.5 mr-1" /> Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", middleName: user.middleName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }}>
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
                     </Button>
                   </div>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">First Name</Label>
                     {isEditingBasic ? (
                       <Input value={basicForm.firstName} onChange={(e) => setBasicForm({ ...basicForm, firstName: e.target.value })} />
                     ) : (
                       <p className="font-medium">{basicForm.firstName || "—"}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Middle Name (Optional)</Label>
+                    {isEditingBasic ? (
+                      <Input value={basicForm.middleName} onChange={(e) => setBasicForm({ ...basicForm, middleName: e.target.value })} placeholder="Optional" />
+                    ) : (
+                      <p className="font-medium">{basicForm.middleName || "—"}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
@@ -389,7 +440,14 @@ export default function Profile() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Timezone</Label>
                     {isEditingBasic ? (
-                      <Input value={basicForm.timezone} onChange={(e) => setBasicForm({ ...basicForm, timezone: e.target.value })} placeholder="e.g. GMT" />
+                      <Select value={basicForm.timezone} onValueChange={(v) => setBasicForm({ ...basicForm, timezone: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select timezone" /></SelectTrigger>
+                        <SelectContent>
+                          {TIMEZONES.map((tz) => (
+                            <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <p className="font-medium">{basicForm.timezone || "—"}</p>
                     )}

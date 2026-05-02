@@ -230,7 +230,7 @@ export default function AdminCoursesTable() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium">Course</th>
-                <th className="text-left p-3 font-medium">Cohort</th>
+                {/* Cohort column removed - courses are online only */}
                 <th className="text-left p-3 font-medium hidden md:table-cell">Instructor</th>
                 <th className="text-left p-3 font-medium">Capacity</th>
                 <th className="text-right p-3 font-medium">Enrolled</th>
@@ -246,7 +246,7 @@ export default function AdminCoursesTable() {
                 return (
                   <tr key={c.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedCourse(c)}>
                     <td className="p-3 font-medium max-w-[200px] truncate">{c.title}</td>
-                    <td className="p-3 font-mono text-[10px] text-muted-foreground">{c.cohort_id || "—"}</td>
+                    {/* Cohort ID removed - courses are online only */}
                     <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">
                       {c.instructor ? `${c.instructor.first_name} ${c.instructor.last_name}` : "—"}
                     </td>
@@ -328,7 +328,7 @@ export default function AdminCoursesTable() {
                       {selectedCourse.subtitle && <p className="text-sm text-muted-foreground">{selectedCourse.subtitle}</p>}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <StatusBadge course={selectedCourse} />
-                        {selectedCourse.cohort_id && <Badge variant="outline" className="font-mono text-[10px]">{selectedCourse.cohort_id}</Badge>}
+                        {/* Cohort badge removed - courses are online only */}
                         <Badge variant="outline" className="text-[10px] capitalize">{selectedCourse.level}</Badge>
                       </div>
                     </div>

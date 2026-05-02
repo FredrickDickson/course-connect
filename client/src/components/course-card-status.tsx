@@ -54,12 +54,15 @@ export function getCourseStatus(
 ): CourseStatus {
   const normalizedCourseLevel = courseLevel?.toUpperCase() || "ASSOCIATE";
   const normalizedUserLevel = userLevel?.toUpperCase() || "NONE";
-  
+
   const userIndex = LEVEL_ORDER.indexOf(normalizedUserLevel);
   const courseIndex = LEVEL_ORDER.indexOf(normalizedCourseLevel);
-  
+
+  // User can access courses at or below their current level
   if (userIndex >= courseIndex) return "AVAILABLE";
+  // Next level course - user should complete prerequisite first
   if (userIndex === courseIndex - 1) return "NEXT_STEP";
+  // Higher level courses are locked until prerequisites are met
   return "LOCKED";
 }
 
@@ -182,12 +185,13 @@ export default function CourseCardStatus({
 
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-1.5 group/rating">
+          {/* Review count commented out until substantial user base */}
+          {/* <div className="flex items-center space-x-1.5 group/rating">
             <Star className="w-4 h-4 text-yellow-400 fill-current group-hover/rating:scale-125 transition-transform" />
             <span className="text-sm font-medium text-foreground" data-testid="course-rating">
               {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
             </span>
-          </div>
+          </div> */}
           <div className="flex items-center space-x-2">
             <Badge 
               className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
@@ -239,22 +243,7 @@ export default function CourseCardStatus({
           </div>
         </div>
 
-        {/* Capacity indicator */}
-        {course.total_capacity && (
-          <div className="mb-3">
-            {(course.total_capacity - (course.enrollment_count || 0)) <= 0 ? (
-              <Badge variant="destructive" className="text-xs">Sold Out — Join Waitlist</Badge>
-            ) : (course.total_capacity - (course.enrollment_count || 0)) <= 10 ? (
-              <Badge className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100">
-                Only {course.total_capacity - (course.enrollment_count || 0)} spots left!
-              </Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {course.total_capacity - (course.enrollment_count || 0)} spots remaining
-              </span>
-            )}
-          </div>
-        )}
+        {/* Capacity indicator removed - courses are online only */}
 
         {/* Physical course details */}
         {course.course_type === 'PHYSICAL' && (

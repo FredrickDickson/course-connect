@@ -6,6 +6,7 @@ interface UserProfile {
   id: string;
   email: string;
   firstName: string;
+  middleName?: string;
   lastName: string;
   profileImageUrl: string;
   role: string;
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
       supabase
         .from("users")
-        .select("role, assigned_level, current_level")
+        .select("role, assigned_level, current_level, first_name, middle_name, last_name")
         .eq("id", currentAuthUser.id)
         .maybeSingle(),
     ]);
@@ -76,8 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       id: currentAuthUser.id,
       email: currentAuthUser.email || "",
-      firstName: nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
-      lastName: nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
+      firstName: userRow?.first_name || nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      middleName: userRow?.middle_name || currentAuthUser.user_metadata?.middle_name || "",
+      lastName: userRow?.last_name || nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
       role: derivedRole,
       membershipLevel: profileData?.part || null,

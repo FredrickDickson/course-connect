@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std/http/server.ts";
+import { Resend } from "npm:resend";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,8 @@ interface EmailPayload {
   cc?: string | string[];
   bcc?: string | string[];
 }
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,45 +45,22 @@ serve(async (req) => {
       );
     }
 
-    const from = payload.from || "CIMA Learn <onboarding@resend.dev>";
+    const from = payload.from || "CIMA Learn <noreply@thecima.org>";
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: Array.isArray(payload.to) ? payload.to : [payload.to],
-        subject: payload.subject,
-        html: payload.html,
-        text: payload.text,
-        reply_to: payload.replyTo,
-        cc: payload.cc,
-        bcc: payload.bcc,
-      }),
+    const response = await resend.emails.send({
+      from,
+      to: Array.isArray(payload.to) ? payload.to : [payload.to],
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+      replyTo: payload.replyTo,
+      cc: payload.cc,
+      bcc: payload.bcc,
     });
 
-    const data = await response.json();
+    console.log("Email sent successfully:", response.id);
 
-    if (!response.ok) {
-      console.error("Resend API error:", data);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to send email",
-          details: data,
-        }),
-        {
-          status: response.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    console.log("Email sent successfully:", data.id);
-
-    return new Response(JSON.stringify({ success: true, id: data.id }), {
+    return new Response(JSON.stringify({ success: true, id: response.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
