@@ -374,9 +374,6 @@ export function QualificationProgress({
             Track your progress through CIMA qualification tracks
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-center py-12 text-muted-foreground">
-          Unable to load qualification data
-        </CardContent>
       </Card>
     );
   }

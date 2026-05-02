@@ -138,9 +138,9 @@ export default function CourseDetail() {
     queryFn: async () => {
       if (!user?.id) return {};
       const { data, error } = await supabase
-        .from("track_progress")
+        .from("track_progress" as any)
         .select("track, level")
-        .eq("user_id", user.id);
+        .eq("user_id" as any, user.id);
       if (error) throw error;
       const progress: Record<string, string> = {};
       (data || []).forEach((row: any) => {
