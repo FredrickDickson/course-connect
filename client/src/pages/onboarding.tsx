@@ -220,6 +220,12 @@ export default function Onboarding() {
 
     full_name: "",
 
+    first_name: "",
+
+    middle_name: "",
+
+    last_name: "",
+
     email: "",
 
     date_of_birth: "",
@@ -376,6 +382,12 @@ export default function Onboarding() {
             ...prev,
 
             full_name: d.full_name || `${user.firstName} ${user.lastName}`.trim(),
+
+            first_name: user.firstName || "",
+
+            middle_name: user.middleName || "",
+
+            last_name: user.lastName || "",
 
             email: user.email || "",
 
@@ -566,6 +578,16 @@ export default function Onboarding() {
 
     try {
 
+      // Update users table with name fields
+      const { error: userError } = await supabase.from("users").update({
+        first_name: form.first_name,
+        middle_name: form.middle_name || null,
+        last_name: form.last_name,
+      }).eq("id", user.id);
+
+      if (userError) throw userError;
+
+      // Update profiles table
       const { error } = await supabase.from("profiles").upsert({
 
         user_id: user.id,
@@ -591,8 +613,6 @@ export default function Onboarding() {
         profile_photo_url: form.profile_photo_url,
 
       }, { onConflict: "user_id" });
-
-
 
       if (error) throw error;
 

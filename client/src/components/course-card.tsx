@@ -91,12 +91,13 @@ export default function CourseCard({ course }: CourseCardProps) {
 
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-1.5 group/rating">
+          {/* Review count commented out until substantial user base */}
+          {/* <div className="flex items-center space-x-1.5 group/rating">
             <Star className="w-4 h-4 text-yellow-400 fill-current group-hover/rating:scale-125 transition-transform" />
             <span className="text-sm font-medium text-foreground" data-testid="course-rating">
               {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
             </span>
-          </div>
+          </div> */}
           <div className="flex items-center space-x-2">
             <Badge 
               className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
@@ -135,22 +136,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           </div>
         </div>
 
-        {/* Capacity indicator */}
-        {(course as any).total_capacity && (
-          <div className="mb-3">
-            {((course as any).total_capacity - (course.enrollment_count || 0)) <= 0 ? (
-              <Badge variant="destructive" className="text-xs">Sold Out — Join Waitlist</Badge>
-            ) : ((course as any).total_capacity - (course.enrollment_count || 0)) <= 10 ? (
-              <Badge className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100">
-                Only {(course as any).total_capacity - (course.enrollment_count || 0)} spots left!
-              </Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {(course as any).total_capacity - (course.enrollment_count || 0)} spots remaining
-              </span>
-            )}
-          </div>
-        )}
+        {/* Capacity indicator removed - courses are online only */}
 
         {course.instructor && (
           <div className="text-xs font-medium text-muted-foreground mb-6 flex items-center" data-testid="instructor-info">

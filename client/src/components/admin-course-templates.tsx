@@ -1,6 +1,7 @@
 /**
- * Admin Course Templates & Cohort System
- * Create reusable templates and spawn yearly editions with auto-generated cohort IDs
+ * Admin Course Templates System
+ * Create reusable course templates
+ * Cohort system removed - courses are online only
  */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -111,16 +112,7 @@ export default function AdminCourseTemplates() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TemplateForm>(emptyForm);
-  const [showNewEdition, setShowNewEdition] = useState<CourseTemplate | null>(null);
-  const [editionForm, setEditionForm] = useState({
-    year: new Date().getFullYear().toString(),
-    month: (new Date().getMonth() + 1).toString(),
-    start_date: "",
-    end_date: "",
-    venue: "",
-    capacity: "",
-    title_override: "",
-  });
+  // Cohort edition functionality removed - courses are online only
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery({
@@ -141,7 +133,9 @@ export default function AdminCourseTemplates() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("courses")
-        .select("id, template_id, cohort_id, course_status, start_date, title");
+        .select("id, template_id, course_status, start_date, title")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -203,57 +197,7 @@ export default function AdminCourseTemplates() {
     },
   });
 
-  // Spawn new edition
-  const spawnEdition = useMutation({
-    mutationFn: async (template: CourseTemplate) => {
-      const year = parseInt(editionForm.year);
-      const month = parseInt(editionForm.month);
-      const cohortId = generateCohortId(template.short_code, year, month);
-
-      // Check for duplicate cohort
-      const { data: existing } = await (supabase as any)
-        .from("courses")
-        .select("id")
-        .eq("cohort_id", cohortId)
-        .maybeSingle();
-      if (existing) throw new Error(`Cohort ${cohortId} already exists`);
-
-      const ticketTypes = template.default_ticket_types || [];
-      const title = editionForm.title_override || `${template.name} — ${cohortId}`;
-
-      const { error } = await (supabase as any).from("courses").insert({
-        title,
-        description: template.description,
-        thumbnail_url: template.banner_image_url,
-        duration_hours: template.duration_hours,
-        total_capacity: parseInt(editionForm.capacity) || template.default_capacity,
-        price: template.default_price || 0,
-        currency: template.default_currency || "GHS",
-        ticket_types: ticketTypes,
-        enquiry_phone_1: template.enquiry_phone_1,
-        enquiry_phone_2: template.enquiry_phone_2,
-        template_id: template.id,
-        cohort_id: cohortId,
-        course_status: "draft",
-        start_date: editionForm.start_date || null,
-        end_date: editionForm.end_date || null,
-        venue: editionForm.venue || null,
-        is_published: false,
-        level: "professional",
-      });
-      if (error) throw error;
-      return cohortId;
-    },
-    onSuccess: (cohortId) => {
-      qc.invalidateQueries({ queryKey: ["courses-with-templates"] });
-      qc.invalidateQueries({ queryKey: ["admin-courses-enhanced"] });
-      toast({ title: "New edition created", description: `Cohort: ${cohortId}` });
-      setShowNewEdition(null);
-    },
-    onError: (err: Error) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    },
-  });
+  // Spawn new edition functionality removed - courses are online only
 
   const openEdit = (t: CourseTemplate) => {
     setEditingId(t.id);
@@ -279,18 +223,7 @@ export default function AdminCourseTemplates() {
     setShowForm(true);
   };
 
-  const openNewEdition = (t: CourseTemplate) => {
-    setEditionForm({
-      year: new Date().getFullYear().toString(),
-      month: (new Date().getMonth() + 1).toString(),
-      start_date: "",
-      end_date: "",
-      venue: "",
-      capacity: t.default_capacity?.toString() || "30",
-      title_override: "",
-    });
-    setShowNewEdition(t);
-  };
+  // openNewEdition function removed - courses are online only
 
   const editionsForTemplate = (templateId: string) =>
     courses.filter((c: any) => c.template_id === templateId);
@@ -351,9 +284,7 @@ export default function AdminCourseTemplates() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openNewEdition(t)}>
-                          <CalendarPlus className="h-4 w-4 mr-2" /> New Edition
-                        </DropdownMenuItem>
+                        {/* New Edition removed - courses are online only */}
                         <DropdownMenuItem onClick={() => openEdit(t)}>
                           <Edit className="h-4 w-4 mr-2" /> Edit Template
                         </DropdownMenuItem>
@@ -405,52 +336,37 @@ export default function AdminCourseTemplates() {
                   )}
 
                   {/* Editions list */}
-                  <div className="pt-2 border-t">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Editions ({editions.length})
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs px-2"
-                        onClick={() => openNewEdition(t)}
-                      >
-                        <CalendarPlus className="h-3 w-3 mr-1" /> New
-                      </Button>
-                    </div>
-                    {editions.length > 0 ? (
-                      <div className="space-y-1">
-                        {editions.slice(0, 4).map((e: any) => (
-                          <div
-                            key={e.id}
-                            className="flex items-center justify-between text-xs"
+                  {editions.length > 0 ? (
+                    <div className="space-y-1">
+                      {editions.slice(0, 4).map((e: any) => (
+                        <div
+                          key={e.id}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <span className="font-mono">{e.cohort_id || "—"}</span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              e.course_status === "live"
+                                ? "border-green-300 text-green-700"
+                                : e.course_status === "completed"
+                                  ? "border-muted text-muted-foreground"
+                                  : "border-blue-300 text-blue-700"
+                            }
                           >
-                            <span className="font-mono">{e.cohort_id || "—"}</span>
-                            <Badge
-                              variant="outline"
-                              className={
-                                e.course_status === "live"
-                                  ? "border-green-300 text-green-700"
-                                  : e.course_status === "completed"
-                                    ? "border-muted text-muted-foreground"
-                                    : "border-blue-300 text-blue-700"
-                              }
-                            >
-                              {e.course_status || "draft"}
-                            </Badge>
-                          </div>
-                        ))}
-                        {editions.length > 4 && (
-                          <p className="text-xs text-muted-foreground">
-                            +{editions.length - 4} more
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">No editions yet</p>
-                    )}
-                  </div>
+                            {e.course_status || "draft"}
+                          </Badge>
+                        </div>
+                      ))}
+                      {editions.length > 4 && (
+                        <p className="text-xs text-muted-foreground">
+                          +{editions.length - 4} more
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No editions yet</p>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -640,130 +556,7 @@ export default function AdminCourseTemplates() {
         </DialogContent>
       </Dialog>
 
-      {/* New Edition Dialog */}
-      <Dialog open={!!showNewEdition} onOpenChange={() => setShowNewEdition(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              <CalendarPlus className="h-5 w-5 inline mr-2" />
-              New Edition — {showNewEdition?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Create a specific cohort or edition of this course for a given year and season.
-            </DialogDescription>
-          </DialogHeader>
-          {showNewEdition && (
-            <div className="space-y-4">
-              <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                <p className="font-medium mb-1">Cohort ID Preview:</p>
-                <p className="font-mono text-lg">
-                  {generateCohortId(
-                    showNewEdition.short_code,
-                    parseInt(editionForm.year),
-                    parseInt(editionForm.month)
-                  )}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Year</Label>
-                  <Input
-                    type="number"
-                    value={editionForm.year}
-                    onChange={(e) => setEditionForm((f) => ({ ...f, year: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Season Month</Label>
-                  <Select
-                    value={editionForm.month}
-                    onValueChange={(v) => setEditionForm((f) => ({ ...f, month: v }))}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[
-                        { v: "1", l: "Jan (WIN)" }, { v: "2", l: "Feb (WIN)" },
-                        { v: "3", l: "Mar (SPR)" }, { v: "4", l: "Apr (SPR)" },
-                        { v: "5", l: "May (SPR)" }, { v: "6", l: "Jun (SUM)" },
-                        { v: "7", l: "Jul (SUM)" }, { v: "8", l: "Aug (SUM)" },
-                        { v: "9", l: "Sep (AUT)" }, { v: "10", l: "Oct (AUT)" },
-                        { v: "11", l: "Nov (AUT)" }, { v: "12", l: "Dec (WIN)" },
-                      ].map((m) => (
-                        <SelectItem key={m.v} value={m.v}>{m.l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={editionForm.start_date}
-                    onChange={(e) => setEditionForm((f) => ({ ...f, start_date: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={editionForm.end_date}
-                    onChange={(e) => setEditionForm((f) => ({ ...f, end_date: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Venue / Zoom Link</Label>
-                <Input
-                  value={editionForm.venue}
-                  onChange={(e) => setEditionForm((f) => ({ ...f, venue: e.target.value }))}
-                  placeholder="e.g. CIMA HQ, Accra / Zoom"
-                />
-              </div>
-
-              <div>
-                <Label>Capacity</Label>
-                <Input
-                  type="number"
-                  value={editionForm.capacity}
-                  onChange={(e) => setEditionForm((f) => ({ ...f, capacity: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label>Title Override (optional)</Label>
-                <Input
-                  value={editionForm.title_override}
-                  onChange={(e) => setEditionForm((f) => ({ ...f, title_override: e.target.value }))}
-                  placeholder={`${showNewEdition.name} — ${generateCohortId(showNewEdition.short_code, parseInt(editionForm.year), parseInt(editionForm.month))}`}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Leave blank to use template name + cohort ID
-                </p>
-              </div>
-
-              <div className="p-3 border rounded-lg text-xs space-y-1">
-                <p className="font-medium">Pre-filled from template:</p>
-                <p>Description, ticket types, pricing, enquiry contacts</p>
-                <p>Status: <Badge variant="outline" className="text-xs">Draft</Badge> — publish when ready</p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewEdition(null)}>Cancel</Button>
-            <Button
-              onClick={() => showNewEdition && spawnEdition.mutate(showNewEdition)}
-              disabled={spawnEdition.isPending}
-            >
-              {spawnEdition.isPending ? "Creating..." : "Create Edition"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* New Edition Dialog removed - courses are online only */}
     </div>
   );
 }

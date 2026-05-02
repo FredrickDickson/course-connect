@@ -75,6 +75,20 @@ export const uploadLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/**
+ * Eligibility check rate limiter - Prevents bot scraping of professional directory
+ * Limits eligibility checks to prevent abuse
+ */
+export const eligibilityLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Max 20 eligibility checks per window
+  message: {
+    error: "Too many eligibility checks, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Security middleware
 export const securityMiddleware = [
   helmet({

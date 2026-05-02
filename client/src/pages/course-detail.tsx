@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import confetti from "canvas-confetti";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,6 +132,13 @@ export default function CourseDetail() {
       const eligibility: EligibilityResponse = await response.json();
 
       if (eligibility.status === "ELIGIBLE") {
+        // Trigger confetti animation on successful eligibility check
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#610000', '#D4AF37', '#FFFFFF'],
+        });
         setLocation(`/checkout/${id}`);
         return;
       }
@@ -223,14 +231,15 @@ export default function CourseDetail() {
                     <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
                   </div>
                 )}
-                <div className="flex items-center space-x-1">
+                {/* Reviews and student count commented out until substantial user base */}
+                {/* <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 fill-current" />
                   <span>{avgRating.toFixed(1)} ({ratingCount} reviews)</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Users className="w-4 h-4" />
                   <span>{course.enrollment_count} students</span>
-                </div>
+                </div> */}
               </div>
             </div>
 

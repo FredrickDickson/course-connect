@@ -22,6 +22,7 @@ export default function Register() {
 
   const [formData, setFormData] = useState({
     firstName: "",
+    middleName: "",
     lastName: "",
     email: "",
     password: "",
@@ -76,6 +77,7 @@ export default function Register() {
         options: {
           data: {
             firstName: formData.firstName.trim(),
+            middleName: formData.middleName.trim(),
             lastName: formData.lastName.trim(),
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -88,6 +90,18 @@ export default function Register() {
 
       if (!data.user) {
         throw new Error('Registration failed');
+      }
+
+      // Save name fields to users table
+      const { error: userError } = await supabase.from("users").update({
+        first_name: formData.firstName.trim(),
+        middle_name: formData.middleName.trim() || null,
+        last_name: formData.lastName.trim(),
+      }).eq("id", data.user.id);
+
+      if (userError) {
+        console.error("Error saving name to users table:", userError);
+        // Don't throw error - registration was successful, this is secondary
       }
 
       // Check if email confirmation is required
@@ -158,12 +172,19 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="firstName" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="middleName">Middle Name (Optional)</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="middleName" name="middleName" placeholder="Optional" value={formData.middleName} onChange={handleChange} disabled={isLoading} className="pl-10" />
                 </div>
               </div>
               <div className="space-y-2">

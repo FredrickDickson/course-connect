@@ -4,7 +4,7 @@
 
 # CIMA Learn — Automation Workflow Catalog
 
-You already have a solid foundation at `@c:\Users\Administrator\Documents\projects\course-connect\n8n\README.md:1-242` (39 workflows across 9 phases). Below is the full landscape of automations your app can benefit from — existing ones marked ✅, suggested additions marked 🆕. Grouped by business domain.
+You already have a solid foundation at `@c:\Users\Administrator\Documents\projects\course-connect\n8n\README.md:1-242` (40 workflows across 10 phases). Below is the full landscape of automations your app can benefit from — existing ones marked ✅, suggested additions marked 🆕. Grouped by business domain.
 
 ## 1. Payments & Enrollment
 
@@ -94,6 +94,9 @@ Given `@c:\Users\Administrator\Documents\projects\course-connect\docs\qualificat
 ## 10. Marketing & Growth
 
 - **✅ WF39 — Review collection**.
+- **✅ WF40 — LinkedIn content automation**: 3x daily posts (9 AM, 12:30 PM, 5:30 PM) with AI-generated content in Mohammed Talib's authoritative style using Google Gemini 1.5 Flash (free), Google Search API for research on ADR/AI/Cybersecurity/Tech News/Current Affairs (free), Google Drive storage, Google Sheets logging with engagement tracking, manual approval workflow before publishing to LinkedIn personal profile.
+- **✅ WF41 — LinkedIn Enhanced (No Image)**: Enhanced ghostwriter prompt with elite institutional tone, Google Search research, Google Gemini content generation using "Rule of Three" analysis, CIMA Connection integration, British English, max 3 hashtags, Google Drive/Sheets storage, manual approval workflow.
+- **✅ WF42 — LinkedIn Enhanced (With Image)**: Enhanced ghostwriter prompt with elite institutional tone, Google Search research, Google Gemini content generation, Hugging Face image generation with brand palette (Deep Crimson Red & Achievement Amber), Google Drive/Sheets storage, manual approval workflow with image attachment to LinkedIn.
 - **🆕 Testimonial pipeline**: 5-star review → ask consent → auto-post to landing page CMS.
 - **🆕 Referral program**: Generate unique code → track signups → credit rewards automatically.
 - **🆕 SEO content repurposing**: New blog → auto-generate LinkedIn/Twitter/WhatsApp teaser via AI → schedule.

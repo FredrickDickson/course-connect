@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Certificate is Ready</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Certificate Issued</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Congratulations! Your certificate has been successfully generated and is now available for download.
+      </p>
+      
+      <div style="background: #fffff0; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d69e2e;">
+        <h3 style="margin-top: 0; color: #744210; font-size: 18px;">Certificate Details</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #744210;">
+          <li style="margin-bottom: 10px;"><strong>Name:</strong> {{fullName}}</li>
+          <li style="margin-bottom: 10px;"><strong>Level:</strong> {{membershipLevel}}</li>
+          <li style="margin-bottom: 10px;"><strong>Pathway:</strong> {{pathway}}</li>
+          <li style="margin-bottom: 10px;"><strong>Member ID:</strong> {{memberId}}</li>
+          <li style="margin-bottom: 0;"><strong>Valid Until:</strong> {{expiryDate}}</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{certificateUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          Download Certificate
+        </a>
+      </div>
+      
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 16px;">Important Information</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #4a5568; font-size: 14px;">
+          <li style="margin-bottom: 8px;">Your certificate is a formal recognition of your achievement</li>
+          <li style="margin-bottom: 8px;">Please keep your certificate in a safe place</li>
+          <li style="margin-bottom: 8px;">This certificate must be returned to CIMA on cessation of membership</li>
+          <li style="margin-bottom: 0;">You can download additional copies from your dashboard anytime</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}" 
+           style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 14px;">
+          Go to Dashboard
+        </a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        If you have any issues accessing your certificate, please reply to this email or contact our support team.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>

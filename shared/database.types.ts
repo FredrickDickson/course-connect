@@ -3146,9 +3146,10 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          last_name: string | null
           level_source: string | null
           level_updated_at: string | null
-          last_name: string | null
+          middle_name: string | null
           password: string | null
           pathway_type: string | null
           paystack_customer_code: string | null
@@ -3169,9 +3170,10 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          last_name?: string | null
           level_source?: string | null
           level_updated_at?: string | null
-          last_name?: string | null
+          middle_name?: string | null
           password?: string | null
           pathway_type?: string | null
           paystack_customer_code?: string | null
@@ -3192,9 +3194,10 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          last_name?: string | null
           level_source?: string | null
           level_updated_at?: string | null
-          last_name?: string | null
+          middle_name?: string | null
           password?: string | null
           pathway_type?: string | null
           paystack_customer_code?: string | null

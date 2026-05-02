@@ -338,14 +338,15 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
-            <Link href="/community">
+            {/* Join community button commented out */}
+            {/* <Link href="/community">
               <button
                 data-testid="button-join-community"
                 className="w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
               >
                 JOIN COMMUNITY
               </button>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>

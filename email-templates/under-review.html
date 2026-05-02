@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Under Review</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Application Under Review</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Your application is now under review by our administration team. We will carefully evaluate your qualifications and experience.
+      </p>
+      
+      <div style="background: #fffaf0; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #ed8936;">
+        <h3 style="margin-top: 0; color: #7c2d12; font-size: 18px;">Application Details</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #7c2d12;">
+          <li style="margin-bottom: 10px;"><strong>Application Type:</strong> {{applicationType}}</li>
+          <li style="margin-bottom: 10px;"><strong>Target Level:</strong> {{targetLevel}}</li>
+          <li style="margin-bottom: 10px;"><strong>Pathway:</strong> {{pathway}}</li>
+          <li style="margin-bottom: 0;"><strong>Submitted Date:</strong> {{submittedDate}}</li>
+        </ul>
+      </div>
+      
+      {{#if reviewComments}}
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 16px;">Initial Review Notes</h3>
+        <p style="margin: 10px 0; color: #4a5568; font-style: italic;">{{reviewComments}}</p>
+      </div>
+      {{/if}}
+      
+      <div style="background: #ebf8ff; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #D4AF37;">
+        <h3 style="margin-top: 0; color: #2c5282; font-size: 16px;">What Happens Next?</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2c5282;">
+          <li style="margin-bottom: 10px;">Our team will review your application within 5-7 business days</li>
+          <li style="margin-bottom: 10px;">You may be contacted if additional information is needed</li>
+          <li style="margin-bottom: 10px;">You will receive an email notification once a decision is made</li>
+          <li style="margin-bottom: 0;">You can check your application status in your dashboard</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          Check Application Status
+        </a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        If you have any questions about the review process, please reply to this email or contact our support team.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>

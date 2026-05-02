@@ -1,6 +1,7 @@
 /**
  * Membership Renewal Page
  * Shows renewal summary, payment options, and confirmation
+ * Implements tiered pricing based on World Bank income classifications
  */
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { downloadCertificate } from "@/lib/certificate-generator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatPrice, type Currency } from "../../../shared/renewal-pricing";
 import {
-  CheckCircle, Shield, Lock, ArrowLeft, Download, CreditCard, Building, FileText,
+  CheckCircle, Shield, Lock, ArrowLeft, CreditCard, Building, FileText, Mail, AlertTriangle,
 } from "lucide-react";
 
 declare global {
@@ -44,12 +46,30 @@ const PART_LABELS: Record<string, string> = {
   fellow: "Part III (Fellow)",
 };
 
-// Default renewal fees per level (admin-configurable in future)
-const RENEWAL_FEES: Record<string, number> = {
-  associate: 3500,
-  member: 5000,
-  fellow: 7500,
-};
+interface PricingData {
+  income_tier: string;
+  membership_level: string;
+  country_code: string;
+  country_name: string;
+  default_currency: Currency;
+  available_currencies: Currency[];
+  is_late: boolean;
+  renewal_anniversary: string;
+  organization: {
+    id: string;
+    name: string;
+    discount_percentage: number;
+  } | null;
+  pricing_options: Array<{
+    currency: Currency;
+    baseAmount: number;
+    lateSurcharge: number;
+    totalAmount: number;
+    discountAmount: number;
+    discountPercentage: number;
+    isLate: boolean;
+  }>;
+}
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-GB", {
@@ -63,6 +83,7 @@ export default function RenewMembership() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [paymentMethod, setPaymentMethod] = useState("paystack");
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>("USD");
   const [isProcessing, setIsProcessing] = useState(false);
   const [renewalResult, setRenewalResult] = useState<any>(null);
   const paystackLoaded = useRef(false);
@@ -112,7 +133,26 @@ export default function RenewMembership() {
     enabled: !!membership?.id,
   });
 
-  if (authLoading || isLoading) {
+  // Fetch tier-based pricing
+  const { data: pricingData, isLoading: pricingLoading } = useQuery<PricingData>({
+    queryKey: ["renewal-pricing", user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/renewal/pricing?user_id=${user!.id}`);
+      if (!response.ok) throw new Error("Failed to fetch pricing");
+      const result = await response.json();
+      return result.data;
+    },
+    enabled: !!user,
+  });
+
+  // Set default currency when pricing data loads
+  useEffect(() => {
+    if (pricingData && !selectedCurrency) {
+      setSelectedCurrency(pricingData.default_currency);
+    }
+  }, [pricingData, selectedCurrency]);
+
+  if (authLoading || isLoading || pricingLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -141,9 +181,17 @@ export default function RenewMembership() {
   }
 
   const level = membership.part;
-  const renewalFee = RENEWAL_FEES[level] || 5000;
+  
+  // Get pricing for selected currency
+  const selectedPricing = pricingData?.pricing_options.find(p => p.currency === selectedCurrency);
+  const renewalFee = selectedPricing?.totalAmount || 0;
   const isExpired = membership.status === "expired";
   const postNominal = POST_NOMINALS[level] || membership.post_nominal || "";
+  
+  // Get tier info
+  const incomeTier = pricingData?.income_tier || 'LOWER_MIDDLE_INCOME';
+  const isLate = pricingData?.is_late || false;
+  const organization = pricingData?.organization;
 
   const processRenewal = async (method: string, paystackRef?: string) => {
     const today = new Date();
@@ -161,23 +209,31 @@ export default function RenewMembership() {
         expiry_date: expiryStr,
         status: "active",
         renewal_count: (membership.renewal_count || 0) + 1,
+        income_tier: incomeTier,
       })
       .eq("id", membership.id);
 
     if (memberErr) throw memberErr;
 
-    // Insert renewal history
+    // Insert renewal history with tier information
     const { error: historyErr } = await (supabase as any)
       .from("renewal_history")
       .insert({
         member_id: membership.id,
         renewal_date: todayStr,
         new_expiry_date: expiryStr,
-        amount_paid: renewalFee,
-        currency: "GHS",
+        amount_paid: selectedPricing?.baseAmount || renewalFee,
+        currency: selectedCurrency,
         payment_method: method,
         payment_reference: paystackRef || null,
         created_by: user?.id || null,
+        income_tier: incomeTier,
+        currency_used: selectedCurrency,
+        base_amount: selectedPricing?.baseAmount || renewalFee,
+        surcharge_amount: selectedPricing?.lateSurcharge || 0,
+        discount_amount: selectedPricing?.discountAmount || 0,
+        discount_percentage: selectedPricing?.discountPercentage || 0,
+        is_late: isLate,
       });
 
     if (historyErr) throw historyErr;
@@ -185,11 +241,13 @@ export default function RenewMembership() {
     // Invalidate queries
     queryClient.invalidateQueries({ queryKey: ["membership"] });
     queryClient.invalidateQueries({ queryKey: ["renewal-history"] });
+    queryClient.invalidateQueries({ queryKey: ["renewal-pricing"] });
 
     setRenewalResult({
       newIssueDate: todayStr,
       newExpiryDate: expiryStr,
       amount: renewalFee,
+      currency: selectedCurrency,
       method,
     });
   };
@@ -205,10 +263,15 @@ export default function RenewMembership() {
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: membership.email,
         amount: renewalFee * 100,
-        currency: "GHS",
+        currency: selectedCurrency,
         metadata: {
           member_id: membership.member_id,
-          type: "membership_renewal",
+          type: "renewal",
+          full_name: membership.full_name,
+          membership_level: level,
+          email: membership.email,
+          currency: selectedCurrency,
+          income_tier: incomeTier,
         },
         callback: async (response: any) => {
           try {
@@ -242,8 +305,8 @@ export default function RenewMembership() {
             member_id: membership.id,
             renewal_date: todayStr,
             new_expiry_date: expiryStr,
-            amount_paid: renewalFee,
-            currency: "GHS",
+            amount_paid: selectedPricing?.baseAmount || renewalFee,
+            currency: selectedCurrency,
             payment_method: "bank_transfer",
             notes: "Pending bank transfer confirmation",
             created_by: user?.id || null,
@@ -253,6 +316,7 @@ export default function RenewMembership() {
           newIssueDate: todayStr,
           newExpiryDate: expiryStr,
           amount: renewalFee,
+          currency: selectedCurrency,
           method: "bank_transfer",
           pending: true,
         });
@@ -264,20 +328,11 @@ export default function RenewMembership() {
     }
   };
 
-  const handleDownloadNewCert = async () => {
-    if (!renewalResult) return;
-    await downloadCertificate({
-      fullName: membership.full_name,
-      membershipLevel: level,
-      memberId: membership.member_id,
-      issueDate: renewalResult.newIssueDate,
-      expiryDate: renewalResult.newExpiryDate,
-    });
-  };
 
   // CONFIRMATION SCREEN
   if (renewalResult) {
     const isPaid = renewalResult.method === "paystack";
+    const currency = renewalResult.currency || selectedCurrency;
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -313,7 +368,7 @@ export default function RenewMembership() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Payment</span>
                   <Badge variant={isPaid ? "default" : "secondary"}>
-                    {isPaid ? `GHS ${renewalResult.amount.toLocaleString()} — Confirmed` : "Pending Bank Transfer"}
+                    {isPaid ? `${formatPrice(renewalResult.amount, currency)} — Confirmed` : "Pending Bank Transfer"}
                   </Badge>
                 </div>
               </CardContent>
@@ -333,9 +388,17 @@ export default function RenewMembership() {
 
             <div className="flex flex-wrap justify-center gap-3">
               {isPaid && (
-                <Button onClick={handleDownloadNewCert}>
-                  <Download className="w-4 h-4 mr-2" /> Download New Certificate
-                </Button>
+                <Card className="bg-blue-50 border-blue-200 max-w-md">
+                  <CardContent className="p-4 text-sm text-blue-900">
+                    <div className="flex items-start gap-3">
+                      <Mail className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold mb-1">Certificate on the way!</p>
+                        <p>Your renewed certificate will be emailed to {membership.email} within a few minutes.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
               <Button variant="outline" onClick={() => setLocation("/dashboard")}>
                 Return to Dashboard
@@ -417,7 +480,7 @@ export default function RenewMembership() {
           <CardContent className="space-y-2">
             {[
               "Membership extended for 12 months",
-              "New certificate issued with updated dates",
+              "New certificate emailed to you within minutes",
               isExpired ? "Post-nominals reinstated" : "Post-nominals maintained",
               "Panel listing maintained",
               "Access to member resources and network",
@@ -430,16 +493,115 @@ export default function RenewMembership() {
           </CardContent>
         </Card>
 
+        {/* Tier Information */}
+        {pricingData && (
+          <Card className="mb-6 bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-blue-900 mb-1">
+                    {incomeTier === 'HIGH_INCOME' ? 'High-Income Jurisdiction' : 'Lower-Middle-Income Jurisdiction'}
+                  </p>
+                  <p className="text-sm text-blue-800">
+                    Your renewal fee is based on World Bank income classification for {pricingData.country_name}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Late Renewal Warning */}
+        {isLate && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-900">
+              <strong>Late Renewal:</strong> Your renewal is past the deadline. A 15% administrative surcharge has been applied.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Organization Discount */}
+        {organization && (
+          <Card className="mb-6 bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-green-900">Organization Discount Applied</p>
+                  <p className="text-sm text-green-800">{organization.name} — {organization.discount_percentage}% discount</p>
+                </div>
+                <Badge className="bg-green-600 text-white">
+                  -{organization.discount_percentage}%
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Currency Selector */}
+        {pricingData && pricingData.available_currencies.length > 1 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Select Currency</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup value={selectedCurrency} onValueChange={(value) => setSelectedCurrency(value as Currency)} className="space-y-3">
+                {pricingData.available_currencies.map((currency) => {
+                  const pricing = pricingData.pricing_options.find(p => p.currency === currency);
+                  return (
+                    <div key={currency} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50">
+                      <RadioGroupItem value={currency} id={`currency-${currency}`} />
+                      <Label htmlFor={`currency-${currency}`} className="flex items-center justify-between cursor-pointer flex-1">
+                        <span>{currency}</span>
+                        <span className="font-semibold">{formatPrice(pricing?.totalAmount || 0, currency)}</span>
+                      </Label>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Fee */}
         <Card className="mb-6 border-primary/20">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Renewal Fee</p>
-              <p className="text-2xl font-bold text-primary">GHS {renewalFee.toLocaleString()}</p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Renewal Fee</p>
+                <p className="text-2xl font-bold text-primary">{formatPrice(renewalFee, selectedCurrency)}</p>
+              </div>
+              <Badge variant="outline" className="text-primary border-primary text-lg px-4 py-1">
+                {postNominal}
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-primary border-primary text-lg px-4 py-1">
-              {postNominal}
-            </Badge>
+            
+            {/* Price Breakdown */}
+            {selectedPricing && (selectedPricing.lateSurcharge > 0 || selectedPricing.discountAmount > 0) && (
+              <div className="border-t pt-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Base Amount</span>
+                  <span>{formatPrice(selectedPricing.baseAmount, selectedCurrency)}</span>
+                </div>
+                {selectedPricing.lateSurcharge > 0 && (
+                  <div className="flex justify-between text-amber-700">
+                    <span>Late Surcharge (15%)</span>
+                    <span>+{formatPrice(selectedPricing.lateSurcharge, selectedCurrency)}</span>
+                  </div>
+                )}
+                {selectedPricing.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <span>Organization Discount ({selectedPricing.discountPercentage}%)</span>
+                    <span>-{formatPrice(selectedPricing.discountAmount, selectedCurrency)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold pt-2 border-t">
+                  <span>Total</span>
+                  <span>{formatPrice(selectedPricing.totalAmount, selectedCurrency)}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -454,7 +616,7 @@ export default function RenewMembership() {
                 <RadioGroupItem value="paystack" id="paystack" />
                 <Label htmlFor="paystack" className="flex items-center gap-2 cursor-pointer flex-1">
                   <CreditCard className="w-4 h-4" />
-                  Pay by Card / Mobile Money (Paystack — GHS)
+                  Pay by Card / Mobile Money (Paystack — {selectedCurrency})
                 </Label>
               </div>
               <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50">

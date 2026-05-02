@@ -13,8 +13,9 @@ import {
 } from "../storage/enrollment";
 import { getProfessionalProfileByUserId } from "../storage/professionalProfiles";
 import { requireSupabaseAuth } from "../supabaseAuth";
-import { asyncHandler } from "../middleware/security";
+import { asyncHandler, eligibilityLimiter } from "../middleware/security";
 import { insertEnrollmentSchema, insertProgressSchema } from "@shared/schema";
+import { createClient } from "@supabase/supabase-js";
 import type { EligibilityResponse, EnrollmentLevel } from "@shared/enrollmentEligibility";
 import { send400Error, validateRequiredFields } from "../middleware/error-fixes";
 
@@ -42,10 +43,17 @@ interface CertEntry {
 
 const router = Router();
 
+// Create Supabase client for review prompts
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
+
 // Check eligibility before enrollment
 router.post(
   "/check-eligibility",
   requireSupabaseAuth,
+  eligibilityLimiter,
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     const { courseId, enrollmentLevel } = req.body;
@@ -202,6 +210,30 @@ router.post(
                 l.id === progressData.lessonId,
             );
 
+            // Check for midway review prompt at 50% progress
+            const progressPercentage = (completedLessonIds.size / allLessons.length) * 100;
+            if (progressPercentage >= 50 && progressPercentage < 51) {
+              // Check if midway prompt already exists
+              const { data: existingPrompt } = await supabase
+                .from("review_prompts")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("course_id", courseId)
+                .eq("prompt_type", "midway")
+                .maybeSingle();
+
+              if (!existingPrompt) {
+                // Create midway review prompt
+                await supabase.from("review_prompts").insert({
+                  user_id: userId,
+                  course_id: courseId,
+                  prompt_type: "midway",
+                  prompt_question: "How are you finding the course material so far?",
+                  shown_at: new Date().toISOString(),
+                });
+              }
+            }
+
             if (allCompleted) {
               const existingCerts = await storage.getUserCertifications(userId);
               const hasCert = existingCerts.some(
@@ -209,6 +241,26 @@ router.post(
               );
 
               if (!hasCert) {
+                // Check if end-of-course prompt already exists
+                const { data: existingEndPrompt } = await supabase
+                  .from("review_prompts")
+                  .select("id")
+                  .eq("user_id", userId)
+                  .eq("course_id", courseId)
+                  .eq("prompt_type", "end_course")
+                  .maybeSingle();
+
+                if (!existingEndPrompt) {
+                  // Create end-of-course review prompt before certificate
+                  await supabase.from("review_prompts").insert({
+                    user_id: userId,
+                    course_id: courseId,
+                    prompt_type: "end_course",
+                    prompt_question: "How likely are you to recommend CIMA to a colleague?",
+                    shown_at: new Date().toISOString(),
+                  });
+                }
+
                 await storage.createCertification({
                   userId,
                   courseId,

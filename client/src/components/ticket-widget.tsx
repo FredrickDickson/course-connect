@@ -72,16 +72,7 @@ export default function TicketWidget({
       <CardContent className="p-6 space-y-5">
         <h3 className="text-lg font-bold text-foreground">Tickets</h3>
 
-        {spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 10 && (
-          <p className="text-sm font-semibold text-amber-600">
-            Only {spotsRemaining} spots left!
-          </p>
-        )}
-        {spotsRemaining !== null && spotsRemaining > 10 && (
-          <p className="text-sm text-muted-foreground">
-            {spotsRemaining} spots remaining
-          </p>
-        )}
+        {/* Spots left display removed - courses are online only */}
 
         {isSoldOut ? (
           <div className="text-center py-4">

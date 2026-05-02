@@ -64,6 +64,7 @@ import {
   updateProfessionalProfileReview,
   setUserAssignedLevel,
 } from "../storage/professionalProfiles";
+import { sendAdminApprovalEmail, sendUnderReviewEmail } from "../utils/email";
 import type { ProfessionalProfileRecord } from "../storage/professionalProfiles";
 import type { ProfessionalDocument } from "../../shared/schema";
 import { requireSupabaseAuth } from "../supabaseAuth";
@@ -942,6 +943,30 @@ router.post(
       message: "Application approved successfully",
       application: updated,
     });
+
+    // Send approval email to user
+    try {
+      const { data: user } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .eq("id", application.userId)
+        .single();
+
+      if (user?.email) {
+        await sendAdminApprovalEmail({
+          to: user.email,
+          firstName: user.first_name || "Member",
+          assignedLevel: targetLevel,
+          pathway: application.track,
+          approvedDate: new Date().toISOString(),
+          reviewComments: reviewComments,
+          dashboardUrl: `${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/dashboard`,
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send approval email:", emailError);
+      // Don't fail the request if email fails
+    }
   })
 );
 
@@ -1016,6 +1041,31 @@ router.post(
       message: "Review comments added successfully",
       application: updated,
     });
+
+    // Send under review email to user
+    try {
+      const { data: user } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .eq("id", application.userId)
+        .single();
+
+      if (user?.email) {
+        await sendUnderReviewEmail({
+          to: user.email,
+          firstName: user.first_name || "Member",
+          applicationType: "Expedited Application",
+          targetLevel: application.targetLevel || "Unknown",
+          pathway: application.track,
+          submittedDate: (application.submittedAt instanceof Date ? application.submittedAt.toISOString() : application.submittedAt) || new Date().toISOString(),
+          reviewComments: reviewComments,
+          dashboardUrl: `${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/dashboard`,
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send under review email:", emailError);
+      // Don't fail the request if email fails
+    }
   })
 );
 

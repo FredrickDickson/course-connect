@@ -22,6 +22,82 @@ const professionalDocumentTypeEnum = z.enum([
 ]);
 
 // ============================================================================
+// TIERED RENEWAL SYSTEM SCHEMAS
+// ============================================================================
+
+// Tiered renewal system enums
+export const incomeTierEnum = z.enum(["HIGH_INCOME", "LOWER_MIDDLE_INCOME"]);
+export const currencyEnum = z.enum(["GBP", "USD", "GHS"]);
+export const discountTierEnum = z.enum(["NONE", "10_PERCENT", "15_PERCENT"]);
+
+// Country classification schema
+export const countryClassificationSchema = z.object({
+  id: z.string().uuid(),
+  countryCode: z.string().length(2),
+  countryName: z.string(),
+  incomeTier: incomeTierEnum,
+  region: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Organization schema (for group/institutional renewals)
+export const organizationSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  contactEmail: z.string().email(),
+  contactPhone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  discountTier: discountTierEnum.default("NONE"),
+  isActive: z.boolean().default(true),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Renewal pricing configuration schema
+export const renewalPricingSchema = z.object({
+  id: z.string().uuid(),
+  incomeTier: incomeTierEnum,
+  membershipLevel: z.enum(["ASSOCIATE", "MEMBER", "FELLOW"]),
+  currency: currencyEnum,
+  baseAmount: z.string(), // Decimal as string for precision
+  isActive: z.boolean().default(true),
+  effectiveFrom: z.date().optional(),
+  effectiveTo: z.date().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Renewal history schema (updated with tier information)
+export const renewalHistorySchema = z.object({
+  id: z.string().uuid(),
+  memberId: z.string(),
+  renewalDate: z.date().optional(),
+  newExpiryDate: z.date().optional(),
+  amountPaid: z.string().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  paymentMethod: z.enum(["paystack", "bank_transfer", "mobile_money", "other"]).nullable().optional(),
+  paymentReference: z.string().nullable().optional(),
+  status: z.enum(["pending", "confirmed", "failed"]).default("pending"),
+  confirmedAt: z.date().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  // New tiered renewal fields
+  incomeTier: incomeTierEnum.nullable().optional(),
+  currencyUsed: currencyEnum.nullable().optional(),
+  baseAmount: z.string().nullable().optional(),
+  surchargeAmount: z.string().nullable().optional(),
+  discountAmount: z.string().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  isLate: z.boolean().nullable().optional(),
+  organizationId: z.string().uuid().nullable().optional(),
+});
+
+// ============================================================================
 // AUTHENTICATION & SESSION SCHEMAS
 // ============================================================================
 
@@ -40,6 +116,7 @@ export const userSchema = z.object({
   email: z.string().email(),
   password: z.string().nullable().optional(),
   first_name: z.string().nullable().optional(),
+  middle_name: z.string().nullable().optional(),
   last_name: z.string().nullable().optional(),
   profile_image_url: z.string().nullable().optional(),
   role: z.enum(["student", "instructor", "admin"]).default("student"),
@@ -630,6 +707,12 @@ export type Course = z.infer<typeof courseSchema>;
 export type Module = z.infer<typeof moduleSchema>;
 export type Lesson = z.infer<typeof lessonSchema>;
 export type Enrollment = z.infer<typeof enrollmentSchema>;
+
+// Tiered renewal system types
+export type CountryClassification = z.infer<typeof countryClassificationSchema>;
+export type Organization = z.infer<typeof organizationSchema>;
+export type RenewalPricing = z.infer<typeof renewalPricingSchema>;
+export type RenewalHistory = z.infer<typeof renewalHistorySchema>;
 export type Progress = z.infer<typeof progressSchema>;
 export type Review = z.infer<typeof reviewSchema>;
 export type Discussion = z.infer<typeof discussionSchema>;
@@ -830,6 +913,31 @@ export const insertLevelWaiverSchema = levelWaiverSchema.omit({
   updatedAt: true,
 });
 
+// Tiered renewal system insert schemas
+export const insertCountryClassificationSchema = countryClassificationSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOrganizationSchema = organizationSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRenewalPricingSchema = renewalPricingSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRenewalHistorySchema = renewalHistorySchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
@@ -870,9 +978,21 @@ export type InsertStudentMembership = z.infer<typeof insertStudentMembershipSche
 export type InsertCourseCompletionRecord = z.infer<
   typeof insertCourseCompletionRecordSchema
 >;
-export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
-export type InsertProfessionalDocument = z.infer<typeof insertProfessionalDocumentSchema>;
+export type InsertProfessionalProfile = z.infer<
+  typeof insertProfessionalProfileSchema
+>;
+export type InsertProfessionalDocument = z.infer<
+  typeof insertProfessionalDocumentSchema
+>;
 export type InsertLevelWaiver = z.infer<typeof insertLevelWaiverSchema>;
+
+// Tiered renewal system insert types
+export type InsertCountryClassification = z.infer<
+  typeof insertCountryClassificationSchema
+>;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type InsertRenewalPricing = z.infer<typeof insertRenewalPricingSchema>;
+export type InsertRenewalHistory = z.infer<typeof insertRenewalHistorySchema>;
 
 export const insertCategorySchema = categorySchema.omit({
   id: true,
