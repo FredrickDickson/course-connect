@@ -89,7 +89,7 @@ function levelLabel(level?: string): string {
 async function getEnrollment(userId: string, courseId: string): Promise<any> {
   const { data, error } = await supabaseAdmin
     .from("enrollments")
-    .select("*")
+    .select("id, status")
     .eq("user_id", userId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -99,7 +99,6 @@ async function getEnrollment(userId: string, courseId: string): Promise<any> {
 }
 
 async function getTrackLevel(userId: string, track: string): Promise<string> {
-  console.log("Getting track level for user:", userId, "track:", track);
   const { data, error } = await supabaseAdmin
     .from("track_progress")
     .select("level")
@@ -107,24 +106,11 @@ async function getTrackLevel(userId: string, track: string): Promise<string> {
     .eq("track", track)
     .maybeSingle();
   
-  console.log("Track progress query result:", { data, error });
-  
   if (error || !data) {
-    // Initialize track_progress if missing
-    console.log("No track progress found, initializing with NONE");
-    await supabaseAdmin
-      .from("track_progress")
-      .insert({
-        user_id: userId,
-        track: track,
-        level: "NONE"
-      });
     return "NONE";
   }
   
-  const normalized = normalizeTrackLevel(data.level);
-  console.log("Returning normalized track level:", normalized);
-  return normalized;
+  return normalizeTrackLevel(data.level);
 }
 
 async function checkEligibility(
@@ -133,17 +119,22 @@ async function checkEligibility(
   enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW",
 ): Promise<any> {
   const track = resolveTrack(course.track);
-  const currentLevel = await getTrackLevel(user.id, track);
   const requiredLevel = normalizeEnrollmentLevel(
     (course.level as string | null) ?? enrollmentLevel,
   );
   const progressionBase: any = {
     track,
-    currentLevel,
+    currentLevel: "NONE",
     targetLevel: requiredLevel,
   };
 
-  const existingEnrollment = await getEnrollment(user.id, course.id);
+  // Parallelize track level and enrollment checks
+  const [currentLevel, existingEnrollment] = await Promise.all([
+    getTrackLevel(user.id, track),
+    getEnrollment(user.id, course.id)
+  ]);
+  
+  progressionBase.currentLevel = currentLevel;
   if (
     existingEnrollment &&
     ACTIVE_ENROLLMENT_STATUSES.has(
@@ -265,6 +256,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Add caching headers for split-second responses
+  res.setHeader('Cache-Control', 'private, max-age=30');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -285,10 +278,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: "courseId is required" });
     }
 
-    // Get course details
+    // Get course details (only needed columns)
     const { data: course, error: courseError } = await supabaseAdmin
       .from("courses")
-      .select("*")
+      .select("id, title, level, track")
       .eq("id", courseId)
       .single();
 
@@ -299,7 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get user details (auto-create if missing — handles users created before trigger)
     let { data: user, error: userError } = await supabaseAdmin
       .from("users")
-      .select("*")
+      .select("id, email, first_name, last_name, role")
       .eq("id", userId)
       .maybeSingle();
 
