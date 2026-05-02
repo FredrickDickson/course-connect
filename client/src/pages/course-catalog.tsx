@@ -9,6 +9,7 @@ import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/componen
 import EnrollmentGateModal from "@/components/enrollment-gate-modal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   PATHWAY_TYPES, 
   detectCoursePathway,
@@ -19,12 +20,33 @@ import {
 export default function CourseCatalog() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPathway, setSelectedPathway] = useState<PathwayType | "all">("all");
+  const [trackFilter, setTrackFilter] = useState<"all" | "ARBITRATION" | "MEDIATION">("all");
+  const [showEligibleOnly, setShowEligibleOnly] = useState(false);
   const [selectedLockedCourse, setSelectedLockedCourse] = useState<any>(null);
   const [isGateModalOpen, setIsGateModalOpen] = useState(false);
   const { user } = useAuth();
   
   // Get user's effective level
   const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+
+  // Fetch user's track progress
+  const { data: trackProgress = {} } = useQuery({
+    queryKey: ["track-progress", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data, error } = await supabase
+        .from("track_progress")
+        .select("track, level")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      const progress: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        progress[row.track] = row.level || "NONE";
+      });
+      return progress;
+    },
+    enabled: !!user?.id,
+  });
 
   // Fetch categories from Supabase
   const { data: categoriesData = [] } = useQuery({
@@ -38,17 +60,48 @@ export default function CourseCatalog() {
 
   // Fetch published courses from Supabase
   const { data: courses = [], isLoading } = useQuery<any[]>({
-    queryKey: ["courses"],
+    queryKey: ["courses", selectedCategory, selectedPathway, trackFilter, showEligibleOnly],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("courses")
         .select(
-          `*,\n          category:categories(name),\n          instructor:users!courses_instructor_id_fkey(first_name, last_name)\n        `,
+          `*,
+          category:categories(name),
+          instructor:users!courses_instructor_id_fkey(first_name, last_name)
+        `,
         )
         .eq("is_published", true);
 
+      // Track filter
+      if (trackFilter !== "all") {
+        query = query.eq("track", trackFilter);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      
+      let filteredData = data || [];
+      
+      // Filter by eligibility if toggle is on
+      if (showEligibleOnly && user?.id) {
+        filteredData = filteredData.filter(course => {
+          const eligibility = checkCourseEligibility(course);
+          return eligibility.status === "eligible";
+        });
+      }
+      
+      // Sort by eligibility: eligible first, then upgrade-required, then enrolled
+      if (user?.id) {
+        filteredData.sort((a: any, b: any) => {
+          const aElig = checkCourseEligibility(a);
+          const bElig = checkCourseEligibility(b);
+          
+          const priority = { eligible: 0, "upgrade-required": 1, enrolled: 2, unknown: 3 };
+          return priority[aElig.status as keyof typeof priority] - priority[bElig.status as keyof typeof priority];
+        });
+      }
+      
+      return filteredData;
     },
   });
 
@@ -76,6 +129,39 @@ export default function CourseCatalog() {
   // Check if user is enrolled in a course
   const isEnrolled = (courseId: string) => {
     return userEnrollments.some(e => e.course_id === courseId && e.status === 'ACTIVE');
+  };
+  
+  // Eligibility checking helper
+  const checkCourseEligibility = (course: any): { status: "eligible" | "upgrade-required" | "enrolled" | "unknown"; label: string } => {
+    if (!user?.id) return { status: "unknown", label: "Sign in to check" };
+    
+    const courseTrack = course.track || "ARBITRATION";
+    const userTrackLevel = trackProgress[courseTrack] || "NONE";
+    const courseLevel = (course.level || "associate").toUpperCase();
+    
+    const LEVEL_ORDER = { NONE: 0, ASSOCIATE: 1, MEMBER: 2, FELLOW: 3 };
+    const userIndex = LEVEL_ORDER[userTrackLevel as keyof typeof LEVEL_ORDER] || 0;
+    const courseIndex = LEVEL_ORDER[courseLevel as keyof typeof LEVEL_ORDER] || 1;
+    
+    // Check if enrolled
+    const isEnrolledCourse = userEnrollments.some(
+      (e: any) => e.course_id === course.id && e.status === "ACTIVE"
+    );
+    if (isEnrolledCourse) return { status: "enrolled", label: "Enrolled" };
+    
+    // Anyone can take Associate
+    if (courseLevel === "ASSOCIATE") {
+      return { status: "eligible", label: "Eligible" };
+    }
+    
+    // Must have completed previous level
+    if (userIndex >= courseIndex - 1) {
+      return { status: "eligible", label: "Eligible" };
+    }
+    
+    // Show what level is needed
+    const requiredLevel = courseIndex === 2 ? "Associate" : "Member";
+    return { status: "upgrade-required", label: `Requires ${requiredLevel}` };
   };
   
   // Get next course for progression
@@ -178,6 +264,45 @@ export default function CourseCatalog() {
             </Button>
           </div>
 
+          {/* Track and Eligibility Filters */}
+          <div className="flex flex-wrap justify-center gap-3 items-center">
+            <Select value={trackFilter} onValueChange={(value: any) => setTrackFilter(value)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Track" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tracks</SelectItem>
+                <SelectItem value="ARBITRATION">Arbitration</SelectItem>
+                <SelectItem value="MEDIATION">Mediation</SelectItem>
+              </SelectContent>
+            </Select>
+            {user && (
+              <Button
+                variant={showEligibleOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowEligibleOnly(!showEligibleOnly)}
+              >
+                {showEligibleOnly ? "All Courses" : "Eligible Only"}
+              </Button>
+            )}
+          </div>
+
+          {/* Progress Header for Logged-in Users */}
+          {user && Object.keys(trackProgress).length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4 max-w-2xl mx-auto">
+              <div className="text-center space-y-2">
+                <h3 className="font-semibold text-foreground">Your Progress</h3>
+                <div className="flex flex-wrap justify-center gap-2 text-sm">
+                  {Object.entries(trackProgress).map(([track, level]) => (
+                    <Badge key={track} variant="secondary">
+                      {track}: {level}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Loading State */}
           {isLoading && (
             <div className="text-center py-12">
@@ -202,9 +327,12 @@ export default function CourseCatalog() {
           {!isLoading && filteredCourses.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => {
-                const status: CourseStatus = isEnrolled(course.id) 
+                const eligibility = checkCourseEligibility(course);
+                const status: CourseStatus = eligibility.status === "enrolled" 
                   ? "ENROLLED" 
-                  : getCourseStatus(course.level, userLevel);
+                  : eligibility.status === "eligible"
+                  ? "AVAILABLE"
+                  : "LOCKED";
                 
                 return (
                   <CourseCardStatus 
@@ -212,6 +340,7 @@ export default function CourseCatalog() {
                     course={course} 
                     userLevel={userLevel}
                     status={status}
+                    eligibility={eligibility}
                     onLockedClick={() => {
                       setSelectedLockedCourse(course);
                       setIsGateModalOpen(true);
@@ -237,10 +366,12 @@ export default function CourseCatalog() {
         userLevel={userLevel}
         courseId={selectedLockedCourse?.id}
         courseTitle={selectedLockedCourse?.title}
+        courseTrack={selectedLockedCourse?.track as "ARBITRATION" | "MEDIATION"}
         nextCourse={getNextCourse(userLevel) ? {
           id: getNextCourse(userLevel)!.id,
           title: getNextCourse(userLevel)!.title,
-          level: getNextCourse(userLevel)!.level
+          level: getNextCourse(userLevel)!.level,
+          track: getNextCourse(userLevel)!.track
         } : undefined}
       />
     </div>

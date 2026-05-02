@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import confetti from "canvas-confetti";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import {
   BookOpen,
   PlayCircle,
   CheckCircle,
+  Lock,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 
@@ -88,6 +91,93 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  // Check eligibility on page load
+  const { data: eligibility, isLoading: eligibilityLoading, error: eligibilityError } = useQuery<EligibilityResponse>({
+    queryKey: ["course-eligibility", id, user?.id],
+    queryFn: async () => {
+      console.log("Checking eligibility for course:", id, "user:", user?.id);
+      if (!user?.id) return { status: "ELIGIBLE", reason: "GUEST", ui: { title: "", message: "" }, actions: [] };
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch("/api/enrollments/check-eligibility", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ courseId: id }),
+      });
+
+      console.log("Eligibility check response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Eligibility check failed:", response.status, errorText);
+        throw new Error("Unable to verify eligibility");
+      }
+
+      const result = await response.json();
+      console.log("Eligibility check result:", result);
+      console.log("Eligibility progression:", result.progression);
+      return result;
+    },
+    enabled: !!id && !!user,
+    retry: false,
+  });
+
+  // Log eligibility error
+  if (eligibilityError) {
+    console.error("Eligibility query error:", eligibilityError);
+  }
+
+  // Fetch user's track progress
+  const { data: trackProgress = {} } = useQuery({
+    queryKey: ["track-progress", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data, error } = await supabase
+        .from("track_progress")
+        .select("track, level")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      const progress: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        progress[row.track] = row.level || "NONE";
+      });
+      return progress;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch prerequisite course if locked
+  const { data: prerequisiteCourse } = useQuery({
+    queryKey: ["prerequisite-course", course?.track, course?.level],
+    queryFn: async () => {
+      if (!course?.track || !course?.level) return null;
+      
+      const LEVEL_ORDER = ["NONE", "ASSOCIATE", "MEMBER", "FELLOW"];
+      const courseIndex = LEVEL_ORDER.indexOf(course.level.toUpperCase());
+      if (courseIndex <= 1) return null; // Associate is entry level
+      
+      const requiredLevel = LEVEL_ORDER[courseIndex - 1];
+      
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, title, level, track")
+        .eq("track", course.track)
+        .eq("level", requiredLevel)
+        .eq("is_published", true)
+        .limit(1)
+        .single();
+      
+      if (error) return null;
+      return data;
+    },
+    enabled: !!course?.track && !!course?.level && eligibility?.status !== "ELIGIBLE",
+  });
+
   // Parse ticket types from course
   const ticketTypes = (() => {
     try {
@@ -106,50 +196,13 @@ export default function CourseDetail() {
       return;
     }
 
-    // Check eligibility before proceeding
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch("/api/enrollments/check-eligibility", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ courseId: id }),
-      });
-
-      if (response.status === 401) {
-        setLocation(`/login?redirect=/course/${id}`);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Unable to verify eligibility");
-      }
-
-      const eligibility: EligibilityResponse = await response.json();
-
-      if (eligibility.status === "ELIGIBLE") {
-        // Trigger confetti animation on successful eligibility check
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#610000', '#D4AF37', '#FFFFFF'],
-        });
-        setLocation(`/checkout/${id}`);
-        return;
-      }
-
-      toast.info(eligibility.ui.title, {
-        description: eligibility.ui.message,
-      });
-      setLocation(`/enroll/${id}/status`);
-    } catch (error) {
-      toast.error('Failed to check eligibility. Please try again.');
+    // If not eligible, show inline locked state (already displayed)
+    if (eligibility && eligibility.status !== "ELIGIBLE") {
+      return;
     }
+
+    // Proceed to checkout
+    setLocation(`/checkout/${id}`);
   };
 
   if (isLoading) {
@@ -207,6 +260,17 @@ export default function CourseDetail() {
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Locked State Banner */}
+          {user && eligibility && eligibility.status !== "ELIGIBLE" && (
+            <Alert className="mb-6 bg-white/10 border-white/20 text-white backdrop-blur-sm">
+              <Lock className="h-4 w-4" />
+              <AlertTitle className="text-white font-semibold">This course is currently locked</AlertTitle>
+              <AlertDescription className="text-white/90">
+                {eligibility.ui.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
@@ -257,6 +321,42 @@ export default function CourseDetail() {
                     </Link>
                   </CardContent>
                 </Card>
+              ) : user && eligibility && eligibility.status !== "ELIGIBLE" ? (
+                <Card className="bg-white shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-1">Course Price</p>
+                      <p className="text-3xl font-bold text-primary">{course.currency || 'USD'} {parseFloat(course.price || '0').toFixed(2)}</p>
+                    </div>
+                    {prerequisiteCourse && (
+                      <div className="mb-4">
+                        <p className="text-sm text-muted-foreground mb-2">Required Prerequisite:</p>
+                        <Link href={`/course/${prerequisiteCourse.id}`} className="block">
+                          <Button variant="outline" className="w-full mb-2">
+                            <Lock className="w-4 h-4 mr-2" />
+                            Start {prerequisiteCourse.title}
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    <div className="bg-muted p-3 rounded-lg mb-4">
+                      <p className="text-sm font-medium mb-2">Your Progress ({course.track || 'Track'}):</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        {Object.keys(trackProgress).length > 0 ? (
+                          <Badge variant="secondary">
+                            {course.track}: {trackProgress[course.track] || "NONE"}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">No progress yet</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button className="w-full" size="lg" disabled variant="outline">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Locked
+                    </Button>
+                  </CardContent>
+                </Card>
               ) : (
                 <Card className="bg-white shadow-lg">
                   <CardContent className="p-6">
@@ -284,10 +384,9 @@ export default function CourseDetail() {
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-6">
@@ -341,7 +440,7 @@ export default function CourseDetail() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="reviews" className="mt-6">
+                {/* <TabsContent value="reviews" className="mt-6">
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold">Student Reviews</h3>
@@ -391,7 +490,7 @@ export default function CourseDetail() {
                       <p className="text-muted-foreground">No reviews yet. Be the first to review this course!</p>
                     )}
                   </div>
-                </TabsContent>
+                </TabsContent> */}
               </Tabs>
             </div>
 

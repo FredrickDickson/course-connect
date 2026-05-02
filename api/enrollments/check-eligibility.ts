@@ -99,6 +99,7 @@ async function getEnrollment(userId: string, courseId: string): Promise<any> {
 }
 
 async function getTrackLevel(userId: string, track: string): Promise<string> {
+  console.log("Getting track level for user:", userId, "track:", track);
   const { data, error } = await supabaseAdmin
     .from("track_progress")
     .select("level")
@@ -106,8 +107,11 @@ async function getTrackLevel(userId: string, track: string): Promise<string> {
     .eq("track", track)
     .maybeSingle();
   
+  console.log("Track progress query result:", { data, error });
+  
   if (error || !data) {
     // Initialize track_progress if missing
+    console.log("No track progress found, initializing with NONE");
     await supabaseAdmin
       .from("track_progress")
       .insert({
@@ -118,7 +122,9 @@ async function getTrackLevel(userId: string, track: string): Promise<string> {
     return "NONE";
   }
   
-  return normalizeTrackLevel(data.level);
+  const normalized = normalizeTrackLevel(data.level);
+  console.log("Returning normalized track level:", normalized);
+  return normalized;
 }
 
 async function checkEligibility(

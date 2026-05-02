@@ -27,10 +27,12 @@ interface EnrollmentGateModalProps {
   userLevel: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
   courseId?: string;
   courseTitle?: string;
+  courseTrack?: "ARBITRATION" | "MEDIATION";
   nextCourse?: {
     id: string;
     title: string;
     level: string;
+    track?: string;
   };
 }
 
@@ -50,6 +52,7 @@ export default function EnrollmentGateModal({
   userLevel = "NONE",
   courseId,
   courseTitle,
+  courseTrack = "ARBITRATION",
   nextCourse
 }: EnrollmentGateModalProps) {
   const normalizedCourseLevel = courseLevel.toUpperCase();
@@ -107,6 +110,9 @@ export default function EnrollmentGateModal({
               </span>
             )}
             This course requires <Badge variant="secondary">{LEVEL_LABELS[normalizedCourseLevel]}</Badge> status
+            {courseTrack && (
+              <span className="block text-sm mt-1">in <Badge variant="outline">{courseTrack}</Badge> track</span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +121,9 @@ export default function EnrollmentGateModal({
           {/* Current position indicator */}
           <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Your Progress</span>
+              <span className="text-sm text-muted-foreground">
+                Your Progress{courseTrack && ` (${courseTrack})`}
+              </span>
               <Badge variant="outline" className="font-medium">
                 <CurrentLevelIcon className="w-3 h-3 mr-1" />
                 {LEVEL_LABELS[normalizedUserLevel]}
@@ -154,6 +162,9 @@ export default function EnrollmentGateModal({
                 </div>
                 <div className="flex-1">
                   <span className="font-medium text-blue-900">{LEVEL_LABELS[LEVEL_ORDER[userIndex + 1]]}</span>
+                  {nextCourse.track && (
+                    <span className="text-xs text-blue-600 ml-2">({nextCourse.track})</span>
+                  )}
                   <span className="text-xs text-blue-600 ml-2">Next Step</span>
                 </div>
                 <Link href={`/course/${nextCourse.id}`}>

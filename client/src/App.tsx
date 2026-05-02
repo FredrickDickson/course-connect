@@ -52,7 +52,7 @@ import Contact from "@/pages/contact";
 import TechnicalSupport from "@/pages/technical-support";
 import AcademicAdvising from "@/pages/academic-advising";
 import CourseCatalog from "@/pages/course-catalog";
-import CourseBrowser from "@/pages/course-browser";
+import CourseSearch from "@/pages/course-search";
 import GlobalMAProgram from "@/pages/global-ma-program";
 import FCIMarbFellowship from "@/pages/fcrimarb-fellowship";
 import Certification from "@/pages/certification";
@@ -149,7 +149,8 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/technical-support" component={TechnicalSupport} />
       <Route path="/academic-advising" component={AcademicAdvising} />
-      <Route path="/course-catalog" component={CourseBrowser} />
+      <Route path="/course-catalog" component={CourseSearch} />
+      <Route path="/search" component={CourseSearch} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/global-ma-program" component={GlobalMAProgram} />
       <Route path="/fcrimarb-fellowship" component={FCIMarbFellowship} />

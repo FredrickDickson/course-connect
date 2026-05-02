@@ -8,6 +8,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import confetti from "canvas-confetti";
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
@@ -27,6 +28,14 @@ export default function PaymentSuccess() {
     },
     onSuccess: async (response: any) => {
       if (response?.success) {
+        // Trigger confetti animation on successful payment
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#610000', '#D4AF37', '#FFFFFF'],
+        });
+
         // Invalidate every enrollment-related cache so gated pages unlock immediately
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] }),
