@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Lottie from "react-lottie";
+import Lottie from "lottie-react";
 import animationData from "@/components/confetti-animation-data";
 
 interface ConfettiProps {
@@ -43,16 +43,6 @@ const Confetti = ({
     };
   }, [isActive, duration, loop]);
 
-  // Confetti animation options
-  const lottieOptions = {
-    loop: loop || true,
-    autoplay: true,
-    animationData,
-    rendererSettings: {
-      preserveAspectRatio: "xMidYMid slice",
-    },
-  };
-
   if (!isActive) return null;
 
   return (
@@ -61,10 +51,10 @@ const Confetti = ({
       style={{ zIndex }}
     >
       <Lottie 
-        options={lottieOptions} 
-        height="100%" 
-        width="100%" 
-        isStopped={!isActive}
+        animationData={animationData}
+        loop={loop || true}
+        autoplay={isActive}
+        style={{ width: '100%', height: '100%' }}
       />
     </div>
   );
