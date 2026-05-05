@@ -47,8 +47,8 @@ const CalendarHeader = () => {
   const currentYear = currentDate.year
 
   const now = today(getLocalTimeZone())
-  const yearStart = now.year - 80
-  const yearEnd = now.year + 20
+  const yearStart = now.year - 100
+  const yearEnd = now.year
   const years = Array.from({ length: yearEnd - yearStart + 1 }, (_, i) => yearStart + i)
 
   return (
