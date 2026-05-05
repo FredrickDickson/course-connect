@@ -33,7 +33,7 @@ import { COUNTRIES } from "@/lib/countries";
 
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import { Calendar } from "@/components/ui/calendar-rac";
+import { DatePicker } from "@/components/ui/calendar-date-picker";
 import { CalendarDate, parseDate } from "@internationalized/date";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -977,62 +977,23 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <Field className="w-full">
-
                   <FieldLabel htmlFor="date-of-birth" className="text-sm font-medium">Date of Birth *</FieldLabel>
-
-                  <Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
-
-                    <PopoverTrigger asChild>
-
-                      <Button
-
-                        id="date-of-birth"
-
-                        variant="outline"
-
-                        data-empty={!isDobValid}
-
-                        aria-invalid={!!errors.date_of_birth}
-
-                        className={cn(
-
-                          "w-full justify-start text-left font-normal",
-
-                          "data-[empty=true]:text-muted-foreground",
-
-                          errors.date_of_birth && "border-destructive focus-visible:ring-destructive"
-
-                        )}
-
-                      >
-
-                        {isDobValid && dobDate ? dobDate.toLocaleDateString() : "Select date"}
-
-                      </Button>
-
-                    </PopoverTrigger>
-
-                    <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm overflow-hidden p-0" align="start">
-                      <Calendar
-                        selected={dobCalendarDate}
-                        defaultMonth={dobCalendarDate || youngestAllowedDobCalendar}
-                        minValue={oldestAllowedDobCalendar}
-                        maxValue={youngestAllowedDobCalendar}
-                        onSelect={(date: CalendarDate) => {
-                          if (date) {
-                            updateField("date_of_birth", date.toString());
-                            setDateOfBirthOpen(false);
-                          }
-                        }}
-                      />
-                    </PopoverContent>
-
-                  </Popover>
-
+                  <DatePicker
+                    id="date-of-birth"
+                    value={dobCalendarDate}
+                    onChange={(date) => {
+                      if (date) {
+                        updateField("date_of_birth", date.toString());
+                      }
+                    }}
+                    minValue={oldestAllowedDobCalendar}
+                    maxValue={youngestAllowedDobCalendar}
+                    placeholder="Select date"
+                    className={errors.date_of_birth && "border-destructive focus-visible:ring-destructive"}
+                  />
                   {errors.date_of_birth && (
                     <p className="text-xs text-destructive" role="alert">{errors.date_of_birth}</p>
                   )}
-
                 </Field>
 
                 <div className="space-y-2">
