@@ -19,6 +19,8 @@ const Confetti = ({
 }: ConfettiProps) => {
   const [isActive, setIsActive] = useState(autoPlay);
 
+  console.log('Confetti component - externalIsActive:', externalIsActive, 'isActive:', isActive);
+
   // Sync with external control if provided
   useEffect(() => {
     if (externalIsActive !== undefined) {

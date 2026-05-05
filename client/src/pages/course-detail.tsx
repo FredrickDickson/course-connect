@@ -38,7 +38,10 @@ export default function CourseDetail() {
   // Check for payment success on page load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('payment') === 'success') {
+    const paymentSuccess = params.get('payment') === 'success';
+    console.log('Course detail - payment param:', paymentSuccess, 'URL:', window.location.search);
+    if (paymentSuccess) {
+      console.log('Triggering confetti on course detail page');
       setShowConfetti(true);
       // Auto-hide confetti after 3 seconds
       setTimeout(() => setShowConfetti(false), 3000);

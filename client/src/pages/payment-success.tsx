@@ -50,6 +50,7 @@ export default function PaymentSuccess() {
           tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
 
         if (enrolledCourseId) {
+          console.log('Redirecting to course with confetti:', enrolledCourseId);
           setLocation(`/course/${enrolledCourseId}?payment=success`);
           return;
         }
