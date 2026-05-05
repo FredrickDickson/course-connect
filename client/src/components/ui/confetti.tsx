@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Lottie } from "lottie-react";
+import { useLottie } from "lottie-react";
 import animationData from "@/components/confetti-animation-data";
 
 interface ConfettiProps {
@@ -31,31 +31,34 @@ const Confetti = ({
   // Handle auto-stop timer
   useEffect(() => {
     let timeoutId: number;
-    
+
     if (isActive && !loop && duration > 0) {
       timeoutId = window.setTimeout(() => {
         setIsActive(false);
       }, duration);
     }
-    
+
     return () => {
       if (timeoutId) window.clearTimeout(timeoutId);
     };
   }, [isActive, duration, loop]);
 
+  const options = {
+    animationData,
+    loop: loop || true,
+    autoplay: isActive,
+  };
+
+  const { View } = useLottie(options);
+
   if (!isActive) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 pointer-events-none"
       style={{ zIndex }}
     >
-      <Lottie 
-        animationData={animationData}
-        loop={loop || true}
-        autoplay={isActive}
-        style={{ width: '100%', height: '100%' }}
-      />
+      {View}
     </div>
   );
 };
