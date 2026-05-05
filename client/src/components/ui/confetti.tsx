@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Lottie from "lottie-react";
+import { Lottie } from "lottie-react";
 import animationData from "@/components/confetti-animation-data";
 
 interface ConfettiProps {
