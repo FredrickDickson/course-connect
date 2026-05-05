@@ -29,9 +29,21 @@ export default function PaymentSuccess() {
     },
     onSuccess: async (response: any) => {
       if (response?.success) {
+        // Store confetti flag in session storage
+        const tx = response?.data;
+        const enrolledCourseId =
+          tx?.metadata?.courseId ||
+          tx?.data?.metadata?.courseId;
+
+        if (enrolledCourseId) {
+          sessionStorage.setItem('showConfetti', 'true');
+          sessionStorage.setItem('confettiCourseId', enrolledCourseId);
+          console.log('Stored confetti flag for course:', enrolledCourseId);
+        }
+
         // Trigger confetti animation on successful payment
         setShowConfetti(true);
-        
+
         // Auto-hide confetti after 3 seconds
         setTimeout(() => setShowConfetti(false), 3000);
 
@@ -42,15 +54,8 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
-        // Server returns { success, data: paystackTransaction }
-        // where paystackTransaction.metadata.courseId is set during checkout init.
-        const tx = response?.data;
-        const enrolledCourseId =
-          tx?.metadata?.courseId ||
-          tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
-
         if (enrolledCourseId) {
-          console.log('Redirecting to course with confetti:', enrolledCourseId);
+          console.log('Redirecting to course:', enrolledCourseId);
           setLocation(`/course/${enrolledCourseId}?payment=success`);
           return;
         }

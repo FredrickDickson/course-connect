@@ -39,16 +39,25 @@ export default function CourseDetail() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentSuccess = params.get('payment') === 'success';
-    console.log('Course detail - payment param:', paymentSuccess, 'URL:', window.location.search);
-    if (paymentSuccess) {
+    const showConfettiFlag = sessionStorage.getItem('showConfetti') === 'true';
+    const confettiCourseId = sessionStorage.getItem('confettiCourseId');
+
+    console.log('Course detail - payment param:', paymentSuccess, 'showConfettiFlag:', showConfettiFlag, 'confettiCourseId:', confettiCourseId, 'currentCourseId:', id, 'URL:', window.location.search);
+
+    // Check if confetti should show (either from URL param or session storage)
+    const shouldShowConfetti = paymentSuccess || (showConfettiFlag && confettiCourseId === id);
+
+    if (shouldShowConfetti) {
       console.log('Triggering confetti on course detail page');
       setShowConfetti(true);
       // Auto-hide confetti after 3 seconds
       setTimeout(() => setShowConfetti(false), 3000);
-      // Clean up URL
+      // Clean up URL and session storage
       window.history.replaceState({}, '', window.location.pathname);
+      sessionStorage.removeItem('showConfetti');
+      sessionStorage.removeItem('confettiCourseId');
     }
-  }, []);
+  }, [id]);
 
   const { data: course, isLoading } = useQuery<any>({
     queryKey: ["course", id],
