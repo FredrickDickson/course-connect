@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
+import Confetti from "@/components/ui/confetti";
 import {
   Star,
   Clock,
@@ -32,6 +33,19 @@ export default function CourseDetail() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Check for payment success on page load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      setShowConfetti(true);
+      // Auto-hide confetti after 3 seconds
+      setTimeout(() => setShowConfetti(false), 3000);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const { data: course, isLoading } = useQuery<any>({
     queryKey: ["course", id],
@@ -267,8 +281,10 @@ export default function CourseDetail() {
   const ratingCount = course.rating_count || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <>
+      <Confetti isActive={showConfetti} duration={3000} zIndex={100} />
+      <div className="min-h-screen bg-background">
+        <Header />
 
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
@@ -535,6 +551,7 @@ export default function CourseDetail() {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }
