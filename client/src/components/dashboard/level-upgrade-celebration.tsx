@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, ArrowRight, X, LockOpen, GraduationCap } from "lucide-react";
 import { Link } from "wouter";
-import confetti from "canvas-confetti";
+import Confetti from "@/components/ui/confetti";
 
 const LEVEL_NAMES: Record<string, string> = {
   ASSOCIATE: "Associate",
@@ -30,6 +30,7 @@ export default function LevelUpgradeCelebration() {
     track?: string;
   } | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -82,6 +83,9 @@ export default function LevelUpgradeCelebration() {
         // Trigger confetti for recent upgrades
         if (latestUpgrade.isNew) {
           triggerConfetti();
+          
+          // Auto-hide confetti after 3 seconds
+          setTimeout(() => setShowConfetti(false), 3000);
         }
 
         // Mark as shown
@@ -94,31 +98,7 @@ export default function LevelUpgradeCelebration() {
   }, [user?.id]);
 
   const triggerConfetti = () => {
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: any = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      confetti({
-        ...defaults, 
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-      });
-      confetti({
-        ...defaults, 
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-      });
-    }, 250);
+    setShowConfetti(true);
   };
 
   const handleDismiss = () => {
@@ -133,7 +113,9 @@ export default function LevelUpgradeCelebration() {
   const description = LEVEL_DESCRIPTIONS[upgradeInfo.level] || "Explore your newly unlocked courses!";
 
   return (
-    <Card className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-amber-200 relative overflow-hidden">
+    <>
+      <Confetti isActive={showConfetti} duration={3000} zIndex={100} />
+      <Card className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-amber-200 relative overflow-hidden">
       <div className="absolute top-0 right-0 p-2">
         <button 
           onClick={handleDismiss}
@@ -237,5 +219,6 @@ export default function LevelUpgradeCelebration() {
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }

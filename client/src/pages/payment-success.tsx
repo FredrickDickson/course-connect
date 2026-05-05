@@ -8,12 +8,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import confetti from "canvas-confetti";
+import Confetti from "@/components/ui/confetti";
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const [reference, setReference] = useState<string | null>(null);
   const { isAuthenticated, isLoading } = useAuth();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -29,12 +30,10 @@ export default function PaymentSuccess() {
     onSuccess: async (response: any) => {
       if (response?.success) {
         // Trigger confetti animation on successful payment
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#610000', '#D4AF37', '#FFFFFF'],
-        });
+        setShowConfetti(true);
+        
+        // Auto-hide confetti after 3 seconds
+        setTimeout(() => setShowConfetti(false), 3000);
 
         // Invalidate every enrollment-related cache so gated pages unlock immediately
         await Promise.all([
@@ -167,90 +166,93 @@ export default function PaymentSuccess() {
     paymentData?.data?.metadata?.courseId;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Card className="border-primary">
-          <CardHeader>
-            <div className="flex items-center justify-center mb-4">
-              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <CheckCircle className="h-12 w-12 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-center text-3xl">Payment Successful!</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg text-muted-foreground mb-4">
-                Thank you for your purchase. You are now enrolled in the course!
-              </p>
-              
-              {paymentData && (
-                <div className="bg-muted p-6 rounded-lg space-y-3 text-left max-w-md mx-auto">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Transaction Reference:</span>
-                    <span className="font-medium">{paymentData.reference}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount Paid:</span>
-                    <span className="font-medium">
-                      {paymentData.currency} {(paymentData.amount / 100).toFixed(2)}
-                    </span>
-                  </div>
-                  {paymentData.metadata?.courseName && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Course:</span>
-                      <span className="font-medium">{paymentData.metadata.courseName}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium text-primary">Completed</span>
-                  </div>
+    <>
+      <Confetti isActive={showConfetti} duration={3000} zIndex={100} />
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card className="border-primary">
+            <CardHeader>
+              <div className="flex items-center justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle className="h-12 w-12 text-primary" />
                 </div>
-              )}
-            </div>
+              </div>
+              <CardTitle className="text-center text-3xl">Payment Successful!</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Thank you for your purchase. You are now enrolled in the course!
+                </p>
+                
+                {paymentData && (
+                  <div className="bg-muted p-6 rounded-lg space-y-3 text-left max-w-md mx-auto">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Transaction Reference:</span>
+                      <span className="font-medium">{paymentData.reference}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount Paid:</span>
+                      <span className="font-medium">
+                        {paymentData.currency} {(paymentData.amount / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    {paymentData.metadata?.courseName && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Course:</span>
+                        <span className="font-medium">{paymentData.metadata.courseName}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span className="font-medium text-primary">Completed</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <div className="flex gap-4 justify-center pt-6">
-              {finalCourseId ? (
-                <>
-                  <Link href={`/course/${finalCourseId}`}>
-                    <Button size="lg" className="bg-primary hover:bg-primary/90">
-                      <PlayCircle className="h-5 w-5 mr-2" />
-                      Start Learning
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard">
-                    <Button variant="outline" size="lg">
-                      Go to Dashboard
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/dashboard">
-                    <Button size="lg">
-                      View My Courses
-                    </Button>
-                  </Link>
-                  <Link href="/course-catalog">
-                    <Button variant="outline" size="lg">
-                      Browse More Courses
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
+              <div className="flex gap-4 justify-center pt-6">
+                {finalCourseId ? (
+                  <>
+                    <Link href={`/course/${finalCourseId}`}>
+                      <Button size="lg" className="bg-primary hover:bg-primary/90">
+                        <PlayCircle className="h-5 w-5 mr-2" />
+                        Start Learning
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard">
+                      <Button variant="outline" size="lg">
+                        Go to Dashboard
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/dashboard">
+                      <Button size="lg">
+                        View My Courses
+                      </Button>
+                    </Link>
+                    <Link href="/course-catalog">
+                      <Button variant="outline" size="lg">
+                        Browse More Courses
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
 
-            <div className="text-center pt-6 border-t">
-              <p className="text-sm text-muted-foreground">
-                A confirmation email has been sent to your registered email address.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-center pt-6 border-t">
+                <p className="text-sm text-muted-foreground">
+                  A confirmation email has been sent to your registered email address.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </>
   );
 }
