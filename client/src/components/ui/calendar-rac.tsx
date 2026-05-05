@@ -2,20 +2,24 @@
 
 import { cn } from "@/lib/utils"
 import { getLocalTimeZone, today, CalendarDate } from "@internationalized/date"
-import { ComponentProps } from "react"
+import { ComponentProps, useContext } from "react"
 import {
-  Button,
   CalendarCell as CalendarCellRac,
   CalendarGridBody as CalendarGridBodyRac,
   CalendarGridHeader as CalendarGridHeaderRac,
   CalendarGrid as CalendarGridRac,
   CalendarHeaderCell as CalendarHeaderCellRac,
   Calendar as CalendarRac,
-  Heading as HeadingRac,
+  CalendarStateContext,
+  RangeCalendarStateContext,
   RangeCalendar as RangeCalendarRac,
   composeRenderProps,
 } from "react-aria-components"
-import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons"
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
 
 interface BaseCalendarProps {
   className?: string
@@ -31,23 +35,54 @@ interface BaseCalendarProps {
 type CalendarProps = ComponentProps<typeof CalendarRac> & BaseCalendarProps
 type RangeCalendarProps = ComponentProps<typeof RangeCalendarRac> & BaseCalendarProps
 
-const CalendarHeader = () => (
-  <header className="flex w-full items-center gap-1 pb-1">
-    <Button
-      slot="previous"
-      className="flex size-9 items-center justify-center rounded-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:bg-accent hover:text-foreground focus:outline-none data-[focus-visible]:outline data-[focus-visible]:outline-2 data-[focus-visible]:outline-ring/70"
-    >
-      <ChevronLeftIcon width={16} height={16} />
-    </Button>
-    <HeadingRac className="grow text-center text-sm font-medium" />
-    <Button
-      slot="next"
-      className="flex size-9 items-center justify-center rounded-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:bg-accent hover:text-foreground focus:outline-none data-[focus-visible]:outline data-[focus-visible]:outline-2 data-[focus-visible]:outline-ring/70"
-    >
-      <ChevronRightIcon width={16} height={16} />
-    </Button>
-  </header>
-)
+const CalendarHeader = () => {
+  const calState = useContext(CalendarStateContext)
+  const rangeState = useContext(RangeCalendarStateContext)
+  const state = calState ?? rangeState
+
+  if (!state) return null
+
+  const currentDate = state.visibleRange.start
+  const currentMonth = currentDate.month
+  const currentYear = currentDate.year
+
+  const now = today(getLocalTimeZone())
+  const yearStart = now.year - 80
+  const yearEnd = now.year + 20
+  const years = Array.from({ length: yearEnd - yearStart + 1 }, (_, i) => yearStart + i)
+
+  return (
+    <header className="flex w-full items-center justify-center gap-2 pb-1 px-1">
+      <select
+        value={currentMonth}
+        onChange={(e) =>
+          state.setFocusedDate(currentDate.set({ month: Number(e.target.value) }))
+        }
+        className="h-8 sm:h-7 min-w-[100px] sm:min-w-[120px] rounded-md border border-input bg-background px-2 sm:px-1.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/70 cursor-pointer"
+      >
+        {MONTHS.map((name, i) => (
+          <option key={name} value={i + 1}>
+            {name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={currentYear}
+        onChange={(e) =>
+          state.setFocusedDate(currentDate.set({ year: Number(e.target.value) }))
+        }
+        className="h-8 sm:h-7 min-w-[80px] sm:min-w-[90px] rounded-md border border-input bg-background px-2 sm:px-1.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/70 cursor-pointer"
+      >
+        {years.map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+    </header>
+  )
+}
 
 const CalendarGridComponent = ({ isRange = false }: { isRange?: boolean }) => {
   const now = today(getLocalTimeZone())
