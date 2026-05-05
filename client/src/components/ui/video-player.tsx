@@ -46,7 +46,10 @@ const CustomSlider = ({
 };
 
 interface VideoPlayerProps {
-  src: string;
+  src?: string;
+  videoUrl?: string;
+  videoPlatform?: 'youtube' | 'vimeo';
+  videoId?: string;
   onTimeUpdate?: () => void;
   onLoadedMetadata?: () => void;
   onPlay?: () => void;
@@ -67,7 +70,10 @@ export interface VideoPlayerRef {
 
 const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
   ({ 
-    src, 
+    src,
+    videoUrl,
+    videoPlatform,
+    videoId,
     onTimeUpdate, 
     onLoadedMetadata, 
     onPlay, 
@@ -78,6 +84,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     className
   }, ref) => {
     const internalVideoRef = useRef<HTMLVideoElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [volume, setVolume] = useState(1);
     const [progress, setProgress] = useState(0);
@@ -86,6 +93,38 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const [showControls, setShowControls] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Support old API
+    const actualSrc = src || videoUrl;
+    const isExternal = videoPlatform && videoId;
+    const isUpload = actualSrc && !isExternal;
+
+    // Generate embed URL for external videos
+    const getEmbedUrl = () => {
+      if (!videoPlatform || !videoId) return null;
+      
+      if (videoPlatform === 'youtube') {
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+      } else if (videoPlatform === 'vimeo') {
+        return `https://player.vimeo.com/video/${videoId}`;
+      }
+      return null;
+    };
+
+    // Handle external video load
+    const handleIframeLoad = () => {
+      setIsLoading(false);
+      onLoadedMetadata?.();
+    };
+
+    // Handle external video error
+    const handleIframeError = () => {
+      setError(`Failed to load ${videoPlatform} video`);
+      onError?.();
+      setIsLoading(false);
+    };
 
     // Expose video element and methods to parent
     useImperativeHandle(ref, () => ({
@@ -171,6 +210,36 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }
   };
 
+  // External video (YouTube/Vimeo)
+  if (isExternal) {
+    const embedUrl = getEmbedUrl();
+    if (!embedUrl) {
+      return (
+        <div className={cn("aspect-video bg-muted rounded-lg flex items-center justify-center", className)}>
+          <p className="text-sm text-muted-foreground">Invalid video configuration</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cn("relative w-full", className)}>
+        <div className="aspect-video rounded-lg overflow-hidden bg-black">
+          <iframe
+            ref={iframeRef}
+            src={embedUrl}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            onLoad={handleIframeLoad}
+            onError={handleIframeError}
+            title="Video player"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Uploaded video file with custom controls
   return (
     <motion.div
       className={cn("relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[0_0_20px_rgba(0,0,0,0.2)] backdrop-blur-sm", className)}
@@ -201,7 +270,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         onError={onError}
         onLoadStart={onLoadStart}
         onCanPlay={onCanPlay}
-        src={src}
+        src={actualSrc}
         onClick={togglePlay}
       />
 
