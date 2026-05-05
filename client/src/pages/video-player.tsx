@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { VideoPlayer as VideoPlayerComponent } from "@/components/VideoPlayer";
+import VideoPlayer from "@/components/ui/video-player";
+import type { VideoPlayerRef } from "@/components/ui/video-player";
 import { AlertCircle } from "lucide-react";
 
 // Type definitions
@@ -38,7 +40,7 @@ export default function VideoPlayer() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<VideoPlayerRef>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -199,78 +201,6 @@ export default function VideoPlayer() {
     setIsExternalVideo(!!(lessonAny?.video_platform && lessonAny?.video_id));
   }, [currentLesson]);
 
-  // Video event handlers (only for uploaded videos)
-  useEffect(() => {
-    if (isExternalVideo) return; // Skip for external videos
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
-
-      // Update progress every 10 seconds
-      if (Math.floor(video.currentTime) % 10 === 0 && currentLesson) {
-        const watchTimeSecondsValue = Math.floor(video.currentTime);
-        const completed = video.currentTime >= video.duration * 0.9; // 90% completion
-
-        updateProgressMutation.mutate({
-          lessonId: currentLesson.id,
-          watch_time_seconds: watchTimeSecondsValue,
-          completed,
-        });
-      }
-    };
-
-    const handleLoadedMetadata = () => {
-      setDuration(video.duration);
-
-      // Resume from last watched position
-      const lessonProgress = progressList.find(
-        (p: { lesson_id: string | null; watch_time_seconds: number | null }) =>
-          p.lesson_id === lessonId,
-      );
-      if (lessonProgress && (lessonProgress.watch_time_seconds || 0) > 0) {
-        video.currentTime = lessonProgress.watch_time_seconds || 0;
-      }
-    };
-
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleError = () => {
-      setVideoError(
-        "Failed to load video. Please check your connection or try again.",
-      );
-      setIsVideoLoading(false);
-    };
-
-    const handleLoadStart = () => {
-      setIsVideoLoading(true);
-      setVideoError(null);
-    };
-
-    const handleCanPlay = () => {
-      setIsVideoLoading(false);
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.addEventListener("play", handlePlay);
-    video.addEventListener("pause", handlePause);
-    video.addEventListener("error", handleError);
-    video.addEventListener("loadstart", handleLoadStart);
-    video.addEventListener("canplay", handleCanPlay);
-
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      video.removeEventListener("play", handlePlay);
-      video.removeEventListener("pause", handlePause);
-      video.removeEventListener("error", handleError);
-      video.removeEventListener("loadstart", handleLoadStart);
-      video.removeEventListener("canplay", handleCanPlay);
-    };
-  }, [currentLesson, progressList, lessonId, isExternalVideo]);
 
   // Auto-mark as complete for external videos after 30 seconds
   useEffect(() => {
@@ -294,25 +224,6 @@ export default function VideoPlayer() {
     }
   }, [isExternalVideo, currentLesson, progressList, lessonId]);
 
-  const togglePlayPause = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.play();
-    }
-  };
-
-  const handleSeek = (percentage: number) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
-
-    const newTime = (percentage / 100) * duration;
-    video.currentTime = newTime;
-    setCurrentTime(newTime);
-  };
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -445,15 +356,56 @@ export default function VideoPlayer() {
                       </div>
                     )}
                     {currentLesson.video_url ? (
-                      <video
+                      <VideoPlayer
                         ref={videoRef}
-                        className="w-full h-full"
-                        controls
-                        data-testid="video-element"
-                      >
-                        <source src={currentLesson.video_url} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
+                        src={currentLesson.video_url}
+                        onTimeUpdate={() => {
+                          const currentTime = videoRef.current?.currentTime || 0;
+                          const duration = videoRef.current?.duration || 0;
+                          setCurrentTime(currentTime);
+                          setDuration(duration);
+
+                          // Update progress every 10 seconds
+                          if (Math.floor(currentTime) % 10 === 0 && currentLesson) {
+                            const watchTimeSecondsValue = Math.floor(currentTime);
+                            const completed = currentTime >= duration * 0.9;
+
+                            updateProgressMutation.mutate({
+                              lessonId: currentLesson.id,
+                              watch_time_seconds: watchTimeSecondsValue,
+                              completed,
+                            });
+                          }
+                        }}
+                        onLoadedMetadata={() => {
+                          const duration = videoRef.current?.duration || 0;
+                          setDuration(duration);
+                          setIsVideoLoading(false);
+
+                          // Resume from last watched position
+                          const lessonProgress = progressList.find(
+                            (p: { lesson_id: string | null; watch_time_seconds: number | null }) =>
+                              p.lesson_id === lessonId,
+                          );
+                          if (lessonProgress && (lessonProgress.watch_time_seconds || 0) > 0) {
+                            // Note: The new component doesn't support setting currentTime directly yet
+                            // This functionality is temporarily disabled
+                          }
+                        }}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onError={() => {
+                          setVideoError("Failed to load video. Please check your connection or try again.");
+                          setIsVideoLoading(false);
+                        }}
+                        onLoadStart={() => {
+                          setIsVideoLoading(true);
+                          setVideoError(null);
+                        }}
+                        onCanPlay={() => {
+                          setIsVideoLoading(false);
+                        }}
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white">
                         <div className="text-center">

@@ -33,7 +33,8 @@ import { COUNTRIES } from "@/lib/countries";
 
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar-rac";
+import { CalendarDate, parseDate } from "@internationalized/date";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -280,6 +281,9 @@ export default function Onboarding() {
   const youngestAllowedDob = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
   const dobDate = form.date_of_birth ? new Date(form.date_of_birth) : undefined;
   const isDobValid = dobDate instanceof Date && !isNaN(dobDate?.getTime() || NaN);
+  const oldestAllowedDobCalendar = parseDate(oldestAllowedDob.toISOString().split("T")[0]);
+  const youngestAllowedDobCalendar = parseDate(youngestAllowedDob.toISOString().split("T")[0]);
+  const dobCalendarDate = form.date_of_birth ? parseDate(form.date_of_birth) : undefined;
 
   const nonDraftReviewStatus =
 
@@ -1009,35 +1013,18 @@ export default function Onboarding() {
                     </PopoverTrigger>
 
                     <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm overflow-hidden p-0" align="start">
-
                       <Calendar
-
-                        mode="single"
-
-                        captionLayout="dropdown"
-
-                        selected={isDobValid ? dobDate : undefined}
-
-                        defaultMonth={isDobValid && dobDate ? dobDate : youngestAllowedDob}
-
-                        onSelect={(date) => {
-
+                        selected={dobCalendarDate}
+                        defaultMonth={dobCalendarDate || youngestAllowedDobCalendar}
+                        minValue={oldestAllowedDobCalendar}
+                        maxValue={youngestAllowedDobCalendar}
+                        onSelect={(date: CalendarDate) => {
                           if (date) {
-
-                            updateField("date_of_birth", date.toISOString().split("T")[0]);
-
+                            updateField("date_of_birth", date.toString());
                             setDateOfBirthOpen(false);
-
                           }
-
                         }}
-
-                        disabled={(date) => date < oldestAllowedDob || date > youngestAllowedDob}
-
-                        initialFocus
-
                       />
-
                     </PopoverContent>
 
                   </Popover>
