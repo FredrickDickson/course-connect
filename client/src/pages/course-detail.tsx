@@ -36,7 +36,7 @@ export default function CourseDetail() {
   const { data: course, isLoading } = useQuery<any>({
     queryKey: ["course", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("courses")
         .select(
           "*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
@@ -52,7 +52,7 @@ export default function CourseDetail() {
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("enrollments")
         .select("*")
         .eq("course_id", id!)
@@ -67,7 +67,7 @@ export default function CourseDetail() {
   const { data: reviews = [] } = useQuery<any[]>({
     queryKey: ["reviews", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("reviews")
         .select("*, user:users!reviews_user_id_fkey(*)")
         .eq("course_id", id!);
@@ -150,10 +150,10 @@ export default function CourseDetail() {
     queryKey: ["track-progress", user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
-      const { data, error } = await supabase
-        .from("track_progress" as any)
+      const { data, error } = await (supabase as any)
+        .from("track_progress")
         .select("track, level")
-        .eq("user_id" as any, user.id);
+        .eq("user_id", user.id);
       if (error) throw error;
       const progress: Record<string, string> = {};
       (data || []).forEach((row: any) => {
@@ -176,7 +176,7 @@ export default function CourseDetail() {
       
       const requiredLevel = LEVEL_ORDER[courseIndex - 1];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("courses")
         .select("id, title, level, track")
         .eq("track", course.track)
@@ -278,10 +278,10 @@ export default function CourseDetail() {
             <Alert className="mb-6 bg-white/10 border-white/20 text-white backdrop-blur-sm">
               <Lock className="h-4 w-4" />
               <AlertTitle className="text-white font-semibold">
-                {eligibility?.status === "ELIGIBLE" ? "You're cleared to enroll" : "This course is currently locked"}
+                {eligibility?.reasonCode === "ALREADY_ENROLLED" ? "You're already enrolled" : eligibility?.status === "ELIGIBLE" ? "You're cleared to enroll" : "This course is currently locked"}
               </AlertTitle>
               <AlertDescription className="text-white/90">
-                {eligibility?.ui.message || "Checking your eligibility..."}
+                {eligibility?.reasonCode === "ALREADY_ENROLLED" ? "You can access this course from your dashboard or continue learning below." : eligibility?.ui.message || "Checking your eligibility..."}
               </AlertDescription>
             </Alert>
           )}
