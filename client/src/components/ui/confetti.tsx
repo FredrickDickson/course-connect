@@ -1,77 +1,49 @@
-import { useEffect, useState, useRef } from "react";
-import { useLottie } from "lottie-react";
-import animationData from "@/components/confetti-animation-data";
+import { useEffect } from "react";
+import confetti from "canvas-confetti";
 
 interface ConfettiProps {
   isActive?: boolean;
   duration?: number;
-  autoPlay?: boolean;
   zIndex?: number;
-  loop?: boolean;
 }
 
 const Confetti = ({
-  isActive: externalIsActive,
-  duration = 6000,
-  autoPlay = false,
+  isActive = false,
+  duration = 3000,
   zIndex = 50,
-  loop = false,
 }: ConfettiProps) => {
-  const [isActive, setIsActive] = useState(autoPlay);
-
-  console.log('Confetti component - externalIsActive:', externalIsActive, 'isActive:', isActive);
-
-  // Sync with external control if provided
   useEffect(() => {
-    if (externalIsActive !== undefined) {
-      setIsActive(externalIsActive);
+    if (isActive) {
+      console.log('Triggering confetti animation');
+      
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          zIndex,
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          zIndex,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      frame();
     }
-  }, [externalIsActive]);
+  }, [isActive, duration, zIndex]);
 
-  // Handle auto-stop timer
-  useEffect(() => {
-    let timeoutId: number;
-
-    if (isActive && !loop && duration > 0) {
-      timeoutId = window.setTimeout(() => {
-        setIsActive(false);
-      }, duration);
-    }
-
-    return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [isActive, duration, loop]);
-
-  const options = {
-    animationData,
-    loop: loop || true,
-    autoplay: false, // We'll control this manually
-  };
-
-  const { View, lottieRef } = useLottie(options);
-
-  // Control animation playback based on isActive
-  useEffect(() => {
-    if (lottieRef.current) {
-      if (isActive) {
-        lottieRef.current.play();
-      } else {
-        lottieRef.current.stop();
-      }
-    }
-  }, [isActive, lottieRef]);
-
-  if (!isActive) return null;
-
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex }}
-    >
-      {View}
-    </div>
-  );
+  return null; // canvas-confetti creates its own canvas element
 };
 
 export default Confetti;
