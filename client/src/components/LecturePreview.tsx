@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { VideoPlayer } from './VideoPlayer';
+import VideoPlayer from '@/components/ui/video-player';
 import {
   Video,
   FileText,

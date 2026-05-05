@@ -13,7 +13,6 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { VideoPlayer as VideoPlayerComponent } from "@/components/VideoPlayer";
 import VideoPlayer from "@/components/ui/video-player";
 import type { VideoPlayerRef } from "@/components/ui/video-player";
 import { AlertCircle } from "lucide-react";
@@ -316,12 +315,12 @@ export default function VideoPlayer() {
             <ErrorBoundary>
               <Card className="overflow-hidden" data-testid="video-player">
                 {isExternalVideo ? (
-                  <VideoPlayerComponent
+                  <VideoPlayer
                     videoUrl={(currentLesson as any)?.video_url}
                     videoPlatform={(currentLesson as any)?.video_platform}
                     videoId={(currentLesson as any)?.video_id}
-                    onError={(error: string) => {
-                      setVideoError(error);
+                    onError={() => {
+                      setVideoError("Failed to load video");
                       setIsVideoLoading(false);
                     }}
                   />
