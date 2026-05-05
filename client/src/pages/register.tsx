@@ -172,26 +172,28 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="firstName" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="firstName" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="lastName" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="middleName">Middle Name (Optional)</Label>
+                <Label htmlFor="middleName" className="text-muted-foreground">Middle Name <span className="text-xs">(optional)</span></Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input id="middleName" name="middleName" placeholder="Optional" value={formData.middleName} onChange={handleChange} disabled={isLoading} className="pl-10" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="lastName" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required disabled={isLoading} className="pl-10" />
                 </div>
               </div>
             </div>
