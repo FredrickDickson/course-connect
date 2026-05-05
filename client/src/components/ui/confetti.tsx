@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLottie } from "lottie-react";
 import animationData from "@/components/confetti-animation-data";
 
@@ -46,10 +46,21 @@ const Confetti = ({
   const options = {
     animationData,
     loop: loop || true,
-    autoplay: isActive,
+    autoplay: false, // We'll control this manually
   };
 
-  const { View } = useLottie(options);
+  const { View, lottieRef } = useLottie(options);
+
+  // Control animation playback based on isActive
+  useEffect(() => {
+    if (lottieRef.current) {
+      if (isActive) {
+        lottieRef.current.play();
+      } else {
+        lottieRef.current.stop();
+      }
+    }
+  }, [isActive, lottieRef]);
 
   if (!isActive) return null;
 
