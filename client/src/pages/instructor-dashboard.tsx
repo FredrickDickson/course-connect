@@ -60,17 +60,30 @@ export default function InstructorDashboard() {
     queryFn: async () => {
       if (!user) return null;
       const { count: totalCourses } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('instructor_id', user.id);
-      const { data: cData } = await supabase.from('courses').select('id, enrollment_count').eq('instructor_id', user.id);
+      const { data: cData } = await supabase.from('courses').select('id, enrollment_count, avg_rating').eq('instructor_id', user.id);
       const courseIds = cData?.map(c => c.id) || [];
       const totalStudents = cData?.reduce((acc, c) => acc + Number(c.enrollment_count || 0), 0) || 0;
 
+      // Calculate average rating from courses
+      const coursesWithRatings = cData?.filter(c => c.avg_rating !== null && c.avg_rating > 0) || [];
+      const averageRating = coursesWithRatings.length > 0
+        ? coursesWithRatings.reduce((acc, c) => acc + Number(c.avg_rating), 0) / coursesWithRatings.length
+        : 0;
+
       let totalRevenue = 0;
       if (courseIds.length > 0) {
-        const { data: orders } = await supabase.from('orders').select('amount').in('course_id', courseIds);
-        totalRevenue = orders?.reduce((s, o) => s + Number(o.amount || 0), 0) || 0;
+        // Only count completed orders (not refunded)
+        const { data: orders } = await supabase.from('orders').select('amount, status').in('course_id', courseIds);
+        totalRevenue = orders?.reduce((s, o) => {
+          // Only count completed orders, exclude refunded/failed orders
+          if (o.status === 'completed' || o.status === 'paid') {
+            return s + Number(o.amount || 0);
+          }
+          return s;
+        }, 0) || 0;
       }
 
-      return { totalCourses: totalCourses || 0, totalStudents, totalRevenue, averageRating: 0 };
+      return { totalCourses: totalCourses || 0, totalStudents, totalRevenue, averageRating };
     }
   });
 
@@ -362,11 +375,9 @@ export default function InstructorDashboard() {
                       <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <h4 className="font-medium">{assignment.board?.name || 'Unnamed Board'}</h4>
-                          {assignment.course_edition?.course && (
-                            <p className="text-sm text-muted-foreground">
-                              Course: {assignment.course_edition.course.title}
-                            </p>
-                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {assignment.board?.description || 'No description'}
+                          </p>
                         </div>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/community/forums/${assignment.board?.slug}`}>

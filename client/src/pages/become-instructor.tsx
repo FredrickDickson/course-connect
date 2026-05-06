@@ -568,9 +568,16 @@ export default function BecomeInstructor() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-center mb-4">Instructor Application</h2>
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-center mb-4">
                 Please provide detailed information about your background and expertise.
               </p>
+              <Alert className="max-w-2xl mx-auto">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Application Process:</strong> Your application will be reviewed by our team within 3-5 business days. 
+                  Once approved, you'll receive an email confirmation and can immediately start creating courses.
+                </AlertDescription>
+              </Alert>
             </div>
 
             {/* Progress Steps */}
