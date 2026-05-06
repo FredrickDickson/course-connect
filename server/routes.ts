@@ -65,9 +65,9 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 
 import enrollmentsRouter from "./routes/enrollments";
-
+import renewalRouter from "./routes/renewal";
+import certificatesRouter from "./routes/certificates";
 import {
-
   insertCourseSchema,
 
   insertEnrollmentSchema,
@@ -172,6 +172,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount enrollment routes with eligibility check
 
   app.use("/api/enrollments", enrollmentsRouter);
+
+  // Mount renewal and certificate routes
+  app.use("/api/renewal", renewalRouter);
+  app.use("/api/certificates", certificatesRouter);
 
 
 

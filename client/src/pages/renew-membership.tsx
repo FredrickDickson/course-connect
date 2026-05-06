@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatPrice, type Currency } from "../../../shared/renewal-pricing";
 import {
-  CheckCircle, Shield, Lock, ArrowLeft, CreditCard, Building, FileText, Mail, AlertTriangle,
+  CheckCircle, Shield, Lock, ArrowLeft, CreditCard, Mail, AlertTriangle,
 } from "lucide-react";
 
 declare global {
@@ -82,7 +82,6 @@ export default function RenewMembership() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const [paymentMethod, setPaymentMethod] = useState("paystack");
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>("USD");
   const [isProcessing, setIsProcessing] = useState(false);
   const [renewalResult, setRenewalResult] = useState<any>(null);
@@ -193,145 +192,56 @@ export default function RenewMembership() {
   const isLate = pricingData?.is_late || false;
   const organization = pricingData?.organization;
 
-  const processRenewal = async (method: string, paystackRef?: string) => {
-    const today = new Date();
-    const newExpiry = new Date(today);
-    newExpiry.setDate(newExpiry.getDate() + 365);
-
-    const todayStr = today.toISOString().split("T")[0];
-    const expiryStr = newExpiry.toISOString().split("T")[0];
-
-    // Update member record
-    const { error: memberErr } = await (supabase as any)
-      .from("members")
-      .update({
-        issue_date: todayStr,
-        expiry_date: expiryStr,
-        status: "active",
-        renewal_count: (membership.renewal_count || 0) + 1,
-        income_tier: incomeTier,
-      })
-      .eq("id", membership.id);
-
-    if (memberErr) throw memberErr;
-
-    // Insert renewal history with tier information
-    const { error: historyErr } = await (supabase as any)
-      .from("renewal_history")
-      .insert({
-        member_id: membership.id,
-        renewal_date: todayStr,
-        new_expiry_date: expiryStr,
-        amount_paid: selectedPricing?.baseAmount || renewalFee,
-        currency: selectedCurrency,
-        payment_method: method,
-        payment_reference: paystackRef || null,
-        created_by: user?.id || null,
-        income_tier: incomeTier,
-        currency_used: selectedCurrency,
-        base_amount: selectedPricing?.baseAmount || renewalFee,
-        surcharge_amount: selectedPricing?.lateSurcharge || 0,
-        discount_amount: selectedPricing?.discountAmount || 0,
-        discount_percentage: selectedPricing?.discountPercentage || 0,
-        is_late: isLate,
-      });
-
-    if (historyErr) throw historyErr;
-
-    // Invalidate queries
-    queryClient.invalidateQueries({ queryKey: ["membership"] });
-    queryClient.invalidateQueries({ queryKey: ["renewal-history"] });
-    queryClient.invalidateQueries({ queryKey: ["renewal-pricing"] });
-
-    setRenewalResult({
-      newIssueDate: todayStr,
-      newExpiryDate: expiryStr,
-      amount: renewalFee,
-      currency: selectedCurrency,
-      method,
-    });
-  };
-
   const handlePayment = async () => {
-    if (paymentMethod === "paystack") {
-      if (!window.PaystackPop) {
-        toast({ title: "Payment system loading, please wait...", variant: "destructive" });
-        return;
-      }
-      setIsProcessing(true);
-      const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+    if (!window.PaystackPop) {
+      toast({ title: "Payment system loading, please wait...", variant: "destructive" });
+      return;
+    }
+
+    // Paystack charges in GHS — find the GHS pricing option
+    const ghsPricing = pricingData?.pricing_options.find(p => p.currency === "GHS");
+    const paystackAmount = ghsPricing ? ghsPricing.totalAmount * 100 : renewalFee * 100;
+
+    setIsProcessing(true);
+    const handler = window.PaystackPop.setup({
+      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+      email: membership.email,
+      amount: paystackAmount,
+      currency: "GHS",
+      metadata: {
+        member_id: membership.member_id,
+        type: "renewal",
+        full_name: membership.full_name,
+        membership_level: level,
         email: membership.email,
-        amount: renewalFee * 100,
         currency: selectedCurrency,
-        metadata: {
-          member_id: membership.member_id,
-          type: "renewal",
-          full_name: membership.full_name,
-          membership_level: level,
-          email: membership.email,
-          currency: selectedCurrency,
-          income_tier: incomeTier,
-        },
-        callback: async (response: any) => {
-          try {
-            await processRenewal("paystack", response.reference);
-            toast({ title: "Membership renewed successfully!" });
-          } catch (err: any) {
-            toast({ title: "Renewal failed", description: err.message, variant: "destructive" });
-          }
-          setIsProcessing(false);
-        },
-        onClose: () => {
-          setIsProcessing(false);
-          toast({ title: "Payment cancelled", variant: "destructive" });
-        },
-      });
-      handler.openIframe();
-    } else {
-      // Bank transfer
-      setIsProcessing(true);
-      try {
-        // Don't update status yet — admin confirms manually
-        const today = new Date();
-        const newExpiry = new Date(today);
-        newExpiry.setDate(newExpiry.getDate() + 365);
-        const todayStr = today.toISOString().split("T")[0];
-        const expiryStr = newExpiry.toISOString().split("T")[0];
-
-        await (supabase as any)
-          .from("renewal_history")
-          .insert({
-            member_id: membership.id,
-            renewal_date: todayStr,
-            new_expiry_date: expiryStr,
-            amount_paid: selectedPricing?.baseAmount || renewalFee,
-            currency: selectedCurrency,
-            payment_method: "bank_transfer",
-            notes: "Pending bank transfer confirmation",
-            created_by: user?.id || null,
-          });
-
+        display_amount: renewalFee,
+        ghs_amount: ghsPricing?.totalAmount || renewalFee,
+        income_tier: incomeTier,
+      },
+      callback: async (response: any) => {
+        setIsProcessing(false);
+        queryClient.invalidateQueries({ queryKey: ["membership"] });
+        queryClient.invalidateQueries({ queryKey: ["renewal-history"] });
+        queryClient.invalidateQueries({ queryKey: ["renewal-pricing"] });
         setRenewalResult({
-          newIssueDate: todayStr,
-          newExpiryDate: expiryStr,
+          reference: response.reference,
           amount: renewalFee,
           currency: selectedCurrency,
-          method: "bank_transfer",
-          pending: true,
         });
-        toast({ title: "Renewal request submitted" });
-      } catch (err: any) {
-        toast({ title: "Error", description: err.message, variant: "destructive" });
-      }
-      setIsProcessing(false);
-    }
+        toast({ title: "Payment received! Processing your renewal..." });
+      },
+      onClose: () => {
+        setIsProcessing(false);
+        toast({ title: "Payment cancelled", variant: "destructive" });
+      },
+    });
+    handler.openIframe();
   };
 
 
   // CONFIRMATION SCREEN
   if (renewalResult) {
-    const isPaid = renewalResult.method === "paystack";
     const currency = renewalResult.currency || selectedCurrency;
     return (
       <div className="min-h-screen bg-background">
@@ -342,9 +252,7 @@ export default function RenewMembership() {
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold">
-              {isPaid
-                ? `Membership Renewed, ${membership.full_name.split(" ")[0]}!`
-                : "Renewal Request Submitted"}
+              Payment Received, {membership.full_name.split(" ")[0]}!
             </h1>
 
             <Card>
@@ -358,37 +266,19 @@ export default function RenewMembership() {
                   <span className="font-bold text-gray-900">{PART_LABELS[level] || level}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">New Issue Date</span>
-                  <span className="font-medium">{formatDate(renewalResult.newIssueDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Valid Until</span>
-                  <span className="font-medium">{formatDate(renewalResult.newExpiryDate)}</span>
+                  <span className="text-muted-foreground">Payment Reference</span>
+                  <span className="font-mono text-sm">{renewalResult.reference}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Payment</span>
-                  <Badge variant={isPaid ? "default" : "secondary"}>
-                    {isPaid ? `${formatPrice(renewalResult.amount, currency)} — Confirmed` : "Pending Bank Transfer"}
+                  <Badge variant="default">
+                    {formatPrice(renewalResult.amount, currency)} — Confirmed
                   </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            {!isPaid && (
-              <Card className="bg-amber-50 border-amber-200">
-                <CardContent className="p-4 text-sm text-amber-900">
-                  <p className="font-semibold mb-2">Complete your payment:</p>
-                  <p>MoMo No: 0241022964</p>
-                  <p>Stanbic Bank, Accra Main — Account No: 9040012902985</p>
-                  <p className="mt-2">Reference your full name and Member ID when paying.</p>
-                  <p className="mt-2">Your membership will be renewed once payment is confirmed by CIMA.</p>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="flex flex-wrap justify-center gap-3">
-              {isPaid && (
-                <Card className="bg-blue-50 border-blue-200 max-w-md">
+            <Card className="bg-blue-50 border-blue-200 max-w-md mx-auto">
                   <CardContent className="p-4 text-sm text-blue-900">
                     <div className="flex items-start gap-3">
                       <Mail className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -399,11 +289,9 @@ export default function RenewMembership() {
                     </div>
                   </CardContent>
                 </Card>
-              )}
               <Button variant="outline" onClick={() => setLocation("/dashboard")}>
                 Return to Dashboard
               </Button>
-            </div>
           </div>
         </div>
         <Footer />
@@ -611,22 +499,11 @@ export default function RenewMembership() {
             <CardTitle className="text-lg">Payment Method</CardTitle>
           </CardHeader>
           <CardContent>
-            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50">
-                <RadioGroupItem value="paystack" id="paystack" />
-                <Label htmlFor="paystack" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <CreditCard className="w-4 h-4" />
-                  Pay by Card / Mobile Money (Paystack — {selectedCurrency})
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50">
-                <RadioGroupItem value="bank_transfer" id="bank" />
-                <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
-                  <Building className="w-4 h-4" />
-                  Pay via Bank Transfer / Cheque (admin confirms)
-                </Label>
-              </div>
-            </RadioGroup>
+                          <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/20">
+                <CreditCard className="w-4 h-4" />
+                <span>Pay by Card / Mobile Money (Paystack — {selectedCurrency})</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Paystack processes payments in GHS. Your card will be charged the GHS equivalent.</p>
           </CardContent>
         </Card>
 
@@ -641,13 +518,13 @@ export default function RenewMembership() {
           ) : (
             <>
               <Lock className="w-4 h-4 mr-2" />
-              {paymentMethod === "paystack" ? "Pay & Renew Now" : "Submit Renewal Request"}
+              Pay & Renew Now
             </>
           )}
         </Button>
 
         <p className="text-xs text-muted-foreground text-center mt-3 flex items-center justify-center gap-1">
-          <Shield className="w-3 h-3" /> Secured by {paymentMethod === "paystack" ? "Paystack" : "CIMA"}
+          <Shield className="w-3 h-3" /> Secured by Paystack
         </p>
 
         {/* Renewal History */}

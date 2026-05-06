@@ -278,7 +278,7 @@ export default function Onboarding() {
 
   const today = new Date();
   const oldestAllowedDob = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-  const youngestAllowedDob = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+  const youngestAllowedDob = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const dobDate = form.date_of_birth ? new Date(form.date_of_birth) : undefined;
   const isDobValid = dobDate instanceof Date && !isNaN(dobDate?.getTime() || NaN);
   const oldestAllowedDobCalendar = parseDate(oldestAllowedDob.toISOString().split("T")[0]);
