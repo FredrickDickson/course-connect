@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Upload, Image as ImageIcon, X, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploaderProps {
   currentImageUrl?: string;
@@ -82,24 +83,70 @@ export function ImageUploader({
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-
-      const res = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error || 'Upload failed');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
       }
 
-      const response = await res.json();
+      const fileExt = imageFile.name.split('.').pop() || 'jpg';
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      setUploadedUrl(response.imageUrl);
-      onUploadComplete(response.imageUrl);
+      const { data, error } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          upsert: false,
+        });
+
+      if (error) {
+        // If bucket doesn't exist, create it first
+        if (error.message.includes('Bucket not found') || error.message.includes('The bucket was not found')) {
+          const { error: createError } = await supabase.storage.createBucket('course-thumbnails', {
+            public: true,
+            fileSizeLimit: 5 * 1024 * 1024, // 5MB
+          });
+
+          if (createError) {
+            throw new Error(`Failed to create storage bucket: ${createError.message}`);
+          }
+
+          // Retry upload after creating bucket
+          const { data: retryData, error: retryError } = await supabase.storage
+            .from('course-thumbnails')
+            .upload(fileName, imageFile, {
+              contentType: imageFile.type,
+              upsert: false,
+            });
+
+          if (retryError) {
+            throw new Error(`Upload failed: ${retryError.message}`);
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('course-thumbnails')
+            .getPublicUrl(fileName);
+
+          setUploadedUrl(publicUrl);
+          onUploadComplete(publicUrl);
+
+          toast({
+            title: 'Success',
+            description: 'Image uploaded successfully',
+          });
+
+          setImageFile(null);
+          return;
+        }
+
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-thumbnails')
+        .getPublicUrl(fileName);
+
+      setUploadedUrl(publicUrl);
+      onUploadComplete(publicUrl);
 
       toast({
         title: 'Success',
