@@ -79,6 +79,132 @@ Deno.serve(async (req: Request) => {
         return new Response("Expedited payment recorded", { status: 200 });
       }
 
+      // ------------------------------------------------------------------
+      // Membership renewal payment
+      // ------------------------------------------------------------------
+      if (metadata && metadata.type === "renewal" && metadata.member_id) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const today = new Date();
+        const newExpiry = new Date(today);
+        newExpiry.setDate(newExpiry.getDate() + 365);
+        const todayStr = today.toISOString().split("T")[0];
+        const expiryStr = newExpiry.toISOString().split("T")[0];
+
+        // Fetch member to get current state
+        const { data: member, error: memberErr } = await supabase
+          .from("members")
+          .select("id, renewal_count, renewal_anniversary, issue_date, organization_id")
+          .eq("member_id", metadata.member_id)
+          .single();
+
+        if (memberErr || !member) {
+          console.error("Member not found for renewal", metadata.member_id, memberErr);
+          return new Response("Member not found", { status: 404 });
+        }
+
+        const anniversary = member.renewal_anniversary || member.issue_date || todayStr;
+        const newRenewalCount = (member.renewal_count || 0) + 1;
+
+        // Update member record
+        const { error: updateErr } = await supabase
+          .from("members")
+          .update({
+            issue_date: todayStr,
+            expiry_date: expiryStr,
+            status: "active",
+            renewal_count: newRenewalCount,
+            last_renewal_at: todayStr,
+            renewal_anniversary: anniversary,
+            income_tier: metadata.income_tier || null,
+            is_suspended: false,
+            suspension_date: null,
+          })
+          .eq("member_id", metadata.member_id);
+
+        if (updateErr) {
+          console.error("Member update error:", updateErr);
+          return new Response("Member update failed", { status: 500 });
+        }
+
+        // Insert renewal history
+        const displayCurrency = metadata.currency || "USD";
+        const displayAmount = metadata.display_amount || (event.data.amount / 100);
+        const ghsAmount = event.data.amount / 100;
+
+        const { error: historyErr } = await supabase
+          .from("renewal_history")
+          .insert({
+            member_id: member.id,
+            renewal_date: todayStr,
+            new_expiry_date: expiryStr,
+            amount_paid: ghsAmount,
+            currency: "GHS",
+            payment_method: "paystack",
+            payment_reference: event.data.reference,
+            status: "confirmed",
+            confirmed_at: todayStr,
+            income_tier: metadata.income_tier || null,
+            currency_used: displayCurrency,
+            base_amount: displayAmount,
+            surcharge_amount: 0,
+            discount_amount: 0,
+            discount_percentage: 0,
+            is_late: false,
+          });
+
+        if (historyErr) {
+          console.error("Renewal history insert error:", historyErr);
+        }
+
+        // Log activity
+        await supabase.from("activity_log").insert({
+          user_id: member.id,
+          event_type: "renewal_payment_succeeded",
+          event_data: {
+            member_id: metadata.member_id,
+            reference: event.data.reference,
+            amount: event.data.amount / 100,
+            currency: metadata.currency || event.data.currency,
+            income_tier: metadata.income_tier,
+            new_expiry: expiryStr,
+          },
+        });
+
+        // Call certificate generation API
+        const certApiKey = Deno.env.get("CERTIFICATE_API_KEY");
+        const appUrl = Deno.env.get("VITE_APP_URL") || "https://cima-learn.vercel.app";
+
+        try {
+          const certResponse = await fetch(`${appUrl}/api/certificates/generate`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${certApiKey}`,
+            },
+            body: JSON.stringify({
+              member_id: metadata.member_id,
+              full_name: metadata.full_name || "Member",
+              membership_level: metadata.membership_level || "member",
+              issue_date: todayStr,
+              expiry_date: expiryStr,
+              renewal_count: newRenewalCount,
+            }),
+          });
+
+          if (!certResponse.ok) {
+            const certErr = await certResponse.text();
+            console.error("Certificate generation failed:", certErr);
+          } else {
+            console.log("Certificate generated for", metadata.member_id);
+          }
+        } catch (certError) {
+          console.error("Certificate API call failed:", certError);
+        }
+
+        console.log(`Renewal processed for member ${metadata.member_id}, ref ${event.data.reference}`);
+        return new Response("Renewal processed", { status: 200 });
+      }
+
       if (metadata && metadata.courseId) {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

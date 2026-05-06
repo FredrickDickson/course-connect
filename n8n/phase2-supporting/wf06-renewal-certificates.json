@@ -135,7 +135,7 @@
     },
     {
       "parameters": {
-        "url": "https://your-domain.com/api/generate-certificate",
+        "url": "https://cimalearn.thecima.org/api/certificates/generate",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -211,7 +211,7 @@
         "operation": "update",
         "table": "members",
         "column": "certificate_url",
-        "value": "https://your-project.supabase.co/storage/v1/object/public/certificates/{{ $json.member_id }}-{{ $now.substring(0, 10) }}.pdf",
+        "value": "https://emvibxbcrvritkwkguya.supabase.co/storage/v1/object/public/certificates/{{ $json.member_id }}-{{ $now.substring(0, 10) }}.pdf",
         "where": {
           "conditions": [
             {
