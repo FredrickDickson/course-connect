@@ -1793,6 +1793,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   // INSTRUCTOR ROUTES
+  // NOTE: /api/instructor/courses POST is handled by Vercel serverless function (api/instructor/courses.ts)
+  // These Express routes are for local development and additional endpoints not covered by serverless functions
 
   // ============================================================================
 

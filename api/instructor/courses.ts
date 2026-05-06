@@ -97,14 +97,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verify authentication
     const authHeader = req.headers.authorization || '';
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Missing or invalid authorization header' });
+      return res.status(401).json({ error: 'Unauthorized', message: 'Missing or invalid authorization header' });
     }
 
     const token = authHeader.substring(7);
     
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ message: 'Unauthorized — Invalid token' });
+    if (authError) {
+      console.error('Auth error:', authError);
+      return res.status(401).json({ error: 'Unauthorized', message: 'Invalid token' });
+    }
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User not found' });
     }
 
     // Check if user is an instructor
@@ -114,8 +119,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData || userData.role !== 'instructor') {
-      return res.status(403).json({ message: 'Access denied. Instructor role required.' });
+    if (userError) {
+      console.error('User fetch error:', userError);
+      return res.status(500).json({ error: 'Database error', message: 'Failed to verify user role' });
+    }
+
+    if (!userData) {
+      return res.status(404).json({ error: 'Not found', message: 'User profile not found' });
+    }
+
+    if (userData.role !== 'instructor') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Access denied. Instructor role required.' });
     }
 
     // Validate and prepare course data
@@ -136,9 +150,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (createError) {
       console.error('Course creation error:', createError);
+      const message = createError.message.includes('duplicate') 
+        ? 'A course with this information already exists'
+        : createError.message;
       return res.status(500).json({ 
         error: 'Failed to create course',
-        message: createError.message 
+        message 
       });
     }
 
