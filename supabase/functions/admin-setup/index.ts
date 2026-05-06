@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SETUP_KEY = "CIMA_ADMIN_SETUP_2024";
+const SETUP_KEY = Deno.env.get("ADMIN_SETUP_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

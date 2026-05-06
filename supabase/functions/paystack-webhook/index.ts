@@ -386,10 +386,11 @@ async function sendWelcomeEmail(supabase: any, user: any, course: any, context: 
 
   // Send email via send-email Edge Function
   try {
+    const internalApiKey = Deno.env.get("INTERNAL_API_KEY");
     const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Authorization": `Bearer ${internalApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

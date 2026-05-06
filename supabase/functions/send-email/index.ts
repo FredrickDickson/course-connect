@@ -26,6 +26,20 @@ serve(async (req) => {
   }
 
   try {
+    // Verify internal API key to prevent unauthorized access
+    const authHeader = req.headers.get("Authorization");
+    const internalApiKey = Deno.env.get("INTERNAL_API_KEY");
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.slice(7) !== internalApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
