@@ -83,14 +83,14 @@ export function LectureContentEditor({
       throw new Error('Please enter a lecture title first');
     }
 
-    const { data: existing } = await supabase
+    const { data: maxOrderData } = await supabase
       .from('lessons')
       .select('order')
       .eq('module_id', moduleId)
       .order('order', { ascending: false })
       .limit(1);
 
-    const nextOrder = (existing?.[0]?.order || 0) + 1;
+    const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
 
     const { data, error } = await supabase
       .from('lessons')
@@ -150,14 +150,14 @@ export function LectureContentEditor({
           .eq('id', savedLessonId);
         if (error) throw error;
       } else {
-        const { data: existing } = await supabase
+        const { data: maxOrderData } = await supabase
           .from('lessons')
           .select('order')
           .eq('module_id', moduleId)
           .order('order', { ascending: false })
           .limit(1);
 
-        const nextOrder = (existing?.[0]?.order || 0) + 1;
+        const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
 
         const { data, error } = await supabase
           .from('lessons')
@@ -189,12 +189,16 @@ export function LectureContentEditor({
 
     // Auto-save video URL to lesson if it exists
     if (savedLessonId && url) {
-      await supabase.from('lessons').update({
+      const { error } = await supabase.from('lessons').update({
         video_url: url,
         video_platform: null,
         video_id: null,
         duration_seconds: duration || null,
       }).eq('id', savedLessonId);
+      if (error) {
+        console.error('Error saving video URL:', error);
+        toast({ title: 'Error', description: 'Failed to save video URL', variant: 'destructive' });
+      }
     }
   };
 
@@ -212,7 +216,10 @@ export function LectureContentEditor({
         video_platform: metadata.platform,
         video_id: metadata.videoId,
       }).eq('id', savedLessonId).then(({ error }) => {
-        if (error) console.error('Error saving video metadata:', error);
+        if (error) {
+          console.error('Error saving video metadata:', error);
+          toast({ title: 'Error', description: 'Failed to save video metadata', variant: 'destructive' });
+        }
       });
     }
   };
