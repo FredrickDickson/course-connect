@@ -340,7 +340,9 @@ export function LectureContentEditor({
 
                       // Insert questions and answers
                        if (normalizedQuestions.length > 0) {
+                         console.log('Inserting questions for quiz:', quiz.id);
                          for (const q of normalizedQuestions) {
+                          console.log('Inserting question:', q);
                           const { data: question, error: qError } = await supabase.from('quiz_questions').insert({
                             quiz_id: quiz.id,
                             question: q.question,
@@ -348,16 +350,21 @@ export function LectureContentEditor({
                             points: q.points ?? 1,
                             order: q.order ?? 0,
                           }).select().single();
+                          
+                          console.log('Question insert result:', { question, qError });
                           if (qError) throw qError;
 
                           if (q.answers?.length > 0) {
+                            console.log('Inserting answers for question:', question.id);
                             const answersToInsert = q.answers.map((a: any, idx: number) => ({
                               question_id: question.id,
                                answer: a.answer,
                               is_correct: a.isCorrect ?? false,
                                order: a.order ?? idx,
                             }));
+                            console.log('Answers to insert:', answersToInsert);
                             const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
+                            console.log('Answers insert result:', { error: aError });
                             if (aError) throw aError;
                           }
                         }
