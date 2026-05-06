@@ -338,39 +338,53 @@ export function LectureContentEditor({
                       console.log('Quiz insert result:', { quiz, quizError });
                       if (quizError) throw quizError;
 
-                      // Insert questions and answers
+                      // Insert questions and answers - batch insert for efficiency
                        if (normalizedQuestions.length > 0) {
                          console.log('Inserting questions for quiz:', quiz.id);
-                         for (const q of normalizedQuestions) {
-                          console.log('Inserting question:', q);
-                          const { data: question, error: qError } = await supabase.from('quiz_questions').insert({
-                            quiz_id: quiz.id,
-                            question: q.question,
-                             question_type: q.questionType,
-                            points: q.points ?? 1,
-                            order: q.order ?? 0,
-                          }).select().single();
-                          
-                          console.log('Question insert result:', { question, qError });
-                          if (qError) {
-                            console.error('Question insert error details:', JSON.stringify(qError, null, 2));
-                            throw qError;
-                          }
+                         
+                         // Batch insert all questions
+                         const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
+                           quiz_id: quiz.id,
+                           question: q.question,
+                           question_type: q.questionType,
+                           points: q.points ?? 1,
+                           order: q.order ?? idx,
+                         }));
+                         
+                         console.log('Questions to insert:', questionsToInsert);
+                         const { data: questions, error: questionsError } = await supabase
+                           .from('quiz_questions')
+                           .insert(questionsToInsert)
+                           .select();
+                         
+                         console.log('Questions insert result:', { questions, questionsError });
+                         if (questionsError) {
+                           console.error('Questions insert error details:', JSON.stringify(questionsError, null, 2));
+                           throw questionsError;
+                         }
 
-                          if (q.answers?.length > 0) {
-                            console.log('Inserting answers for question:', question.id);
-                            const answersToInsert = q.answers.map((a: any, idx: number) => ({
-                              question_id: question.id,
+                         // Insert answers for each question
+                         for (let i = 0; i < questions.length; i++) {
+                           const question = questions[i];
+                           const q = normalizedQuestions[i];
+                           
+                           if (q.answers?.length > 0) {
+                             console.log('Inserting answers for question:', question.id);
+                             const answersToInsert = q.answers.map((a: any, idx: number) => ({
+                               question_id: question.id,
                                answer: a.answer,
-                              is_correct: a.isCorrect ?? false,
+                               is_correct: a.isCorrect ?? false,
                                order: a.order ?? idx,
-                            }));
-                            console.log('Answers to insert:', answersToInsert);
-                            const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
-                            console.log('Answers insert result:', { error: aError });
-                            if (aError) throw aError;
-                          }
-                        }
+                             }));
+                             console.log('Answers to insert:', answersToInsert);
+                             const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
+                             console.log('Answers insert result:', { error: aError });
+                             if (aError) {
+                               console.error('Answers insert error details:', JSON.stringify(aError, null, 2));
+                               throw aError;
+                             }
+                           }
+                         }
                       }
 
                       toast({ title: 'Success', description: 'Quiz saved successfully' });
