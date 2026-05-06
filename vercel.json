@@ -9,6 +9,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/instructor/courses",
+      "destination": "/api/instructor/courses.ts"
+    },
+    {
       "source": "/api/verify-payment",
       "destination": "/api/verify-payment.ts"
     },
