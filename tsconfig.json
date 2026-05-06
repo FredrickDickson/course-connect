@@ -32,7 +32,8 @@
     "node_modules",
     "build",
     "dist",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "supabase/functions"
   ],
   "include": [
     "client/src/**/*",
