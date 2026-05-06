@@ -61,6 +61,8 @@ export function LectureContentEditor({
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
   const [pendingQuizData, setPendingQuizData] = useState<any>(null);
   const [pendingAssignmentData, setPendingAssignmentData] = useState<any>(null);
+  const [existingQuiz, setExistingQuiz] = useState<any>(null);
+  const [existingAssignment, setExistingAssignment] = useState<any>(null);
   const { toast } = useToast();
 
   // Reset state when lesson prop changes
@@ -78,6 +80,78 @@ export function LectureContentEditor({
     setPendingQuizData(null);
     setPendingAssignmentData(null);
   }, [lesson]);
+
+  // Fetch existing quiz/assignment data when lesson changes
+  useEffect(() => {
+    if (lesson?.id) {
+      // Fetch existing quiz
+      supabase
+        .from('quizzes')
+        .select(`
+          *,
+          quiz_questions (
+            *,
+            quiz_answers (*)
+          )
+        `)
+        .eq('lesson_id', lesson.id)
+        .single()
+        .then(({ data: quizData, error }) => {
+          if (quizData && !error) {
+            const normalizedQuestions = quizData.quiz_questions?.map((q: any) => ({
+              id: q.id,
+              question: q.question,
+              questionType: q.question_type,
+              points: q.points,
+              order: q.order,
+              answers: q.quiz_answers?.map((a: any) => ({
+                id: a.id,
+                answer: a.answer,
+                isCorrect: a.is_correct,
+                order: a.order,
+              })) || [],
+            })) || [];
+            
+            setExistingQuiz({
+              id: quizData.id,
+              title: quizData.title,
+              description: quizData.description,
+              timeLimit: quizData.time_limit_minutes,
+              passingScore: quizData.passing_score,
+              maxAttempts: quizData.max_attempts,
+              questions: normalizedQuestions,
+            });
+          } else {
+            setExistingQuiz(null);
+          }
+        });
+
+      // Fetch existing assignment
+      supabase
+        .from('assignments')
+        .select('*')
+        .eq('lesson_id', lesson.id)
+        .single()
+        .then(({ data: assignmentData, error }) => {
+          if (assignmentData && !error) {
+            setExistingAssignment({
+              id: assignmentData.id,
+              title: assignmentData.title,
+              description: assignmentData.description,
+              instructions: assignmentData.instructions,
+              maxPoints: assignmentData.max_score,
+              dueDate: assignmentData.due_date,
+              allowLateSubmission: assignmentData.allow_late_submission,
+            });
+          } else {
+            setExistingAssignment(null);
+          }
+        });
+    } else {
+      setExistingQuiz(null);
+      setExistingAssignment(null);
+    }
+  }, [lesson?.id]);
 
   // Auto-save to create the lesson so video/quiz/assignment can be attached immediately
   const ensureLessonExists = async (): Promise<string> => {
@@ -176,9 +250,6 @@ export function LectureContentEditor({
       if (pendingQuizData) {
         const lessonIdToUse = savedLessonId || (await ensureLessonExists());
         
-        // Delete existing quiz for this lesson
-        await supabase.from('quizzes').delete().eq('lesson_id', lessonIdToUse);
-        
         const normalizedQuestions = (pendingQuizData.questions || []).map((question: any, questionIndex: number) => ({
           question: question.question,
           questionType: question.questionType || question.type || 'multiple_choice',
@@ -195,20 +266,53 @@ export function LectureContentEditor({
               })),
         }));
 
-        const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
-          lesson_id: lessonIdToUse,
-          title: pendingQuizData.title,
-          description: pendingQuizData.description || null,
-          time_limit_minutes: pendingQuizData.timeLimit || null,
-          passing_score: pendingQuizData.passingScore ?? 80,
-          max_attempts: pendingQuizData.maxAttempts ?? 3,
-        }).select().single();
-        
-        if (quizError) throw quizError;
+        // Check if quiz already exists
+        const { data: existingQuizData } = await supabase
+          .from('quizzes')
+          .select('id')
+          .eq('lesson_id', lessonIdToUse)
+          .single();
+
+        let quizId: string;
+
+        if (existingQuizData) {
+          // Update existing quiz
+          quizId = existingQuizData.id;
+          const { error: quizError } = await supabase
+            .from('quizzes')
+            .update({
+              title: pendingQuizData.title,
+              description: pendingQuizData.description || null,
+              time_limit_minutes: pendingQuizData.timeLimit || null,
+              passing_score: pendingQuizData.passingScore ?? 80,
+              max_attempts: pendingQuizData.maxAttempts ?? 3,
+            })
+            .eq('id', quizId);
+          if (quizError) throw quizError;
+
+          // Delete existing questions and answers
+          await supabase.from('quiz_answers').delete().in('question_id', 
+            (await supabase.from('quiz_questions').select('id').eq('quiz_id', quizId)).data?.map((q: any) => q.id) || []
+          );
+          await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
+        } else {
+          // Create new quiz
+          const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
+            lesson_id: lessonIdToUse,
+            title: pendingQuizData.title,
+            description: pendingQuizData.description || null,
+            time_limit_minutes: pendingQuizData.timeLimit || null,
+            passing_score: pendingQuizData.passingScore ?? 80,
+            max_attempts: pendingQuizData.maxAttempts ?? 3,
+          }).select().single();
+          
+          if (quizError) throw quizError;
+          quizId = quiz.id;
+        }
 
         if (normalizedQuestions.length > 0) {
           const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
-            quiz_id: quiz.id,
+            quiz_id: quizId,
             question: q.question,
             question_type: q.questionType,
             points: q.points ?? 1,
@@ -244,19 +348,40 @@ export function LectureContentEditor({
       if (pendingAssignmentData) {
         const lessonIdToUse = savedLessonId || (await ensureLessonExists());
         
-        // Delete existing assignment for this lesson
-        await supabase.from('assignments').delete().eq('lesson_id', lessonIdToUse);
-        
-        const { error } = await supabase.from('assignments').insert({
-          lesson_id: lessonIdToUse,
-          title: pendingAssignmentData.title,
-          description: pendingAssignmentData.description || '',
-          instructions: pendingAssignmentData.instructions || null,
-          max_score: pendingAssignmentData.maxPoints ?? 100,
-          due_date: pendingAssignmentData.dueDate || null,
-          allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
-        });
-        if (error) throw error;
+        // Check if assignment already exists
+        const { data: existingAssignmentData } = await supabase
+          .from('assignments')
+          .select('id')
+          .eq('lesson_id', lessonIdToUse)
+          .single();
+
+        if (existingAssignmentData) {
+          // Update existing assignment
+          const { error } = await supabase
+            .from('assignments')
+            .update({
+              title: pendingAssignmentData.title,
+              description: pendingAssignmentData.description || '',
+              instructions: pendingAssignmentData.instructions || null,
+              max_score: pendingAssignmentData.maxPoints ?? 100,
+              due_date: pendingAssignmentData.dueDate || null,
+              allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
+            })
+            .eq('id', existingAssignmentData.id);
+          if (error) throw error;
+        } else {
+          // Create new assignment
+          const { error } = await supabase.from('assignments').insert({
+            lesson_id: lessonIdToUse,
+            title: pendingAssignmentData.title,
+            description: pendingAssignmentData.description || '',
+            instructions: pendingAssignmentData.instructions || null,
+            max_score: pendingAssignmentData.maxPoints ?? 100,
+            due_date: pendingAssignmentData.dueDate || null,
+            allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
+          });
+          if (error) throw error;
+        }
       }
 
       toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
@@ -402,7 +527,7 @@ export function LectureContentEditor({
 
               <TabsContent value="quiz" className="mt-6">
                 {currentLessonId ? (
-                  <QuizBuilder lessonId={currentLessonId} onSave={(quizData) => {
+                  <QuizBuilder lessonId={currentLessonId} initialQuiz={existingQuiz} onSave={(quizData) => {
                     // Store quiz data to be saved when main save button is clicked
                     setPendingQuizData(quizData);
                     toast({ title: 'Quiz ready', description: 'Click "Save Lecture" to save the quiz' });
@@ -427,7 +552,7 @@ export function LectureContentEditor({
 
               <TabsContent value="assignment" className="mt-6">
                 {currentLessonId ? (
-                  <AssignmentBuilder lessonId={currentLessonId} onSave={(assignmentData) => {
+                  <AssignmentBuilder lessonId={currentLessonId} initialAssignment={existingAssignment} onSave={(assignmentData) => {
                     // Store assignment data to be saved when main save button is clicked
                     setPendingAssignmentData(assignmentData);
                     toast({ title: 'Assignment ready', description: 'Click "Save Lecture" to save the assignment' });
