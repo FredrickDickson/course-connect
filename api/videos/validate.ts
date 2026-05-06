@@ -11,6 +11,8 @@ interface ValidationResult {
   duration?: string;
   thumbnail?: string;
   error?: string;
+  platform?: 'youtube' | 'vimeo';
+  videoId?: string;
 }
 
 /**
@@ -20,29 +22,44 @@ function validateYouTubeUrl(url: string): ValidationResult {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();
-    
+
     if (!hostname.includes('youtube.com') && !hostname.includes('youtu.be')) {
       return { valid: false, error: 'Not a YouTube URL' };
     }
 
-    // Extract video ID
+    // Extract video ID using multiple patterns
     let videoId = '';
-    if (hostname.includes('youtube.com')) {
-      videoId = urlObj.searchParams.get('v') || '';
-    } else if (hostname.includes('youtu.be')) {
-      videoId = urlObj.pathname.substring(1);
+    const patterns = [
+      // Standard watch URL: youtube.com/watch?v=VIDEO_ID
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+      // Short URL: youtu.be/VIDEO_ID
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      // Embed URL: youtube.com/embed/VIDEO_ID
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+      // V URL: youtube.com/v/VIDEO_ID
+      /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+      // Shorts URL: youtube.com/shorts/VIDEO_ID
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        videoId = match[1];
+        break;
+      }
     }
 
     if (!videoId) {
       return { valid: false, error: 'Could not extract video ID' };
     }
 
-    // For now, just validate the URL structure
-    // In production, you might want to use YouTube API to get actual metadata
     return {
       valid: true,
       title: `YouTube Video (${videoId})`,
       duration: 'Unknown',
+      platform: 'youtube' as const,
+      videoId,
     };
   } catch (error) {
     return { valid: false, error: 'Invalid URL format' };
@@ -56,7 +73,7 @@ function validateVimeoUrl(url: string): ValidationResult {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();
-    
+
     if (!hostname.includes('vimeo.com')) {
       return { valid: false, error: 'Not a Vimeo URL' };
     }
@@ -73,6 +90,8 @@ function validateVimeoUrl(url: string): ValidationResult {
       valid: true,
       title: `Vimeo Video (${videoId})`,
       duration: 'Unknown',
+      platform: 'vimeo' as const,
+      videoId,
     };
   } catch (error) {
     return { valid: false, error: 'Invalid URL format' };
