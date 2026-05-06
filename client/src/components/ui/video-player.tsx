@@ -98,7 +98,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
 
     // Support old API
     const actualSrc = src || videoUrl;
-    const isExternal = videoPlatform && videoId;
+    const isExternal = videoPlatform && videoId && videoId.length > 0;
     const isUpload = actualSrc && !isExternal;
 
     // Generate embed URL for external videos
@@ -213,6 +213,8 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
   // External video (YouTube/Vimeo)
   if (isExternal) {
     const embedUrl = getEmbedUrl();
+    console.log('External video config:', { videoPlatform, videoId, embedUrl });
+    
     if (!embedUrl) {
       return (
         <div className={cn("aspect-video bg-muted rounded-lg flex items-center justify-center", className)}>
@@ -223,6 +225,19 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
 
     return (
       <div className={cn("relative w-full", className)}>
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 rounded-lg">
+            <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 rounded-lg">
+            <div className="text-center text-white p-4">
+              <p className="text-sm">{error}</p>
+              <p className="text-xs mt-2 opacity-70">Platform: {videoPlatform}, ID: {videoId}</p>
+            </div>
+          </div>
+        )}
         <div className="aspect-video rounded-lg overflow-hidden bg-black">
           <iframe
             ref={iframeRef}
@@ -249,6 +264,19 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="text-center text-white p-4">
+            <p className="text-sm">{error}</p>
+            <p className="text-xs mt-2 opacity-70">Video URL: {actualSrc || 'None'}</p>
+          </div>
+        </div>
+      )}
+      {isLoading && !error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+        </div>
+      )}
       <video
         ref={internalVideoRef}
         className="w-full"
@@ -267,9 +295,19 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           setIsPlaying(false);
           onPause?.();
         }}
-        onError={onError}
-        onLoadStart={onLoadStart}
-        onCanPlay={onCanPlay}
+        onError={(e) => {
+          console.error('Video player error:', e);
+          setError('Failed to load video');
+          onError?.();
+        }}
+        onLoadStart={() => {
+          setIsLoading(true);
+          onLoadStart?.();
+        }}
+        onCanPlay={() => {
+          setIsLoading(false);
+          onCanPlay?.();
+        }}
         src={actualSrc}
         onClick={togglePlay}
       />
