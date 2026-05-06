@@ -49,12 +49,16 @@ export function validateAndExtractVideoUrl(url: string): VideoMetadata | Validat
  */
 function extractYouTubeInfo(url: string): VideoMetadata | null {
   const patterns = [
-    // Standard watch URL
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
-    // Short URL
+    // Standard watch URL: youtube.com/watch?v=VIDEO_ID
+    /youtube\.com\/watch\?[?&]v=([a-zA-Z0-9_-]{11})/,
+    // Short URL: youtu.be/VIDEO_ID
     /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    // Embed URL
+    // Embed URL: youtube.com/embed/VIDEO_ID
     /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    // V URL: youtube.com/v/VIDEO_ID
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    // Shortened watch URL: youtu.be/VIDEO_ID
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
 
   for (const pattern of patterns) {
