@@ -59,6 +59,8 @@ export function LectureContentEditor({
   const [articleContent, setArticleContent] = useState(lesson?.content || '');
   const [saving, setSaving] = useState(false);
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
+  const [pendingQuizData, setPendingQuizData] = useState<any>(null);
+  const [pendingAssignmentData, setPendingAssignmentData] = useState<any>(null);
   const { toast } = useToast();
 
   // Reset state when lesson prop changes
@@ -73,6 +75,8 @@ export function LectureContentEditor({
     setVideoDuration(lesson?.duration || 0);
     setArticleContent(lesson?.content || '');
     setSavedLessonId(lesson?.id || null);
+    setPendingQuizData(null);
+    setPendingAssignmentData(null);
   }, [lesson]);
 
   // Auto-save to create the lesson so video/quiz/assignment can be attached immediately
@@ -168,9 +172,98 @@ export function LectureContentEditor({
         setSavedLessonId(data.id);
       }
 
+      // Save quiz if pending data exists
+      if (pendingQuizData) {
+        const lessonIdToUse = savedLessonId || (await ensureLessonExists());
+        
+        // Delete existing quiz for this lesson
+        await supabase.from('quizzes').delete().eq('lesson_id', lessonIdToUse);
+        
+        const normalizedQuestions = (pendingQuizData.questions || []).map((question: any, questionIndex: number) => ({
+          question: question.question,
+          questionType: question.questionType || question.type || 'multiple_choice',
+          points: question.points ?? 1,
+          order: question.order ?? questionIndex,
+          answers: question.questionType === 'fill_blank'
+            ? (question.correctAnswer?.trim()
+                ? [{ answer: question.correctAnswer.trim(), isCorrect: true }]
+                : [])
+            : (question.answers || []).map((answer: any, answerIndex: number) => ({
+                answer: answer.answer || answer.text || '',
+                isCorrect: !!answer.isCorrect,
+                order: answerIndex,
+              })),
+        }));
+
+        const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
+          lesson_id: lessonIdToUse,
+          title: pendingQuizData.title,
+          description: pendingQuizData.description || null,
+          time_limit_minutes: pendingQuizData.timeLimit || null,
+          passing_score: pendingQuizData.passingScore ?? 80,
+          max_attempts: pendingQuizData.maxAttempts ?? 3,
+        }).select().single();
+        
+        if (quizError) throw quizError;
+
+        if (normalizedQuestions.length > 0) {
+          const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
+            quiz_id: quiz.id,
+            question: q.question,
+            question_type: q.questionType,
+            points: q.points ?? 1,
+            order: q.order ?? idx,
+          }));
+          
+          const { data: questions, error: questionsError } = await supabase
+            .from('quiz_questions')
+            .insert(questionsToInsert)
+            .select();
+          
+          if (questionsError) throw questionsError;
+
+          for (let i = 0; i < questions.length; i++) {
+            const question = questions[i];
+            const q = normalizedQuestions[i];
+            
+            if (q.answers?.length > 0) {
+              const answersToInsert = q.answers.map((a: any, idx: number) => ({
+                question_id: question.id,
+                answer: a.answer,
+                is_correct: a.isCorrect ?? false,
+                order: a.order ?? idx,
+              }));
+              const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
+              if (aError) throw aError;
+            }
+          }
+        }
+      }
+
+      // Save assignment if pending data exists
+      if (pendingAssignmentData) {
+        const lessonIdToUse = savedLessonId || (await ensureLessonExists());
+        
+        // Delete existing assignment for this lesson
+        await supabase.from('assignments').delete().eq('lesson_id', lessonIdToUse);
+        
+        const { error } = await supabase.from('assignments').insert({
+          lesson_id: lessonIdToUse,
+          title: pendingAssignmentData.title,
+          description: pendingAssignmentData.description || '',
+          instructions: pendingAssignmentData.instructions || null,
+          max_score: pendingAssignmentData.maxPoints ?? 100,
+          due_date: pendingAssignmentData.dueDate || null,
+          allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
+        });
+        if (error) throw error;
+      }
+
       toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
       onSave();
       onOpenChange(false);
+      setPendingQuizData(null);
+      setPendingAssignmentData(null);
     } catch (error) {
       console.error('Error saving lecture:', error);
       toast({
@@ -309,100 +402,10 @@ export function LectureContentEditor({
 
               <TabsContent value="quiz" className="mt-6">
                 {currentLessonId ? (
-                  <QuizBuilder lessonId={currentLessonId} onSave={async (quizData) => {
-                    try {
-                      console.log('Saving quiz with lessonId:', currentLessonId);
-                      console.log('Quiz data:', quizData);
-                      
-                       const normalizedQuestions = (quizData.questions || []).map((question: any, questionIndex: number) => ({
-                         question: question.question,
-                         questionType: question.questionType || question.type || 'multiple_choice',
-                         points: question.points ?? 1,
-                         order: question.order ?? questionIndex,
-                         answers: question.questionType === 'fill_blank'
-                           ? (question.correctAnswer?.trim()
-                               ? [{ answer: question.correctAnswer.trim(), isCorrect: true }]
-                               : [])
-                           : (question.answers || []).map((answer: any, answerIndex: number) => ({
-                               answer: answer.answer || answer.text || '',
-                               isCorrect: !!answer.isCorrect,
-                               order: answerIndex,
-                             })),
-                       }));
-
-                      console.log('Normalized questions:', normalizedQuestions);
-
-                      // Insert quiz with snake_case columns
-                      const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
-                        lesson_id: currentLessonId,
-                        title: quizData.title,
-                        description: quizData.description || null,
-                        time_limit_minutes: quizData.timeLimit || null,
-                        passing_score: quizData.passingScore ?? 80,
-                        max_attempts: quizData.maxAttempts ?? 3,
-                      }).select().single();
-                      
-                      console.log('Quiz insert result:', { quiz, quizError });
-                      if (quizError) throw quizError;
-
-                      // Insert questions and answers - batch insert for efficiency
-                       if (normalizedQuestions.length > 0) {
-                         console.log('Inserting questions for quiz:', quiz.id);
-                         
-                         // Batch insert all questions
-                         const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
-                           quiz_id: quiz.id,
-                           question: q.question,
-                           question_type: q.questionType,
-                           points: q.points ?? 1,
-                           order: q.order ?? idx,
-                         }));
-                         
-                         console.log('Questions to insert:', questionsToInsert);
-                         const { data: questions, error: questionsError } = await supabase
-                           .from('quiz_questions')
-                           .insert(questionsToInsert)
-                           .select();
-                         
-                         console.log('Questions insert result:', { questions, questionsError });
-                         if (questionsError) {
-                           console.error('Questions insert error details:', JSON.stringify(questionsError, null, 2));
-                           throw questionsError;
-                         }
-
-                         // Insert answers for each question
-                         for (let i = 0; i < questions.length; i++) {
-                           const question = questions[i];
-                           const q = normalizedQuestions[i];
-                           
-                           if (q.answers?.length > 0) {
-                             console.log('Inserting answers for question:', question.id);
-                             const answersToInsert = q.answers.map((a: any, idx: number) => ({
-                               question_id: question.id,
-                               answer: a.answer,
-                               is_correct: a.isCorrect ?? false,
-                               order: a.order ?? idx,
-                             }));
-                             console.log('Answers to insert:', answersToInsert);
-                             const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
-                             console.log('Answers insert result:', { error: aError });
-                             if (aError) {
-                               console.error('Answers insert error details:', JSON.stringify(aError, null, 2));
-                               throw aError;
-                             }
-                           }
-                         }
-                      }
-
-                      toast({ title: 'Success', description: 'Quiz saved successfully' });
-                    } catch (error) {
-                       const errorMessage = error instanceof Error
-                         ? error.message
-                         : typeof error === 'object' && error && 'message' in error && typeof error.message === 'string'
-                           ? error.message
-                           : 'Failed to save quiz';
-                       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
-                    }
+                  <QuizBuilder lessonId={currentLessonId} onSave={(quizData) => {
+                    // Store quiz data to be saved when main save button is clicked
+                    setPendingQuizData(quizData);
+                    toast({ title: 'Quiz ready', description: 'Click "Save Lecture" to save the quiz' });
                   }} />
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
@@ -424,22 +427,10 @@ export function LectureContentEditor({
 
               <TabsContent value="assignment" className="mt-6">
                 {currentLessonId ? (
-                  <AssignmentBuilder lessonId={currentLessonId} onSave={async (assignmentData) => {
-                    try {
-                      const { error } = await supabase.from('assignments').insert({
-                        lesson_id: currentLessonId,
-                        title: assignmentData.title,
-                        description: assignmentData.description || '',
-                        instructions: assignmentData.instructions || null,
-                        max_score: assignmentData.maxPoints ?? 100,
-                        due_date: assignmentData.dueDate || null,
-                        allow_late_submission: assignmentData.allowLateSubmission ?? true,
-                      });
-                      if (error) throw error;
-                      toast({ title: 'Success', description: 'Assignment saved successfully' });
-                    } catch (error) {
-                      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save assignment', variant: 'destructive' });
-                    }
+                  <AssignmentBuilder lessonId={currentLessonId} onSave={(assignmentData) => {
+                    // Store assignment data to be saved when main save button is clicked
+                    setPendingAssignmentData(assignmentData);
+                    toast({ title: 'Assignment ready', description: 'Click "Save Lecture" to save the assignment' });
                   }} />
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
