@@ -352,7 +352,10 @@ export function LectureContentEditor({
                           }).select().single();
                           
                           console.log('Question insert result:', { question, qError });
-                          if (qError) throw qError;
+                          if (qError) {
+                            console.error('Question insert error details:', JSON.stringify(qError, null, 2));
+                            throw qError;
+                          }
 
                           if (q.answers?.length > 0) {
                             console.log('Inserting answers for question:', question.id);
