@@ -304,6 +304,9 @@ export function LectureContentEditor({
                 {currentLessonId ? (
                   <QuizBuilder lessonId={currentLessonId} onSave={async (quizData) => {
                     try {
+                      console.log('Saving quiz with lessonId:', currentLessonId);
+                      console.log('Quiz data:', quizData);
+                      
                        const normalizedQuestions = (quizData.questions || []).map((question: any, questionIndex: number) => ({
                          question: question.question,
                          questionType: question.questionType || question.type || 'multiple_choice',
@@ -320,6 +323,8 @@ export function LectureContentEditor({
                              })),
                        }));
 
+                      console.log('Normalized questions:', normalizedQuestions);
+
                       // Insert quiz with snake_case columns
                       const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
                         lesson_id: currentLessonId,
@@ -329,6 +334,8 @@ export function LectureContentEditor({
                         passing_score: quizData.passingScore ?? 80,
                         max_attempts: quizData.maxAttempts ?? 3,
                       }).select().single();
+                      
+                      console.log('Quiz insert result:', { quiz, quizError });
                       if (quizError) throw quizError;
 
                       // Insert questions and answers
