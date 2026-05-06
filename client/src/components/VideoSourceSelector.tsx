@@ -29,18 +29,16 @@ export function VideoSourceSelector({ value, onChange, disabled }: VideoSourceSe
           }`}
         >
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="upload" id="upload" />
+            <Label htmlFor="upload" className="flex items-center space-x-3 cursor-pointer">
+              <RadioGroupItem value="upload" id="upload" onClick={(e) => e.stopPropagation()} />
               <Upload className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <Label htmlFor="upload" className="font-medium cursor-pointer">
-                  Upload Video
-                </Label>
+                <span className="font-medium">Upload Video</span>
                 <p className="text-xs text-muted-foreground mt-1">
                   Upload directly to our server
                 </p>
               </div>
-            </div>
+            </Label>
           </CardContent>
         </Card>
 
@@ -52,18 +50,16 @@ export function VideoSourceSelector({ value, onChange, disabled }: VideoSourceSe
           }`}
         >
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="external" id="external" />
+            <Label htmlFor="external" className="flex items-center space-x-3 cursor-pointer">
+              <RadioGroupItem value="external" id="external" onClick={(e) => e.stopPropagation()} />
               <Link2 className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <Label htmlFor="external" className="font-medium cursor-pointer">
-                  External URL
-                </Label>
+                <span className="font-medium">External URL</span>
                 <p className="text-xs text-muted-foreground mt-1">
                   YouTube or Vimeo link
                 </p>
               </div>
-            </div>
+            </Label>
           </CardContent>
         </Card>
       </RadioGroup>
