@@ -13,8 +13,9 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import VideoPlayer from "@/components/ui/video-player";
+import VideoPlayerComponent from "@/components/ui/video-player";
 import type { VideoPlayerRef } from "@/components/ui/video-player";
+const VideoPlayer = VideoPlayerComponent as any;
 import { AlertCircle } from "lucide-react";
 
 // Type definitions
