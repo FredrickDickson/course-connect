@@ -316,20 +316,9 @@ export default function Onboarding() {
 
     try {
 
-      const res = await apiRequest("GET", "/api/qualification/professional-profile");
-
-      const data = await res.json();
-      setProfileStatus(data ?? null);
-
-      if (data?.reviewStatus) {
-
-        if (data.reviewStatus !== "DRAFT" || experienceChoice === "undecided") {
-
-          setExperienceChoice("yes");
-
-        }
-
-      }
+      // Professional profile API is not currently available on this deployment.
+      // Skip the fetch silently; the expedited application page handles its own state.
+      setProfileStatus(null);
 
     } catch (err) {
 
