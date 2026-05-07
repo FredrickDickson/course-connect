@@ -282,20 +282,20 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
             .delete()
             .eq('id', existingQuizData.id);
           if (deleteError) throw deleteError;
-        } else {
-          // Create new quiz
-          const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
-            lesson_id: lessonIdToUse,
-            title: pendingQuizData.title,
-            description: pendingQuizData.description || null,
-            time_limit_minutes: pendingQuizData.timeLimit || null,
-            passing_score: pendingQuizData.passingScore ?? 80,
-            max_attempts: pendingQuizData.maxAttempts ?? 3,
-          }).select().single();
-          
-          if (quizError) throw quizError;
-          quizId = quiz.id;
         }
+
+        // Create new quiz (always create after delete)
+        const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
+          lesson_id: lessonIdToUse,
+          title: pendingQuizData.title,
+          description: pendingQuizData.description || null,
+          time_limit_minutes: pendingQuizData.timeLimit || null,
+          passing_score: pendingQuizData.passingScore ?? 80,
+          max_attempts: pendingQuizData.maxAttempts ?? 3,
+        }).select().single();
+
+        if (quizError) throw quizError;
+        quizId = quiz.id;
 
         if (normalizedQuestions.length > 0) {
           const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
@@ -519,7 +519,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                       console.log('LectureContentEditor received quizData:', quizData);
                       setPendingQuizData(quizData);
                       console.log('pendingQuizData set to:', quizData);
-                      toast({ title: 'Quiz saved', description: 'Click "Save Lecture" to save all changes' });
+                      toast({ title: 'Quiz saved', description: lesson ? 'Click "Update Lecture" to save all changes' : 'Click "Create Lecture" to save all changes' });
                     }} />
                   ) : (
                     <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
