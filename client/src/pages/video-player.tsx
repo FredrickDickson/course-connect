@@ -345,7 +345,7 @@ export default function VideoPlayer() {
                               // Force video reload
                               const video = videoRef.current;
                               if (video) {
-                                video.load();
+                                (video as any).load?.();
                               }
                             }}
                           >
