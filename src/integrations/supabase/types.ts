@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          entity_id: string | null
+          entity_type: string | null
           event_type: string
           id: string
           metadata: Json | null
@@ -26,6 +28,8 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          entity_id?: string | null
+          entity_type?: string | null
           event_type: string
           id?: string
           metadata?: Json | null
@@ -34,6 +38,8 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          entity_id?: string | null
+          entity_type?: string | null
           event_type?: string
           id?: string
           metadata?: Json | null
@@ -78,6 +84,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      assessment_modules: {
+        Row: {
+          application_id: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          module_code: string
+          module_title: string
+          score: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_code: string
+          module_title: string
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          module_code?: string
+          module_title?: string
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_modules_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "expedited_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_rubrics: {
+        Row: {
+          assessment_type: string
+          created_at: string | null
+          criteria_description: string | null
+          criteria_name: string
+          id: string
+          is_active: boolean | null
+          max_score: number
+          weight_percentage: number | null
+        }
+        Insert: {
+          assessment_type: string
+          created_at?: string | null
+          criteria_description?: string | null
+          criteria_name: string
+          id?: string
+          is_active?: boolean | null
+          max_score: number
+          weight_percentage?: number | null
+        }
+        Update: {
+          assessment_type?: string
+          created_at?: string | null
+          criteria_description?: string | null
+          criteria_name?: string
+          id?: string
+          is_active?: boolean | null
+          max_score?: number
+          weight_percentage?: number | null
+        }
+        Relationships: []
       }
       assignment_submissions: {
         Row: {
@@ -404,6 +487,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      country_classifications: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string | null
+          id: string
+          income_tier: string
+          region: string | null
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string | null
+          id?: string
+          income_tier: string
+          region?: string | null
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string | null
+          id?: string
+          income_tier?: string
+          region?: string | null
+        }
+        Relationships: []
       }
       course_completion_records: {
         Row: {
@@ -934,6 +1044,44 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          email_to: string
+          id: string
+          member_id: string
+          sent_at: string
+          subject: string | null
+          template_type: string
+        }
+        Insert: {
+          created_at?: string
+          email_to: string
+          id?: string
+          member_id: string
+          sent_at?: string
+          subject?: string | null
+          template_type: string
+        }
+        Update: {
+          created_at?: string
+          email_to?: string
+          id?: string
+          member_id?: string
+          sent_at?: string
+          subject?: string | null
+          template_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_reminder_logs: {
         Row: {
           email_type: string
@@ -1032,65 +1180,98 @@ export type Database = {
       }
       expedited_applications: {
         Row: {
+          application_score: number | null
+          application_type: string | null
           assessment_completed_at: string | null
+          assessment_modules_completed: Json | null
           assessment_passed: boolean | null
           assessment_score: number | null
+          assessment_submitted_at: string | null
           created_at: string | null
           cv_url: string | null
+          documents: Json | null
+          eligibility_notes: string | null
           experience_summary: string | null
           id: string
           paid_at: string | null
+          pathway_track: string | null
           paystack_reference: string | null
+          professional_writing_score: number | null
           qualifications_summary: string | null
           review_comments: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          reviewer_id: string | null
+          score: number | null
           status: string | null
           submitted_at: string | null
           target_level: string
           track: string
+          understanding_score: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          application_score?: number | null
+          application_type?: string | null
           assessment_completed_at?: string | null
+          assessment_modules_completed?: Json | null
           assessment_passed?: boolean | null
           assessment_score?: number | null
+          assessment_submitted_at?: string | null
           created_at?: string | null
           cv_url?: string | null
+          documents?: Json | null
+          eligibility_notes?: string | null
           experience_summary?: string | null
           id?: string
           paid_at?: string | null
+          pathway_track?: string | null
           paystack_reference?: string | null
+          professional_writing_score?: number | null
           qualifications_summary?: string | null
           review_comments?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          reviewer_id?: string | null
+          score?: number | null
           status?: string | null
           submitted_at?: string | null
           target_level: string
           track?: string
+          understanding_score?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          application_score?: number | null
+          application_type?: string | null
           assessment_completed_at?: string | null
+          assessment_modules_completed?: Json | null
           assessment_passed?: boolean | null
           assessment_score?: number | null
+          assessment_submitted_at?: string | null
           created_at?: string | null
           cv_url?: string | null
+          documents?: Json | null
+          eligibility_notes?: string | null
           experience_summary?: string | null
           id?: string
           paid_at?: string | null
+          pathway_track?: string | null
           paystack_reference?: string | null
+          professional_writing_score?: number | null
           qualifications_summary?: string | null
           review_comments?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          reviewer_id?: string | null
+          score?: number | null
           status?: string | null
           submitted_at?: string | null
           target_level?: string
           track?: string
+          understanding_score?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -1843,9 +2024,13 @@ export type Database = {
           expiry_date: string | null
           full_name: string
           id: string
+          income_tier: string | null
+          is_suspended: boolean | null
           issue_date: string | null
           last_reminder_sent: string | null
+          last_renewal_at: string | null
           member_id: string
+          organization_id: string | null
           part: Database["public"]["Enums"]["membership_level"]
           pathway_confirmed_at: string | null
           pathway_confirmed_by: string | null
@@ -1854,8 +2039,10 @@ export type Database = {
           phone: string | null
           post_nominal: string | null
           primary_pathway: string | null
+          renewal_anniversary: string | null
           renewal_count: number
           status: Database["public"]["Enums"]["membership_status"]
+          suspension_date: string | null
           updated_at: string
           user_id: string | null
         }
@@ -1867,9 +2054,13 @@ export type Database = {
           expiry_date?: string | null
           full_name: string
           id?: string
+          income_tier?: string | null
+          is_suspended?: boolean | null
           issue_date?: string | null
           last_reminder_sent?: string | null
+          last_renewal_at?: string | null
           member_id: string
+          organization_id?: string | null
           part?: Database["public"]["Enums"]["membership_level"]
           pathway_confirmed_at?: string | null
           pathway_confirmed_by?: string | null
@@ -1878,8 +2069,10 @@ export type Database = {
           phone?: string | null
           post_nominal?: string | null
           primary_pathway?: string | null
+          renewal_anniversary?: string | null
           renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
+          suspension_date?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1891,9 +2084,13 @@ export type Database = {
           expiry_date?: string | null
           full_name?: string
           id?: string
+          income_tier?: string | null
+          is_suspended?: boolean | null
           issue_date?: string | null
           last_reminder_sent?: string | null
+          last_renewal_at?: string | null
           member_id?: string
+          organization_id?: string | null
           part?: Database["public"]["Enums"]["membership_level"]
           pathway_confirmed_at?: string | null
           pathway_confirmed_by?: string | null
@@ -1902,12 +2099,21 @@ export type Database = {
           phone?: string | null
           post_nominal?: string | null
           primary_pathway?: string | null
+          renewal_anniversary?: string | null
           renewal_count?: number
           status?: Database["public"]["Enums"]["membership_status"]
+          suspension_date?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
@@ -2092,6 +2298,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          discount_tier: string | null
+          id: string
+          member_count: number | null
+          name: string
+          organization_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          discount_tier?: string | null
+          id?: string
+          member_count?: number | null
+          name: string
+          organization_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          discount_tier?: string | null
+          id?: string
+          member_count?: number | null
+          name?: string
+          organization_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       pathway_certificates: {
         Row: {
@@ -2732,45 +2977,75 @@ export type Database = {
       renewal_history: {
         Row: {
           amount_paid: number
+          base_amount: number | null
           certificate_url: string | null
+          confirmed_at: string | null
           created_at: string
           created_by: string | null
           currency: string
+          currency_used: string | null
+          discount_amount: number | null
+          discount_percentage: number | null
           id: string
+          income_tier: string | null
+          is_late: boolean | null
           member_id: string
           new_expiry_date: string
           notes: string | null
+          organization_id: string | null
           payment_method: string
           payment_reference: string | null
           renewal_date: string
+          status: string | null
+          surcharge_amount: number | null
         }
         Insert: {
           amount_paid?: number
+          base_amount?: number | null
           certificate_url?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          currency_used?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           id?: string
+          income_tier?: string | null
+          is_late?: boolean | null
           member_id: string
           new_expiry_date: string
           notes?: string | null
+          organization_id?: string | null
           payment_method?: string
           payment_reference?: string | null
           renewal_date?: string
+          status?: string | null
+          surcharge_amount?: number | null
         }
         Update: {
           amount_paid?: number
+          base_amount?: number | null
           certificate_url?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          currency_used?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           id?: string
+          income_tier?: string | null
+          is_late?: boolean | null
           member_id?: string
           new_expiry_date?: string
           notes?: string | null
+          organization_id?: string | null
           payment_method?: string
           payment_reference?: string | null
           renewal_date?: string
+          status?: string | null
+          surcharge_amount?: number | null
         }
         Relationships: [
           {
@@ -2780,7 +3055,53 @@ export type Database = {
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "renewal_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      renewal_pricing: {
+        Row: {
+          base_amount: number
+          created_at: string | null
+          currency: string
+          effective_from: string
+          id: string
+          income_tier: string
+          is_active: boolean | null
+          late_surcharge_percentage: number | null
+          membership_level: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_amount: number
+          created_at?: string | null
+          currency: string
+          effective_from: string
+          id?: string
+          income_tier: string
+          is_active?: boolean | null
+          late_surcharge_percentage?: number | null
+          membership_level: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_amount?: number
+          created_at?: string | null
+          currency?: string
+          effective_from?: string
+          id?: string
+          income_tier?: string
+          is_active?: boolean | null
+          late_surcharge_percentage?: number | null
+          membership_level?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       replies: {
         Row: {
@@ -3015,6 +3336,44 @@ export type Database = {
           },
         ]
       }
+      track_progress: {
+        Row: {
+          created_at: string | null
+          id: string
+          level: string
+          pathway: string | null
+          track: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          level?: string
+          pathway?: string | null
+          track: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          level?: string
+          pathway?: string | null
+          track?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_track_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievements: {
         Row: {
           achieved_at: string | null
@@ -3083,58 +3442,33 @@ export type Database = {
           },
         ]
       }
-      user_track_progress: {
-        Row: {
-          created_at: string | null
-          id: string
-          level: string
-          pathway: string | null
-          track: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          level?: string
-          pathway?: string | null
-          track: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          level?: string
-          pathway?: string | null
-          track?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_track_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       users: {
         Row: {
+          assigned_level: string | null
+          award_writing_samples: Json | null
+          bar_admission_number: string | null
+          bar_jurisdiction: string | null
           bio: string | null
           country: string | null
           created_at: string | null
+          current_employer: string | null
           current_level: string | null
           eligibility_flags: Json | null
           email: string
           first_name: string | null
+          has_llm_degree: boolean | null
           id: string
+          job_title: string | null
           last_name: string | null
+          llm_graduation_year: number | null
+          llm_institution: string | null
+          llm_specialization: string | null
+          middle_name: string | null
           password: string | null
           pathway_type: string | null
           paystack_customer_code: string | null
+          professional_portfolio_url: string | null
+          professional_references: Json | null
           profile_image_url: string | null
           role: string | null
           timezone: string | null
@@ -3143,18 +3477,31 @@ export type Database = {
           years_legal_experience: number | null
         }
         Insert: {
+          assigned_level?: string | null
+          award_writing_samples?: Json | null
+          bar_admission_number?: string | null
+          bar_jurisdiction?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          current_employer?: string | null
           current_level?: string | null
           eligibility_flags?: Json | null
           email: string
           first_name?: string | null
+          has_llm_degree?: boolean | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
+          llm_graduation_year?: number | null
+          llm_institution?: string | null
+          llm_specialization?: string | null
+          middle_name?: string | null
           password?: string | null
           pathway_type?: string | null
           paystack_customer_code?: string | null
+          professional_portfolio_url?: string | null
+          professional_references?: Json | null
           profile_image_url?: string | null
           role?: string | null
           timezone?: string | null
@@ -3163,18 +3510,31 @@ export type Database = {
           years_legal_experience?: number | null
         }
         Update: {
+          assigned_level?: string | null
+          award_writing_samples?: Json | null
+          bar_admission_number?: string | null
+          bar_jurisdiction?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
+          current_employer?: string | null
           current_level?: string | null
           eligibility_flags?: Json | null
           email?: string
           first_name?: string | null
+          has_llm_degree?: boolean | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
+          llm_graduation_year?: number | null
+          llm_institution?: string | null
+          llm_specialization?: string | null
+          middle_name?: string | null
           password?: string | null
           pathway_type?: string | null
           paystack_customer_code?: string | null
+          professional_portfolio_url?: string | null
+          professional_references?: Json | null
           profile_image_url?: string | null
           role?: string | null
           timezone?: string | null
@@ -3314,8 +3674,20 @@ export type Database = {
       }
     }
     Functions: {
+      award_official_answer_points: {
+        Args: { points: number; user_id: string }
+        Returns: undefined
+      }
+      award_post_points: {
+        Args: { points: number; user_id: string }
+        Returns: undefined
+      }
+      award_reply_points: {
+        Args: { points: number; user_id: string }
+        Returns: undefined
+      }
       award_reputation_points: {
-        Args: { achievement_type?: string; points: number; user_id: string }
+        Args: { achievement_type: string; points: number; user_id: string }
         Returns: undefined
       }
       calculate_member_level: { Args: { p_user_id: string }; Returns: string }
