@@ -65,7 +65,7 @@ export default function CourseSearch() {
     queryKey: ["track-progress", user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("track_progress")
         .select("track, level")
         .eq("user_id", user.id);
