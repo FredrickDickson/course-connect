@@ -1,43 +1,59 @@
-# Fix curriculum builder timeouts
+## Problem
 
-## Root cause
+Inserts into `public.lessons` keep returning 403 (`42501 — new row violates row-level security policy`) for instructor `6e3dc8a4-…` even though:
 
-Earlier migration replaced INSERT/UPDATE/DELETE policies on `quizzes`, `quiz_questions`, `quiz_answers` with `user_owns_*` helpers, but left the **SELECT** policies (and **all** policies on `assignments` and `lessons`) using deeply-nested `EXISTS (SELECT ... JOIN modules JOIN courses JOIN enrollments ...)` chains.
+- Policy `lessons_insert WITH CHECK user_owns_module(module_id, auth.uid())` is correct.
+- `user_owns_module(<each module>, '6e3dc…')` returns `true` for all three modules of the course.
+- `courses.instructor_id` exactly equals the user id.
+- `user_owns_module` is `SECURITY DEFINER`, owned by `postgres`, `EXECUTE` granted to PUBLIC.
+- The user's role in `public.users` is `instructor`.
 
-PostgREST evaluates SELECT policies on every read AND on the `RETURNING` clause of inserts/updates (the `?select=id` part). With multiple heavy SELECT policies OR'd together, this exceeds the 8s statement timeout — causing the 12s–22s 500 errors on quiz_questions POST, quiz_answers GET, assignments GET, and lessons PATCH.
+So either (a) `auth.uid()` inside the request is NOT what we think (the request is reaching PostgREST as `anon` or with a different `sub`), or (b) the client is sending `module_id: null` for some code path.
 
-The earlier `user_owns_lesson/quiz/question` helpers are `SECURITY DEFINER` so they bypass RLS recursion and run a single indexed lookup.
+The earlier "Multiple GoTrueClient instances" warning + the existence of a second copy of the Supabase client at `src/integrations/supabase/client.ts` (parallel to the canonical `client/src/integrations/supabase/client.ts`) is the most likely culprit — both register listeners on the same storage key, can race, and one of them can momentarily emit requests with no/anon session.
 
-## Migration
+## Plan
 
-Add one more helper and rewrite all remaining heavy policies:
+### 1. Remove the duplicate Supabase client (root cause candidate)
 
-1. **New helper** `public.user_can_view_lesson(_lesson_id uuid, _user_id uuid)` — `SECURITY DEFINER`, returns true if user is the course instructor OR has an enrollment row for the course. Single function avoids OR'd policies.
+- Delete `src/integrations/supabase/client.ts` and `src/integrations/supabase/types.ts` (the canonical files live under `client/src/integrations/supabase/`).
+- Verify nothing in the bundle imports from root `src/...` (already confirmed via grep — no consumers).
 
-2. **`lessons`** — drop `Instructors can manage lessons of their modules`, `Lessons are viewable if course is viewable`, `lessons_instructors_*` (4 policies), `lessons_view_from_published_courses`. Recreate:
-   - SELECT using `user_can_view_lesson(id, auth.uid()) OR EXISTS(SELECT 1 FROM modules m JOIN courses c ON c.id=m.course_id WHERE m.id=lessons.module_id AND c.is_published)` — wrapped in a single SECURITY DEFINER function `public.user_can_see_lesson`.
-   - INSERT/UPDATE/DELETE using `user_owns_lesson_module(module_id, auth.uid())` (new SD helper checking instructor of the module's course).
+This eliminates the "Multiple GoTrueClient instances" race that can cause intermittent unauthenticated requests.
 
-3. **`quizzes`** — drop `Quizzes are viewable if lesson is viewable`, `quizzes_instructors_view`, `quizzes_view_enrolled`. Replace SELECT with a single policy: `user_can_view_lesson(lesson_id, auth.uid())`.
+### 2. Add a diagnostic RPC + client-side probe
 
-4. **`quiz_questions`** — drop `quiz_questions_view`. Replace with: `user_owns_quiz(quiz_id, auth.uid()) OR user_quiz_enrolled(quiz_id, auth.uid())` via a new SD helper `user_can_view_quiz`.
+Create a `SECURITY INVOKER` SQL function that returns the JWT the database actually sees:
 
-5. **`quiz_answers`** — drop `quiz_answers_view`. Replace with `user_can_view_question(question_id, auth.uid())` SD helper.
+```sql
+create or replace function public.debug_whoami()
+returns jsonb language sql stable as $$
+  select jsonb_build_object(
+    'uid', auth.uid(),
+    'role', auth.role(),
+    'jwt_sub', current_setting('request.jwt.claim.sub', true),
+    'jwt_role', current_setting('request.jwt.claim.role', true)
+  );
+$$;
+grant execute on function public.debug_whoami() to anon, authenticated;
+```
 
-6. **`assignments`** — drop all 4 policies (`Assignments are viewable…`, `assignments_instructors_view`, `assignments_instructors_create`, `assignments_view_enrolled`). Recreate:
-   - SELECT: `user_can_view_lesson(lesson_id, auth.uid())`
-   - INSERT/UPDATE/DELETE: `user_owns_lesson(lesson_id, auth.uid())`
+In `LectureContentEditor.handleSave` and `ensureLessonExists`, before the `lessons` insert, call `supabase.rpc('debug_whoami')` and `console.log` it. This proves whether the failing request is going out as the instructor or as anon.
 
-All new policies are scoped `TO authenticated` to avoid `anon` evaluation overhead.
+### 3. Harden the insert path
 
-## Why this fixes it
+- In `LectureContentEditor`, refuse to call insert when `moduleId` is falsy, surfacing a clear toast instead of a 403.
+- Refresh the auth session (`supabase.auth.getSession()`) once at the top of `handleSave`/`ensureLessonExists`; if the session is missing, redirect to `/login` with a toast rather than firing the insert.
 
-- All policy predicates become a single function call returning a boolean from one indexed lookup, instead of Postgres planning multi-table joins per row through RLS recursion.
-- Removes duplicate OR'd SELECT policies (Postgres must evaluate every applicable policy until one passes).
-- `SECURITY DEFINER` bypasses RLS inside the helper, so no recursive policy evaluation.
+### 4. Verify and clean up
 
-## Verification after apply
+- Reproduce: open the curriculum page, add a lecture, observe the `debug_whoami` log.
+  - If `uid` matches the instructor → root cause is data/payload (we'll see `module_id` in the 400/403 response and adjust).
+  - If `uid` is null/different → confirmed stale-session bug; the duplicate-client removal in step 1 already addresses it, and step 3 prevents recurrence.
+- Once green, remove the `console.log` calls but keep `debug_whoami` (cheap, useful for future debugging).
 
-- Reload curriculum page — assignments and quiz_answers GETs should return in <500ms.
-- Save a quiz question — POST to `/quiz_questions?...&select=id` should complete in <1s.
-- Save lecture — PATCH to `/lessons` should complete in <1s.
+## Technical notes
+
+- No RLS policy changes needed — current policies are correct.
+- No schema changes other than the new diagnostic function.
+- `client/src/integrations/supabase/client.ts` already passes `storage: localStorage` and PKCE; it remains the single source of truth for the browser session.
