@@ -95,30 +95,15 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     if (ensureLessonPromiseRef.current) return ensureLessonPromiseRef.current;
 
     const promise = (async () => {
-      const { data: maxOrderData } = await supabase
-        .from('lessons')
-        .select('order')
-        .eq('module_id', moduleId)
-        .order('order', { ascending: false })
-        .limit(1);
-
-      const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
-
-      const { data, error } = await supabase
-        .from('lessons')
-        .insert({
-          title,
-          description: description || null,
-          content_type: contentType,
-          module_id: moduleId,
-          order: nextOrder,
-        })
-        .select('id')
-        .single();
-
+      const { data: newId, error } = await (supabase as any).rpc('create_lesson', {
+        _module_id: moduleId,
+        _title: title,
+        _description: description || null,
+        _content_type: contentType,
+      });
       if (error) throw error;
-      setSavedLessonId(data.id);
-      return data.id;
+      setSavedLessonId(newId as string);
+      return newId as string;
     })();
     ensureLessonPromiseRef.current = promise;
     try {
