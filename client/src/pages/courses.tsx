@@ -553,7 +553,9 @@ export default function Courses() {
                             {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>
                         </div>
-                        <Button>Learn More</Button>
+                        <Link href={`/course/${course.id}`}>
+                          <Button>Learn More</Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>
