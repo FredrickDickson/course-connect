@@ -3691,6 +3691,20 @@ export type Database = {
         Returns: undefined
       }
       calculate_member_level: { Args: { p_user_id: string }; Returns: string }
+      create_lesson: {
+        Args: {
+          _content?: string
+          _content_type?: string
+          _description?: string
+          _duration_seconds?: number
+          _module_id: string
+          _title: string
+          _video_id?: string
+          _video_platform?: string
+          _video_url?: string
+        }
+        Returns: string
+      }
       debug_lessons_insert: { Args: { _module_id: string }; Returns: Json }
       debug_whoami: { Args: never; Returns: Json }
       generate_certificate_verification_code: { Args: never; Returns: string }
