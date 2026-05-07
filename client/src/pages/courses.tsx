@@ -581,9 +581,9 @@ export default function Courses() {
               .filter((course: any) => course.is_featured)
               .slice(0, 2)
               .map((course: any) => (
+                <Link key={course.id} href={`/course/${course.id}`}>
                 <Card
-                  key={course.id}
-                  className="overflow-hidden group hover:shadow-xl transition-all duration-300"
+                  className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   <div className="relative">
                     <img
@@ -622,8 +622,7 @@ export default function Courses() {
                             ${course.price.toLocaleString()}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {course.duration_hours} hours •{" "}
-                            {course.enrollment_count} enrolled
+                            {course.duration_hours} hours
                           </div>
                         </div>
                         <Button>Learn More</Button>
@@ -631,6 +630,7 @@ export default function Courses() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               ))}
           </div>
         </div>
