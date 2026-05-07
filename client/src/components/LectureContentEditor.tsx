@@ -190,22 +190,19 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           .eq('id', savedLessonId);
         if (error) throw error;
       } else {
-        const { data: maxOrderData } = await supabase
-          .from('lessons')
-          .select('order')
-          .eq('module_id', moduleId)
-          .order('order', { ascending: false })
-          .limit(1);
-
-        const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
-
-        const { data, error } = await supabase
-          .from('lessons')
-          .insert({ ...lessonData, module_id: moduleId, order: nextOrder })
-          .select('id')
-          .single();
+        const { data: newId, error } = await (supabase as any).rpc('create_lesson', {
+          _module_id: moduleId,
+          _title: title,
+          _description: description || null,
+          _content_type: contentType,
+          _content: lessonData.content ?? null,
+          _video_url: lessonData.video_url ?? null,
+          _video_platform: lessonData.video_platform ?? null,
+          _video_id: lessonData.video_id ?? null,
+          _duration_seconds: lessonData.duration_seconds ?? null,
+        });
         if (error) throw error;
-        setSavedLessonId(data.id);
+        setSavedLessonId(newId as string);
       }
 
       toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
