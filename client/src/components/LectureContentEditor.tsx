@@ -134,10 +134,26 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
       toast({ title: 'Validation Error', description: 'Please enter a lecture title', variant: 'destructive' });
       return;
     }
+    if (!moduleId) {
+      toast({ title: 'Error', description: 'Missing section. Please reopen the editor from a section.', variant: 'destructive' });
+      return;
+    }
 
     setSaving(true);
 
     try {
+      // Make sure we have a live session before issuing RLS-protected writes.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({ title: 'Session expired', description: 'Please sign in again to continue.', variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+      try {
+        const { data: who } = await supabase.rpc('debug_whoami');
+        console.log('[lecture-save] whoami', who, 'moduleId', moduleId);
+      } catch (e) { console.warn('whoami failed', e); }
+
       const lessonData: any = {
         title,
         description: description || null,
