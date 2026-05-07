@@ -652,10 +652,12 @@ export default function Onboarding() {
 
     try {
 
-      await apiRequest("POST", "/api/qualification/onboarding/experience", {
-
-        hasExperience: choice === "yes",
-
+      // Record the experience choice locally; the legacy server endpoint is not deployed.
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        event_type: "experience_choice",
+        description: `User indicated ${choice === "yes" ? "prior" : "no prior"} ADR/legal experience`,
+        metadata: { hasExperience: choice === "yes" },
       });
 
 
