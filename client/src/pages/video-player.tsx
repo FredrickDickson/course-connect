@@ -15,7 +15,7 @@ import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import VideoPlayerImpl from "@/components/ui/video-player";
 import type { VideoPlayerRef } from "@/components/ui/video-player";
-const VideoPlayer: any = VideoPlayerImpl;
+const VP: any = VideoPlayerImpl;
 import { AlertCircle } from "lucide-react";
 
 // Type definitions
@@ -315,8 +315,8 @@ export default function VideoPlayer() {
             {/* Video Player */}
             <ErrorBoundary>
               <Card className="overflow-hidden" data-testid="video-player">
-                {isExternalVideo ? (
-                  <VideoPlayer
+                 {isExternalVideo ? (
+                  <VP
                     videoUrl={(currentLesson as any)?.video_url}
                     videoPlatform={(currentLesson as any)?.video_platform}
                     videoId={(currentLesson as any)?.video_id}
@@ -356,7 +356,7 @@ export default function VideoPlayer() {
                       </div>
                     )}
                     {currentLesson.video_url ? (
-                      <VideoPlayer
+                      <VP
                         ref={videoRef}
                         src={currentLesson.video_url}
                         onTimeUpdate={() => {
