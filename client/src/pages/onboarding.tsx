@@ -780,7 +780,8 @@ export default function Onboarding() {
 
 
       // Legacy expedited-review API is not deployed; record the submission locally.
-      const professionalProfile = {
+      const professionalProfile: any = {
+        id: `local-${user.id}`,
         reviewStatus: "UNDER_REVIEW",
         contactEmail: form.email,
         contactPhone: form.phone,
