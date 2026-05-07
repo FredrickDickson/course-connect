@@ -34,35 +34,22 @@ interface LectureContentEditorProps {
   onSave: () => void;
 }
 
-export function LectureContentEditor({
-  open,
-  onOpenChange,
-  courseId,
-  moduleId,
-  lesson,
-  onSave,
-}: LectureContentEditorProps) {
+export function LectureContentEditor({ open, onOpenChange, lesson, courseId, moduleId, onSave: onLectureSave }: LectureContentEditorProps) {
   const [title, setTitle] = useState(lesson?.title || '');
   const [description, setDescription] = useState(lesson?.description || '');
-  const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>(
-    lesson?.contentType || 'video'
-  );
-  const [videoSource, setVideoSource] = useState<VideoSource>(
-    lesson?.videoPlatform && lesson?.videoId ? 'external' : 'upload'
-  );
-  const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || '');
-  const [videoPlatform, setVideoPlatform] = useState<'youtube' | 'vimeo' | null>(
-    lesson?.videoPlatform || null
-  );
-  const [videoId, setVideoId] = useState(lesson?.videoId || '');
-  const [videoDuration, setVideoDuration] = useState(lesson?.duration || 0);
   const [articleContent, setArticleContent] = useState(lesson?.content || '');
-  const [saving, setSaving] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || '');
+  const [videoPlatform, setVideoPlatform] = useState<'youtube' | 'vimeo' | null>(lesson?.videoPlatform || null);
+  const [videoId, setVideoId] = useState(lesson?.videoId || '');
+  const [videoDuration, setVideoDuration] = useState<number | undefined>(lesson?.duration || undefined);
+  const [videoSource, setVideoSource] = useState<VideoSource>(lesson?.videoUrl ? 'upload' : (lesson?.videoPlatform ? 'external' : 'upload'));
+  const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>('video');
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
   const [pendingQuizData, setPendingQuizData] = useState<any>(null);
   const [pendingAssignmentData, setPendingAssignmentData] = useState<any>(null);
   const [existingQuiz, setExistingQuiz] = useState<any>(null);
   const [existingAssignment, setExistingAssignment] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   // Reset state when lesson prop changes
@@ -289,25 +276,12 @@ export function LectureContentEditor({
         let quizId: string;
 
         if (existingQuizData) {
-          // Update existing quiz
-          quizId = existingQuizData.id;
-          const { error: quizError } = await supabase
+          // Delete existing quiz (CASCADE will delete questions and answers)
+          const { error: deleteError } = await supabase
             .from('quizzes')
-            .update({
-              title: pendingQuizData.title,
-              description: pendingQuizData.description || null,
-              time_limit_minutes: pendingQuizData.timeLimit || null,
-              passing_score: pendingQuizData.passingScore ?? 80,
-              max_attempts: pendingQuizData.maxAttempts ?? 3,
-            })
-            .eq('id', quizId);
-          if (quizError) throw quizError;
-
-          // Delete existing questions and answers
-          await supabase.from('quiz_answers').delete().in('question_id', 
-            (await supabase.from('quiz_questions').select('id').eq('quiz_id', quizId)).data?.map((q: any) => q.id) || []
-          );
-          await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
+            .delete()
+            .eq('id', existingQuizData.id);
+          if (deleteError) throw deleteError;
         } else {
           // Create new quiz
           const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
@@ -398,7 +372,7 @@ export function LectureContentEditor({
       }
 
       toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
-      onSave();
+      onLectureSave();
       onOpenChange(false);
       setPendingQuizData(null);
       setPendingAssignmentData(null);
@@ -542,7 +516,6 @@ export function LectureContentEditor({
                 <TabsContent value="quiz" className="mt-6">
                   {currentLessonId ? (
                     <QuizBuilder lessonId={currentLessonId} initialQuiz={existingQuiz} onSave={(quizData) => {
-                      // Store quiz data to be saved when main save button is clicked
                       console.log('LectureContentEditor received quizData:', quizData);
                       setPendingQuizData(quizData);
                       console.log('pendingQuizData set to:', quizData);

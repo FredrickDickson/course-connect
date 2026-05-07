@@ -15,6 +15,7 @@ interface QuizQuestion {
   question: string;
   questionType: 'multiple_choice' | 'true_false' | 'fill_blank';
   points: number;
+  order?: number;
   answers: QuizAnswer[];
   correctAnswer?: string; // For fill-in-the-blank
 }
@@ -234,7 +235,9 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
     };
 
     console.log('QuizBuilder calling onSave with quizData:', quizData);
-    onSave(quizData);
+    if (onSave) {
+      onSave(quizData);
+    }
   };
 
   return (
