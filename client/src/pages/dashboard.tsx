@@ -55,7 +55,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("certificates")
-        .select("*, course:courses(id, title)")
+        .select("*")
         .eq("user_id", user!.id)
         .eq("is_revoked", false);
       if (error) throw error;
