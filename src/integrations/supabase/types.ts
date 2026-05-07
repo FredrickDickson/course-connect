@@ -3705,6 +3705,18 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_owns_lesson: {
+        Args: { _lesson_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_question: {
+        Args: { _question_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_quiz: {
+        Args: { _quiz_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       membership_level: "associate" | "member" | "fellow"
