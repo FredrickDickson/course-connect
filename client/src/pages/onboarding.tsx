@@ -779,58 +779,28 @@ export default function Onboarding() {
 
 
 
-      const profileResponse = await apiRequest("POST", "/api/qualification/professional-profile", {
-
-        submit: true,
-
+      // Legacy expedited-review API is not deployed; record the submission locally.
+      const professionalProfile = {
+        reviewStatus: "UNDER_REVIEW",
         contactEmail: form.email,
-
         contactPhone: form.phone,
-
         country: form.country,
-
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-
-        linkedinUrl: form.linkedin_url || undefined,
-
         organization: form.organisation,
-
         jobTitle: form.job_title,
-
         yearsAdrExperience: experienceYearsValue,
-
         yearsLegalExperience: experienceYearsValue,
-
-        qualifications: form.highest_qualification ? [form.highest_qualification] : undefined,
-
-        submittedPayload: {
-
-          ...form,
-
-          years_experience_value: experienceYearsValue,
-
-        },
-
-      });
-
-      const professionalProfile = await profileResponse.json();
+      };
 
       setProfileStatus(professionalProfile);
 
       await supabase.from("activity_log").insert({
-
         user_id: user.id,
-
         event_type: "professional_profile_submitted",
-
         description: "Submitted professional profile for expedited review",
-
         metadata: {
-
-          reviewStatus: professionalProfile?.reviewStatus ?? "UNKNOWN",
-
+          reviewStatus: "UNDER_REVIEW",
+          payload: { ...form, years_experience_value: experienceYearsValue },
         },
-
       });
 
       toast.success("Profile submitted! You'll keep Associate access while we review your experience.");
