@@ -4,13 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,20 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCard from "@/components/course-card";
-import {
-  Search,
-  Filter,
-  SortAsc,
-  SortDesc,
-  Grid,
-  List,
-  Heart,
-  BookOpen,
-  Clock,
-  Star,
-  Users,
-  X,
-} from "lucide-react";
+import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users, X } from "lucide-react";
 import { Link } from "wouter";
 
 interface Suggestion {
@@ -80,10 +61,7 @@ export default function Courses() {
     queryKey: ["user-enrollments", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from("enrollments")
-        .select("course_id, status")
-        .eq("user_id", user.id);
+      const { data, error } = await supabase.from("enrollments").select("course_id, status").eq("user_id", user.id);
       if (error) throw error;
       return data || [];
     },
@@ -112,14 +90,10 @@ export default function Courses() {
           .eq("is_published", true)
           .ilike("title", `%${search}%`)
           .limit(5),
-        supabase
-          .from("categories")
-          .select("id, name")
-          .ilike("name", `%${search}%`)
-          .limit(3),
+        supabase.from("categories").select("id, name").ilike("name", `%${search}%`).limit(3),
       ]);
 
-      const courseSuggestions: Suggestion[] = (coursesResult.data || []).map(c => ({
+      const courseSuggestions: Suggestion[] = (coursesResult.data || []).map((c) => ({
         type: "course",
         id: c.id,
         title: c.title,
@@ -127,7 +101,7 @@ export default function Courses() {
         url: `/course/${c.id}`,
       }));
 
-      const categorySuggestions: Suggestion[] = (categoriesResult.data || []).map(c => ({
+      const categorySuggestions: Suggestion[] = (categoriesResult.data || []).map((c) => ({
         type: "category",
         id: c.id,
         title: c.name,
@@ -163,33 +137,33 @@ export default function Courses() {
   };
 
   // Eligibility checking helper
-  const checkCourseEligibility = (course: any): { status: "eligible" | "upgrade-required" | "enrolled" | "unknown"; label: string } => {
+  const checkCourseEligibility = (
+    course: any,
+  ): { status: "eligible" | "upgrade-required" | "enrolled" | "unknown"; label: string } => {
     if (!user?.id) return { status: "unknown", label: "Sign in to check" };
-    
+
     const courseTrack = course.track || "ARBITRATION";
     const userTrackLevel = trackProgress[courseTrack] || "NONE";
     const courseLevel = (course.level || "associate").toUpperCase();
-    
+
     const LEVEL_ORDER = { NONE: 0, ASSOCIATE: 1, MEMBER: 2, FELLOW: 3 };
     const userIndex = LEVEL_ORDER[userTrackLevel as keyof typeof LEVEL_ORDER] || 0;
     const courseIndex = LEVEL_ORDER[courseLevel as keyof typeof LEVEL_ORDER] || 1;
-    
+
     // Check if enrolled
-    const isEnrolled = userEnrollments.some(
-      (e: any) => e.course_id === course.id && e.status === "ACTIVE"
-    );
+    const isEnrolled = userEnrollments.some((e: any) => e.course_id === course.id && e.status === "ACTIVE");
     if (isEnrolled) return { status: "enrolled", label: "Enrolled" };
-    
+
     // Anyone can take Associate
     if (courseLevel === "ASSOCIATE") {
       return { status: "eligible", label: "Eligible" };
     }
-    
+
     // Must have completed previous level
     if (userIndex >= courseIndex - 1) {
       return { status: "eligible", label: "Eligible" };
     }
-    
+
     // Show what level is needed
     const requiredLevel = courseIndex === 2 ? "Associate" : "Member";
     return { status: "upgrade-required", label: `Requires ${requiredLevel}` };
@@ -211,9 +185,7 @@ export default function Courses() {
     queryFn: async () => {
       let query = supabase
         .from("courses")
-        .select(
-          "*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)",
-        )
+        .select("*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)")
         .eq("is_published", true);
 
       if (search) {
@@ -223,11 +195,7 @@ export default function Courses() {
       if (category && category !== "all") {
         // If it's a slug, we might need a join or a second query.
         // Assuming we have slugs in categories table.
-        const { data: catData } = await supabase
-          .from("categories")
-          .select("id")
-          .eq("slug", category)
-          .maybeSingle();
+        const { data: catData } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
         if (catData) query = query.eq("category_id", (catData as any).id);
       }
 
@@ -240,39 +208,35 @@ export default function Courses() {
       }
 
       // Sort logic
-      if (sortBy === "newest")
-        query = query.order("created_at", { ascending: false });
-      else if (sortBy === "price-low")
-        query = query.order("price", { ascending: true });
-      else if (sortBy === "price-high")
-        query = query.order("price", { ascending: false });
-      else if (sortBy === "rating")
-        query = query.order("avg_rating", { ascending: false });
+      if (sortBy === "newest") query = query.order("created_at", { ascending: false });
+      else if (sortBy === "price-low") query = query.order("price", { ascending: true });
+      else if (sortBy === "price-high") query = query.order("price", { ascending: false });
+      else if (sortBy === "rating") query = query.order("avg_rating", { ascending: false });
 
       const { data, error } = await query;
       if (error) throw error;
-      
+
       let filteredData = data || [];
-      
+
       // Filter by eligibility if toggle is on
       if (showEligibleOnly && user?.id) {
-        filteredData = filteredData.filter(course => {
+        filteredData = filteredData.filter((course) => {
           const eligibility = checkCourseEligibility(course);
           return eligibility.status === "eligible";
         });
       }
-      
+
       // Sort by eligibility: eligible first, then upgrade-required, then enrolled
       if (user?.id) {
         filteredData.sort((a: any, b: any) => {
           const aElig = checkCourseEligibility(a);
           const bElig = checkCourseEligibility(b);
-          
+
           const priority = { eligible: 0, "upgrade-required": 1, enrolled: 2, unknown: 3 };
           return priority[aElig.status as keyof typeof priority] - priority[bElig.status as keyof typeof priority];
         });
       }
-      
+
       return filteredData;
     },
   });
@@ -301,9 +265,7 @@ export default function Courses() {
                 <BookOpen className="w-4 h-4 mr-2" />
                 {stats?.totalCourses || "50+"} Professional Courses
               </Badge>
-              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                {t("courses.title")}
-              </h1>
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">{t("courses.title")}</h1>
               <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
                 {t("courses.subtitle")}
               </p>
@@ -325,7 +287,7 @@ export default function Courses() {
               </div>
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-4 h-4 text-yellow-300" />
-                <span>6 Professional Courses</span>
+                <span>Expert-Led Courses</span>
               </div>
             </div>
           </div>
@@ -370,11 +332,7 @@ export default function Courses() {
                     className="w-full px-4 py-3 flex items-start gap-3 hover:bg-accent transition-colors text-left border-b last:border-b-0"
                   >
                     <div className="mt-0.5 text-muted-foreground">
-                      {suggestion.type === "course" ? (
-                        <BookOpen className="w-4 h-4" />
-                      ) : (
-                        <Filter className="w-4 h-4" />
-                      )}
+                      {suggestion.type === "course" ? <BookOpen className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground">{suggestion.title}</p>
@@ -491,9 +449,7 @@ export default function Courses() {
           {/* Active Filters */}
           {(search || category || level || priceRange) && (
             <div className="flex flex-wrap items-center gap-2 mb-6">
-              <span className="text-sm text-muted-foreground">
-                Active filters:
-              </span>
+              <span className="text-sm text-muted-foreground">Active filters:</span>
               {search && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Search: "{search}"
@@ -510,13 +466,8 @@ export default function Courses() {
               )}
               {category && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Category:{" "}
-                  {categories.find((c: any) => c.slug === category)?.name ||
-                    category}
-                  <button
-                    onClick={() => setCategory("")}
-                    className="ml-1 hover:text-destructive"
-                  >
+                  Category: {categories.find((c: any) => c.slug === category)?.name || category}
+                  <button onClick={() => setCategory("")} className="ml-1 hover:text-destructive">
                     ×
                   </button>
                 </Badge>
@@ -524,10 +475,7 @@ export default function Courses() {
               {level && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Level: {level}
-                  <button
-                    onClick={() => setLevel("")}
-                    className="ml-1 hover:text-destructive"
-                  >
+                  <button onClick={() => setLevel("")} className="ml-1 hover:text-destructive">
                     ×
                   </button>
                 </Badge>
@@ -535,10 +483,7 @@ export default function Courses() {
               {priceRange && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Price: {priceRange === "free" ? "Free" : `$${priceRange}`}
-                  <button
-                    onClick={() => setPriceRange("")}
-                    className="ml-1 hover:text-destructive"
-                  >
+                  <button onClick={() => setPriceRange("")} className="ml-1 hover:text-destructive">
                     ×
                   </button>
                 </Badge>
@@ -566,12 +511,9 @@ export default function Courses() {
       <section className="hidden md:block py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Featured Professional Courses
-            </h2>
+            <h2 className="text-3xl font-bold text-foreground mb-4">Featured Professional Courses</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Internationally recognized courses designed by leading ADR experts
-              and practitioners
+              Internationally recognized courses designed by leading ADR experts and practitioners
             </p>
           </div>
 
@@ -581,10 +523,7 @@ export default function Courses() {
               .filter((course: any) => course.is_featured)
               .slice(0, 2)
               .map((course: any) => (
-                <Link key={course.id} href={`/course/${course.id}`}>
-                <Card
-                  className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
-                >
+                <Card key={course.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
                   <div className="relative">
                     <img
                       src={course.thumbnail_url}
@@ -592,15 +531,10 @@ export default function Courses() {
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
-                      <Badge className="bg-primary text-primary-foreground">
-                        Featured
-                      </Badge>
+                      <Badge className="bg-primary text-primary-foreground">Featured</Badge>
                     </div>
                     <div className="absolute top-4 right-4">
-                      <Badge
-                        variant="secondary"
-                        className="bg-black/20 text-white border-0"
-                      >
+                      <Badge variant="secondary" className="bg-black/20 text-white border-0">
                         {course.level}
                       </Badge>
                     </div>
@@ -608,21 +542,15 @@ export default function Courses() {
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2">
-                          {course.title}
-                        </h3>
-                        <p className="text-muted-foreground text-sm line-clamp-3">
-                          {course.description}
-                        </p>
+                        <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2">{course.title}</h3>
+                        <p className="text-muted-foreground text-sm line-clamp-3">{course.description}</p>
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="text-2xl font-bold text-foreground">
-                            ${course.price.toLocaleString()}
-                          </div>
+                          <div className="text-2xl font-bold text-foreground">${course.price.toLocaleString()}</div>
                           <div className="text-sm text-muted-foreground">
-                            {course.duration_hours} hours
+                            {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>
                         </div>
                         <Button>Learn More</Button>
@@ -630,7 +558,6 @@ export default function Courses() {
                     </div>
                   </CardContent>
                 </Card>
-                </Link>
               ))}
           </div>
         </div>
@@ -644,24 +571,17 @@ export default function Courses() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  {courses.length === 0
-                    ? "No courses found"
-                    : "Available Courses"}
+                  {courses.length === 0 ? "No courses found" : "Available Courses"}
                 </h2>
-                <p
-                  className="text-muted-foreground mt-1"
-                  data-testid="results-count"
-                >
-                  {courses.length > 0 &&
-                    `${courses.length} course${courses.length !== 1 ? "s" : ""} available`}
+                <p className="text-muted-foreground mt-1" data-testid="results-count">
+                  {courses.length > 0 && `${courses.length} course${courses.length !== 1 ? "s" : ""} available`}
                 </p>
               </div>
 
               {courses.length > 0 && (
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-muted-foreground">
-                    Showing {Math.min(courses.length, 12)} of {courses.length}{" "}
-                    results
+                    Showing {Math.min(courses.length, 12)} of {courses.length} results
                   </span>
                 </div>
               )}
@@ -670,19 +590,9 @@ export default function Courses() {
 
           {/* Loading State */}
           {isLoading && (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-                  : "space-y-6"
-              }
-            >
+            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-6"}>
               {[...Array(6)].map((_, i) => (
-                <Card
-                  key={i}
-                  className="animate-pulse"
-                  data-testid={`skeleton-course-${i}`}
-                >
+                <Card key={i} className="animate-pulse" data-testid={`skeleton-course-${i}`}>
                   {viewMode === "grid" ? (
                     <>
                       <div className="w-full h-48 bg-muted"></div>
@@ -715,12 +625,9 @@ export default function Courses() {
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                No courses found
-              </h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">No courses found</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                We couldn't find any courses matching your criteria. Try
-                adjusting your filters or search terms.
+                We couldn't find any courses matching your criteria. Try adjusting your filters or search terms.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
@@ -744,32 +651,19 @@ export default function Courses() {
 
           {/* Course Results */}
           {!isLoading && courses.length > 0 && (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-                  : "space-y-6"
-              }
-            >
+            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-6"}>
               {courses.map((course: any) => {
                 const eligibility = checkCourseEligibility(course);
-                
+
                 return viewMode === "grid" ? (
                   <CourseCard key={course.id} course={course} eligibility={eligibility} />
                 ) : (
-                  <Card
-                    key={course.id}
-                    className="hover:shadow-lg transition-all duration-300 group"
-                  >
+                  <Card key={course.id} className="hover:shadow-lg transition-all duration-300 group">
                     <CardContent className="p-6">
                       <div className="flex space-x-4">
                         <div className="w-24 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
                           {course.thumbnail_url ? (
-                            <img
-                              src={course.thumbnail_url}
-                              alt={course.title}
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
                               <BookOpen className="w-6 h-6 text-primary" />
@@ -789,15 +683,15 @@ export default function Courses() {
                                       eligibility.status === "eligible"
                                         ? "default"
                                         : eligibility.status === "enrolled"
-                                        ? "secondary"
-                                        : "outline"
+                                          ? "secondary"
+                                          : "outline"
                                     }
                                     className={
                                       eligibility.status === "eligible"
                                         ? "bg-green-500 text-white"
                                         : eligibility.status === "enrolled"
-                                        ? "bg-blue-500 text-white"
-                                        : ""
+                                          ? "bg-blue-500 text-white"
+                                          : ""
                                     }
                                   >
                                     {eligibility.label}
@@ -805,16 +699,12 @@ export default function Courses() {
                                 )}
                               </div>
                               {course.subtitle && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                                  {course.subtitle}
-                                </p>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{course.subtitle}</p>
                               )}
                               <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                                 <div className="flex items-center space-x-1">
                                   <Star className="w-4 h-4 fill-current text-yellow-500" />
-                                  <span>
-                                    {course.avg_rating?.toFixed(1) || "0.0"}
-                                  </span>
+                                  <span>{course.avg_rating?.toFixed(1) || "0.0"}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <Users className="w-4 h-4" />
@@ -830,8 +720,7 @@ export default function Courses() {
                             </div>
                             <div className="flex flex-col items-end space-y-2 ml-4">
                               <div className="text-lg font-bold text-primary">
-                                {course.price &&
-                                parseFloat(course.price.toString()) > 0
+                                {course.price && parseFloat(course.price.toString()) > 0
                                   ? `$${parseFloat(course.price.toString()).toFixed(2)}`
                                   : "Free"}
                               </div>
