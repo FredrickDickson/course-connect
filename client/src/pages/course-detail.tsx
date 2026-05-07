@@ -75,6 +75,26 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  // Fetch instructor profile (avatar) from profiles table
+  const { data: instructorProfile } = useQuery<any>({
+    queryKey: ["instructor-profile", course?.instructor?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", course.instructor.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!course?.instructor?.id,
+  });
+
+  const instructorAvatar =
+    instructorProfile?.avatar_url || course?.instructor?.profile_image_url || null;
+  const instructorInitials = course?.instructor
+    ? `${course.instructor.first_name?.[0] || ""}${course.instructor.last_name?.[0] || ""}`.toUpperCase()
+    : "";
+
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
