@@ -324,11 +324,11 @@ export function AssignmentBuilder({ lessonId, initialAssignment, onSave }: Assig
         </CardContent>
       </Card>
 
-      {/* Save Button - Hidden since assignment is saved via main Save Lecture button */}
+      {/* Save Button - Save assignment data immediately */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button onClick={handleSave} size="lg" data-testid="button-save-assignment" variant="outline">
+        <Button onClick={handleSave} size="lg" data-testid="button-save-assignment">
           <CheckCircle2 className="w-4 h-4 mr-2" />
-          Preview Assignment (will be saved with lecture)
+          Save Assignment
         </Button>
       </div>
     </div>
