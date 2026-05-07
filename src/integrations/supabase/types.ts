@@ -3705,8 +3705,24 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_can_view_lesson: {
+        Args: { _lesson_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_can_view_question: {
+        Args: { _question_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_can_view_quiz: {
+        Args: { _quiz_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_owns_lesson: {
         Args: { _lesson_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_owns_module: {
+        Args: { _module_id: string; _user_id: string }
         Returns: boolean
       }
       user_owns_question: {
