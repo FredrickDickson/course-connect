@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { VideoUrlInput } from './VideoUrlInput';
 import { Video, FileText, ClipboardCheck, FileUp, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchQuizForLesson, fetchAssignmentForLesson } from '@/lib/curriculum-mutations';
 
 interface LectureContentEditorProps {
   open: boolean;
@@ -45,15 +46,15 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [videoSource, setVideoSource] = useState<VideoSource>(lesson?.videoUrl ? 'upload' : (lesson?.videoPlatform ? 'external' : 'upload'));
   const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>('video');
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
-  const [pendingQuizData, setPendingQuizData] = useState<any>(null);
-  const [pendingAssignmentData, setPendingAssignmentData] = useState<any>(null);
   const [existingQuiz, setExistingQuiz] = useState<any>(null);
   const [existingAssignment, setExistingAssignment] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const ensureLessonPromiseRef = useRef<Promise<string> | null>(null);
 
-  // Reset state when lesson prop changes
+  // Reset full editor state when the dialog (re)opens
   useEffect(() => {
+    if (!open) return;
     setTitle(lesson?.title || '');
     setDescription(lesson?.description || '');
     setContentType(lesson?.contentType || 'video');
@@ -64,125 +65,68 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setVideoDuration(lesson?.duration || 0);
     setArticleContent(lesson?.content || '');
     setSavedLessonId(lesson?.id || null);
-    setPendingQuizData(null);
-    setPendingAssignmentData(null);
-  }, [lesson]);
+    setExistingQuiz(null);
+    setExistingAssignment(null);
+    ensureLessonPromiseRef.current = null;
+  }, [open, lesson?.id]);
 
-  // Fetch existing quiz/assignment data when lesson changes
+  const refreshAttachments = async (lessonId: string) => {
+    const [quiz, assignment] = await Promise.all([
+      fetchQuizForLesson(lessonId),
+      fetchAssignmentForLesson(lessonId),
+    ]);
+    setExistingQuiz(quiz);
+    setExistingAssignment(assignment);
+  };
+
+  // Fetch existing quiz/assignment data when an existing lesson is opened
   useEffect(() => {
-    if (lesson?.id) {
-      // Fetch existing quiz
-      supabase
-        .from('quizzes')
-        .select('*')
-        .eq('lesson_id', lesson.id)
-        .single()
-        .then(async ({ data: quizData, error }) => {
-          if (quizData && !error) {
-            // Fetch questions separately
-            const { data: questionsData } = await supabase
-              .from('quiz_questions')
-              .select('*')
-              .eq('quiz_id', quizData.id)
-              .order('order');
-            
-            const questionsWithAnswers = await Promise.all(
-              (questionsData || []).map(async (q: any) => {
-                const { data: answersData } = await supabase
-                  .from('quiz_answers')
-                  .select('*')
-                  .eq('question_id', q.id)
-                  .order('order');
-                
-                return {
-                  id: q.id,
-                  question: q.question,
-                  questionType: q.question_type,
-                  points: q.points,
-                  order: q.order,
-                  answers: (answersData || []).map((a: any) => ({
-                    id: a.id,
-                    answer: a.answer,
-                    isCorrect: a.is_correct,
-                    order: a.order,
-                  })),
-                };
-              })
-            );
-            
-            setExistingQuiz({
-              id: quizData.id,
-              title: quizData.title,
-              description: quizData.description,
-              timeLimit: quizData.time_limit_minutes,
-              passingScore: quizData.passing_score,
-              maxAttempts: quizData.max_attempts,
-              questions: questionsWithAnswers,
-            });
-          } else {
-            setExistingQuiz(null);
-          }
-        });
-
-      // Fetch existing assignment
-      supabase
-        .from('assignments')
-        .select('*')
-        .eq('lesson_id', lesson.id)
-        .maybeSingle()
-        .then(({ data: assignmentData, error }) => {
-          if (assignmentData && !error) {
-            setExistingAssignment({
-              id: assignmentData.id,
-              title: assignmentData.title,
-              description: assignmentData.description,
-              instructions: assignmentData.instructions,
-              maxPoints: assignmentData.max_score,
-              dueDate: assignmentData.due_date,
-              allowLateSubmission: assignmentData.allow_late_submission,
-            });
-          } else {
-            setExistingAssignment(null);
-          }
-        });
-    } else {
-      setExistingQuiz(null);
-      setExistingAssignment(null);
+    if (!open) return;
+    if (savedLessonId) {
+      refreshAttachments(savedLessonId).catch(() => {});
     }
-  }, [lesson?.id]);
+  }, [open, savedLessonId]);
 
-  // Auto-save to create the lesson so video/quiz/assignment can be attached immediately
+  // Auto-save to create the lesson so video/quiz/assignment can be attached immediately.
+  // Concurrent-safe: returns the same in-flight promise to prevent duplicate inserts.
   const ensureLessonExists = async (): Promise<string> => {
     if (savedLessonId) return savedLessonId;
+    if (!title.trim()) throw new Error('Please enter a lecture title first');
+    if (ensureLessonPromiseRef.current) return ensureLessonPromiseRef.current;
 
-    if (!title.trim()) {
-      throw new Error('Please enter a lecture title first');
+    const promise = (async () => {
+      const { data: maxOrderData } = await supabase
+        .from('lessons')
+        .select('order')
+        .eq('module_id', moduleId)
+        .order('order', { ascending: false })
+        .limit(1);
+
+      const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
+
+      const { data, error } = await supabase
+        .from('lessons')
+        .insert({
+          title,
+          description: description || null,
+          content_type: contentType,
+          module_id: moduleId,
+          order: nextOrder,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      setSavedLessonId(data.id);
+      return data.id;
+    })();
+    ensureLessonPromiseRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      // Keep the resolved id cached implicitly via savedLessonId; clear ref so retries work
+      ensureLessonPromiseRef.current = null;
     }
-
-    const { data: maxOrderData } = await supabase
-      .from('lessons')
-      .select('order')
-      .eq('module_id', moduleId)
-      .order('order', { ascending: false })
-      .limit(1);
-
-    const nextOrder = (maxOrderData?.[0]?.order ?? 0) + 1;
-
-    const { data, error } = await supabase
-      .from('lessons')
-      .insert({
-        title,
-        description: description || null,
-        content_type: contentType,
-        module_id: moduleId,
-        order: nextOrder,
-      })
-      .select('id')
-      .single();
-
-    if (error) throw error;
-    setSavedLessonId(data.id);
-    return data.id;
   };
 
   const handleSave = async () => {
@@ -244,138 +188,9 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         setSavedLessonId(data.id);
       }
 
-      // Save quiz if pending data exists
-      console.log('handleSave: pendingQuizData:', pendingQuizData);
-      if (pendingQuizData) {
-        console.log('Saving quiz with data:', pendingQuizData);
-        const lessonIdToUse = savedLessonId || (await ensureLessonExists());
-        
-        const normalizedQuestions = (pendingQuizData.questions || []).map((question: any, questionIndex: number) => ({
-          question: question.question,
-          questionType: question.questionType || question.type || 'multiple_choice',
-          points: question.points ?? 1,
-          order: question.order ?? questionIndex,
-          answers: question.questionType === 'fill_blank'
-            ? (question.correctAnswer?.trim()
-                ? [{ answer: question.correctAnswer.trim(), isCorrect: true }]
-                : [])
-            : (question.answers || []).map((answer: any, answerIndex: number) => ({
-                answer: answer.answer || answer.text || '',
-                isCorrect: !!answer.isCorrect,
-                order: answerIndex,
-              })),
-        }));
-
-        // Check if quiz already exists
-        const { data: existingQuizData } = await supabase
-          .from('quizzes')
-          .select('id')
-          .eq('lesson_id', lessonIdToUse)
-          .single();
-
-        let quizId: string;
-
-        if (existingQuizData) {
-          // Delete existing quiz (CASCADE will delete questions and answers)
-          const { error: deleteError } = await supabase
-            .from('quizzes')
-            .delete()
-            .eq('id', existingQuizData.id);
-          if (deleteError) throw deleteError;
-        }
-
-        // Create new quiz (always create after delete)
-        const { data: quiz, error: quizError } = await supabase.from('quizzes').insert({
-          lesson_id: lessonIdToUse,
-          title: pendingQuizData.title,
-          description: pendingQuizData.description || null,
-          time_limit_minutes: pendingQuizData.timeLimit || null,
-          passing_score: pendingQuizData.passingScore ?? 80,
-          max_attempts: pendingQuizData.maxAttempts ?? 3,
-        }).select().single();
-
-        if (quizError) throw quizError;
-        quizId = quiz.id;
-
-        if (normalizedQuestions.length > 0) {
-          const questionsToInsert = normalizedQuestions.map((q: any, idx: number) => ({
-            quiz_id: quizId,
-            question: q.question,
-            question_type: q.questionType,
-            points: q.points ?? 1,
-            order: q.order ?? idx,
-          }));
-          
-          const { data: questions, error: questionsError } = await supabase
-            .from('quiz_questions')
-            .insert(questionsToInsert)
-            .select();
-          
-          if (questionsError) throw questionsError;
-
-          for (let i = 0; i < questions.length; i++) {
-            const question = questions[i];
-            const q = normalizedQuestions[i];
-            
-            if (q.answers?.length > 0) {
-              const answersToInsert = q.answers.map((a: any, idx: number) => ({
-                question_id: question.id,
-                answer: a.answer,
-                is_correct: a.isCorrect ?? false,
-                order: a.order ?? idx,
-              }));
-              const { error: aError } = await supabase.from('quiz_answers').insert(answersToInsert);
-              if (aError) throw aError;
-            }
-          }
-        }
-      }
-
-      // Save assignment if pending data exists
-      if (pendingAssignmentData) {
-        const lessonIdToUse = savedLessonId || (await ensureLessonExists());
-        
-        // Check if assignment already exists
-        const { data: existingAssignmentData } = await supabase
-          .from('assignments')
-          .select('id')
-          .eq('lesson_id', lessonIdToUse)
-          .single();
-
-        if (existingAssignmentData) {
-          // Update existing assignment
-          const { error } = await supabase
-            .from('assignments')
-            .update({
-              title: pendingAssignmentData.title,
-              description: pendingAssignmentData.description || '',
-              instructions: pendingAssignmentData.instructions || null,
-              max_score: pendingAssignmentData.maxPoints ?? 100,
-              due_date: pendingAssignmentData.dueDate || null,
-              allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
-            })
-            .eq('id', existingAssignmentData.id);
-          if (error) throw error;
-        } else {
-          // Create new assignment
-          const { error } = await supabase.from('assignments').insert({
-            lesson_id: lessonIdToUse,
-            title: pendingAssignmentData.title,
-            description: pendingAssignmentData.description || '',
-            instructions: pendingAssignmentData.instructions || null,
-            max_score: pendingAssignmentData.maxPoints ?? 100,
-            due_date: pendingAssignmentData.dueDate || null,
-            allow_late_submission: pendingAssignmentData.allowLateSubmission ?? true,
-          });
-          if (error) throw error;
-        }
-      }
-
       toast({ title: 'Success', description: savedLessonId ? 'Lecture updated successfully' : 'Lecture created successfully' });
       onLectureSave();
       onOpenChange(false);
-      setPendingQuizData(null);
-      setPendingAssignmentData(null);
     } catch (error) {
       console.error('Error saving lecture:', error);
       toast({
@@ -515,12 +330,13 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
 
                 <TabsContent value="quiz" className="mt-6">
                   {currentLessonId ? (
-                    <QuizBuilder lessonId={currentLessonId} initialQuiz={existingQuiz} onSave={(quizData) => {
-                      console.log('LectureContentEditor received quizData:', quizData);
-                      setPendingQuizData(quizData);
-                      console.log('pendingQuizData set to:', quizData);
-                      toast({ title: 'Quiz saved', description: lesson ? 'Click "Update Lecture" to save all changes' : 'Click "Create Lecture" to save all changes' });
-                    }} />
+                    <QuizBuilder
+                      key={`quiz-${currentLessonId}-${existingQuiz?.id || 'new'}`}
+                      lessonId={currentLessonId}
+                      initialQuiz={existingQuiz}
+                      onSaved={() => refreshAttachments(currentLessonId)}
+                      onDeleted={() => refreshAttachments(currentLessonId)}
+                    />
                   ) : (
                     <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
                       <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -541,11 +357,13 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
 
                 <TabsContent value="assignment" className="mt-6">
                   {currentLessonId ? (
-                    <AssignmentBuilder lessonId={currentLessonId} initialAssignment={existingAssignment} onSave={(assignmentData) => {
-                      // Store assignment data to be saved when main save button is clicked
-                      setPendingAssignmentData(assignmentData);
-                      toast({ title: 'Assignment ready', description: 'Click "Save Lecture" to save the assignment' });
-                    }} />
+                    <AssignmentBuilder
+                      key={`assignment-${currentLessonId}-${existingAssignment?.id || 'new'}`}
+                      lessonId={currentLessonId}
+                      initialAssignment={existingAssignment}
+                      onSaved={() => refreshAttachments(currentLessonId)}
+                      onDeleted={() => refreshAttachments(currentLessonId)}
+                    />
                   ) : (
                     <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
                       <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
