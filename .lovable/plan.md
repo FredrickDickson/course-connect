@@ -1,62 +1,43 @@
-## Problem
+# Fix curriculum builder timeouts
 
-The curriculum builder has several real bugs that explain why quizzes and assignments don't reliably save, and why CRUD feels broken:
+## Root cause
 
-1. **Quiz/Assignment "Save" inside the dialog only stores data in local React state** (`pendingQuizData` / `pendingAssignmentData`). If the user closes the dialog, switches tabs, or re-opens an existing lecture, that data is lost — nothing was persisted yet.
-2. **The outer "Update Lecture" button is the only thing that actually writes to the DB**, but the toast on Quiz/Assignment Save says "saved" — misleading users into thinking it's persisted.
-3. **Existing-quiz/assignment fetches use `.single()` instead of `.maybeSingle()`** for `quizzes` and (in part) for the existence check on save. With no row this throws `PGRST116`, which is silently swallowed in some places and surfaces as a hard error in others — so on edit, the previously-saved quiz often fails to reload.
-4. **Quiz update path always deletes + re-inserts** (good for question diffs) but it's done from the outer save handler with stale `savedLessonId` references — when a brand-new lecture is created in the same session, `lessonIdToUse` falls back to `ensureLessonExists`, which inserts a *second* lesson row because `savedLessonId` state hasn't yet propagated.
-5. **Assignment builder collects fields the DB doesn't have** (`submission_type`, `rubric`) and never persists them, so editing an assignment loses those values immediately.
-6. **No standalone "Delete Quiz" / "Delete Assignment"** action — the only way to remove them is to delete the whole lecture.
-7. **Reset effect in `LectureContentEditor`** runs on the `lesson` object identity, so opening "Add Lecture" right after editing one keeps the previous `savedLessonId` in some race conditions, leading to "edits" being applied to the wrong lecture.
+Earlier migration replaced INSERT/UPDATE/DELETE policies on `quizzes`, `quiz_questions`, `quiz_answers` with `user_owns_*` helpers, but left the **SELECT** policies (and **all** policies on `assignments` and `lessons`) using deeply-nested `EXISTS (SELECT ... JOIN modules JOIN courses JOIN enrollments ...)` chains.
 
-## Fix
+PostgREST evaluates SELECT policies on every read AND on the `RETURNING` clause of inserts/updates (the `?select=id` part). With multiple heavy SELECT policies OR'd together, this exceeds the 8s statement timeout — causing the 12s–22s 500 errors on quiz_questions POST, quiz_answers GET, assignments GET, and lessons PATCH.
 
-### 1. `LectureContentEditor.tsx` — make persistence atomic and immediate
-- Replace the "pending data buffer" pattern with **direct save** when the user clicks Save inside `QuizBuilder` / `AssignmentBuilder`. The inner Save button writes straight to Supabase via a shared helper (`saveQuizForLesson`, `saveAssignmentForLesson`), then refetches `existingQuiz` / `existingAssignment`.
-- Outer "Save Lecture" button only saves the lesson row (title, description, content_type, video, article).
-- Use `.maybeSingle()` everywhere a row may not exist.
-- Reset `savedLessonId` and all builder state when the dialog closes (`open` going false), not only when the `lesson` prop changes.
-- Guard `ensureLessonExists` with a ref so concurrent calls return the same promise — prevents duplicate lesson rows.
+The earlier `user_owns_lesson/quiz/question` helpers are `SECURITY DEFINER` so they bypass RLS recursion and run a single indexed lookup.
 
-### 2. New helper module `client/src/lib/curriculum-mutations.ts`
-Centralize all quiz/assignment CRUD so the builder, dialog, and curriculum page share the same code:
-- `upsertQuiz(lessonId, quizData)` — inserts/updates `quizzes`, then deletes & re-inserts `quiz_questions` + `quiz_answers` inside a single logical flow with rollback on error.
-- `deleteQuiz(quizId)` — explicit delete (cascade handles questions/answers).
-- `upsertAssignment(lessonId, data)`, `deleteAssignment(assignmentId)`.
-- `fetchQuizForLesson(lessonId)`, `fetchAssignmentForLesson(lessonId)` — using `maybeSingle` and returning normalized camelCase shapes.
+## Migration
 
-### 3. `QuizBuilder.tsx`
-- Accept `lessonId` and call `upsertQuiz` directly on Save (with loading/disabled state and error toast).
-- Replace `onSave` prop with `onSaved` (notification only).
-- Add a **Delete Quiz** button (visible only when `initialQuiz?.id` exists) that calls `deleteQuiz` after a confirm.
-- Fix the "uncheck others on multiple_choice" bug — current code returns the same answer object regardless of branch.
+Add one more helper and rewrite all remaining heavy policies:
 
-### 4. `AssignmentBuilder.tsx`
-- Same pattern: direct upsert on Save, Delete button on edit.
-- Drop UI for `submissionType` and `rubric` (not in schema). Optionally, add `submission_type` column + `assignment_rubrics` linkage in a follow-up — for now match what the DB supports so Save round-trips cleanly.
+1. **New helper** `public.user_can_view_lesson(_lesson_id uuid, _user_id uuid)` — `SECURITY DEFINER`, returns true if user is the course instructor OR has an enrollment row for the course. Single function avoids OR'd policies.
 
-### 5. `course-curriculum.tsx`
-- After `LectureContentEditor` `onSave`, also invalidate `["lesson-quiz", lessonId]` and `["lesson-assignment", lessonId]` query keys so badges refresh.
-- Show a small badge on each lesson row indicating "Quiz attached" / "Assignment attached" with item count, querying the new helpers.
-- Lecture delete already cascades via FK.
+2. **`lessons`** — drop `Instructors can manage lessons of their modules`, `Lessons are viewable if course is viewable`, `lessons_instructors_*` (4 policies), `lessons_view_from_published_courses`. Recreate:
+   - SELECT using `user_can_view_lesson(id, auth.uid()) OR EXISTS(SELECT 1 FROM modules m JOIN courses c ON c.id=m.course_id WHERE m.id=lessons.module_id AND c.is_published)` — wrapped in a single SECURITY DEFINER function `public.user_can_see_lesson`.
+   - INSERT/UPDATE/DELETE using `user_owns_lesson_module(module_id, auth.uid())` (new SD helper checking instructor of the module's course).
 
-### 6. Pre-existing build errors (out of scope but blocking)
-The build is currently red from prior unrelated TS errors in `level-upgrade-celebration.tsx`, `search-modal.tsx`, `course-catalog.tsx`, `course-search.tsx`, `courses.tsx`, `video-player.tsx`, and `server/storage/qualificationState.ts` — they reference a `track_progress` table the generated `Database` types don't know about (and a removed `STUDENT` enum value). They will need a quick pass to either remove the dead `track_progress` queries (the table is no longer in PostgREST) or cast through `as any`. I'll include minimal fixes for these in the same change so the project compiles after the curriculum rewrite.
+3. **`quizzes`** — drop `Quizzes are viewable if lesson is viewable`, `quizzes_instructors_view`, `quizzes_view_enrolled`. Replace SELECT with a single policy: `user_can_view_lesson(lesson_id, auth.uid())`.
 
-## Files touched
+4. **`quiz_questions`** — drop `quiz_questions_view`. Replace with: `user_owns_quiz(quiz_id, auth.uid()) OR user_quiz_enrolled(quiz_id, auth.uid())` via a new SD helper `user_can_view_quiz`.
 
-- `client/src/components/LectureContentEditor.tsx` — refactor save flow
-- `client/src/components/QuizBuilder.tsx` — direct persistence + delete
-- `client/src/components/AssignmentBuilder.tsx` — direct persistence + delete, drop unsupported fields
-- `client/src/lib/curriculum-mutations.ts` — **new** shared CRUD helpers
-- `client/src/pages/course-curriculum.tsx` — query-invalidation + attached-badge
-- Minor compile fixes in: `level-upgrade-celebration.tsx`, `search-modal.tsx`, `course-catalog.tsx`, `course-search.tsx`, `courses.tsx`, `video-player.tsx`, `server/storage/qualificationState.ts`
+5. **`quiz_answers`** — drop `quiz_answers_view`. Replace with `user_can_view_question(question_id, auth.uid())` SD helper.
 
-## What you'll see after
+6. **`assignments`** — drop all 4 policies (`Assignments are viewable…`, `assignments_instructors_view`, `assignments_instructors_create`, `assignments_view_enrolled`). Recreate:
+   - SELECT: `user_can_view_lesson(lesson_id, auth.uid())`
+   - INSERT/UPDATE/DELETE: `user_owns_lesson(lesson_id, auth.uid())`
 
-- Clicking **Save Quiz** or **Save Assignment** inside the lecture dialog persists immediately with a real success toast; closing the dialog no longer loses the work.
-- Re-opening any lecture loads its existing quiz/assignment correctly (no more silent fetch errors).
-- A **Delete** button appears on the quiz and assignment panels for already-saved items.
-- Editing a brand-new lecture no longer creates duplicate lesson rows.
-- Lesson rows in the curriculum show a small "Quiz · N questions" / "Assignment" badge.
+All new policies are scoped `TO authenticated` to avoid `anon` evaluation overhead.
+
+## Why this fixes it
+
+- All policy predicates become a single function call returning a boolean from one indexed lookup, instead of Postgres planning multi-table joins per row through RLS recursion.
+- Removes duplicate OR'd SELECT policies (Postgres must evaluate every applicable policy until one passes).
+- `SECURITY DEFINER` bypasses RLS inside the helper, so no recursive policy evaluation.
+
+## Verification after apply
+
+- Reload curriculum page — assignments and quiz_answers GETs should return in <500ms.
+- Save a quiz question — POST to `/quiz_questions?...&select=id` should complete in <1s.
+- Save lecture — PATCH to `/lessons` should complete in <1s.
