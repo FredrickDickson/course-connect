@@ -75,6 +75,26 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  // Fetch instructor profile (avatar) from profiles table
+  const { data: instructorProfile } = useQuery<any>({
+    queryKey: ["instructor-profile", course?.instructor?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", course.instructor.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!course?.instructor?.id,
+  });
+
+  const instructorAvatar =
+    instructorProfile?.avatar_url || course?.instructor?.profile_image_url || null;
+  const instructorInitials = course?.instructor
+    ? `${course.instructor.first_name?.[0] || ""}${course.instructor.last_name?.[0] || ""}`.toUpperCase()
+    : "";
+
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
@@ -330,11 +350,17 @@ export default function CourseDetail() {
               <div className="flex flex-wrap items-center gap-6 text-sm">
                 {course.instructor && (
                   <div className="flex items-center space-x-2">
-                    <img
-                      src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                      alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
+                    {instructorAvatar ? (
+                      <img
+                        src={instructorAvatar}
+                        alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold">
+                        {instructorInitials}
+                      </div>
+                    )}
                     <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
                   </div>
                 )}
@@ -544,14 +570,24 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-4">Instructor</h3>
                     <div className="text-center space-y-4">
-                      <img
-                        src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`}
-                        alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                        className="w-20 h-20 rounded-full object-cover mx-auto"
-                      />
+                      {instructorAvatar ? (
+                        <img
+                          src={instructorAvatar}
+                          alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
+                          className="w-20 h-20 rounded-full object-cover mx-auto"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                          {instructorInitials}
+                        </div>
+                      )}
                       <div>
                         <h4 className="font-semibold text-lg">{course.instructor.first_name} {course.instructor.last_name}</h4>
-                        {course.instructor.bio && <p className="text-sm text-muted-foreground mt-2">{course.instructor.bio}</p>}
+                        {course.instructor.bio ? (
+                          <p className="text-sm text-muted-foreground mt-2">{course.instructor.bio}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-2 italic">No bio provided yet.</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>

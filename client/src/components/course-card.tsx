@@ -170,10 +170,11 @@ export default function CourseCard({ course, eligibility }: CourseCardProps) {
                 <span>{course.duration_hours}h</span>
               </span>
             )}
-            <span className="flex items-center space-x-1.5" data-testid="course-students">
+            {/* Learners count hidden until substantial user base */}
+            {/* <span className="flex items-center space-x-1.5" data-testid="course-students">
               <Users className="w-3.5 h-3.5 text-primary/60" />
               <span>{course.enrollment_count || 0} learners</span>
-            </span>
+            </span> */}
           </div>
         </div>
 
