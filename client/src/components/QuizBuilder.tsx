@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, GripVertical, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QuizBulkImport } from '@/components/QuizBulkImport';
+import { upsertQuiz, deleteQuizByLesson } from '@/lib/curriculum-mutations';
 
 interface QuizQuestion {
   id: string;
@@ -37,16 +38,19 @@ interface QuizBuilderProps {
     maxAttempts: number;
     questions: QuizQuestion[];
   };
-  onSave: (quizData: any) => void;
+  onSaved?: () => void;
+  onDeleted?: () => void;
 }
 
-export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps) {
+export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizBuilderProps) {
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [description, setDescription] = useState(initialQuiz?.description || '');
   const [timeLimit, setTimeLimit] = useState(initialQuiz?.timeLimit?.toString() || '');
   const [passingScore, setPassingScore] = useState(initialQuiz?.passingScore || 80);
   const [maxAttempts, setMaxAttempts] = useState(initialQuiz?.maxAttempts || 3);
   const [questions, setQuestions] = useState<QuizQuestion[]>(initialQuiz?.questions || []);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
   const addQuestion = () => {
@@ -126,18 +130,15 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
   const updateAnswer = (questionId: string, answerId: string, field: string, value: any) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
+        const isSingleAnswer =
+          field === 'isCorrect' && value === true && q.questionType === 'multiple_choice';
         return {
           ...q,
           answers: q.answers.map(a => {
             if (a.id === answerId) {
-              // For multiple choice, only one answer can be correct
-              if (field === 'isCorrect' && value === true && q.questionType === 'multiple_choice') {
-                return { ...a, [field]: value };
-              }
               return { ...a, [field]: value };
             }
-            // Uncheck other answers if this is multiple choice
-            if (field === 'isCorrect' && value === true && q.questionType === 'multiple_choice') {
+            if (isSingleAnswer) {
               return { ...a, isCorrect: false };
             }
             return a;
@@ -148,7 +149,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validation
     if (!title.trim()) {
       toast({
@@ -221,22 +222,54 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
       }
     }
 
-    const quizData = {
-      lessonId,
-      title,
-      description,
-      timeLimit: timeLimit ? parseInt(timeLimit) : null,
-      passingScore,
-      maxAttempts,
-      questions: questions.map((q, index) => ({
-        ...q,
-        order: index,
-      })),
-    };
+    setSaving(true);
+    try {
+      await upsertQuiz(lessonId, {
+        title,
+        description,
+        timeLimit: timeLimit ? parseInt(timeLimit) : null,
+        passingScore,
+        maxAttempts,
+        questions: questions.map((q, index) => ({
+          question: q.question,
+          questionType: q.questionType,
+          points: q.points,
+          order: index,
+          correctAnswer: q.correctAnswer,
+          answers: q.answers,
+        })),
+      });
+      toast({ title: 'Quiz saved', description: 'Your quiz has been saved successfully.' });
+      onSaved?.();
+    } catch (e: any) {
+      toast({
+        title: 'Error saving quiz',
+        description: e?.message || 'Failed to save quiz',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    console.log('QuizBuilder calling onSave with quizData:', quizData);
-    if (onSave) {
-      onSave(quizData);
+  const handleDelete = async () => {
+    if (!confirm('Delete this quiz? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await deleteQuizByLesson(lessonId);
+      setTitle('');
+      setDescription('');
+      setQuestions([]);
+      toast({ title: 'Quiz deleted' });
+      onDeleted?.();
+    } catch (e: any) {
+      toast({
+        title: 'Error deleting quiz',
+        description: e?.message || 'Failed to delete quiz',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -461,9 +494,24 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
 
       {/* Save Button - Validates quiz and prepares it for saving */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button onClick={handleSave} size="lg" data-testid="button-save-quiz">
-          <CheckCircle2 className="w-4 h-4 mr-2" />
-          Save Quiz
+        {initialQuiz?.id && (
+          <Button
+            variant="destructive"
+            size="lg"
+            onClick={handleDelete}
+            disabled={deleting || saving}
+            data-testid="button-delete-quiz"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {deleting ? 'Deleting...' : 'Delete Quiz'}
+          </Button>
+        )}
+        <Button onClick={handleSave} size="lg" disabled={saving} data-testid="button-save-quiz">
+          {saving ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+          ) : (
+            <><CheckCircle2 className="w-4 h-4 mr-2" />Save Quiz</>
+          )}
         </Button>
       </div>
     </div>
