@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import type {
   Track,
   TrackLevel,
@@ -6,11 +5,7 @@ import type {
   PathwayType,
   PathwayAction,
 } from "@/types/qualification";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+import { supabase } from "@/integrations/supabase/client";
 
 export interface QualificationTrackProgress {
   track: Track;
