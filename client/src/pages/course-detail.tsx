@@ -383,7 +383,7 @@ export default function CourseDetail() {
                   <CardContent className="p-6 text-center">
                     <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
                     <h3 className="text-lg font-bold text-foreground mb-2">You're Enrolled</h3>
-                    <Link href={`/learn/${course.id}/1`}>
+                    <Link href={`/learn/${course.id}/${course.modules?.[0]?.lessons?.[0]?.id ?? "1"}`}>
                       <Button className="w-full" size="lg">
                         <PlayCircle className="w-4 h-4 mr-2" /> Continue Learning
                       </Button>
