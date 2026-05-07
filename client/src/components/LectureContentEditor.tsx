@@ -87,30 +87,41 @@ export function LectureContentEditor({
       // Fetch existing quiz
       supabase
         .from('quizzes')
-        .select(`
-          *,
-          quiz_questions (
-            *,
-            quiz_answers (*)
-          )
-        `)
+        .select('*')
         .eq('lesson_id', lesson.id)
         .single()
-        .then(({ data: quizData, error }) => {
+        .then(async ({ data: quizData, error }) => {
           if (quizData && !error) {
-            const normalizedQuestions = quizData.quiz_questions?.map((q: any) => ({
-              id: q.id,
-              question: q.question,
-              questionType: q.question_type,
-              points: q.points,
-              order: q.order,
-              answers: q.quiz_answers?.map((a: any) => ({
-                id: a.id,
-                answer: a.answer,
-                isCorrect: a.is_correct,
-                order: a.order,
-              })) || [],
-            })) || [];
+            // Fetch questions separately
+            const { data: questionsData } = await supabase
+              .from('quiz_questions')
+              .select('*')
+              .eq('quiz_id', quizData.id)
+              .order('order');
+            
+            const questionsWithAnswers = await Promise.all(
+              (questionsData || []).map(async (q: any) => {
+                const { data: answersData } = await supabase
+                  .from('quiz_answers')
+                  .select('*')
+                  .eq('question_id', q.id)
+                  .order('order');
+                
+                return {
+                  id: q.id,
+                  question: q.question,
+                  questionType: q.question_type,
+                  points: q.points,
+                  order: q.order,
+                  answers: (answersData || []).map((a: any) => ({
+                    id: a.id,
+                    answer: a.answer,
+                    isCorrect: a.is_correct,
+                    order: a.order,
+                  })),
+                };
+              })
+            );
             
             setExistingQuiz({
               id: quizData.id,
@@ -119,7 +130,7 @@ export function LectureContentEditor({
               timeLimit: quizData.time_limit_minutes,
               passingScore: quizData.passing_score,
               maxAttempts: quizData.max_attempts,
-              questions: normalizedQuestions,
+              questions: questionsWithAnswers,
             });
           } else {
             setExistingQuiz(null);
@@ -131,7 +142,7 @@ export function LectureContentEditor({
         .from('assignments')
         .select('*')
         .eq('lesson_id', lesson.id)
-        .single()
+        .maybeSingle()
         .then(({ data: assignmentData, error }) => {
           if (assignmentData && !error) {
             setExistingAssignment({
@@ -247,7 +258,9 @@ export function LectureContentEditor({
       }
 
       // Save quiz if pending data exists
+      console.log('handleSave: pendingQuizData:', pendingQuizData);
       if (pendingQuizData) {
+        console.log('Saving quiz with data:', pendingQuizData);
         const lessonIdToUse = savedLessonId || (await ensureLessonExists());
         
         const normalizedQuestions = (pendingQuizData.questions || []).map((question: any, questionIndex: number) => ({
@@ -469,7 +482,7 @@ export function LectureContentEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-lecture-editor">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" data-testid="dialog-lecture-editor">
         <DialogHeader>
           <DialogTitle>{lesson ? 'Edit Lecture' : 'Add New Lecture'}</DialogTitle>
           <DialogDescription>
@@ -477,104 +490,108 @@ export function LectureContentEditor({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="lecture-title">Lecture Title *</Label>
-              <Input id="lecture-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Introduction to Mediation" data-testid="input-title" />
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="lecture-title">Lecture Title *</Label>
+                <Input id="lecture-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Introduction to Mediation" data-testid="input-title" />
+              </div>
+              <div>
+                <Label htmlFor="lecture-description">Description (Optional)</Label>
+                <Textarea id="lecture-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of this lecture..." rows={2} />
+              </div>
             </div>
+
             <div>
-              <Label htmlFor="lecture-description">Description (Optional)</Label>
-              <Textarea id="lecture-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of what students will learn" rows={2} data-testid="input-description" />
-            </div>
-          </div>
+              <Label className="mb-3 block">Lecture Type</Label>
+              <Tabs value={contentType} onValueChange={handleTabChange}>
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
+                  <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
+                  <TabsTrigger value="quiz"><ClipboardCheck className="w-4 h-4 mr-2" />Quiz</TabsTrigger>
+                  <TabsTrigger value="assignment"><FileUp className="w-4 h-4 mr-2" />Assignment</TabsTrigger>
+                </TabsList>
 
-          <div>
-            <Label className="mb-3 block">Lecture Type</Label>
-            <Tabs value={contentType} onValueChange={handleTabChange}>
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
-                <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
-                <TabsTrigger value="quiz"><ClipboardCheck className="w-4 h-4 mr-2" />Quiz</TabsTrigger>
-                <TabsTrigger value="assignment"><FileUp className="w-4 h-4 mr-2" />Assignment</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="video" className="mt-6">
-                <div className="space-y-6">
-                  <VideoSourceSelector
-                    value={videoSource}
-                    onChange={handleVideoSourceChange}
-                  />
-                  
-                  {videoSource === 'upload' ? (
-                    <VideoUploader
-                      lessonId={currentLessonId || undefined}
-                      currentVideoUrl={videoUrl}
-                      onUploadComplete={handleVideoUpload}
+                <TabsContent value="video" className="mt-6">
+                  <div className="space-y-6">
+                    <VideoSourceSelector
+                      value={videoSource}
+                      onChange={handleVideoSourceChange}
                     />
+                    
+                    {videoSource === 'upload' ? (
+                      <VideoUploader
+                        lessonId={currentLessonId || undefined}
+                        currentVideoUrl={videoUrl}
+                        onUploadComplete={handleVideoUpload}
+                      />
+                    ) : (
+                      <VideoUrlInput
+                        value={videoUrl}
+                        onChange={handleVideoUrlChange}
+                      />
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="text" className="mt-6">
+                  <RichTextEditor content={articleContent} onChange={setArticleContent} placeholder="Write your article content here." />
+                </TabsContent>
+
+                <TabsContent value="quiz" className="mt-6">
+                  {currentLessonId ? (
+                    <QuizBuilder lessonId={currentLessonId} initialQuiz={existingQuiz} onSave={(quizData) => {
+                      // Store quiz data to be saved when main save button is clicked
+                      console.log('LectureContentEditor received quizData:', quizData);
+                      setPendingQuizData(quizData);
+                      console.log('pendingQuizData set to:', quizData);
+                      toast({ title: 'Quiz saved', description: 'Click "Save Lecture" to save all changes' });
+                    }} />
                   ) : (
-                    <VideoUrlInput
-                      value={videoUrl}
-                      onChange={handleVideoUrlChange}
-                    />
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                      <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="font-medium mb-2">Enter a lecture title first</p>
+                      <p className="text-sm text-muted-foreground">Type a title above, then the quiz builder will appear automatically</p>
+                      {title.trim() && (
+                        <Button className="mt-4" onClick={async () => {
+                          try { await ensureLessonExists(); } catch (err) {
+                            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                          }
+                        }}>
+                          Create Lecture & Add Quiz
+                        </Button>
+                      )}
+                    </div>
                   )}
-                </div>
-              </TabsContent>
+                </TabsContent>
 
-              <TabsContent value="text" className="mt-6">
-                <RichTextEditor content={articleContent} onChange={setArticleContent} placeholder="Write your article content here." />
-              </TabsContent>
-
-              <TabsContent value="quiz" className="mt-6">
-                {currentLessonId ? (
-                  <QuizBuilder lessonId={currentLessonId} initialQuiz={existingQuiz} onSave={(quizData) => {
-                    // Store quiz data to be saved when main save button is clicked
-                    setPendingQuizData(quizData);
-                    toast({ title: 'Quiz ready', description: 'Click "Save Lecture" to save the quiz' });
-                  }} />
-                ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
-                    <ClipboardCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="font-medium mb-2">Enter a lecture title first</p>
-                    <p className="text-sm text-muted-foreground">Type a title above, then the quiz builder will appear automatically</p>
-                    {title.trim() && (
-                      <Button className="mt-4" onClick={async () => {
-                        try { await ensureLessonExists(); } catch (err) {
-                          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
-                        }
-                      }}>
-                        Create Lecture & Add Quiz
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="assignment" className="mt-6">
-                {currentLessonId ? (
-                  <AssignmentBuilder lessonId={currentLessonId} initialAssignment={existingAssignment} onSave={(assignmentData) => {
-                    // Store assignment data to be saved when main save button is clicked
-                    setPendingAssignmentData(assignmentData);
-                    toast({ title: 'Assignment ready', description: 'Click "Save Lecture" to save the assignment' });
-                  }} />
-                ) : (
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
-                    <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="font-medium mb-2">Enter a lecture title first</p>
-                    <p className="text-sm text-muted-foreground">Type a title above, then the assignment builder will appear automatically</p>
-                    {title.trim() && (
-                      <Button className="mt-4" onClick={async () => {
-                        try { await ensureLessonExists(); } catch (err) {
-                          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
-                        }
-                      }}>
-                        Create Lecture & Add Assignment
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="assignment" className="mt-6">
+                  {currentLessonId ? (
+                    <AssignmentBuilder lessonId={currentLessonId} initialAssignment={existingAssignment} onSave={(assignmentData) => {
+                      // Store assignment data to be saved when main save button is clicked
+                      setPendingAssignmentData(assignmentData);
+                      toast({ title: 'Assignment ready', description: 'Click "Save Lecture" to save the assignment' });
+                    }} />
+                  ) : (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                      <FileUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="font-medium mb-2">Enter a lecture title first</p>
+                      <p className="text-sm text-muted-foreground">Type a title above, then the assignment builder will appear automatically</p>
+                      {title.trim() && (
+                        <Button className="mt-4" onClick={async () => {
+                          try { await ensureLessonExists(); } catch (err) {
+                            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                          }
+                        }}>
+                          Create Lecture & Add Assignment
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         </div>
 

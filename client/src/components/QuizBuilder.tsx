@@ -233,6 +233,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
       })),
     };
 
+    console.log('QuizBuilder calling onSave with quizData:', quizData);
     onSave(quizData);
   };
 
@@ -455,11 +456,11 @@ export function QuizBuilder({ lessonId, initialQuiz, onSave }: QuizBuilderProps)
         )}
       </div>
 
-      {/* Save Button - Hidden since quiz is saved via main Save Lecture button */}
+      {/* Save Button - Validates quiz and prepares it for saving */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button onClick={handleSave} size="lg" data-testid="button-save-quiz" variant="outline">
+        <Button onClick={handleSave} size="lg" data-testid="button-save-quiz">
           <CheckCircle2 className="w-4 h-4 mr-2" />
-          Preview Quiz (will be saved with lecture)
+          Save Quiz
         </Button>
       </div>
     </div>
