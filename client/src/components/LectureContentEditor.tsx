@@ -153,6 +153,10 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         const { data: who } = await (supabase as any).rpc('debug_whoami');
         console.log('[lecture-save] whoami', who, 'moduleId', moduleId, 'session.user.id', sessionData.session.user.id);
       } catch (e) { console.warn('whoami failed', e); }
+      try {
+        const { data: dbg, error: dbgErr } = await (supabase as any).rpc('debug_lessons_insert', { _module_id: moduleId });
+        console.log('[lecture-save] debug_lessons_insert', dbg, 'err', dbgErr);
+      } catch (e) { console.warn('debug_lessons_insert failed', e); }
 
       const lessonData: any = {
         title,
