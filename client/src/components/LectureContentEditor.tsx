@@ -150,8 +150,8 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         return;
       }
       try {
-        const { data: who } = await supabase.rpc('debug_whoami');
-        console.log('[lecture-save] whoami', who, 'moduleId', moduleId);
+        const { data: who } = await (supabase as any).rpc('debug_whoami');
+        console.log('[lecture-save] whoami', who, 'moduleId', moduleId, 'session.user.id', sessionData.session.user.id);
       } catch (e) { console.warn('whoami failed', e); }
 
       const lessonData: any = {
