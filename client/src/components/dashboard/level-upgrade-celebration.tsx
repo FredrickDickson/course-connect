@@ -37,7 +37,7 @@ export default function LevelUpgradeCelebration() {
 
     const checkForUpgrade = async () => {
       // Check for recent level upgrade in track_progress table
-      const { data: trackProgressList } = await supabase
+      const { data: trackProgressList } = await (supabase as any)
         .from("track_progress")
         .select("*")
         .eq("user_id", user.id);
