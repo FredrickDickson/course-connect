@@ -121,7 +121,6 @@ interface QualificationContext {
 
 const LEVEL_ORDER: Record<TrackLevel, number> = {
   NONE: 0,
-  STUDENT: 1,
   ASSOCIATE: 2,
   MEMBER: 3,
   FELLOW: 4,
@@ -170,7 +169,7 @@ export async function getAvailablePathwaysForTrack(
   const level = normalizeTrackLevel(snapshot.level);
   const pathways: PathwayOption[] = [];
 
-  if (LEVEL_ORDER[level] <= LEVEL_ORDER.STUDENT) {
+  if (LEVEL_ORDER[level] <= LEVEL_ORDER.NONE) {
     pathways.push({
       type: "STANDARD",
       level: "ASSOCIATE",
@@ -322,11 +321,11 @@ export function deriveTrackEligibility(
   const hasMemberStanding = LEVEL_ORDER[level] >= LEVEL_ORDER.MEMBER || waivedLevels.has("MEMBER");
 
   return {
-    canTakePart1: LEVEL_ORDER[level] <= LEVEL_ORDER.STUDENT,
+    canTakePart1: LEVEL_ORDER[level] <= LEVEL_ORDER.NONE,
     canTakePart2: hasAssociateStanding,
     canApplyFellow: hasMemberStanding,
     canUseExpedited: snapshot.track === "ARBITRATION" && hasExpeditedAccess(snapshot, profile),
-    canTakeAssociate: LEVEL_ORDER[level] <= LEVEL_ORDER.STUDENT,
+    canTakeAssociate: LEVEL_ORDER[level] <= LEVEL_ORDER.NONE,
     canTakeMember: hasAssociateStanding,
   } satisfies TrackEligibility;
 }
