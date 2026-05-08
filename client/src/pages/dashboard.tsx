@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { LoadingState } from "@/components/ui/loading-state";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebration";
@@ -29,62 +30,86 @@ export default function Dashboard() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get payment enrollments from course_enrollments
+      const { data: paymentEnrollments, error: paymentError } = await supabase
+        .from("course_enrollments")
+        .select("*, course:courses(*)")
+        .eq("user_id", user!.id)
+        .neq("payment_status", "cancelled")
+        .order("created_at", { ascending: false });
+      if (paymentError) throw paymentError;
+      
+      // Get progress enrollments from enrollments table
+      const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id)
         .order("enrolled_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      if (progressError) throw progressError;
+      
+      // Combine and deduplicate by course_id
+      const allEnrollments = [...(paymentEnrollments || []), ...(progressEnrollments || [])];
+      const uniqueEnrollments = allEnrollments.reduce((acc: any[], enrollment) => {
+        const existing = acc.find(e => e.course_id === enrollment.course_id);
+        if (!existing) {
+          acc.push(enrollment);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueEnrollments;
     },
     enabled: !!user,
   });
 
-  const { data: favorites = [] } = useQuery({
-    queryKey: ["favorites", user?.id],
+  const { data: userStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["user-dashboard-stats", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("favorites").select("id").eq("user_id", user!.id);
-      if (error) throw error;
-      return data || [];
+      // Combine multiple dashboard queries in parallel
+      const [favoritesResult, certificatesResult, qualificationResult] = await Promise.all([
+        supabase.from("favorites").select("id").eq("user_id", user!.id),
+        supabase
+          .from("certificates")
+          .select("*, course_completion_records!inner(course_id, courses(title))")
+          .eq("user_id", user!.id)
+          .eq("is_revoked", false),
+        (async () => {
+          const token = (await supabase.auth.getSession()).data.session?.access_token;
+          const response = await fetch("/api/qualifications/get-user-state", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch qualification state");
+          return response.json();
+        })()
+      ]);
+
+      if (favoritesResult.error) throw favoritesResult.error;
+      if (certificatesResult.error) throw certificatesResult.error;
+
+      return {
+        favorites: favoritesResult.data || [],
+        certificates: certificatesResult.data || [],
+        qualificationState: qualificationResult
+      };
     },
-    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: certificates = [] } = useQuery({
-    queryKey: ["certificates", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("certificates")
-        .select("*")
-        .eq("user_id", user!.id)
-        .eq("is_revoked", false);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
+  // Extract individual stats from combined query
+  const favorites = userStats?.favorites || [];
+  const certificates = userStats?.certificates || [];
+  const userQualificationState = userStats?.qualificationState;
 
-  const { data: userQualificationState } = useQuery({
-    queryKey: ["userQualificationState", user?.id],
-    queryFn: async () => {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const response = await fetch("/api/qualifications/get-user-state", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch qualification state");
-      return response.json();
-    },
-    enabled: !!user,
-  });
-
-  if (authLoading || !isAuthenticated) {
+  if (authLoading || enrollmentsLoading || statsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+          <LoadingState message="Loading your dashboard..." size="lg" />
         </div>
         <Footer />
       </div>
@@ -192,15 +217,17 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       {certificates.map((cert: any) => {
                         const trackColor = cert.track === "ARBITRATION" ? "#1e40af" : "#059669";
+                        const courseTitle = cert.course_completion_records?.[0]?.courses?.title || "Course";
                         return (
                           <div key={cert.id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
-                            <div 
+                            <div
                               className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                               style={{ backgroundColor: trackColor }}
                             >
                               {cert.post_nominal?.[0] || "C"}
                             </div>
                             <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{courseTitle}</p>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
                                   {cert.track}

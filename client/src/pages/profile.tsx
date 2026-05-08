@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AvatarUpload from "@/components/avatar-upload";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { LoadingState } from "@/components/ui/loading-state";
 import {
   Select,
   SelectContent,
@@ -46,7 +47,10 @@ import {
   AlertCircle,
   Shield,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import CertificatePreviewModal from "@/components/dashboard/certificate-preview-modal";
+import type { CertificateData } from "@/lib/certificate-generator";
+import { PATHWAY_TYPES, type PathwayType } from "@shared/pathways";
 
 const INDUSTRIES = [
   "Legal", "Business / Corporate", "Public Sector / Government", "Academic / Education",
@@ -120,8 +124,13 @@ export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isEditingBasic, setIsEditingBasic] = useState(false);
   const [isEditingProfessional, setIsEditingProfessional] = useState(false);
+
+  // Certificate modal state
+  const [certModalOpen, setCertModalOpen] = useState(false);
+  const [activeCertData, setActiveCertData] = useState<CertificateData | null>(null);
 
   const [basicForm, setBasicForm] = useState({
     firstName: "", middleName: "", lastName: "", bio: "", country: "", timezone: "",
@@ -151,12 +160,32 @@ export default function Profile() {
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get payment enrollments from course_enrollments
+      const { data: paymentEnrollments, error: paymentError } = await supabase
+        .from("course_enrollments")
+        .select("*, course:courses(*)")
+        .eq("user_id", user!.id)
+        .neq("payment_status", "cancelled");
+      if (paymentError) throw paymentError;
+      
+      // Get progress enrollments from enrollments table
+      const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
-        .eq("user_id", user?.id!);
-      if (error) throw error;
-      return data || [];
+        .eq("user_id", user!.id);
+      if (progressError) throw progressError;
+      
+      // Combine and deduplicate by course_id
+      const allEnrollments = [...(paymentEnrollments || []), ...(progressEnrollments || [])];
+      const uniqueEnrollments = allEnrollments.reduce((acc: any[], enrollment) => {
+        const existing = acc.find(e => e.course_id === enrollment.course_id);
+        if (!existing) {
+          acc.push(enrollment);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueEnrollments;
     },
     enabled: !!user?.id,
   });
@@ -296,6 +325,73 @@ export default function Profile() {
   const completedCourses = enrollments.filter((e: any) => e.completed_at);
   const inProgressCourses = enrollments.filter((e: any) => !e.completed_at);
 
+  // Helper functions for certificate data
+  function normaliseLevel(level?: string | null): "associate" | "member" | "fellow" {
+    const l = (level || "").toLowerCase();
+    if (l.includes("fellow")) return "fellow";
+    if (l.includes("member")) return "member";
+    return "associate";
+  }
+
+  function normalisePathway(track?: string | null): PathwayType {
+    return (track || "").toLowerCase().includes("med")
+      ? PATHWAY_TYPES.MEDIATION
+      : PATHWAY_TYPES.ARBITRATION;
+  }
+
+  // Handle opening certificate preview
+  const openPreview = async (course: any, completedAt: string) => {
+    // Best-effort: record issuance so admins can audit. Ignore failures (e.g., unique conflict).
+    try {
+      await supabase.from("certificates").upsert(
+        {
+          user_id: user!.id,
+          track: (course.track || "ARBITRATION").toUpperCase(),
+          level: (course.level || "associate").toUpperCase(),
+          pathway: "STANDARD",
+          post_nominal: "",
+          certificate_number: `${course.id.slice(0, 8).toUpperCase()}-${user!.id.slice(0, 6).toUpperCase()}`,
+          issued_at: completedAt,
+        },
+        { onConflict: "user_id,track,level" } as any,
+      );
+    } catch {
+      // Non-fatal
+    }
+
+    const fullName = [user?.firstName, user?.middleName, user?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Member";
+
+    setActiveCertData({
+      fullName,
+      membershipLevel: normaliseLevel(course.level),
+      memberId: `${course.id.slice(0, 8).toUpperCase()}`,
+      issueDate: completedAt,
+      expiryDate: new Date(new Date(completedAt).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      pathway: normalisePathway(course.track),
+    });
+    setCertModalOpen(true);
+  };
+
+  // Handle course query parameter to auto-open certificate
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const courseId = params.get("course");
+    const tab = params.get("tab");
+
+    if (courseId && tab === "certificates" && completedCourses.length > 0) {
+      const targetCourse = completedCourses.find((e: any) => e.course_id === courseId);
+      if (targetCourse && targetCourse.completed_at) {
+        // Auto-open certificate preview
+        openPreview(targetCourse.course, targetCourse.completed_at);
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [completedCourses]);
+
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   }
@@ -379,15 +475,15 @@ export default function Profile() {
                   <CardDescription>Basic contact details</CardDescription>
                 </div>
                 {!isEditingBasic ? (
-                  <Button onClick={() => setIsEditingBasic(true)} variant="outline" size="sm">
+                  <Button onClick={() => setIsEditingBasic(true)} variant="outline" size="sm" aria-label="Edit basic information">
                     <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveBasicMutation.mutate(basicForm)} disabled={saveBasicMutation.isPending}>
+                    <Button size="sm" onClick={() => saveBasicMutation.mutate(basicForm)} disabled={saveBasicMutation.isPending} aria-label="Save basic information">
                       <Save className="h-3.5 w-3.5 mr-1" /> Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", middleName: user.middleName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", middleName: user.middleName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }} aria-label="Cancel editing basic information">
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
                     </Button>
                   </div>
@@ -468,15 +564,15 @@ export default function Profile() {
                   <CardDescription>Career and qualification details — reused across enrollments</CardDescription>
                 </div>
                 {!isEditingProfessional ? (
-                  <Button onClick={() => setIsEditingProfessional(true)} variant="outline" size="sm">
+                  <Button onClick={() => setIsEditingProfessional(true)} variant="outline" size="sm" aria-label="Edit professional information">
                     <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveProfMutation.mutate(profForm)} disabled={saveProfMutation.isPending}>
+                    <Button size="sm" onClick={() => saveProfMutation.mutate(profForm)} disabled={saveProfMutation.isPending} aria-label="Save professional information">
                       <Save className="h-3.5 w-3.5 mr-1" /> Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setIsEditingProfessional(false); if (profile) setProfForm({ phone: profile.phone || "", whatsapp: profile.whatsapp || "", address: profile.address || "", institution: profile.institution || "", jobTitle: profile.job_title || "", yearsExperience: profile.years_experience || "", industry: profile.industry || "", roleCategory: profile.role_category || "", educationLevel: profile.education_level || "", adrExperience: profile.adr_experience || "none" }); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setIsEditingProfessional(false); if (profile) setProfForm({ phone: profile.phone || "", whatsapp: profile.whatsapp || "", address: profile.address || "", institution: profile.institution || "", jobTitle: profile.job_title || "", yearsExperience: profile.years_experience || "", industry: profile.industry || "", roleCategory: profile.role_category || "", educationLevel: profile.education_level || "", adrExperience: profile.adr_experience || "none" }); }} aria-label="Cancel editing professional information">
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
                     </Button>
                   </div>
@@ -674,12 +770,7 @@ export default function Profile() {
               )}
 
               {isLoadingEnrollments && (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                    <p className="text-muted-foreground">Loading your courses...</p>
-                  </CardContent>
-                </Card>
+                <LoadingState message="Loading your courses..." />
               )}
             </div>
           </TabsContent>
@@ -689,7 +780,12 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Certificates</CardTitle>
-                <CardDescription>View and download your course completion certificates</CardDescription>
+                <CardDescription>
+                  View and download your course completion certificates.
+                  <span className="block mt-1 text-xs text-muted-foreground">
+                    Note: You receive one certificate per track per level. Additional courses at the same level are recorded as supplementary training.
+                  </span>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {completedCourses.length > 0 ? (
@@ -705,7 +801,14 @@ export default function Profile() {
                             <p className="text-xs text-muted-foreground">{new Date(enrollment.completed_at!).toLocaleDateString()}</p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" className="w-full">View Certificate</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => openPreview(enrollment.course, enrollment.completed_at!)}
+                        >
+                          View Certificate
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -721,6 +824,15 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Certificate Preview Modal */}
+      {activeCertData && (
+        <CertificatePreviewModal
+          open={certModalOpen}
+          onOpenChange={setCertModalOpen}
+          data={activeCertData}
+        />
+      )}
     </div>
   );
 }

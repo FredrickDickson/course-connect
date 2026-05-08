@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Download, Eye, Loader2, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { generateCertificatePDF, downloadCertificate, type CertificateData } from "@/lib/certificate-generator";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +25,21 @@ export default function CertificatePreviewModal({ open, onOpenChange, data }: Pr
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
 
+  // Calculate certificate status
+  const certificateStatus = useMemo(() => {
+    const now = new Date();
+    const expiryDate = new Date(data.expiryDate);
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry < 0) {
+      return { status: "expired", label: "Expired", variant: "destructive" as const, icon: XCircle };
+    } else if (daysUntilExpiry <= 30) {
+      return { status: "expiring-soon", label: `Expires in ${daysUntilExpiry} days`, variant: "secondary" as const, icon: AlertTriangle };
+    } else {
+      return { status: "valid", label: `Valid until ${expiryDate.toLocaleDateString()}`, variant: "outline" as const, icon: CheckCircle2 };
+    }
+  }, [data.expiryDate]);
+
   const generatePreview = async () => {
     setLoading(true);
     try {
@@ -38,6 +54,13 @@ export default function CertificatePreviewModal({ open, onOpenChange, data }: Pr
       setLoading(false);
     }
   };
+
+  // Auto-generate preview when modal opens
+  useEffect(() => {
+    if (open && !previewUrl && !loading) {
+      generatePreview();
+    }
+  }, [open]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -64,23 +87,19 @@ export default function CertificatePreviewModal({ open, onOpenChange, data }: Pr
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Certificate Preview</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Certificate Preview</DialogTitle>
+            <Badge variant={certificateStatus.variant} className="flex items-center gap-1">
+              <certificateStatus.icon className="h-3 w-3" />
+              {certificateStatus.label}
+            </Badge>
+          </div>
           <DialogDescription>
             Preview and download your membership certificate.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0">
-          {!previewUrl && !loading && (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <Eye className="h-12 w-12 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Click below to preview your certificate</p>
-              <Button onClick={generatePreview}>
-                <Eye className="h-4 w-4 mr-2" /> Generate Preview
-              </Button>
-            </div>
-          )}
-
           {loading && (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />

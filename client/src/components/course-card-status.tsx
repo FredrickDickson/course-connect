@@ -211,19 +211,6 @@ export default function CourseCardStatus({
                 {course.category.name}
               </Badge>
             )}
-            {/* Course Type Badge */}
-            {course.course_type && (
-              <Badge 
-                className={`text-[10px] uppercase tracking-wider font-bold ${courseTypeConfig[course.course_type].class}`}
-                data-testid="course-type-badge"
-              >
-                {(() => {
-                  const TypeIcon = courseTypeConfig[course.course_type].icon;
-                  return <TypeIcon className="w-3 h-3 mr-1" />;
-                })()}
-                {courseTypeConfig[course.course_type].label}
-              </Badge>
-            )}
           </div>
         </div>
 

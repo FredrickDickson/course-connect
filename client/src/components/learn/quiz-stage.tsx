@@ -37,13 +37,7 @@ export default function QuizStage({ lesson, onComplete }: { lesson: LearnLesson;
   const used = attempts.length;
   const max = quiz?.max_attempts || 0;
 
-  const firedRef = useRef(false);
-  useEffect(() => {
-    if (passed && !firedRef.current) {
-      firedRef.current = true;
-      onComplete?.();
-    }
-  }, [passed, onComplete]);
+  // Removed auto-completion - users must explicitly mark lesson as complete after reviewing results
 
   return (
     <div className="bg-background min-h-[60vh] py-8 px-4">

@@ -43,11 +43,11 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
 
   return (
     <aside className="flex flex-col h-full bg-[#1C1D1F] text-white w-full lg:w-[380px] shrink-0 border-l border-white/5">
-      <div className="flex items-center justify-between px-4 h-12 border-b border-white/10">
-        <h2 className="font-semibold text-sm">Course content</h2>
+      <div className="flex items-center justify-between px-4 h-14 sm:h-12 border-b border-white/10">
+        <h2 className="font-semibold text-sm sm:text-base">Course content</h2>
         {onClose && (
-          <button onClick={onClose} className="p-1 rounded hover:bg-white/10" aria-label="Close sidebar">
-            <X className="h-4 w-4" />
+          <button onClick={onClose} className="p-2 sm:p-1 rounded-lg sm:rounded hover:bg-white/10 active:bg-white/20 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] touch-none" aria-label="Close sidebar">
+            <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
         )}
       </div>
@@ -95,7 +95,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                         <Link
                           href={`/learn/${courseId}/${lesson.id}`}
                           className={cn(
-                            "flex items-start gap-3 px-4 py-3 text-sm hover:bg-[#2D2F31] transition-colors min-h-11",
+                            "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] active:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11 touch-none",
                             isActive && "bg-[#2D2F31] border-l-[3px] border-[#B91C1C] pl-[13px]",
                             !isActive && "border-l-[3px] border-transparent",
                           )}
@@ -103,8 +103,8 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                           <button
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(lesson.id, !done); }}
                             className={cn(
-                              "mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center",
-                              done ? "bg-[#22C55E] border-[#22C55E]" : "border-white/40 hover:border-white"
+                              "mt-0.5 h-5 w-5 sm:h-4 sm:w-4 shrink-0 rounded border flex items-center justify-center touch-none",
+                              done ? "bg-[#22C55E] border-[#22C55E]" : "border-white/40 hover:border-white active:border-white"
                             )}
                             aria-label={done ? "Mark as not complete" : "Mark complete"}
                           >

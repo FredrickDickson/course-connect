@@ -10,7 +10,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Calendar, MapPin, Users, ArrowRight, X } from "lucide-react";
+import { Search, Calendar, MapPin, Users, ArrowRight, X, Clock } from "lucide-react";
 
 const LEVEL_STYLES: Record<string, { bg: string; text: string }> = {
   associate: { bg: "bg-[#888780]", text: "text-white" },
@@ -186,6 +186,12 @@ export default function CourseBrowser() {
                       <h3 className="font-bold text-foreground leading-snug line-clamp-2">{course.title}</h3>
                       
                       <div className="space-y-1.5 text-sm text-muted-foreground">
+                        {course.duration_hours && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span>{course.duration_hours} hours</span>
+                          </div>
+                        )}
                         {course.start_date && (
                           <div className="flex items-center gap-2">
                             <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />

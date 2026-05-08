@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import CourseCard from "@/components/course-card";
+import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users, X } from "lucide-react";
 import { Link } from "wouter";
 
@@ -61,7 +61,7 @@ export default function Courses() {
     queryKey: ["user-enrollments", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from("enrollments").select("course_id, status").eq("user_id", user.id);
+      const { data, error } = await supabase.from("course_enrollments").select("course_id, status").eq("user_id", user.id).neq("payment_status", "cancelled");
       if (error) throw error;
       return data || [];
     },
@@ -467,7 +467,11 @@ export default function Courses() {
               {category && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Category: {categories.find((c: any) => c.slug === category)?.name || category}
-                  <button onClick={() => setCategory("")} className="ml-1 hover:text-destructive">
+                  <button 
+                    onClick={() => setCategory("")} 
+                    className="ml-1 hover:text-destructive"
+                    aria-label={`Remove category filter: ${categories.find((c: any) => c.slug === category)?.name || category}`}
+                  >
                     ×
                   </button>
                 </Badge>
@@ -475,7 +479,11 @@ export default function Courses() {
               {level && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Level: {level}
-                  <button onClick={() => setLevel("")} className="ml-1 hover:text-destructive">
+                  <button 
+                    onClick={() => setLevel("")} 
+                    className="ml-1 hover:text-destructive"
+                    aria-label={`Remove level filter: ${level}`}
+                  >
                     ×
                   </button>
                 </Badge>
@@ -483,7 +491,11 @@ export default function Courses() {
               {priceRange && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Price: {priceRange === "free" ? "Free" : `$${priceRange}`}
-                  <button onClick={() => setPriceRange("")} className="ml-1 hover:text-destructive">
+                  <button 
+                    onClick={() => setPriceRange("")} 
+                    className="ml-1 hover:text-destructive"
+                    aria-label={`Remove price filter: ${priceRange === "free" ? "Free" : `$${priceRange}`}`}
+                  >
                     ×
                   </button>
                 </Badge>
@@ -656,9 +668,21 @@ export default function Courses() {
             <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-6"}>
               {courses.map((course: any) => {
                 const eligibility = checkCourseEligibility(course);
+                const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+                const status: CourseStatus = eligibility.status === "enrolled" 
+                  ? "ENROLLED" 
+                  : eligibility.status === "eligible"
+                  ? "AVAILABLE"
+                  : "LOCKED";
 
                 return viewMode === "grid" ? (
-                  <CourseCard key={course.id} course={course} eligibility={eligibility} />
+                  <CourseCardStatus 
+                    key={course.id} 
+                    course={course} 
+                    userLevel={userLevel}
+                    status={status}
+                    eligibility={eligibility}
+                  />
                 ) : (
                   <Card key={course.id} className="hover:shadow-lg transition-all duration-300 group">
                     <CardContent className="p-6">

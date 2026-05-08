@@ -6,7 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import VideoPlayerImpl, { type VideoPlayerRef } from "@/components/ui/video-player";
+import { LoadingState } from "@/components/ui/loading-state";
+import { LazyVideoPlayer, type VideoPlayerRef } from "@/components/ui/lazy-video-player";
+import { performanceMonitor } from "@/lib/performance";
 import CourseTopBar from "@/components/learn/course-top-bar";
 import CourseSidebar from "@/components/learn/course-sidebar";
 import ContentTabs from "@/components/learn/content-tabs";
@@ -15,11 +17,13 @@ import CourseCompleteModal from "@/components/learn/course-complete-modal";
 import ArticleStage from "@/components/learn/article-stage";
 import QuizStage from "@/components/learn/quiz-stage";
 import AssignmentStage from "@/components/learn/assignment-stage";
+import MobileLearningNav from "@/components/learn/mobile-learning-nav";
 import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import type { LearnCourse, LearnLesson, ProgressRow } from "@/components/learn/types";
 
-const VP: any = VideoPlayerImpl;
+const VP: any = LazyVideoPlayer;
 
 export default function VideoPlayerPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
@@ -41,34 +45,53 @@ export default function VideoPlayerPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: ["learn-course", courseId],
+  const { data: courseWithEnrollment, isLoading: courseLoading } = useQuery({
+    queryKey: ["course-with-enrollment", courseId, user?.id],
     enabled: !!courseId && isAuthenticated,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select(`*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))`)
-        .eq("id", courseId!)
-        .single();
-      if (error) throw error;
+      const startTime = Date.now();
+      
+      // Combine course data and enrollment check in parallel
+      const [courseResult, paymentEnrollmentResult, progressEnrollmentResult] = await Promise.all([
+        supabase
+          .from("courses")
+          .select(`*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))`)
+          .eq("id", courseId!)
+          .single(),
+        (supabase as any).from("course_enrollments").select("*")
+          .eq("course_id", courseId!).eq("user_id", user!.id).neq("payment_status", "cancelled").maybeSingle(),
+        (supabase as any).from("enrollments").select("*")
+          .eq("course_id", courseId!).eq("user_id", user!.id).maybeSingle()
+      ]);
+
+      if (courseResult.error) throw courseResult.error;
+      if (paymentEnrollmentResult.error) throw paymentEnrollmentResult.error;
+      if (progressEnrollmentResult.error) throw progressEnrollmentResult.error;
+
       // Sort modules + lessons by order
-      const c = data as any as LearnCourse;
-      c.modules = (c.modules || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      c.modules.forEach(m => { m.lessons = (m.lessons || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); });
-      return c;
+      const course = courseResult.data as any as LearnCourse;
+      course.modules = (course.modules || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      course.modules.forEach(m => { m.lessons = (m.lessons || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); });
+
+      const queryTime = Date.now() - startTime;
+      performanceMonitor.trackQuery(["course-with-enrollment", courseId || "", user?.id || ""], queryTime);
+
+      return {
+        course,
+        enrollment: {
+          isEnrolled: !!(paymentEnrollmentResult.data || progressEnrollmentResult.data),
+          paymentEnrollment: paymentEnrollmentResult.data,
+          progressEnrollment: progressEnrollmentResult.data
+        }
+      };
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  const { data: enrollment } = useQuery({
-    queryKey: ["enrollment-check", courseId, user?.id],
-    enabled: !!courseId && !!user?.id && isAuthenticated,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("enrollments").select("*")
-        .eq("course_id", courseId!).eq("user_id", user!.id).maybeSingle();
-      if (error) throw error;
-      return data ? { isEnrolled: true } : { isEnrolled: false };
-    },
-  });
+  // Extract course and enrollment from combined query
+  const course = courseWithEnrollment?.course;
+  const enrollment = courseWithEnrollment?.enrollment;
 
   const allLessons = useMemo<LearnLesson[]>(
     () => course?.modules?.flatMap(m => m.lessons || []) || [],
@@ -87,7 +110,34 @@ export default function VideoPlayerPage() {
       if (error) throw error;
       return (data || []) as ProgressRow[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Redirect to appropriate lesson if lessonId is not provided
+  useEffect(() => {
+    if (course && !lessonId && isAuthenticated) {
+      // Flatten all lessons in order
+      const allLessonsForRedirect: LearnLesson[] = [];
+      course.modules?.forEach((module: any) => {
+        if (module.lessons) {
+          allLessonsForRedirect.push(...module.lessons);
+        }
+      });
+      
+      if (allLessonsForRedirect.length > 0) {
+        // Find first incomplete lesson based on progress
+        const completedLessonIds = new Set(progress.filter(p => p.completed).map(p => p.lesson_id));
+        const nextIncompleteLesson = allLessonsForRedirect.find(lesson => !completedLessonIds.has(lesson.id));
+        
+        // Navigate to first incomplete or first lesson
+        const targetLessonId = nextIncompleteLesson?.id ?? allLessonsForRedirect[0]?.id;
+        if (targetLessonId) {
+          navigate(`/learn/${courseId}/${targetLessonId}`);
+        }
+      }
+    }
+  }, [course, lessonId, progress, isAuthenticated, courseId, navigate]);
 
   const upsertProgress = useMutation({
     mutationFn: async ({ id, completed, watch }: { id: string; completed: boolean; watch: number }) => {
@@ -110,6 +160,29 @@ export default function VideoPlayerPage() {
     },
     onError: (_e, _v, ctx: any) => { if (ctx?.prev) qc.setQueryData(["learn-progress", courseId, user?.id], ctx.prev); },
     onSettled: () => qc.invalidateQueries({ queryKey: ["learn-progress", courseId] }),
+  });
+
+  // Update enrollment completion status when course is complete
+  const updateEnrollmentCompletion = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("enrollments")
+        .update({
+          completed_at: new Date().toISOString(),
+          status: "COMPLETED",
+          progress: 100,
+        })
+        .eq("user_id", user!.id)
+        .eq("course_id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Course completed!", description: "Your certificate is now available." });
+      qc.invalidateQueries({ queryKey: ["enrollments", user?.id] });
+    },
+    onError: (e: Error) => {
+      console.error("Failed to update enrollment completion:", e);
+    },
   });
 
   const currentLesson = allLessons.find(l => l.id === lessonId);
@@ -152,25 +225,23 @@ export default function VideoPlayerPage() {
     return () => window.removeEventListener("beforeunload", onUnload);
   }, [currentLesson?.id]);
 
-  // External-video auto-complete after 30s
-  const isExternal = !!(currentLesson?.video_platform && currentLesson?.video_id);
-  useEffect(() => {
-    if (!isExternal || !currentLesson) return;
-    const done = progress.find(p => p.lesson_id === currentLesson.id)?.completed;
-    if (done) return;
-    const t = setTimeout(() => handleToggleComplete(currentLesson.id, true), 30000);
-    return () => clearTimeout(t);
-  }, [isExternal, currentLesson?.id]);
+  // External videos require manual completion - removed auto-complete to ensure users actually watch the content
 
   // Course complete modal
   useEffect(() => {
     if (!completedShown && allLessons.length > 0 && completedCount === allLessons.length) {
       setCompletedShown(true);
+      // Update enrollment completion status when course is complete
+      updateEnrollmentCompletion.mutate();
     }
   }, [completedCount, allLessons.length, completedShown]);
 
   if (isLoading || courseLoading || !course) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-2 border-[#B91C1C] border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingState message="Loading course..." size="lg" />
+      </div>
+    );
   }
   if (!enrollment?.isEnrolled && !currentLesson?.is_preview) {
     return (
@@ -206,32 +277,28 @@ export default function VideoPlayerPage() {
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col overflow-y-auto">
-          {isVideoLesson && lessonType !== "article" && lessonType !== "quiz" && lessonType !== "assignment" ? (
-          <div className="bg-black relative">
-            <ErrorBoundary>
-              <VP
-                ref={videoRef}
-                videoUrl={currentLesson.video_url || undefined}
-                videoPlatform={currentLesson.video_platform || undefined}
-                videoId={currentLesson.video_id || undefined}
-                title={currentLesson.title}
-                startAt={resumeSeconds}
-                onPrev={prevLesson ? () => goToLesson(prevLesson.id) : undefined}
-                onNext={nextLesson ? () => goToLesson(nextLesson.id) : undefined}
-                onTimeUpdate={() => {
-                  const cur = videoRef.current?.currentTime || 0;
-                  const dur = videoRef.current?.duration || 0;
-                  if (!dur) return;
-                  // Save every 5s
-                  if (Math.floor(cur) - lastSavedSec.current >= 5) {
-                    lastSavedSec.current = Math.floor(cur);
-                    const completed = cur >= dur * 0.9;
-                    upsertProgress.mutate({ id: currentLesson.id, completed, watch: cur });
-                  }
-                }}
-                onPause={() => {
-                  const cur = videoRef.current?.currentTime || 0;
-                  const dur = videoRef.current?.duration || 0;
+          <div className="px-4 sm:px-6 lg:px-8 py-3 border-b bg-background">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href={`/course/${courseId}`}>{course.title}</BreadcrumbLink>
+          </div>
+        }
+      >
+        <CourseTopBar
+          course={course}
+          completed={completedCount}
+          total={allLessons.length}
+          nextLessonHref={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : undefined}
+        />
                   if (!cur) return;
                   upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
                 }}
@@ -270,7 +337,7 @@ export default function VideoPlayerPage() {
               <div className="lg:hidden">
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm"><ListVideo className="h-4 w-4 mr-1" />Course content</Button>
+                    <Button variant="outline" size="default" className="lg:hidden"><ListVideo className="h-4 w-4 mr-2" />Course content</Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-[#1C1D1F] border-l-0">
                     <CourseSidebar
@@ -327,6 +394,16 @@ export default function VideoPlayerPage() {
         onOpenChange={(o) => !o && setCompletedShown(false)}
         courseTitle={course.title}
         courseId={course.id}
+      />
+
+      <MobileLearningNav
+        course={course}
+        courseId={courseId!}
+        currentLessonId={currentLesson.id}
+        progress={progress}
+        onToggleComplete={handleToggleComplete}
+        onNextLesson={nextLesson ? () => goToLesson(nextLesson.id) : undefined}
+        hasNextLesson={!!nextLesson}
       />
     </div>
   );
