@@ -12,7 +12,10 @@ import {
 import {
   Download, Plus, FileText, FileSpreadsheet, FileArchive, Image as ImageIcon,
   Video as VideoIcon, Music, Link2, File as FileIcon, Presentation, Trash2, Pencil, Eye, Loader2,
+  HelpCircle, ClipboardList, Play, Check, Send,
 } from "lucide-react";
+import { Link } from "wouter";
+import AssignmentSubmitDialog from "./assignment-submit-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +68,49 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   const qc = useQueryClient();
 
   const isInstructor = !!user && (user.id === course.instructor_id || (typeof isAdmin === "function" && isAdmin()));
+
+  // ===== Activities (per-lesson quizzes & assignments) =====
+  const { data: lessonQuizzes = [] } = useQuery({
+    queryKey: ["lesson-quizzes", lesson.id],
+    queryFn: async () => {
+      const { data, error } = await sb.from("quizzes")
+        .select("*, questions:quiz_questions(id)").eq("lesson_id", lesson.id);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: quizAttempts = [] } = useQuery({
+    queryKey: ["lesson-quiz-attempts", lesson.id, user?.id],
+    enabled: !!user?.id && lessonQuizzes.length > 0,
+    queryFn: async () => {
+      const ids = lessonQuizzes.map((q: any) => q.id);
+      const { data, error } = await sb.from("quiz_attempts")
+        .select("quiz_id, passed, score, completed_at").eq("user_id", user!.id).in("quiz_id", ids);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: lessonAssignments = [] } = useQuery({
+    queryKey: ["lesson-assignments", lesson.id],
+    queryFn: async () => {
+      const { data, error } = await sb.from("assignments").select("*").eq("lesson_id", lesson.id);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: assignmentSubs = [] } = useQuery({
+    queryKey: ["lesson-assignment-subs", lesson.id, user?.id],
+    enabled: !!user?.id && lessonAssignments.length > 0,
+    queryFn: async () => {
+      const ids = lessonAssignments.map((a: any) => a.id);
+      const { data, error } = await sb.from("assignment_submissions")
+        .select("assignment_id, score, graded_at, submitted_at").eq("user_id", user!.id).in("assignment_id", ids);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [submitFor, setSubmitFor] = useState<any>(null);
+  const hasActivities = lessonQuizzes.length + lessonAssignments.length > 0;
 
   // ===== Notes =====
   const [noteDraft, setNoteDraft] = useState("");
@@ -249,7 +295,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4">
-        {["overview", "notes", "announcements", "resources"].map(t => (
+        {["overview", "notes", "activities", "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
@@ -309,6 +355,59 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
             </button>
           </CardContent></Card>
         ))}
+      </TabsContent>
+
+      {/* Activities */}
+      <TabsContent value="activities" className="pt-4 space-y-3">
+        {!hasActivities ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">No quizzes or assignments for this lesson.</p>
+        ) : (
+          <>
+            {lessonQuizzes.map((q: any) => {
+              const att = quizAttempts.filter((a: any) => a.quiz_id === q.id);
+              const passed = att.some((a: any) => a.passed);
+              const used = att.length;
+              return (
+                <Card key={q.id}><CardContent className="p-4 flex items-center gap-3">
+                  <HelpCircle className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{q.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {q.questions?.length || 0} questions · Passing {q.passing_score}%
+                      {q.max_attempts ? ` · ${used}/${q.max_attempts} attempts` : ""}
+                    </p>
+                  </div>
+                  {passed && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Passed</Badge>}
+                  <Link href={`/quiz/${q.id}`}>
+                    <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]">
+                      <Play className="h-4 w-4 mr-1" />{passed ? "Retake" : used > 0 ? "Continue" : "Start"}
+                    </Button>
+                  </Link>
+                </CardContent></Card>
+              );
+            })}
+            {lessonAssignments.map((a: any) => {
+              const sub = assignmentSubs.find((s: any) => s.assignment_id === a.id);
+              return (
+                <Card key={a.id}><CardContent className="p-4 flex items-center gap-3">
+                  <ClipboardList className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{a.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Max {a.max_score} pts{a.due_date ? ` · Due ${new Date(a.due_date).toLocaleDateString()}` : ""}
+                    </p>
+                  </div>
+                  {sub?.graded_at && <Badge className="bg-blue-600 text-white border-0">{sub.score}/{a.max_score}</Badge>}
+                  {sub && !sub.graded_at && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Submitted</Badge>}
+                  <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]" onClick={() => setSubmitFor(a)}>
+                    <Send className="h-4 w-4 mr-1" />{sub ? "View" : "Submit"}
+                  </Button>
+                </CardContent></Card>
+              );
+            })}
+          </>
+        )}
+        <AssignmentSubmitDialog open={!!submitFor} onOpenChange={(o) => !o && setSubmitFor(null)} assignment={submitFor} />
       </TabsContent>
 
       {/* Announcements */}
