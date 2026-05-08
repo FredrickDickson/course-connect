@@ -134,7 +134,18 @@ export default function QuizPage() {
   // Submit quiz mutation
   const submitQuizMutation = useMutation({
     mutationFn: async (quizAnswers: Record<string, string>) => {
-      // We still use the server route for grading to hide correct answers from the client
+      // Transform { questionId: value } → [{ questionId, answerId|responseText }]
+      const responses = (quiz?.questions || []).map((q: QuizQuestion) => {
+        const value = quizAnswers[q.id] ?? "";
+        if (
+          q.question_type === "multiple_choice" ||
+          q.question_type === "true_false"
+        ) {
+          return { questionId: q.id, answerId: value || undefined };
+        }
+        return { questionId: q.id, responseText: value };
+      });
+
       const response = await fetch(`/api/quizzes/${quizId}/submit`, {
         method: "POST",
         headers: {
@@ -142,11 +153,14 @@ export default function QuizPage() {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({
-          answers: quizAnswers,
+          responses,
           timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0,
         }),
       });
-      if (!response.ok) throw new Error("Failed to submit quiz");
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(text || "Failed to submit quiz");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -450,23 +464,27 @@ export default function QuizPage() {
                       handleAnswerChange(currentQ.id, value)
                     }
                     data-testid="multiple-choice-answers"
+                    className="gap-3"
                   >
                     {currentQ.answers
                       .sort((a: QuizAnswer, b: QuizAnswer) => a.order - b.order)
-                      .map((answer: QuizAnswer) => (
-                        <div
-                          key={answer.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem value={answer.id} id={answer.id} />
+                      .map((answer: QuizAnswer) => {
+                        const selected = answers[currentQ.id] === answer.id;
+                        return (
                           <Label
+                            key={answer.id}
                             htmlFor={answer.id}
-                            className="flex-1 cursor-pointer"
+                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent ${
+                              selected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border"
+                            }`}
                           >
-                            {answer.answer}
+                            <RadioGroupItem value={answer.id} id={answer.id} />
+                            <span className="flex-1 text-sm">{answer.answer}</span>
                           </Label>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </RadioGroup>
                 )}
 
@@ -489,6 +507,7 @@ export default function QuizPage() {
                     handleAnswerChange(currentQ.id, value)
                   }
                   data-testid="true-false-answers"
+                  className="gap-3"
                 >
                   {(currentQ.answers && currentQ.answers.length > 0
                     ? [...currentQ.answers].sort(
@@ -498,14 +517,23 @@ export default function QuizPage() {
                         { id: `${currentQ.id}-true`, answer: "True", is_correct: false, order: 0 },
                         { id: `${currentQ.id}-false`, answer: "False", is_correct: false, order: 1 },
                       ]
-                  ).map((answer: QuizAnswer) => (
-                    <div key={answer.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={answer.id} id={answer.id} />
-                      <Label htmlFor={answer.id} className="flex-1 cursor-pointer">
-                        {answer.answer}
+                  ).map((answer: QuizAnswer) => {
+                    const selected = answers[currentQ.id] === answer.id;
+                    return (
+                      <Label
+                        key={answer.id}
+                        htmlFor={answer.id}
+                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent ${
+                          selected
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "border-border"
+                        }`}
+                      >
+                        <RadioGroupItem value={answer.id} id={answer.id} />
+                        <span className="flex-1 text-sm">{answer.answer}</span>
                       </Label>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </RadioGroup>
               )}
 
