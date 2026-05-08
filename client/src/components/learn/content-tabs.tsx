@@ -12,7 +12,10 @@ import {
 import {
   Download, Plus, FileText, FileSpreadsheet, FileArchive, Image as ImageIcon,
   Video as VideoIcon, Music, Link2, File as FileIcon, Presentation, Trash2, Pencil, Eye, Loader2,
+  HelpCircle, ClipboardList, Play, Check, Send,
 } from "lucide-react";
+import { Link } from "wouter";
+import AssignmentSubmitDialog from "./assignment-submit-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +68,49 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   const qc = useQueryClient();
 
   const isInstructor = !!user && (user.id === course.instructor_id || (typeof isAdmin === "function" && isAdmin()));
+
+  // ===== Activities (per-lesson quizzes & assignments) =====
+  const { data: lessonQuizzes = [] } = useQuery({
+    queryKey: ["lesson-quizzes", lesson.id],
+    queryFn: async () => {
+      const { data, error } = await sb.from("quizzes")
+        .select("*, questions:quiz_questions(id)").eq("lesson_id", lesson.id);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: quizAttempts = [] } = useQuery({
+    queryKey: ["lesson-quiz-attempts", lesson.id, user?.id],
+    enabled: !!user?.id && lessonQuizzes.length > 0,
+    queryFn: async () => {
+      const ids = lessonQuizzes.map((q: any) => q.id);
+      const { data, error } = await sb.from("quiz_attempts")
+        .select("quiz_id, passed, score, completed_at").eq("user_id", user!.id).in("quiz_id", ids);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: lessonAssignments = [] } = useQuery({
+    queryKey: ["lesson-assignments", lesson.id],
+    queryFn: async () => {
+      const { data, error } = await sb.from("assignments").select("*").eq("lesson_id", lesson.id);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const { data: assignmentSubs = [] } = useQuery({
+    queryKey: ["lesson-assignment-subs", lesson.id, user?.id],
+    enabled: !!user?.id && lessonAssignments.length > 0,
+    queryFn: async () => {
+      const ids = lessonAssignments.map((a: any) => a.id);
+      const { data, error } = await sb.from("assignment_submissions")
+        .select("assignment_id, score, graded_at, submitted_at").eq("user_id", user!.id).in("assignment_id", ids);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const [submitFor, setSubmitFor] = useState<any>(null);
+  const hasActivities = lessonQuizzes.length + lessonAssignments.length > 0;
 
   // ===== Notes =====
   const [noteDraft, setNoteDraft] = useState("");
@@ -249,7 +295,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4">
-        {["overview", "notes", "announcements", "resources"].map(t => (
+        {["overview", "notes", "activities", "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
