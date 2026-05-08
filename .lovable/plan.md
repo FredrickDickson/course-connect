@@ -1,59 +1,98 @@
-## Problem
+## Goal
 
-Inserts into `public.lessons` keep returning 403 (`42501 — new row violates row-level security policy`) for instructor `6e3dc8a4-…` even though:
+Replace the current custom controls in `client/src/components/ui/video-player.tsx` with a Udemy-style player for **native (Supabase-hosted) videos only**. YouTube and Vimeo embeds keep their own players (their TOS requires it) — we just make the iframe wrapper fully responsive.
 
-- Policy `lessons_insert WITH CHECK user_owns_module(module_id, auth.uid())` is correct.
-- `user_owns_module(<each module>, '6e3dc…')` returns `true` for all three modules of the course.
-- `courses.instructor_id` exactly equals the user id.
-- `user_owns_module` is `SECURITY DEFINER`, owned by `postgres`, `EXECUTE` granted to PUBLIC.
-- The user's role in `public.users` is `instructor`.
+## Scope
 
-So either (a) `auth.uid()` inside the request is NOT what we think (the request is reaching PostgREST as `anon` or with a different `sub`), or (b) the client is sending `module_id: null` for some code path.
+- File touched: `client/src/components/ui/video-player.tsx` (single file rewrite of the native branch + responsive wrapper)
+- No DB changes, no new deps (uses existing `framer-motion`, `lucide-react`, shadcn `Button`, `Slider` already in project)
+- No changes to `videoUrl`/`videoPlatform`/`videoId` prop API — every existing caller (`video-player.tsx` page, lesson preview, etc.) keeps working
 
-The earlier "Multiple GoTrueClient instances" warning + the existence of a second copy of the Supabase client at `src/integrations/supabase/client.ts` (parallel to the canonical `client/src/integrations/supabase/client.ts`) is the most likely culprit — both register listeners on the same storage key, can race, and one of them can momentarily emit requests with no/anon session.
+## Player anatomy (matches Udemy reference screenshots)
 
-## Plan
-
-### 1. Remove the duplicate Supabase client (root cause candidate)
-
-- Delete `src/integrations/supabase/client.ts` and `src/integrations/supabase/types.ts` (the canonical files live under `client/src/integrations/supabase/`).
-- Verify nothing in the bundle imports from root `src/...` (already confirmed via grep — no consumers).
-
-This eliminates the "Multiple GoTrueClient instances" race that can cause intermittent unauthenticated requests.
-
-### 2. Add a diagnostic RPC + client-side probe
-
-Create a `SECURITY INVOKER` SQL function that returns the JWT the database actually sees:
-
-```sql
-create or replace function public.debug_whoami()
-returns jsonb language sql stable as $$
-  select jsonb_build_object(
-    'uid', auth.uid(),
-    'role', auth.role(),
-    'jwt_sub', current_setting('request.jwt.claim.sub', true),
-    'jwt_role', current_setting('request.jwt.claim.role', true)
-  );
-$$;
-grant execute on function public.debug_whoami() to anon, authenticated;
+```text
+┌──────────────────────────────────────────────┐
+│  (16:9 black stage, video fills width)       │
+│                                              │
+│  ◀ prev          ▶ big center play       ▶  │  ← side prev/next arrows (only when handlers passed)
+│                                              │
+│  ╶─────────────●──────────────────────────╴  │  ← scrub bar, full width, crimson fill
+│  ▶ ↻10 1x ↻10  0:23 / 12:45    🔊 📝 ⚙ ⛶ ⤢ │  ← bottom control bar
+└──────────────────────────────────────────────┘
 ```
 
-In `LectureContentEditor.handleSave` and `ensureLessonExists`, before the `lessons` insert, call `supabase.rpc('debug_whoami')` and `console.log` it. This proves whether the failing request is going out as the instructor or as anon.
+### Bottom control bar (left → right)
 
-### 3. Harden the insert path
+- Play / Pause toggle
+- Rewind 10s (`SkipBack` icon, jumps `currentTime -= 10`)
+- Speed pill (`1x`) — click opens menu: 0.5 / 0.75 / 1 / 1.25 / 1.5 / 1.75 / 2
+- Forward 10s (`SkipForward`)
+- Time readout `currentTime / duration` (formatted MM:SS or H:MM:SS)
+- Spacer
+- Volume button + horizontal slider on hover (collapses on mobile to just a tap-to-mute icon)
+- Captions toggle (`Captions` icon — wired to `<track>` if present, hidden if no tracks)
+- Settings cog (quality/speed dropdown — quality only listed if multiple sources passed; otherwise just speed)
+- Theatre / Expanded view toggle (`Maximize2` icon — toggles a `theatre` className that widens player to viewport width while staying in-page)
+- Fullscreen toggle (`Maximize` icon — uses `requestFullscreen()` on the player wrapper, switches icon to `Minimize` when active)
 
-- In `LectureContentEditor`, refuse to call insert when `moduleId` is falsy, surfacing a clear toast instead of a 403.
-- Refresh the auth session (`supabase.auth.getSession()`) once at the top of `handleSave`/`ensureLessonExists`; if the session is missing, redirect to `/login` with a toast rather than firing the insert.
+### Side navigation arrows
 
-### 4. Verify and clean up
+- Big translucent purple/crimson circular arrows on left/right edges, vertically centered, only render when parent passes `onPrev` / `onNext` props (so the lesson page's prev/next can live on the player itself, like Udemy)
+- Hidden on touch devices unless controls visible
 
-- Reproduce: open the curriculum page, add a lecture, observe the `debug_whoami` log.
-  - If `uid` matches the instructor → root cause is data/payload (we'll see `module_id` in the 400/403 response and adjust).
-  - If `uid` is null/different → confirmed stale-session bug; the duplicate-client removal in step 1 already addresses it, and step 3 prevents recurrence.
-- Once green, remove the `console.log` calls but keep `debug_whoami` (cheap, useful for future debugging).
+### Scrub bar
 
-## Technical notes
+- Full width above the bottom bar
+- Crimson `#B91C1C` filled portion, white scrubber thumb, dark grey track
+- Buffered range shown in lighter grey (uses `video.buffered`)
+- Hover anywhere on the bar shows a tooltip with target timestamp
 
-- No RLS policy changes needed — current policies are correct.
-- No schema changes other than the new diagnostic function.
-- `client/src/integrations/supabase/client.ts` already passes `storage: localStorage` and PKCE; it remains the single source of truth for the browser session.
+### Center play overlay
+
+- Large translucent circular Play button when paused, fades on play
+- Tap/click anywhere on video toggles play/pause (existing behaviour kept)
+
+## Responsive behaviour
+
+- Wrapper always uses `aspect-video w-full` — fills container, no fixed widths
+- Controls bar uses `flex flex-wrap` with priority: Play / time / fullscreen always visible; speed/captions/settings collapse into an overflow `⋮` menu under 480px
+- Touch-friendly: every control is min `44x44px` on `<lg` (Tailwind `min-h-11 min-w-11 lg:min-h-9 lg:min-w-9`)
+- Volume slider hidden under `sm`, replaced by tap-to-mute
+- Side prev/next arrows become bottom-bar buttons under `sm`
+- Controls auto-hide after 3s of inactivity while playing; tap/mouse-move reveals
+- Keyboard shortcuts: Space = play/pause, ←/→ = ±5s, ↑/↓ = volume, F = fullscreen, M = mute (desktop only)
+
+## YouTube / Vimeo branch
+
+Already uses iframe + `aspect-video` wrapper. Only fix: ensure the wrapper has no `max-width` and inherits parent width so it's fully responsive on mobile (currently fine, just verify). No control overlay added — their players handle controls.
+
+## New props (all optional, additive)
+
+```ts
+interface VideoPlayerProps {
+  // existing...
+  onPrev?: () => void;     // shows left arrow
+  onNext?: () => void;     // shows right arrow
+  onEnded?: () => void;    // for auto-advance in lesson page
+  poster?: string;         // thumbnail before first play
+  title?: string;          // shown faintly top-left
+}
+```
+
+## Out of scope
+
+- Picture-in-picture (can add later via `requestPictureInPicture()` if requested)
+- Adaptive bitrate / HLS — Supabase serves single-resolution MP4, so no quality switcher unless the lesson record provides multiple sources
+- Custom controls over YouTube/Vimeo (against their embed TOS)
+- Player analytics / heatmaps
+
+## Acceptance check
+
+After build, manually verify in preview at desktop, tablet (768px), and mobile (375px) widths:
+1. Player fills available width with 16:9 ratio
+2. All controls reachable with one tap on mobile
+3. Fullscreen works on iOS Safari (uses `webkitEnterFullscreen` fallback)
+4. Theatre mode widens to viewport width without breaking page scroll
+5. YouTube/Vimeo embeds remain their own players, just responsive
+
+Approve and I'll switch to build mode and rewrite the file.
