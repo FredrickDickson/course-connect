@@ -481,6 +481,45 @@ export default function QuizPage() {
                   data-testid="essay-answer"
                 />
               )}
+
+              {currentQ.question_type === "true_false" && (
+                <RadioGroup
+                  value={answers[currentQ.id] || ""}
+                  onValueChange={(value: string) =>
+                    handleAnswerChange(currentQ.id, value)
+                  }
+                  data-testid="true-false-answers"
+                >
+                  {(currentQ.answers && currentQ.answers.length > 0
+                    ? [...currentQ.answers].sort(
+                        (a: QuizAnswer, b: QuizAnswer) => a.order - b.order,
+                      )
+                    : [
+                        { id: `${currentQ.id}-true`, answer: "True", is_correct: false, order: 0 },
+                        { id: `${currentQ.id}-false`, answer: "False", is_correct: false, order: 1 },
+                      ]
+                  ).map((answer: QuizAnswer) => (
+                    <div key={answer.id} className="flex items-center space-x-2">
+                      <RadioGroupItem value={answer.id} id={answer.id} />
+                      <Label htmlFor={answer.id} className="flex-1 cursor-pointer">
+                        {answer.answer}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              )}
+
+              {currentQ.question_type === "fill_blank" && (
+                <Textarea
+                  placeholder="Type your answer here..."
+                  value={answers[currentQ.id] || ""}
+                  onChange={(e) =>
+                    handleAnswerChange(currentQ.id, e.target.value)
+                  }
+                  className="min-h-[80px]"
+                  data-testid="fill-blank-answer"
+                />
+              )}
             </CardContent>
           </Card>
         )}
