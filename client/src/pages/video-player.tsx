@@ -142,7 +142,6 @@ export default function VideoPlayerPage() {
       const dur = videoRef.current?.duration || 0;
       if (!currentLesson || !cur) return;
       try {
-        navigator.sendBeacon?.; // no-op guard
         upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
       } catch {}
     };
