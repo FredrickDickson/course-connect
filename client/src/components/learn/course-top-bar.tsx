@@ -34,8 +34,14 @@ export default function CourseTopBar({ course, completed, total, nextLessonHref,
   return (
     <header className="flex items-center h-14 px-3 sm:px-4 bg-[#1C1D1F] text-white border-b border-white/10 gap-3">
       <Link href="/dashboard">
-        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white shrink-0" aria-label="Back to dashboard">
-          <ArrowLeft className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="lg"
+          className="text-white hover:bg-white/10 hover:text-white shrink-0 min-h-[44px] md:min-h-[40px]" 
+          aria-label="Exit to dashboard"
+        >
+          <ArrowLeft className="h-6 w-6 md:h-5 md:w-5" />
+          <span className="ml-2 text-sm md:hidden">Exit</span>
         </Button>
       </Link>
 

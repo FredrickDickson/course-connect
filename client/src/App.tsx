@@ -24,6 +24,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationToastContainer } from "@/components/ui/NotificationToast";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -31,7 +33,6 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
-import CourseDetail from "@/pages/course-detail";
 import Dashboard from "@/pages/dashboard";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
@@ -40,7 +41,6 @@ import VideoPlayer from "@/pages/video-player";
 import Community from "@/pages/community";
 import CommunityForumCategory from "@/pages/community-forum-category";
 import CommunityCreatePost from "@/pages/community-create-post";
-import CommunityPost from "@/pages/community-post";
 import CommunityMyBoards from "@/pages/community-my-boards";
 import CommunityMyPosts from "@/pages/community-my-posts";
 import CommunityNotifications from "@/pages/community-notifications";
@@ -63,15 +63,12 @@ import VerifyMember from "@/pages/verify-member";
 import RenewMembership from "@/pages/renew-membership";
 import CommunityForum from "@/pages/community-forum";
 import ProfessionalStandards from "@/pages/professional-standards";
-import QuizPage from "@/pages/quiz";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
-import Profile from "@/pages/profile";
 import PaymentSuccess from "@/pages/payment-success";
 import VerifyEmail from "@/pages/verify-email";
-import Onboarding from "@/pages/onboarding";
 import AuthCallback from "@/pages/auth-callback";
 import EnrollmentStatus from "@/pages/enrollment-status";
 
@@ -82,6 +79,13 @@ const AdminSetup = lazy(() => import("@/pages/admin-setup"));
 const BecomeInstructor = lazy(() => import("@/pages/become-instructor"));
 const CreateCourse = lazy(() => import("@/pages/create-course"));
 const CourseCurriculum = lazy(() => import("@/pages/course-curriculum"));
+
+// Lazy loaded heavy pages for performance
+const CourseDetail = lazy(() => import("@/pages/course-detail"));
+const CommunityPost = lazy(() => import("@/pages/community-post"));
+const Onboarding = lazy(() => import("@/pages/onboarding"));
+const Profile = lazy(() => import("@/pages/profile"));
+const QuizPage = lazy(() => import("@/pages/quiz"));
 
 // Wrapped components with Suspense for ProtectedRoute
 const LazyAdminDashboard = () => (
@@ -114,6 +118,31 @@ const LazyBecomeInstructor = () => (
     <BecomeInstructor />
   </Suspense>
 );
+const LazyCourseDetail = () => (
+  <Suspense fallback={<PageLoader />}>
+    <CourseDetail />
+  </Suspense>
+);
+const LazyCommunityPost = () => (
+  <Suspense fallback={<PageLoader />}>
+    <CommunityPost />
+  </Suspense>
+);
+const LazyOnboarding = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Onboarding />
+  </Suspense>
+);
+const LazyProfile = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Profile />
+  </Suspense>
+);
+const LazyQuizPage = () => (
+  <Suspense fallback={<PageLoader />}>
+    <QuizPage />
+  </Suspense>
+);
 
 // Loading fallback component
 function PageLoader() {
@@ -140,7 +169,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
-      <Route path="/course/:id" component={CourseDetail} />
+      <Route path="/course/:id" component={LazyCourseDetail} />
       <Route path="/become-instructor" component={LazyBecomeInstructor} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
@@ -164,7 +193,7 @@ function Router() {
 
       {/* Protected membership routes */}
       <ProtectedRoute path="/renew-membership" component={RenewMembership} />
-      <ProtectedRoute path="/onboarding" component={Onboarding} />
+      <ProtectedRoute path="/onboarding" component={LazyOnboarding} />
 
       {/* Admin bootstrap — protected behind admin role */}
       <ProtectedRoute
@@ -174,7 +203,7 @@ function Router() {
       />
 
       {/* Protected routes - using ProtectedRoute for proper redirection and role checking */}
-      <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/profile" component={LazyProfile} />
       <ProtectedRoute path="/courses" component={Courses} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/programs" component={Programs} />
@@ -186,11 +215,11 @@ function Router() {
         path="/learn/:courseId"
         component={VideoPlayer}
       />
-      <ProtectedRoute path="/quiz/:quizId" component={QuizPage} />
+      <ProtectedRoute path="/quiz/:quizId" component={LazyQuizPage} />
       <ProtectedRoute path="/community" component={Community} />
       <ProtectedRoute path="/community/forums/:slug" component={CommunityForumCategory} />
       <ProtectedRoute path="/community/forums/:slug/new" component={CommunityCreatePost} />
-      <ProtectedRoute path="/community/posts/:slug" component={CommunityPost} />
+      <ProtectedRoute path="/community/posts/:slug" component={LazyCommunityPost} />
       <ProtectedRoute path="/community/my-boards" component={CommunityMyBoards} />
       <ProtectedRoute path="/community/my-posts" component={CommunityMyPosts} />
       <ProtectedRoute path="/community/notifications" component={CommunityNotifications} />
@@ -218,10 +247,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LanguageProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
+          <NotificationProvider>
+            <TooltipProvider>
+              <Toaster />
+              <NotificationToastContainer />
+              <Router />
+            </TooltipProvider>
+          </NotificationProvider>
         </LanguageProvider>
       </AuthProvider>
       <Analytics />

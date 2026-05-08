@@ -664,7 +664,7 @@ export default function Checkout() {
                     <div className="flex gap-3">
                       <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {course.thumbnail_url ? (
-                          <img src={course.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-primary/20 flex items-center justify-center">
                             <BookOpen className="w-5 h-5 text-primary" />

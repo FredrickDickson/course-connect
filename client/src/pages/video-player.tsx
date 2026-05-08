@@ -27,7 +27,7 @@ const VP: any = LazyVideoPlayer;
 
 export default function VideoPlayerPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, isInstructor } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, navigate] = useLocation();
@@ -243,7 +243,7 @@ export default function VideoPlayerPage() {
       </div>
     );
   }
-  if (!enrollment?.isEnrolled && !currentLesson?.is_preview) {
+  if (!enrollment?.isEnrolled && !currentLesson?.is_preview && !isInstructor()) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
         <h1 className="text-2xl font-bold mb-2">Enroll to access this course</h1>
@@ -290,32 +290,41 @@ export default function VideoPlayerPage() {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbLink href={`/course/${courseId}`}>{course.title}</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{currentLesson.title}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-        }
-      >
-        <CourseTopBar
-          course={course}
-          completed={completedCount}
-          total={allLessons.length}
-          nextLessonHref={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : undefined}
-        />
-                  if (!cur) return;
-                  upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
-                }}
-                onEnded={() => {
-                  upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
-                  if (nextLesson) setShowUpNext(true);
-                }}
-              />
-            </ErrorBoundary>
-            {showUpNext && nextLesson && (
-              <UpNextOverlay
-                nextTitle={nextLesson.title}
-                onPlay={() => { setShowUpNext(false); goToLesson(nextLesson.id); }}
-                onCancel={() => setShowUpNext(false)}
-              />
-            )}
-          </div>
+
+          {isVideoLesson ? (
+            <div className="flex-1 bg-black relative">
+              <ErrorBoundary>
+                <VP
+                  ref={videoRef}
+                  src={currentLesson.video_url}
+                  platform={currentLesson.video_platform}
+                  videoId={currentLesson.video_id}
+                  onTimeUpdate={(cur: number, dur: number) => {
+                    if (!cur) return;
+                    upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
+                  }}
+                  onEnded={() => {
+                    upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
+                    if (nextLesson) setShowUpNext(true);
+                  }}
+                />
+                {showUpNext && nextLesson && (
+                  <UpNextOverlay
+                    nextTitle={nextLesson.title}
+                    onPlay={() => { setShowUpNext(false); goToLesson(nextLesson.id); }}
+                    onCancel={() => setShowUpNext(false)}
+                  />
+                )}
+              </ErrorBoundary>
+            </div>
           ) : lessonType === "article" ? (
             <ArticleStage
               lesson={currentLesson}

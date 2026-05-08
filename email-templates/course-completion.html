@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Completed - CIMA Learn</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Course Completed! 🎓</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Congratulations! You have successfully completed <strong>{{courseTitle}}</strong>. This is a significant achievement in your professional development journey.
+      </p>
+      
+      <div style="background: #f0fff4; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #38a169;">
+        <h3 style="margin-top: 0; color: #2f855a; font-size: 18px;">Course Details</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2f855a;">
+          <li style="margin-bottom: 10px;"><strong>Course:</strong> {{courseTitle}}</li>
+          <li style="margin-bottom: 10px;"><strong>Instructor:</strong> {{instructorName}}</li>
+          <li style="margin-bottom: 10px;"><strong>Completed Date:</strong> {{completionDate}}</li>
+          <li style="margin-bottom: 10px;"><strong>Duration:</strong> {{duration}}</li>
+          <li style="margin-bottom: 0;"><strong>Certificate Available:</strong> {{certificateAvailable ? 'Yes' : 'Pending'}}</li>
+        </ul>
+      </div>
+      
+      {{#if grade}}
+      <div style="background: #ebf8ff; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #3182ce;">
+        <h3 style="margin-top: 0; color: #2c5282; font-size: 18px;">Your Performance</h3>
+        <div style="margin: 10px 0; color: #2c5282;">
+          <p style="font-size: 16px; margin-bottom: 10px;">
+            <strong>Final Grade:</strong> <span style="background: #3182ce; color: white; padding: 4px 8px; border-radius: 4px; font-size: 14px;">{{grade}}</span>
+          </p>
+          <p style="font-size: 14px; color: #4a5568; margin: 0;">
+            {{gradeComments}}
+          </p>
+        </div>
+      </div>
+      {{/if}}
+      
+      {{#if certificateUrl}}
+      <div style="background: #fffff0; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d69e2e;">
+        <h3 style="margin-top: 0; color: #744210; font-size: 18px;">Certificate Available</h3>
+        <p style="margin: 10px 0; color: #744210; font-size: 16px;">
+          Your certificate of completion is now ready for download. This certificate recognizes your achievement and can be added to your professional portfolio.
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="{{certificateUrl}}"
+             style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+            Download Certificate
+          </a>
+        </div>
+      </div>
+      {{/if}}
+      
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d4af37;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 18px;">What's Next?</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2d3748;">
+          <li style="margin-bottom: 10px;">Share your achievement on LinkedIn and professional networks</li>
+          <li style="margin-bottom: 10px;">Explore advanced courses in your pathway</li>
+          <li style="margin-bottom: 10px;">Consider pursuing the next certification level</li>
+          <li style="margin-bottom: 0;">Join our alumni community for networking opportunities</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}"
+           style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 14px;">
+          View Your Dashboard
+        </a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        Congratulations again on completing this important milestone in your professional journey. If you have any questions about your certificate or next steps, please reply to this email or contact our support team.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>

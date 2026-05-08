@@ -381,14 +381,16 @@ export default function AdminCoursesTable() {
                         [DollarSign, "Price", `${selectedCourse.currency || "GHS"} ${Number(selectedCourse.price).toLocaleString()}`],
                         [Layers, "Level", selectedCourse.level],
                         [Users, "Instructor", selectedCourse.instructor ? `${selectedCourse.instructor.first_name} ${selectedCourse.instructor.last_name}` : null],
-                      ].filter(([, , v]) => v != null).map(([Icon, label, value]) => (
-                        <div key={label as string} className="flex items-center gap-3 py-1.5 text-sm">
-                          {/* @ts-ignore */}
-                          <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-muted-foreground min-w-[80px]">{label as string}</span>
-                          <span className="font-medium capitalize">{value as string}</span>
-                        </div>
-                      ))}
+                      ].filter(([, , v]) => v != null).map(([Icon, label, value]) => {
+                        const IconComponent = Icon as React.ComponentType<{ className?: string }>;
+                        return (
+                          <div key={label as string} className="flex items-center gap-3 py-1.5 text-sm">
+                            <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground min-w-[80px]">{label as string}</span>
+                            <span className="font-medium capitalize">{value as string}</span>
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 </TabsContent>

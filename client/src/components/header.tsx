@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import NotificationBell from "@/components/notification-bell";
+import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import SearchModal from "@/components/search-modal";
 import ExploreDropdown from "@/components/explore-dropdown";
 
@@ -52,7 +52,7 @@ export default function Header() {
   const UserMenu = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="User menu">
           <Avatar className="h-10 w-10">
             <AvatarImage
               src={user?.profileImageUrl || undefined}
@@ -162,6 +162,7 @@ export default function Header() {
               className="h-9 w-9 p-0"
               onClick={() => setIsSearchOpen(true)}
               data-testid="search-button"
+              aria-label="Open search"
             >
               <Search className="h-4 w-4" />
             </Button>
@@ -173,7 +174,7 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-3">
               {isAuthenticated ? (
                 <>
-                  <NotificationBell />
+                  <NotificationDropdown />
                   <UserMenu />
                 </> 
               ) : (
@@ -202,6 +203,7 @@ export default function Header() {
                   size="sm"
                   className="md:hidden"
                   data-testid="mobile-menu-trigger"
+                  aria-label="Open menu"
                 >
                   <Menu className="h-5 w-5" />
                 </Button>

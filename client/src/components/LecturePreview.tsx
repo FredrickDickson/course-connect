@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -144,7 +145,7 @@ export function LecturePreview({
     return (
       <div
         className="prose max-w-none"
-        dangerouslySetInnerHTML={{ __html: lessonData.content }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(lessonData.content || "") }}
       />
     );
   };
@@ -268,7 +269,7 @@ export function LecturePreview({
           <Card>
             <CardHeader><CardTitle>Instructions</CardTitle></CardHeader>
             <CardContent>
-              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: assignmentData.instructions }} />
+              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(assignmentData.instructions || "") }} />
             </CardContent>
           </Card>
         )}
