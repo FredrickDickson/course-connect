@@ -39,7 +39,7 @@ export default function VerifyMember() {
   useEffect(() => {
     if (!memberId) return;
     (async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc("verify_member", { _member_id: memberId });
       const row = Array.isArray(data) ? data[0] : data;
       if (error || !row) {
