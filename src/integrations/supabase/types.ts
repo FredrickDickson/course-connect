@@ -3972,6 +3972,18 @@ export type Database = {
         Args: { _quiz_id: string; _user_id: string }
         Returns: boolean
       }
+      verify_member: {
+        Args: { _member_id: string }
+        Returns: {
+          expiry_date: string
+          full_name: string
+          issue_date: string
+          member_id: string
+          part: Database["public"]["Enums"]["membership_level"]
+          post_nominal: string
+          status: Database["public"]["Enums"]["membership_status"]
+        }[]
+      }
     }
     Enums: {
       membership_level: "associate" | "member" | "fellow"
