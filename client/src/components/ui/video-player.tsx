@@ -276,9 +276,12 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           externalContainerRef.current.appendChild(div);
           ytPlayerRef.current = new YT.Player(div.id, {
             videoId,
+            width: "100%",
+            height: "100%",
             playerVars: {
               controls: 0, modestbranding: 1, rel: 0, playsinline: 1,
               disablekb: 1, fs: 0, iv_load_policy: 3, autoplay: 0,
+              color: "white", autohide: 1,
             },
             events: {
               onReady: (e: any) => {
@@ -288,6 +291,21 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
                   e.target.seekTo(startAt, true);
                   seekedRef.current = true;
                 }
+                try {
+                  const ifr = e.target.getIframe?.() as HTMLIFrameElement | undefined;
+                  if (ifr) {
+                    ifr.removeAttribute("width");
+                    ifr.removeAttribute("height");
+                    ifr.setAttribute("allowfullscreen", "true");
+                    ifr.setAttribute(
+                      "allow",
+                      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    );
+                    ifr.style.width = "100%";
+                    ifr.style.height = "100%";
+                    ifr.style.border = "0";
+                  }
+                } catch {}
                 setIsLoading(false);
                 onLoadedMetadata?.();
               },
@@ -310,9 +328,33 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           if (cancelled || !externalContainerRef.current) return;
           externalContainerRef.current.innerHTML = "";
           vimeoPlayerRef.current = new Vimeo(externalContainerRef.current, {
-            id: Number(videoId), controls: false, responsive: true, playsinline: true, autopause: false,
+            id: Number(videoId),
+            controls: false,
+            responsive: false,
+            playsinline: true,
+            autopause: false,
+            transparent: false,
+            dnt: true,
+            title: false,
+            byline: false,
+            portrait: false,
           } as any);
           await vimeoPlayerRef.current.ready();
+          try {
+            const ifr = externalContainerRef.current.querySelector("iframe") as HTMLIFrameElement | null;
+            if (ifr) {
+              ifr.removeAttribute("width");
+              ifr.removeAttribute("height");
+              ifr.setAttribute("allowfullscreen", "true");
+              ifr.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; clipboard-write");
+              ifr.style.position = "absolute";
+              ifr.style.top = "0";
+              ifr.style.left = "0";
+              ifr.style.width = "100%";
+              ifr.style.height = "100%";
+              ifr.style.border = "0";
+            }
+          } catch {}
           const dur = await vimeoPlayerRef.current.getDuration();
           setDuration(dur || 0);
           if (startAt > 0 && !seekedRef.current) {
@@ -419,7 +461,10 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
 
       {/* Media surface */}
       {isExternal ? (
-        <div ref={externalContainerRef} className="absolute inset-0 w-full h-full" />
+        <div
+          ref={externalContainerRef}
+          className="absolute inset-0 w-full h-full [&_iframe]:absolute [&_iframe]:top-0 [&_iframe]:left-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0"
+        />
       ) : (
         <video
           ref={videoRef}
