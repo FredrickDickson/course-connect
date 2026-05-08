@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { LearnLesson } from "./types";
 
 const sb: any = supabase;
 
-export default function QuizStage({ lesson }: { lesson: LearnLesson }) {
+export default function QuizStage({ lesson, onComplete }: { lesson: LearnLesson; onComplete?: () => void }) {
   const { user } = useAuth();
   const { data: quiz } = useQuery({
     queryKey: ["lesson-quiz", lesson.id],
@@ -35,6 +36,14 @@ export default function QuizStage({ lesson }: { lesson: LearnLesson }) {
   const passed = attempts.some((a: any) => a.passed);
   const used = attempts.length;
   const max = quiz?.max_attempts || 0;
+
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (passed && !firedRef.current) {
+      firedRef.current = true;
+      onComplete?.();
+    }
+  }, [passed, onComplete]);
 
   return (
     <div className="bg-background min-h-[60vh] py-8 px-4">
