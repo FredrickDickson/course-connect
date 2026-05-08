@@ -88,12 +88,14 @@ export default function CourseTopBar({ course, completed, total, nextLessonHref,
             <DropdownMenuItem onClick={() => toast({ title: "Resources tab", description: "See the Resources tab below the video." })}>
               Download resources
             </DropdownMenuItem>
+            {/* Hidden temporarily
             <DropdownMenuItem onClick={onReportIssue}>Report an issue</DropdownMenuItem>
             <DropdownMenuItem asChild>
               <a href={`mailto:support@cimarb.org?subject=${encodeURIComponent("Course question: " + course.title)}`}>
                 Contact instructor
               </a>
             </DropdownMenuItem>
+            */}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
