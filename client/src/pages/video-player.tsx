@@ -12,6 +12,9 @@ import CourseSidebar from "@/components/learn/course-sidebar";
 import ContentTabs from "@/components/learn/content-tabs";
 import UpNextOverlay from "@/components/learn/up-next-overlay";
 import CourseCompleteModal from "@/components/learn/course-complete-modal";
+import ArticleStage from "@/components/learn/article-stage";
+import QuizStage from "@/components/learn/quiz-stage";
+import AssignmentStage from "@/components/learn/assignment-stage";
 import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { LearnCourse, LearnLesson, ProgressRow } from "@/components/learn/types";
@@ -188,6 +191,9 @@ export default function VideoPlayerPage() {
   }
 
   const sectionIndex = (course.modules?.findIndex(m => m.id === currentModule?.id) ?? 0) + 1;
+  const lessonType = (currentLesson.content_type || "video").toLowerCase();
+  const isVideoLesson = lessonType === "video" || (!!currentLesson.video_url || !!currentLesson.video_id);
+  const lessonProgress = progress.find(p => p.lesson_id === currentLesson.id);
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -200,6 +206,7 @@ export default function VideoPlayerPage() {
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col overflow-y-auto">
+          {isVideoLesson && lessonType !== "article" && lessonType !== "quiz" && lessonType !== "assignment" ? (
           <div className="bg-black relative">
             <ErrorBoundary>
               <VP
@@ -242,6 +249,17 @@ export default function VideoPlayerPage() {
               />
             )}
           </div>
+          ) : lessonType === "article" ? (
+            <ArticleStage
+              lesson={currentLesson}
+              completed={!!lessonProgress?.completed}
+              onMarkComplete={() => handleToggleComplete(currentLesson.id, true)}
+            />
+          ) : lessonType === "quiz" ? (
+            <QuizStage lesson={currentLesson} />
+          ) : lessonType === "assignment" ? (
+            <AssignmentStage lesson={currentLesson} />
+          ) : null}
 
           <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full">
             <div className="flex items-start justify-between gap-3 flex-wrap">
