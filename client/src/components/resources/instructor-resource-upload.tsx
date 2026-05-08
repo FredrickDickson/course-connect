@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+// Cast bypass: lesson_resources not in generated DB types yet.
+const sb: any = supabase;
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +91,7 @@ export default function InstructorResourceUpload() {
     queryKey: ["instr-res-list", lessonId],
     enabled: !!lessonId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from("lesson_resources")
         .select("*")
         .eq("lesson_id", lessonId)
@@ -123,7 +125,7 @@ export default function InstructorResourceUpload() {
         resource_type = detectType(file.name);
         file_size_mb = +(file.size / 1024 / 1024).toFixed(2);
       }
-      const { error } = await supabase.from("lesson_resources").insert({
+      const { error } = await sb.from("lesson_resources").insert({
         lesson_id: lessonId,
         name: name.trim(),
         file_url,
@@ -148,7 +150,7 @@ export default function InstructorResourceUpload() {
       if (r.resource_type !== "link" && r.file_url && !r.file_url.startsWith("http")) {
         await supabase.storage.from("lesson-resources").remove([r.file_url]);
       }
-      const { error } = await supabase.from("lesson_resources").delete().eq("id", r.id);
+      const { error } = await sb.from("lesson_resources").delete().eq("id", r.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["instr-res-list", lessonId] }),
