@@ -1,114 +1,98 @@
-## Goal
 
-Rebuild `/learn/:courseId/:lessonId` as a Udemy-style course player matching the spec, reusing existing tables (`courses`, `modules`, `lessons`, `enrollments`, `progress`) and the new Udemy-style `VideoPlayer` component already in place.
+## Goals
 
-Map of spec → existing schema:
+1. Resume playback at last watched timestamp.
+2. Auto-persist watch progress + completion immediately.
+3. Comment out Q&A, "Report an issue", and "Contact instructor" UI.
+4. Let instructors manage lesson resources (add/preview/download with file-type icons).
+5. Let instructors add/edit/delete course announcements.
+6. Use the custom Udemy-style player UI for YouTube/Vimeo too (proxy via player APIs).
 
-```text
-course_sections   → modules
-course_lessons    → lessons (lesson_type = content_type)
-lesson_progress   → progress  (already has user_id, lesson_id, watch_time_seconds, completed, last_watched_at)
-```
+---
 
-## Database migration (additive only)
+## 1. Resume Playback
 
-New tables (RLS enabled on all):
+In `client/src/pages/video-player.tsx`:
+- Read `progress.find(p => p.lesson_id === currentLesson.id)?.watch_time_seconds` on load.
+- Pass new prop `startAt={resumeSeconds}` to `<VideoPlayer>`.
+- If `resumeSeconds > 5` and `< duration - 10`, show small toast "Resumed from MM:SS · Restart" with a Restart action that seeks to 0.
 
-- `lesson_notes` (id, user_id, lesson_id FK lessons, content text, video_timestamp_seconds int null) — owner-only RLS (`auth.uid() = user_id`)
-- `lesson_questions` (id, lesson_id, author_id, title, body, is_answered bool default false) — SELECT for course instructor + admin + enrolled users (use existing `user_can_view_lesson` helper); INSERT/UPDATE by author
-- `lesson_question_replies` (id, question_id FK, author_id, body, is_instructor_reply bool) — same SELECT scope; INSERT by author; UPDATE/DELETE by author
-- `lesson_resources` (id, lesson_id, name, file_url, file_size_mb numeric, resource_type text) — SELECT same as lesson visibility; INSERT/UPDATE/DELETE by course owner via `user_owns_lesson`
-- `course_announcements` (id, course_id, author_id, title, body) — SELECT for enrolled + instructor + admin; INSERT/UPDATE/DELETE by course instructor + admin
-- `announcement_reads` (user_id, announcement_id, read_at) PK(user_id, announcement_id) — owner-only
+In `client/src/components/ui/video-player.tsx`:
+- Accept `startAt?: number` prop. On `onLoadedMetadata`, if `startAt > 0` and not yet seeked, set `videoRef.current.currentTime = startAt` (guard with a `didSeekRef`).
+- For YouTube/Vimeo (after item 6 below), seek via their JS APIs once player is ready.
 
-Add columns:
-- `lessons.is_preview boolean default false`
+## 2. Auto-Persist Progress + Completion
 
-Storage:
-- Reuse existing `course-videos` (private) and add new `lesson-resources` bucket (private) for PDF/slide attachments. RLS: enrolled users can read; instructors can write to their own course paths.
+In `video-player.tsx`:
+- Reduce save threshold from every 10s to every 5s.
+- Add `onPause` handler → flush a save immediately.
+- Add `beforeunload` and route-change cleanup → final save of `currentTime`.
+- Mark `completed = true` when `cur >= dur * 0.9` (already in code) AND keep saving timestamp afterward so resume still works.
+- For external (YouTube/Vimeo) videos with the new unified player, run the same 5s save loop driven by player state polling (see item 6).
 
-## Frontend (`client/src/pages/video-player.tsx` rewrite)
+In `course-sidebar.tsx` checkbox: already wired through `onToggleComplete`. Add optimistic update via `qc.setQueryData(["learn-progress", courseId, user?.id], ...)` so the UI ticks instantly without waiting for the round-trip.
 
-Strip current `<Header />` + 3-col grid layout. New full-viewport shell:
+## 3. Comment-out Q&A / Report / Contact
 
-```text
-<div h-screen flex flex-col bg-white>
-  <CourseTopBar />                              ← h-14 #1C1D1F
-  <div flex-1 flex overflow-hidden>
-    <main flex-1 flex flex-col overflow-y-auto>
-      <VideoStage />                            ← black, aspect-video
-      <LessonHeader />                          ← Section · Lesson title
-      <LessonNav />                             ← Prev / Next
-      <ContentTabs />                           ← 5 tabs
-    </main>
-    <CourseSidebar />                           ← w-[380px] dark, sticky on lg+
-  </div>
-</div>
-```
+- `content-tabs.tsx`: wrap the `qa` `TabsTrigger` and `TabsContent` in `{/* ... */}` (keep code intact for later). Default tab stays `overview`.
+- `course-top-bar.tsx`: comment out the `Report an issue` and `Contact instructor` `DropdownMenuItem` blocks. Keep `Download resources`.
 
-### New components in `client/src/components/learn/`
+## 4. Instructor Resource Management
 
-1. `course-top-bar.tsx` — back arrow → `/dashboard`, truncated title (max 50 chars + "..."), level badge (course.level → ACIMArb/MCIMArb/FCIMArb), centered progress bar with "X / Y lessons completed", Your Progress dropdown (DropdownMenu), Share button (clipboard), more-options menu (Download resources / Report issue / Contact instructor → mailto for now)
+Detect instructor: `isInstructor = user?.id === course.instructor_id || isAdmin` (use existing role check pattern).
 
-2. `course-sidebar.tsx` — header "Course content" + collapse X button (lifts a `sidebarOpen` state in parent). Course progress summary block. Accordion of sections; each section shows "X / Y · totalMin", "Complete" green badge if all done. Lesson rows: checkbox + lesson type icon (Video/PDF/Quiz/Assignment), number + title, duration. Active lesson: 3px crimson left border + bg `#2D2F31` + bold. Completed: green check. Clicking checkbox calls `markComplete(lesson.id, !done)` independently of video.
+Edits in `content-tabs.tsx` Resources tab:
+- If `isInstructor`, show "Add resource" button → opens dialog:
+  - Name (text)
+  - File upload to existing private bucket `lesson-resources` at path `${course.id}/${lesson.id}/${uuid}-${filename}`
+  - Auto-detect `resource_type` from file extension (pdf, doc, xls, ppt, zip, image, video, audio, link, other)
+  - Optional: paste external URL (link type)
+  - On submit: insert into `lesson_resources` with `name`, `file_url` (signed URL or storage path → resolved to signed URL on read), `file_size_mb`, `resource_type`, `lesson_id`.
+- Each row shows: file-type icon, name, size, type. Buttons: Preview (PDFs/images/video/audio open in dialog with `<iframe>`/`<img>`/`<video>`/`<audio>`; others fallback to download), Download (signed-URL `a` tag with `download`), Delete (instructor only).
+- Helper `getFileIcon(type)` mapping: `FileText` (pdf/doc), `FileSpreadsheet` (xls/csv), `Presentation` (ppt), `FileArchive` (zip), `Image` (image), `Video`, `Music`, `Link2`, `File`.
+- Use `supabase.storage.from('lesson-resources').createSignedUrl(path, 3600)` for previews/downloads.
 
-3. `lesson-video.tsx` — wraps `<VideoPlayer>` (already Udemy-style). Passes `onPrev`/`onNext` so the player's side arrows navigate lessons. On `onTimeUpdate` debounced every 10s, upserts `progress` (existing logic preserved). On `currentTime ≥ 0.9 * duration` → marks complete once. On `onEnded` → show "Up next in 5s" overlay (5-sec countdown, Play now / Cancel buttons) — implemented as an absolute overlay inside the video stage.
+RLS already exists from prior migration; no DB changes needed.
 
-4. `lesson-nav.tsx` — Prev / Next buttons with titles, disabled at boundaries.
+## 5. Instructor Announcement Management
 
-5. `content-tabs.tsx` — Tabs (Overview / Q&A / Notes / Announcements / Resources):
-   - Overview: course description + what-you'll-learn (course.objectives) + instructor card + requirements
-   - Q&A: list `lesson_questions` for current lesson, "+ Ask a Question" dialog, replies inline with "Instructor ★" badge; search + filter (All / Mine / Unanswered)
-   - Notes: textarea (no rich text yet — out of scope), "+ Note at MM:SS" button captures current player time, list ordered by `video_timestamp_seconds`, "Download all notes as PDF" via existing `jsPDF`
-   - Announcements: list `course_announcements`; mark read via `announcement_reads` upsert on view; unread red dot
-   - Resources: list `lesson_resources` + course-level announcement attachments; download via signed URLs
+Edits in `content-tabs.tsx` Announcements tab:
+- If `isInstructor`, show "New announcement" button → dialog with `title` + `body`.
+- Each announcement row (instructor view) gets Edit and Delete icon buttons → edit dialog reuses form; delete confirms.
+- Mutations: `insertAnnouncement`, `updateAnnouncement`, `deleteAnnouncement` against `course_announcements` table (RLS already permits instructor+admin writes).
+- Keep existing student read-tracking unchanged.
 
-6. `course-complete-modal.tsx` — Dialog shown when completed-count === total-lessons (only first time): 🎉 + course name, Download Certificate (link to existing certificate generator), Share on LinkedIn (URL share), Browse next-level link
+## 6. Unified Udemy-Style Player for YouTube/Vimeo
 
-### State / data hooks
+Goal: same chrome (scrub bar, time, speed, volume, prev/next, theatre, fullscreen) for all sources, hiding the native YT/Vimeo UI.
 
-- Reuse existing `course` + `enrollment` + `progress` queries
-- New queries: `lesson_notes` (filtered by user + lesson), `lesson_questions` + replies (lesson scope), `lesson_resources` (lesson scope), `course_announcements` + `announcement_reads` (course scope)
-- New mutations: `markComplete`, `addNote`, `deleteNote`, `askQuestion`, `replyQuestion`, `markAnnouncementRead`
+Approach in `client/src/components/ui/video-player.tsx`:
+- Refactor so the controls overlay is rendered for all sources.
+- Add a `playerAdapter` abstraction with methods: `play/pause/seek/getCurrentTime/getDuration/setVolume/setMuted/setRate/onTimeUpdate/onPlay/onPause/onEnded/onReady`.
+- Three adapters:
+  - `nativeAdapter` — wraps `<video>` (current behaviour).
+  - `youtubeAdapter` — loads YouTube IFrame API (`https://www.youtube.com/iframe_api`), creates `new YT.Player(...)` with `controls:0, modestbranding:1, rel:0, playsinline:1, disablekb:1, fs:0, iv_load_policy:3`, polls `getCurrentTime()` every 250ms for time updates.
+  - `vimeoAdapter` — loads `@vimeo/player` package (`bun add @vimeo/player`), embed with `controls:false`, subscribe to `timeupdate/play/pause/ended` events.
+- Render either `<video>`, `<div ref=ytContainer>`, or `<div ref=vimeoContainer>` underneath the same overlay.
+- The overlay calls `adapter.play()`, `adapter.seek(t)`, etc.
+- Fullscreen targets the wrapper div (works for iframes too).
+- For `startAt`: adapter's `onReady` → `adapter.seek(startAt)`.
+- Note: YT/Vimeo embed branding (logo) inside the iframe can't be fully removed, but their control bars are hidden via params/options; our overlay sits on top and intercepts pointer events on a transparent layer above the iframe (so click=play/pause works).
 
-### Mobile (`<lg`)
+## Files
 
-- Sidebar hides; Tabs gain a 6th leading tab "Course content" that renders `<CourseSidebar />` inline
-- Bottom tab bar uses existing shadcn `TabsList` (sticky bottom on mobile only)
-- Min 44px tap targets (already set in player); swipe between lessons uses simple `onTouchStart/End` delta on the video stage → calls prev/next
+Edited:
+- `client/src/pages/video-player.tsx` — pass `startAt`, faster autosave, onPause flush, optimistic completion.
+- `client/src/components/ui/video-player.tsx` — `startAt` prop, adapter refactor for YT/Vimeo with shared overlay.
+- `client/src/components/learn/content-tabs.tsx` — comment Q&A; add instructor controls for resources + announcements; resource preview dialog + file-type icons.
+- `client/src/components/learn/course-top-bar.tsx` — comment Report/Contact items.
 
-## Out of scope (call out to user)
+Added dependency: `@vimeo/player`.
 
-- Drag-and-drop curriculum reorder in admin (kept as separate task — `/admin/courses/[id]/content` already exists via `course-curriculum.tsx`; we'll just add the `is_preview` toggle and resources/announcements forms there)
-- Rich text editor for notes (plain textarea now)
-- Real-time announcements (poll on tab open)
-- Auto-detect video duration from URL (admin enters manually)
-- Ticket system for "Report an issue" (uses mailto)
+No DB migrations needed (tables and RLS exist).
 
-## Files to create / edit
+## Out of Scope
 
-Create:
-- `supabase/migrations/<timestamp>_learn_interface.sql`
-- `client/src/components/learn/course-top-bar.tsx`
-- `client/src/components/learn/course-sidebar.tsx`
-- `client/src/components/learn/lesson-video.tsx`
-- `client/src/components/learn/lesson-nav.tsx`
-- `client/src/components/learn/content-tabs.tsx`
-- `client/src/components/learn/course-complete-modal.tsx`
-- `client/src/components/learn/up-next-overlay.tsx`
-
-Edit:
-- `client/src/pages/video-player.tsx` (rewritten, much smaller — composes new components)
-- `client/src/pages/course-curriculum.tsx` (add `is_preview` toggle + resources/announcements panels — minimal)
-
-## Acceptance
-
-After build, in preview at desktop / tablet / mobile:
-1. Topbar shows course title, level badge, live progress, Your Progress dropdown
-2. Sidebar accordion shows section completion badges, active lesson has crimson left border, checkbox toggles completion and updates topbar progress instantly
-3. Video player (already Udemy-style) plays Supabase-hosted MP4 / YouTube / Vimeo; 90% watched marks lesson complete; "Up next" overlay appears on `ended`
-4. All 5 tabs render with real data; Q&A post + reply works; Notes save with timestamp; Announcements marked read; Resources downloadable
-5. Mobile collapses sidebar into a tab; controls remain tappable
-6. Course-complete modal appears once when 100% reached
-
-Approve and I'll run the migration and build the components in one pass.
+- Re-enabling Q&A (kept commented for future).
+- Rich-text announcement editor (plain textarea).
+- Per-resource ordering UI.
