@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import MyCertificates from "@/components/certificates/my-certificates";
 
 export default function Certification() {
   const certificationLevels = [
@@ -89,6 +90,7 @@ export default function Certification() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-16">
+          <MyCertificates />
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Certification</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
