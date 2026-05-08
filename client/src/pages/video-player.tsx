@@ -1,775 +1,266 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, Link } from "wouter";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import VideoPlayerImpl from "@/components/ui/video-player";
-import type { VideoPlayerRef } from "@/components/ui/video-player";
+import VideoPlayerImpl, { type VideoPlayerRef } from "@/components/ui/video-player";
+import CourseTopBar from "@/components/learn/course-top-bar";
+import CourseSidebar from "@/components/learn/course-sidebar";
+import ContentTabs from "@/components/learn/content-tabs";
+import UpNextOverlay from "@/components/learn/up-next-overlay";
+import CourseCompleteModal from "@/components/learn/course-complete-modal";
+import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import type { LearnCourse, LearnLesson, ProgressRow } from "@/components/learn/types";
+
 const VP: any = VideoPlayerImpl;
-import { AlertCircle } from "lucide-react";
 
-// Type definitions
-import { Database } from "@/integrations/supabase/types";
-
-type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
-type Module = Database["public"]["Tables"]["modules"]["Row"] & {
-  lessons?: Lesson[];
-};
-type Course = Database["public"]["Tables"]["courses"]["Row"] & {
-  modules?: Module[];
-};
-
-interface ProgressItem {
-  completed: boolean;
-  watch_time_seconds: number;
-  lesson: Lesson;
-}
-
-export default function VideoPlayer() {
-  const { courseId, lessonId } = useParams();
+export default function VideoPlayerPage() {
+  const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const [, navigate] = useLocation();
   const videoRef = useRef<VideoPlayerRef>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [note, setNote] = useState("");
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
-  const [isExternalVideo, setIsExternalVideo] = useState(false);
+  const [showUpNext, setShowUpNext] = useState(false);
+  const [completedShown, setCompletedShown] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const lastSavedSec = useRef(0);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
-      return;
+      toast({ title: "Please log in", variant: "destructive" });
+      setTimeout(() => (window.location.href = "/login"), 400);
     }
   }, [isAuthenticated, isLoading, toast]);
 
   const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: ["course", courseId],
+    queryKey: ["learn-course", courseId],
+    enabled: !!courseId && isAuthenticated,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select(
-          `
-          *,
-          modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))
-        `,
-        )
-        .eq("id", courseId as string)
+        .select(`*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))`)
+        .eq("id", courseId!)
         .single();
       if (error) throw error;
-      return data;
+      // Sort modules + lessons by order
+      const c = data as any as LearnCourse;
+      c.modules = (c.modules || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      c.modules.forEach(m => { m.lessons = (m.lessons || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); });
+      return c;
     },
-    enabled: !!courseId && isAuthenticated,
   });
 
   const { data: enrollment } = useQuery({
-    queryKey: ["enrollment-check", courseId],
+    queryKey: ["enrollment-check", courseId, user?.id],
+    enabled: !!courseId && !!user?.id && isAuthenticated,
     queryFn: async () => {
-      if (!user?.id) throw new Error("Not authenticated");
-      const { data, error } = await supabase
-        .from("enrollments")
-        .select("*")
-        .eq("course_id", courseId as string)
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("enrollments").select("*")
+        .eq("course_id", courseId!).eq("user_id", user!.id).maybeSingle();
       if (error) throw error;
-      return data ? { isEnrolled: true, ...data } : { isEnrolled: false };
+      return data ? { isEnrolled: true } : { isEnrolled: false };
     },
-    enabled: !!courseId && !!user && isAuthenticated,
   });
 
-  const { data: progressList = [] } = useQuery({
-    queryKey: ["progress", courseId],
+  const allLessons = useMemo<LearnLesson[]>(
+    () => course?.modules?.flatMap(m => m.lessons || []) || [],
+    [course]
+  );
+
+  const { data: progress = [] } = useQuery<ProgressRow[]>({
+    queryKey: ["learn-progress", courseId, user?.id],
+    enabled: !!user?.id && allLessons.length > 0,
     queryFn: async () => {
-      // Get all modules and lessons for this course first to filter progress correctly
-      const { data, error } = await supabase
-        .from("progress")
-        .select("*, lesson:lessons!inner(*)")
-        .eq("user_id", user?.id || "");
-
+      const ids = allLessons.map(l => l.id);
+      if (!ids.length) return [];
+      const { data, error } = await supabase.from("progress")
+        .select("lesson_id, completed, watch_time_seconds")
+        .eq("user_id", user!.id).in("lesson_id", ids);
       if (error) throw error;
-
-      // Filter the progress records that belong to this course's lessons
-      const courseLessons =
-        course?.modules?.flatMap(
-          (m: Module) => m.lessons?.map((l: Lesson) => l.id) || [],
-        ) || [];
-      return (data || []).filter((p: any) =>
-        courseLessons.includes(p.lesson_id),
-      );
-    },
-    enabled: !!courseId && !!user && !!course && isAuthenticated,
-  });
-
-  // Update progress mutation
-  const updateProgressMutation = useMutation({
-    mutationFn: async ({
-      lessonId,
-      watch_time_seconds,
-      completed,
-    }: {
-      lessonId: string;
-      watch_time_seconds: number;
-      completed: boolean;
-    }) => {
-      const { data, error } = await supabase
-        .from("progress")
-        .upsert(
-          {
-            user_id: user?.id || "",
-            lesson_id: lessonId,
-            watch_time_seconds: watch_time_seconds,
-            completed: completed,
-            last_watched_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,lesson_id",
-          },
-        )
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
-        return;
-      }
+      return (data || []) as ProgressRow[];
     },
   });
 
-  // Find current lesson and module
-  const currentLesson = course?.modules?.reduce(
-    (found: Lesson | null, module: Module) => {
-      if (found) return found;
-      return (
-        module.lessons?.find((lesson: Lesson) => lesson.id === lessonId) || null
-      );
+  const upsertProgress = useMutation({
+    mutationFn: async ({ id, completed, watch }: { id: string; completed: boolean; watch: number }) => {
+      const { error } = await supabase.from("progress").upsert({
+        user_id: user!.id, lesson_id: id, completed, watch_time_seconds: Math.floor(watch),
+        last_watched_at: new Date().toISOString(),
+      }, { onConflict: "user_id,lesson_id" });
+      if (error) throw error;
     },
-    null as Lesson | null,
-  );
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["learn-progress", courseId] }),
+  });
 
-  const currentModule = course?.modules?.find((module: Module) =>
-    module.lessons?.some((lesson: Lesson) => lesson.id === lessonId),
-  );
+  const currentLesson = allLessons.find(l => l.id === lessonId);
+  const currentModule = course?.modules?.find(m => m.lessons?.some(l => l.id === lessonId));
+  const idx = allLessons.findIndex(l => l.id === lessonId);
+  const prevLesson = idx > 0 ? allLessons[idx - 1] : undefined;
+  const nextLesson = idx >= 0 && idx < allLessons.length - 1 ? allLessons[idx + 1] : undefined;
+  const completedCount = progress.filter(p => p.completed).length;
 
-  // Get all lessons in order
-  const allLessons =
-    course?.modules?.reduce((acc: Lesson[], module: Module) => {
-      return [...acc, ...(module.lessons || [])];
-    }, [] as Lesson[]) || [];
+  const goToLesson = (id: string) => navigate(`/learn/${courseId}/${id}`);
+  const handleToggleComplete = (id: string, completed: boolean) =>
+    upsertProgress.mutate({ id, completed, watch: progress.find(p => p.lesson_id === id)?.watch_time_seconds || 0 });
 
-  const currentLessonIndex = allLessons.findIndex(
-    (lesson: Lesson) => lesson.id === lessonId,
-  );
-  const nextLesson = allLessons[currentLessonIndex + 1];
-  const prevLesson = allLessons[currentLessonIndex - 1];
-
-  // Check if this is an external video (YouTube/Vimeo)
+  // External-video auto-complete after 30s
+  const isExternal = !!(currentLesson?.video_platform && currentLesson?.video_id);
   useEffect(() => {
-    const lessonAny = currentLesson as any;
-    setIsExternalVideo(!!(lessonAny?.video_platform && lessonAny?.video_id));
-  }, [currentLesson]);
+    if (!isExternal || !currentLesson) return;
+    const done = progress.find(p => p.lesson_id === currentLesson.id)?.completed;
+    if (done) return;
+    const t = setTimeout(() => handleToggleComplete(currentLesson.id, true), 30000);
+    return () => clearTimeout(t);
+  }, [isExternal, currentLesson?.id]);
 
-
-  // Auto-mark as complete for external videos after 30 seconds
+  // Course complete modal
   useEffect(() => {
-    if (!isExternalVideo || !currentLesson) return;
-
-    const lessonProgress = progressList.find(
-      (p: { lesson_id: string | null }) => p.lesson_id === lessonId,
-    );
-
-    // If not already completed, mark as complete after 30 seconds
-    if (!lessonProgress?.completed) {
-      const timer = setTimeout(() => {
-        updateProgressMutation.mutate({
-          lessonId: currentLesson.id,
-          watch_time_seconds: 30,
-          completed: true,
-        });
-      }, 30000);
-
-      return () => clearTimeout(timer);
+    if (!completedShown && allLessons.length > 0 && completedCount === allLessons.length) {
+      setCompletedShown(true);
     }
-  }, [isExternalVideo, currentLesson, progressList, lessonId]);
+  }, [completedCount, allLessons.length, completedShown]);
 
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || courseLoading || !course) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin h-8 w-8 border-2 border-[#B91C1C] border-t-transparent rounded-full" /></div>;
+  }
+  if (!enrollment?.isEnrolled && !currentLesson?.is_preview) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="animate-pulse p-8">
-          <div className="h-64 bg-muted rounded mb-4"></div>
-          <div className="h-8 bg-muted rounded w-1/2"></div>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-2xl font-bold mb-2">Enroll to access this course</h1>
+        <p className="text-muted-foreground mb-6">You need to be enrolled to view these lessons.</p>
+        <Link href={`/course/${courseId}`}><Button>Go to course page</Button></Link>
       </div>
     );
   }
-
-  if (courseLoading || !course) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="animate-pulse p-8">
-          <div className="h-64 bg-muted rounded mb-4"></div>
-          <div className="h-8 bg-muted rounded w-1/2"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!enrollment?.isEnrolled) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div
-          className="max-w-4xl mx-auto px-4 py-16 text-center"
-          data-testid="not-enrolled"
-        >
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Access Denied
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            You need to be enrolled in this course to access the content.
-          </p>
-          <Link href={`/course/${courseId}`}>
-            <Button data-testid="enroll-button">Enroll in Course</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   if (!currentLesson) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div
-          className="max-w-4xl mx-auto px-4 py-16 text-center"
-          data-testid="lesson-not-found"
-        >
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            Lesson Not Found
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            The lesson you're looking for doesn't exist.
-          </p>
-          <Link href={`/course/${courseId}`}>
-            <Button data-testid="back-to-course">Back to Course</Button>
-          </Link>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-2xl font-bold mb-2">Lesson not found</h1>
+        <Link href={`/course/${courseId}`}><Button>Back to course</Button></Link>
       </div>
     );
   }
 
+  const sectionIndex = (course.modules?.findIndex(m => m.id === currentModule?.id) ?? 0) + 1;
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <CourseTopBar
+        course={course}
+        completed={completedCount}
+        total={allLessons.length}
+        nextLessonHref={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : undefined}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Video Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Video Player */}
+      <div className="flex-1 flex overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-y-auto">
+          <div className="bg-black relative">
             <ErrorBoundary>
-              <Card className="overflow-hidden" data-testid="video-player">
-                 {isExternalVideo ? (
-                  <VP
-                    videoUrl={(currentLesson as any)?.video_url}
-                    videoPlatform={(currentLesson as any)?.video_platform}
-                    videoId={(currentLesson as any)?.video_id}
-                    onError={() => {
-                      setVideoError("Failed to load video");
-                      setIsVideoLoading(false);
-                    }}
-                  />
-                ) : (
-                  <div className="relative bg-black aspect-video">
-                    {isVideoLoading && currentLesson.video_url && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                      </div>
-                    )}
-                    {videoError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-                        <div className="text-center text-white p-4">
-                          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                          <p className="text-red-400 mb-4">{videoError}</p>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setVideoError(null);
-                              setIsVideoLoading(true);
-                              // Force video reload
-                              const video = videoRef.current;
-                              if (video) {
-                                (video as any).load?.();
-                              }
-                            }}
-                          >
-                            <i className="fas fa-redo mr-2"></i>
-                            Retry
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {currentLesson.video_url ? (
-                      <VP
-                        ref={videoRef}
-                        src={currentLesson.video_url}
-                        onTimeUpdate={() => {
-                          const currentTime = videoRef.current?.currentTime || 0;
-                          const duration = videoRef.current?.duration || 0;
-                          setCurrentTime(currentTime);
-                          setDuration(duration);
-
-                          // Update progress every 10 seconds
-                          if (Math.floor(currentTime) % 10 === 0 && currentLesson) {
-                            const watchTimeSecondsValue = Math.floor(currentTime);
-                            const completed = currentTime >= duration * 0.9;
-
-                            updateProgressMutation.mutate({
-                              lessonId: currentLesson.id,
-                              watch_time_seconds: watchTimeSecondsValue,
-                              completed,
-                            });
-                          }
-                        }}
-                        onLoadedMetadata={() => {
-                          const duration = videoRef.current?.duration || 0;
-                          setDuration(duration);
-                          setIsVideoLoading(false);
-
-                          // Resume from last watched position
-                          const lessonProgress = progressList.find(
-                            (p: { lesson_id: string | null; watch_time_seconds: number | null }) =>
-                              p.lesson_id === lessonId,
-                          );
-                          if (lessonProgress && (lessonProgress.watch_time_seconds || 0) > 0) {
-                            // Note: The new component doesn't support setting currentTime directly yet
-                            // This functionality is temporarily disabled
-                          }
-                        }}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onError={() => {
-                          setVideoError("Failed to load video. Please check your connection or try again.");
-                          setIsVideoLoading(false);
-                        }}
-                        onLoadStart={() => {
-                          setIsVideoLoading(true);
-                          setVideoError(null);
-                        }}
-                        onCanPlay={() => {
-                          setIsVideoLoading(false);
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white">
-                        <div className="text-center">
-                          <i className="fas fa-play-circle text-6xl mb-4 opacity-50"></i>
-                          <p>Video content coming soon</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Card>
+              <VP
+                ref={videoRef}
+                videoUrl={currentLesson.video_url || undefined}
+                videoPlatform={currentLesson.video_platform || undefined}
+                videoId={currentLesson.video_id || undefined}
+                title={currentLesson.title}
+                onPrev={prevLesson ? () => goToLesson(prevLesson.id) : undefined}
+                onNext={nextLesson ? () => goToLesson(nextLesson.id) : undefined}
+                onTimeUpdate={() => {
+                  const cur = videoRef.current?.currentTime || 0;
+                  const dur = videoRef.current?.duration || 0;
+                  if (!dur) return;
+                  // Save every 10s
+                  if (Math.floor(cur) - lastSavedSec.current >= 10) {
+                    lastSavedSec.current = Math.floor(cur);
+                    const completed = cur >= dur * 0.9;
+                    upsertProgress.mutate({ id: currentLesson.id, completed, watch: cur });
+                  }
+                }}
+                onEnded={() => {
+                  upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
+                  if (nextLesson) setShowUpNext(true);
+                }}
+              />
             </ErrorBoundary>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Badge variant="outline" data-testid="module-badge">
-                      {currentModule?.title}
-                    </Badge>
-                    <Badge
-                      data-testid="lesson-type"
-                      className={
-                        currentLesson.content_type === "video"
-                          ? "bg-primary"
-                          : "bg-secondary"
-                      }
-                    >
-                      {currentLesson.content_type}
-                    </Badge>
-                  </div>
-                  <h1
-                    className="text-2xl font-bold text-foreground mb-2"
-                    data-testid="lesson-title"
-                  >
-                    {currentLesson.title}
-                  </h1>
-                  {currentLesson.description && (
-                    <p
-                      className="text-muted-foreground"
-                      data-testid="lesson-description"
-                    >
-                      {currentLesson.description}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  {currentLesson.duration_seconds && (
-                    <div
-                      className="text-sm text-muted-foreground"
-                      data-testid="lesson-duration"
-                    >
-                      {formatTime(currentLesson.duration_seconds)}
-                    </div>
-                  )}
-                </div>
+            {showUpNext && nextLesson && (
+              <UpNextOverlay
+                nextTitle={nextLesson.title}
+                onPlay={() => { setShowUpNext(false); goToLesson(nextLesson.id); }}
+                onCancel={() => setShowUpNext(false)}
+              />
+            )}
+          </div>
+
+          <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Section {sectionIndex} · {currentModule?.title}</p>
+                <h2 className="text-xl sm:text-2xl font-bold font-serif">{currentLesson.title}</h2>
               </div>
-
-              {/* Progress Bar - only show for uploaded videos */}
-              {!isExternalVideo && duration > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Progress</span>
-                    <span data-testid="video-progress">
-                      {formatTime(currentTime)} / {formatTime(duration)}
-                    </span>
-                  </div>
-                  <Progress
-                    value={(currentTime / duration) * 100}
-                    className="h-2"
-                    data-testid="progress-bar"
-                  />
-                </div>
-              )}
-              {isExternalVideo && (
-                <div className="text-sm text-muted-foreground">
-                  External video - progress tracking not available
-                </div>
-              )}
-
-              {/* Navigation */}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  {prevLesson && (
-                    <Link href={`/learn/${courseId}/${prevLesson.id}`}>
-                      <Button variant="outline" data-testid="prev-lesson">
-                        <i className="fas fa-chevron-left mr-2"></i>
-                        Previous
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <Link href={`/course/${courseId}`}>
-                    <Button variant="outline" data-testid="back-to-course">
-                      <i className="fas fa-book mr-2"></i>
-                      Course Overview
-                    </Button>
-                  </Link>
-                  {nextLesson ? (
-                    <Link href={`/learn/${courseId}/${nextLesson.id}`}>
-                      <Button data-testid="next-lesson">
-                        Next
-                        <i className="fas fa-chevron-right ml-2"></i>
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button disabled data-testid="course-complete">
-                      <i className="fas fa-check mr-2"></i>
-                      Course Complete
-                    </Button>
-                  )}
-                </div>
+              <div className="lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm"><ListVideo className="h-4 w-4 mr-1" />Course content</Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-[#1C1D1F] border-l-0">
+                    <CourseSidebar
+                      course={course} courseId={courseId!} currentLessonId={currentLesson.id}
+                      progress={progress} onToggleComplete={handleToggleComplete}
+                    />
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
 
-            {/* Lesson Content Tabs */}
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList
-                className="grid w-full grid-cols-3"
-                data-testid="lesson-tabs"
-              >
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="notes">Notes</TabsTrigger>
-                <TabsTrigger value="resources">Resources</TabsTrigger>
-              </TabsList>
+            <div className="flex items-center justify-between gap-3 pt-3 border-t">
+              <Button variant="outline" size="sm" disabled={!prevLesson}
+                onClick={() => prevLesson && goToLesson(prevLesson.id)} className="min-w-0">
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                <span className="truncate max-w-[120px] sm:max-w-[200px]">{prevLesson?.title || "Previous"}</span>
+              </Button>
+              <Button size="sm" disabled={!nextLesson}
+                onClick={() => nextLesson && goToLesson(nextLesson.id)}
+                className="bg-[#B91C1C] hover:bg-[#A01818] min-w-0">
+                <span className="truncate max-w-[120px] sm:max-w-[200px]">{nextLesson?.title || "Course end"}</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
 
-              <TabsContent value="overview" data-testid="tab-overview">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      Lesson Overview
-                    </h3>
-                    <div className="prose prose-slate max-w-none">
-                      {currentLesson.content ? (
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: currentLesson.content,
-                          }}
-                        />
-                      ) : (
-                        <p className="text-muted-foreground">
-                          This lesson covers essential concepts in{" "}
-                          {currentModule?.title?.toLowerCase()}. Follow along
-                          with the video content and take notes for future
-                          reference.
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notes" data-testid="tab-notes">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      Personal Notes
-                    </h3>
-                    <Textarea
-                      placeholder="Take notes while watching the lesson..."
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      className="min-h-[200px] mb-4"
-                      data-testid="notes-textarea"
-                    />
-                    <Button data-testid="save-notes">
-                      <i className="fas fa-save mr-2"></i>
-                      Save Notes
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="resources" data-testid="tab-resources">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      Additional Resources
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <i className="fas fa-file-pdf text-red-600"></i>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">
-                            Lesson Transcript
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            PDF • 2 pages
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid="download-transcript"
-                        >
-                          <i className="fas fa-download"></i>
-                        </Button>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <i className="fas fa-file-powerpoint text-orange-600"></i>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">
-                            Presentation Slides
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            PPTX • 15 slides
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid="download-slides"
-                        >
-                          <i className="fas fa-download"></i>
-                        </Button>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <i className="fas fa-external-link-alt text-blue-600"></i>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">
-                            External Reading
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Related articles and resources
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid="external-resources"
-                        >
-                          <i className="fas fa-external-link-alt"></i>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <ContentTabs
+              course={course}
+              lesson={currentLesson}
+              moduleTitle={currentModule?.title}
+              getCurrentVideoTime={() => videoRef.current?.currentTime || 0}
+            />
           </div>
+        </main>
 
-          {/* Sidebar - Course Navigation */}
-          <div className="space-y-6">
-            {/* Course Progress */}
-            <Card data-testid="course-progress">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">
-                  Course Progress
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Overall Progress
-                    </span>
-                    <span className="font-medium">
-                      {
-                        progressList.filter(
-                          (p: { completed: boolean | null }) => p.completed,
-                        ).length
-                      }{" "}
-                      / {allLessons.length}
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (progressList.filter(
-                        (p: { completed: boolean | null }) => p.completed,
-                      ).length /
-                        allLessons.length) *
-                      100
-                    }
-                    className="h-2"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Course Modules */}
-            <Card data-testid="course-modules">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">
-                  Course Content
-                </h3>
-                <div className="space-y-4">
-                  {course.modules?.map(
-                    (module: Module, moduleIndex: number) => (
-                      <div key={module.id} className="space-y-2">
-                        <h4 className="font-medium text-foreground text-sm">
-                          Module {moduleIndex + 1}: {module.title}
-                        </h4>
-                        <div className="space-y-1">
-                          {module.lessons?.map(
-                            (lesson: Lesson, lessonIndex: number) => {
-                              const lessonProgress = progressList.find(
-                                (p: { lesson_id: string | null }) =>
-                                  p.lesson_id === lesson.id,
-                              );
-                              const isCurrentLesson = lesson.id === lessonId;
-                              const isCompleted =
-                                lessonProgress?.completed || false;
-
-                              return (
-                                <Link
-                                  key={lesson.id}
-                                  href={`/learn/${courseId}/${lesson.id}`}
-                                >
-                                  <div
-                                    className={`flex items-center space-x-3 p-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                                      isCurrentLesson
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-muted/50"
-                                    }`}
-                                    data-testid={`lesson-nav-${lesson.id}`}
-                                  >
-                                    <div className="flex-shrink-0">
-                                      {isCompleted ? (
-                                        <i className="fas fa-check-circle text-green-600"></i>
-                                      ) : (
-                                        <i
-                                          className={`fas ${lesson.content_type === "video" ? "fa-play-circle" : "fa-file-text"} ${
-                                            isCurrentLesson
-                                              ? "text-primary-foreground"
-                                              : "text-muted-foreground"
-                                          }`}
-                                        ></i>
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div
-                                        className={`font-medium truncate ${
-                                          isCurrentLesson
-                                            ? "text-primary-foreground"
-                                            : "text-foreground"
-                                        }`}
-                                      >
-                                        {lesson.title}
-                                      </div>
-                                      {lesson.duration_seconds && (
-                                        <div
-                                          className={`text-xs ${
-                                            isCurrentLesson
-                                              ? "text-primary-foreground/80"
-                                              : "text-muted-foreground"
-                                          }`}
-                                        >
-                                          {formatTime(lesson.duration_seconds)}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </Link>
-                              );
-                            },
-                          )}
-                        </div>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        {sidebarOpen && (
+          <div className="hidden lg:block">
+            <CourseSidebar
+              course={course} courseId={courseId!} currentLessonId={currentLesson.id}
+              progress={progress} onToggleComplete={handleToggleComplete}
+              onClose={() => setSidebarOpen(false)}
+            />
           </div>
-        </div>
+        )}
+        {!sidebarOpen && (
+          <button onClick={() => setSidebarOpen(true)}
+            className="hidden lg:flex fixed right-3 top-20 z-20 bg-[#1C1D1F] text-white px-3 py-2 rounded-l-md shadow items-center gap-2 text-sm">
+            <ListVideo className="h-4 w-4" /> Course content
+          </button>
+        )}
       </div>
+
+      <CourseCompleteModal
+        open={completedShown && completedCount === allLessons.length}
+        onOpenChange={(o) => !o && setCompletedShown(false)}
+        courseTitle={course.title}
+        courseId={course.id}
+      />
     </div>
   );
 }
