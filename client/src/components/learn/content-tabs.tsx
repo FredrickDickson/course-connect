@@ -357,6 +357,59 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         ))}
       </TabsContent>
 
+      {/* Activities */}
+      <TabsContent value="activities" className="pt-4 space-y-3">
+        {!hasActivities ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">No quizzes or assignments for this lesson.</p>
+        ) : (
+          <>
+            {lessonQuizzes.map((q: any) => {
+              const att = quizAttempts.filter((a: any) => a.quiz_id === q.id);
+              const passed = att.some((a: any) => a.passed);
+              const used = att.length;
+              return (
+                <Card key={q.id}><CardContent className="p-4 flex items-center gap-3">
+                  <HelpCircle className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{q.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {q.questions?.length || 0} questions · Passing {q.passing_score}%
+                      {q.max_attempts ? ` · ${used}/${q.max_attempts} attempts` : ""}
+                    </p>
+                  </div>
+                  {passed && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Passed</Badge>}
+                  <Link href={`/quiz/${q.id}`}>
+                    <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]">
+                      <Play className="h-4 w-4 mr-1" />{passed ? "Retake" : used > 0 ? "Continue" : "Start"}
+                    </Button>
+                  </Link>
+                </CardContent></Card>
+              );
+            })}
+            {lessonAssignments.map((a: any) => {
+              const sub = assignmentSubs.find((s: any) => s.assignment_id === a.id);
+              return (
+                <Card key={a.id}><CardContent className="p-4 flex items-center gap-3">
+                  <ClipboardList className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{a.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Max {a.max_score} pts{a.due_date ? ` · Due ${new Date(a.due_date).toLocaleDateString()}` : ""}
+                    </p>
+                  </div>
+                  {sub?.graded_at && <Badge className="bg-blue-600 text-white border-0">{sub.score}/{a.max_score}</Badge>}
+                  {sub && !sub.graded_at && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Submitted</Badge>}
+                  <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]" onClick={() => setSubmitFor(a)}>
+                    <Send className="h-4 w-4 mr-1" />{sub ? "View" : "Submit"}
+                  </Button>
+                </CardContent></Card>
+              );
+            })}
+          </>
+        )}
+        <AssignmentSubmitDialog open={!!submitFor} onOpenChange={(o) => !o && setSubmitFor(null)} assignment={submitFor} />
+      </TabsContent>
+
       {/* Announcements */}
       <TabsContent value="announcements" className="pt-4 space-y-3">
         {isInstructor && (
