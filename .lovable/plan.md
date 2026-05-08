@@ -1,98 +1,82 @@
 
+## What exists today
+
+- `lessons.content_type` supports `video`, `article`, `quiz`, `assignment` (free-text in DB). `lessons.content` already holds the article HTML.
+- `quizzes` + `quiz_questions` + `quiz_answers` + `quiz_attempts` tables exist. A working `/quiz/:quizId` page already exists.
+- `assignments` + `assignment_submissions` tables exist, but **no student-facing UI**.
+- The Udemy-style learn page only renders the video player; article/quiz/assignment lessons are invisible. Resources tab works (just done).
+
 ## Goals
 
-1. Resume playback at last watched timestamp.
-2. Auto-persist watch progress + completion immediately.
-3. Comment out Q&A, "Report an issue", and "Contact instructor" UI.
-4. Let instructors manage lesson resources (add/preview/download with file-type icons).
-5. Let instructors add/edit/delete course announcements.
-6. Use the custom Udemy-style player UI for YouTube/Vimeo too (proxy via player APIs).
+1. In the learn page (`/learn/:courseId/:lessonId`), render the right content surface for each lesson based on `content_type` (video, article, quiz, assignment).
+2. Show quizzes & assignments attached to the current video lesson in a dedicated tab so students can take/submit them without leaving the page.
+3. Make the sidebar reflect content type with icons (▶ video, 📄 article, ❓ quiz, 📋 assignment).
+4. Mark progress correctly per type:
+   - Article: "Mark as complete" button.
+   - Quiz: completion when a passing attempt exists.
+   - Assignment: completion when a submission exists.
 
 ---
 
-## 1. Resume Playback
+## 1. Lesson type detection + sidebar icons
 
-In `client/src/pages/video-player.tsx`:
-- Read `progress.find(p => p.lesson_id === currentLesson.id)?.watch_time_seconds` on load.
-- Pass new prop `startAt={resumeSeconds}` to `<VideoPlayer>`.
-- If `resumeSeconds > 5` and `< duration - 10`, show small toast "Resumed from MM:SS · Restart" with a Restart action that seeks to 0.
+`course-sidebar.tsx`:
+- Pick icon by `content_type`: `Play` (video), `FileText` (article), `HelpCircle` (quiz), `ClipboardList` (assignment), `File` (other).
+- Show duration for video, "Reading" for article, "Quiz · N questions" for quiz, "Assignment" for assignment.
 
-In `client/src/components/ui/video-player.tsx`:
-- Accept `startAt?: number` prop. On `onLoadedMetadata`, if `startAt > 0` and not yet seeked, set `videoRef.current.currentTime = startAt` (guard with a `didSeekRef`).
-- For YouTube/Vimeo (after item 6 below), seek via their JS APIs once player is ready.
+## 2. Main content surface in `video-player.tsx`
 
-## 2. Auto-Persist Progress + Completion
+Replace the unconditional `<VideoStage>` with a switch on `currentLesson.content_type`:
 
-In `video-player.tsx`:
-- Reduce save threshold from every 10s to every 5s.
-- Add `onPause` handler → flush a save immediately.
-- Add `beforeunload` and route-change cleanup → final save of `currentTime`.
-- Mark `completed = true` when `cur >= dur * 0.9` (already in code) AND keep saving timestamp afterward so resume still works.
-- For external (YouTube/Vimeo) videos with the new unified player, run the same 5s save loop driven by player state polling (see item 6).
+- `video` (default) → existing video player.
+- `article` → new `ArticleStage` (white card, max-w-3xl, renders `lesson.content` HTML via `dangerouslySetInnerHTML` with sanitization). Bottom action: "Mark as complete" → calls existing `upsertProgress`.
+- `quiz` → new `QuizStage` showing quiz title + Start button → opens existing `/quiz/:quizId` in a dialog (iframe) OR navigates. Plan: navigate (simpler, reuses page). After return, sidebar shows it as completed.
+- `assignment` → new `AssignmentStage` with title, instructions, due date, and a submission form (textarea + optional file upload to existing `assignment-submissions` bucket). Inserts into `assignment_submissions`.
 
-In `course-sidebar.tsx` checkbox: already wired through `onToggleComplete`. Add optimistic update via `qc.setQueryData(["learn-progress", courseId, user?.id], ...)` so the UI ticks instantly without waiting for the round-trip.
+## 3. New "Activities" tab in `content-tabs.tsx`
 
-## 3. Comment-out Q&A / Report / Contact
+Even for video lessons, the instructor can attach quizzes/assignments to that same lesson row. Add a new tab "Activities" that lists:
+- Quizzes for this lesson (`quizzes.lesson_id = lesson.id`) with status badge (Not attempted / Passed / Failed) and "Start quiz" button → navigates to `/quiz/:quizId`.
+- Assignments for this lesson (`assignments.lesson_id = lesson.id`) with due date, "View / Submit" → opens submission dialog.
 
-- `content-tabs.tsx`: wrap the `qa` `TabsTrigger` and `TabsContent` in `{/* ... */}` (keep code intact for later). Default tab stays `overview`.
-- `course-top-bar.tsx`: comment out the `Report an issue` and `Contact instructor` `DropdownMenuItem` blocks. Keep `Download resources`.
+Tab order becomes: Overview · Notes · Activities · Announcements · Resources.
 
-## 4. Instructor Resource Management
+## 4. Progress integration
 
-Detect instructor: `isInstructor = user?.id === course.instructor_id || isAdmin` (use existing role check pattern).
+- Article completion: insert/update `progress` row with `completed=true`.
+- Quiz: the existing quiz attempt flow already inserts into `quiz_attempts`. Add a derived `lessonCompleted` check in the learn page: a lesson is considered complete if `progress.completed=true` OR (any quiz attached has a passing attempt) OR (any assignment attached has a submission). The sidebar checkbox stays driven by `progress` for explicit toggling, but auto-mark `progress.completed=true` when a passing quiz attempt or submission lands.
+- Add a small `useQuery` for quiz attempts and submissions, scoped to the user, for all quizzes/assignments in the course. On data load, auto-upsert `progress.completed` for affected lessons.
 
-Edits in `content-tabs.tsx` Resources tab:
-- If `isInstructor`, show "Add resource" button → opens dialog:
-  - Name (text)
-  - File upload to existing private bucket `lesson-resources` at path `${course.id}/${lesson.id}/${uuid}-${filename}`
-  - Auto-detect `resource_type` from file extension (pdf, doc, xls, ppt, zip, image, video, audio, link, other)
-  - Optional: paste external URL (link type)
-  - On submit: insert into `lesson_resources` with `name`, `file_url` (signed URL or storage path → resolved to signed URL on read), `file_size_mb`, `resource_type`, `lesson_id`.
-- Each row shows: file-type icon, name, size, type. Buttons: Preview (PDFs/images/video/audio open in dialog with `<iframe>`/`<img>`/`<video>`/`<audio>`; others fallback to download), Download (signed-URL `a` tag with `download`), Delete (instructor only).
-- Helper `getFileIcon(type)` mapping: `FileText` (pdf/doc), `FileSpreadsheet` (xls/csv), `Presentation` (ppt), `FileArchive` (zip), `Image` (image), `Video`, `Music`, `Link2`, `File`.
-- Use `supabase.storage.from('lesson-resources').createSignedUrl(path, 3600)` for previews/downloads.
+## 5. Assignment submission UI
 
-RLS already exists from prior migration; no DB changes needed.
+`AssignmentStage` and Activities-tab dialog (shared component `AssignmentSubmitDialog`):
+- Existing submission shown read-only with score/feedback if graded.
+- New submission: `Textarea` for response + optional file uploads to `assignment-submissions` bucket at `${user.id}/${assignment.id}/${uuid}-${name}` (multiple files allowed, store array of paths in `attachment_urls`).
+- Submit button → insert `assignment_submissions` with `user_id`, `assignment_id`, `content`, `attachment_urls`, `submitted_at=now()`, `is_late_submission=now()>due_date`.
+- After insert: invalidate query, show success toast, mark lesson complete.
 
-## 5. Instructor Announcement Management
+## 6. Article rendering safety
 
-Edits in `content-tabs.tsx` Announcements tab:
-- If `isInstructor`, show "New announcement" button → dialog with `title` + `body`.
-- Each announcement row (instructor view) gets Edit and Delete icon buttons → edit dialog reuses form; delete confirms.
-- Mutations: `insertAnnouncement`, `updateAnnouncement`, `deleteAnnouncement` against `course_announcements` table (RLS already permits instructor+admin writes).
-- Keep existing student read-tracking unchanged.
-
-## 6. Unified Udemy-Style Player for YouTube/Vimeo
-
-Goal: same chrome (scrub bar, time, speed, volume, prev/next, theatre, fullscreen) for all sources, hiding the native YT/Vimeo UI.
-
-Approach in `client/src/components/ui/video-player.tsx`:
-- Refactor so the controls overlay is rendered for all sources.
-- Add a `playerAdapter` abstraction with methods: `play/pause/seek/getCurrentTime/getDuration/setVolume/setMuted/setRate/onTimeUpdate/onPlay/onPause/onEnded/onReady`.
-- Three adapters:
-  - `nativeAdapter` — wraps `<video>` (current behaviour).
-  - `youtubeAdapter` — loads YouTube IFrame API (`https://www.youtube.com/iframe_api`), creates `new YT.Player(...)` with `controls:0, modestbranding:1, rel:0, playsinline:1, disablekb:1, fs:0, iv_load_policy:3`, polls `getCurrentTime()` every 250ms for time updates.
-  - `vimeoAdapter` — loads `@vimeo/player` package (`bun add @vimeo/player`), embed with `controls:false`, subscribe to `timeupdate/play/pause/ended` events.
-- Render either `<video>`, `<div ref=ytContainer>`, or `<div ref=vimeoContainer>` underneath the same overlay.
-- The overlay calls `adapter.play()`, `adapter.seek(t)`, etc.
-- Fullscreen targets the wrapper div (works for iframes too).
-- For `startAt`: adapter's `onReady` → `adapter.seek(startAt)`.
-- Note: YT/Vimeo embed branding (logo) inside the iframe can't be fully removed, but their control bars are hidden via params/options; our overlay sits on top and intercepts pointer events on a transparent layer above the iframe (so click=play/pause works).
+Use `DOMPurify` (already in deps; verify) to sanitize `lesson.content` before `dangerouslySetInnerHTML`. If not installed, add it.
 
 ## Files
 
 Edited:
-- `client/src/pages/video-player.tsx` — pass `startAt`, faster autosave, onPause flush, optimistic completion.
-- `client/src/components/ui/video-player.tsx` — `startAt` prop, adapter refactor for YT/Vimeo with shared overlay.
-- `client/src/components/learn/content-tabs.tsx` — comment Q&A; add instructor controls for resources + announcements; resource preview dialog + file-type icons.
-- `client/src/components/learn/course-top-bar.tsx` — comment Report/Contact items.
+- `client/src/pages/video-player.tsx` — type-aware main stage switch; auto-complete from quiz/assignment data.
+- `client/src/components/learn/course-sidebar.tsx` — type icons + labels.
+- `client/src/components/learn/content-tabs.tsx` — new Activities tab.
+- `client/src/components/learn/types.ts` — extend `LearnLesson` (already has `content_type` + `content`).
 
-Added dependency: `@vimeo/player`.
+Created:
+- `client/src/components/learn/article-stage.tsx`
+- `client/src/components/learn/quiz-stage.tsx` (mini panel; uses existing `/quiz/:quizId` page)
+- `client/src/components/learn/assignment-stage.tsx`
+- `client/src/components/learn/assignment-submit-dialog.tsx` (shared)
 
-No DB migrations needed (tables and RLS exist).
+No DB migrations.
 
-## Out of Scope
+## Out of scope
 
-- Re-enabling Q&A (kept commented for future).
-- Rich-text announcement editor (plain textarea).
-- Per-resource ordering UI.
+- Embedded inline quiz UI (defer; reuse existing `/quiz/:quizId` page).
+- Instructor grading workflow (already exists separately).
+- Rich-text editor for assignment responses (plain Textarea).
