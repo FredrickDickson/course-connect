@@ -1,51 +1,78 @@
 ## Goal
 
-When a learner completes the activity that defines a lesson, the sidebar checkbox for that lesson auto-ticks. Hide the Activities tab to remove the duplicated entry point.
+Two deliverables:
 
-## Current behavior
+1. **Comprehensive Playwright test suite** that walks the whole app end-to-end and labels each flow as **PASS / PARTIAL / BROKEN / NOT BUILT**.
+2. **Written audit report** (`docs/agent/app-audit-report.md`) summarising findings, generated from the test run.
 
-- Sidebar checkbox is driven by `progress` rows (`user_id`, `lesson_id`, `completed`).
-- Auto-complete today fires only for: video at ≥90% watched, external video after 30s, manual checkbox click, and a "Mark complete" button on article stages.
-- Quiz and assignment lessons never auto-complete — the user has to manually tick the box, even after passing/submitting.
-- The Activities tab in `content-tabs.tsx` duplicates the per-lesson quiz/assignment cards already shown by `QuizStage` / `AssignmentStage`, plus the sidebar.
+The existing `e2e/auth.spec.ts`, `admin.spec.ts`, `checkout.spec.ts` are stub-quality (hardcoded fake users, no real selectors). I'll replace them with real, runnable tests using seeded test accounts.
 
-## Best-practice rule for quiz / assignment lessons
+## Test accounts (must be seeded once, then reused)
 
-Industry standard (Udemy, Coursera, Moodle):
+I'll add `e2e/fixtures/users.ts` referencing 4 accounts:
+- `student@cima-test.dev` — plain learner, enrolled in 1 course
+- `instructor@cima-test.dev` — approved instructor with 1 published course
+- `admin@cima-test.dev` — admin
+- `applicant@cima-test.dev` — instructor applicant pending review
 
-- **Quiz lesson** → marked complete the moment the learner records a **passing** attempt (`quiz_attempts.passed = true`). Failed attempts do not complete it; retakes after passing don't un-complete it.
-- **Assignment lesson** → marked complete the moment a submission exists (`assignment_submissions` row for that user). Grading/score is tracked separately and does not gate completion. (If you'd rather wait for a passing grade, say so and we'll switch to `graded_at IS NOT NULL AND score >= passing`.)
+A seed script `scripts/seed-e2e-users.ts` (Supabase service-role, one-shot) creates them via `auth.admin.createUser` + `user_roles` rows + a sample course/lesson/quiz/assignment/resource. Documented in the report; not run automatically.
 
-This keeps "lesson complete" = "learner did the required action," while certificates/level upgrades remain gated on the existing course-completion logic.
+## Test files
 
-## Changes
+```
+e2e/
+  fixtures/users.ts                  shared credentials + login helper
+  fixtures/seed-data.ts              expected course/lesson IDs from seed
+  01-public.spec.ts                  landing, /courses, /verify-member, /resources, footer links — works without auth
+  02-auth.spec.ts                    register, login, logout, forgot-password, role redirects
+  03-onboarding.spec.ts              email verification screen + 2-step biodata
+  04-learner-journey.spec.ts         browse → enroll (free track) → dashboard shows course
+  05-learning-experience.spec.ts     open lesson, watch video ≥90% → checkbox auto-ticks; sidebar progress %; Activities tab hidden; Resources tab visible
+  06-quiz-assignment.spec.ts         take quiz → pass → lesson ticks; submit assignment → lesson ticks; failed quiz does NOT tick
+  07-certificate.spec.ts             complete all lessons in seeded course → certificate appears on /certification → preview dialog renders PDF iframe
+  08-instructor.spec.ts              instructor login → /instructor → create course → add lesson → upload resource (file dropzone) → publish
+  09-admin.spec.ts                   admin login → approve pending instructor application → change user role → analytics charts render
+  10-community.spec.ts               create post in seeded board → reply → notifications badge increments
+  11-renewal-emails.spec.ts          calls supabase.functions.invoke('renewal-reminders') with test flag, asserts 200 + email_send_log row written
+  12-edge-functions.spec.ts          smoke-pings each edge fn (paystack-course-initialize, quiz-submit, send-email, renewal-reminders, admin-setup) with minimal valid payload, records status
 
-### 1. `client/src/components/learn/content-tabs.tsx`
-- Remove `"activities"` from the tabs array on line 298 and wrap the `<TabsContent value="activities">` block (lines 363–411) in `{false && (...)}`, mirroring the Notes pattern. Leaves Overview, Announcements, Resources visible.
+Each test wraps its body in try/catch and writes a JSON line to `test-results/audit.jsonl`:
+{ flow, status: 'pass'|'partial'|'broken'|'not_built', notes, screenshot? }
+```
 
-### 2. `client/src/components/learn/quiz-stage.tsx`
-- After loading `attempts`, add a `useEffect` that, when `passed === true` and the current lesson's progress row is not yet `completed`, calls a new `onComplete?: () => void` prop passed in from `video-player.tsx`. Idempotent — only fires once per lesson per session.
+A `globalTeardown` aggregates `audit.jsonl` into `docs/agent/app-audit-report.md` with a summary table + per-flow detail + screenshots of failures.
 
-### 3. `client/src/components/learn/assignment-stage.tsx`
-- Same pattern: when `submission` exists and lesson not yet completed, call `onComplete?.()`.
+## Edge function checks (no UI)
 
-### 4. `client/src/pages/video-player.tsx`
-- Pass `onComplete={() => handleToggleComplete(currentLesson.id, true)}` into `<QuizStage>` and `<AssignmentStage>`.
-- No changes to existing video / article auto-complete logic.
+`12-edge-functions.spec.ts` uses the Supabase JS client directly:
+- `quiz-submit` — submit known answers, expect `{ passed, score }`
+- `renewal-reminders` — invoke with `{ dryRun: true }`, expect counts returned
+- `send-email` — invoke with `{ to: testInbox, template: 'test' }`, expect 200
+- `paystack-course-initialize` — invoke with seeded course, expect `authorization_url`
+- Logs each as pass/broken with the response body snippet.
 
-### 5. (Optional, defensive) `client/src/pages/quiz.tsx`
-- After a successful `quiz-submit` invoke that returns `passed: true`, upsert the `progress` row directly so completion ticks even if the learner never re-opens the lesson page. Uses the same `supabase.from("progress").upsert(...)` shape already used in `video-player.tsx`.
+## Known areas the suite will surface
+
+Based on a scan I already did, these are the most likely findings the report will flag:
+
+- **NOT BUILT**: instructor "upload resource" UI (`client/src/pages/resources.tsx` is a static marketing page; no upload dropzone exists; `resources` table + storage bucket need wiring) — already discussed in the previous turn.
+- **PARTIAL**: certificate generation works in `lib/certificate-generator.ts` but issuance trigger on course completion needs verification.
+- **PARTIAL**: progress checkboxes for quiz/assignment lessons — the auto-tick wiring landed in a recent change; the test verifies it end-to-end.
+- **BROKEN risk**: renewal reminder edge function — needs Resend secret + email domain verified; test will report exact failure mode.
 
 ## Out of scope
 
-- No DB schema changes.
-- No changes to the `quiz-submit` edge function.
-- No change to certificate/level-upgrade triggers — those still depend on `enrollments.status = 'COMPLETED'` via the existing trigger.
+- No production data writes — every test uses seeded `*@cima-test.dev` accounts and a dedicated seed course.
+- No payment actually charged — Paystack init only returns the auth URL, test stops there.
+- Visual regression / Lighthouse — separate concern.
 
-## QA checklist
+## Deliverable
 
-1. Open a video lesson → watch ≥90% → sidebar ticks (unchanged).
-2. Open a quiz lesson → pass quiz → return to lesson → checkbox is ticked. Fail an attempt → checkbox stays empty.
-3. Open an assignment lesson → submit → checkbox ticks.
-4. Confirm Activities tab no longer renders; Overview/Announcements/Resources still work.
-5. Manual uncheck in sidebar still works and persists.
+After the run:
+- `test-results/audit.jsonl` — raw results
+- `docs/agent/app-audit-report.md` — human-readable report with summary table (PASS/PARTIAL/BROKEN/NOT BUILT counts), per-flow notes, screenshots of failures, and a prioritised fix list.
+
+## Confirm before I build
+
+1. OK to add the seed script + seed accounts to your Supabase project? (It's idempotent and only touches `*@cima-test.dev` rows.)
+2. Should the audit run be triggered now (I'll execute Playwright after writing the suite), or do you want the suite written first and you run it?
