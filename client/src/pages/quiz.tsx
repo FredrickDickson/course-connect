@@ -227,11 +227,25 @@ export default function QuizPage() {
       if (data && (data as any).error) throw new Error((data as any).error);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       setQuizSubmitted(true);
       setSubmitError(null);
       if (storageKey) localStorage.removeItem(storageKey);
       queryClient.invalidateQueries({ queryKey: ["quiz-attempts", quizId] });
+      // Auto-mark the parent lesson as complete when the learner passes.
+      if (data?.passed && quiz?.lesson_id && user?.id) {
+        supabase.from("progress").upsert(
+          {
+            user_id: user.id,
+            lesson_id: quiz.lesson_id,
+            completed: true,
+            last_accessed: new Date().toISOString(),
+          },
+          { onConflict: "user_id,lesson_id" },
+        ).then(() => {
+          queryClient.invalidateQueries({ queryKey: ["learn-progress"] });
+        });
+      }
       toast({
         title: "Quiz Submitted",
         description: "Your quiz has been submitted successfully!",
