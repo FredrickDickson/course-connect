@@ -1195,7 +1195,7 @@ function ReplyThread({ reply, nestedReplies, onReply, setReplyingTo, user, postI
               </Button>
               
               {isAuthor && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs">
+                <Button variant="ghost" size="sm" className="h-8 text-xs min-h-[44px]">
                   Edit
                 </Button>
               )}
@@ -1215,8 +1215,8 @@ function ReplyThread({ reply, nestedReplies, onReply, setReplyingTo, user, postI
               {canModerate && !isAuthor && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs">
-                      <MoreVertical className="h-3 w-3" />
+                    <Button variant="ghost" size="sm" className="h-8 text-xs min-h-[44px]">
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>

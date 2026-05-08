@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import CourseCard from "@/components/course-card";
+import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
@@ -305,9 +305,18 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={course as any} />
-              ))}
+              {featuredCourses.map((course) => {
+                const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+                const status: CourseStatus = getCourseStatus(course.level || "ASSOCIATE", userLevel);
+                return (
+                  <CourseCardStatus 
+                    key={course.id} 
+                    course={course as any} 
+                    userLevel={userLevel}
+                    status={status}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

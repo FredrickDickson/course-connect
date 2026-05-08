@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useFocusManagement, keyboardNavigation } from "@/lib/focus-management";
 import { Button } from "@/components/ui/button";
 import {
   Play, Pause, Volume2, Volume1, VolumeX,
@@ -175,32 +176,6 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const actualSrc = src || videoUrl;
   const isExternal = !!(videoPlatform && videoId && videoId.length > 0);
 
-  // Imperative API
-  useImperativeHandle(ref, () => ({
-    videoElement: videoRef.current,
-    play: () => adapterPlay(),
-    pause: () => adapterPause(),
-    get currentTime() { return currentTime; },
-    get duration() { return duration; },
-  }), [currentTime, duration]);
-
-  // ---------- Auto-hide controls ----------
-  const scheduleHide = useCallback(() => {
-    if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => {
-      if (isPlaying) setShowControls(false);
-    }, 3000);
-  }, [isPlaying]);
-  const reveal = useCallback(() => { setShowControls(true); scheduleHide(); }, [scheduleHide]);
-  useEffect(() => () => { if (hideTimer.current) window.clearTimeout(hideTimer.current); }, []);
-
-  // ---------- Fullscreen listener ----------
-  useEffect(() => {
-    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
-  }, []);
-
   // ---------- Adapter functions ----------
   const adapterPlay = () => {
     if (videoPlatform === "youtube") ytPlayerRef.current?.playVideo?.();
@@ -250,12 +225,111 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const togglePlay = () => { isPlaying ? adapterPause() : adapterPlay(); };
   const skip = (delta: number) => adapterSeek(Math.min(Math.max(currentTime + delta, 0), duration || 0));
 
-  const toggleFullscreen = async () => {
-    const el = wrapperRef.current as any;
-    if (!el) return;
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else if (el.requestFullscreen) await el.requestFullscreen();
+  const toggleFullscreen = () => {
+    if (!wrapperRef.current) return;
+    if (!isFullscreen) {
+      wrapperRef.current.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
   };
+
+  const toggleCaptions = () => {
+    // Placeholder for captions toggle - would need implementation based on video source
+    console.log('Toggle captions');
+  };
+
+  // Keyboard navigation handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Handle escape to exit fullscreen
+    if (keyboardNavigation.handleEscape(e, () => {
+      if (isFullscreen) {
+        toggleFullscreen();
+      }
+    })) {
+      return;
+    }
+
+    // Handle video control shortcuts
+    switch (e.key) {
+      case ' ':
+      case 'k':
+        e.preventDefault();
+        togglePlay();
+        break;
+      case 'f':
+        e.preventDefault();
+        toggleFullscreen();
+        break;
+      case 'm':
+        e.preventDefault();
+        adapterToggleMute();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        skip(-5);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        skip(5);
+        break;
+      case 'j':
+        e.preventDefault();
+        skip(-10);
+        break;
+      case 'l':
+        e.preventDefault();
+        skip(10);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        adapterSetVolume(Math.min(1, volume + 0.1));
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        adapterSetVolume(Math.max(0, volume - 0.1));
+        break;
+      case 'c':
+        e.preventDefault();
+        toggleCaptions();
+        break;
+    }
+  }, [isFullscreen, togglePlay, toggleFullscreen, adapterToggleMute, skip, adapterSetVolume, volume, toggleCaptions]);
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    const element = wrapperRef.current;
+    if (!element) return;
+
+    element.addEventListener('keydown', handleKeyDown);
+    return () => element.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Imperative API
+  useImperativeHandle(ref, () => ({
+    videoElement: videoRef.current,
+    play: () => adapterPlay(),
+    pause: () => adapterPause(),
+    get currentTime() { return currentTime; },
+    get duration() { return duration; },
+  }), [currentTime, duration]);
+
+  // ---------- Auto-hide controls ----------
+  const scheduleHide = useCallback(() => {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    hideTimer.current = window.setTimeout(() => {
+      if (isPlaying) setShowControls(false);
+    }, 3000);
+  }, [isPlaying]);
+  const reveal = useCallback(() => { setShowControls(true); scheduleHide(); }, [scheduleHide]);
+  useEffect(() => () => { if (hideTimer.current) window.clearTimeout(hideTimer.current); }, []);
+
+  // ---------- Fullscreen listener ----------
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
 
   // ---------- Mount external players ----------
   useEffect(() => {
@@ -510,8 +584,11 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
       <AnimatePresence>
         {title && showControls && (
           <motion.div
+            id="video-title"
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             className="absolute top-0 left-0 right-0 z-20 px-4 py-3 bg-gradient-to-b from-black/70 to-transparent text-white text-sm font-medium pointer-events-none"
+            role="status"
+            aria-live="polite"
           >
             {title}
           </motion.div>
@@ -525,15 +602,40 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             type="button"
             initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
             onClick={togglePlay}
-            className="absolute inset-0 m-auto h-16 w-16 sm:h-20 sm:w-20 z-20 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/75 text-white"
-            aria-label="Play"
+            className="absolute inset-0 m-auto h-20 w-20 sm:h-20 sm:w-20 z-20 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/75 active:bg-black/80 text-white touch-none"
+            aria-label={isPlaying ? "Pause video" : "Play video"}
+            aria-describedby="video-title"
+            style={{ minHeight: '80px', minWidth: '80px' }}
           >
-            <Play className="h-8 w-8 sm:h-10 sm:w-10 fill-white" />
+            <Play className="h-10 w-10 sm:h-10 sm:w-10 fill-white" />
           </motion.button>
         )}
       </AnimatePresence>
 
       {/* Side prev/next */}
+      {onPrev && (
+        <button
+          onClick={onPrev}
+          aria-label="Previous lesson"
+          className={cn(
+            "flex sm:hidden absolute left-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
+            showControls ? "opacity-100" : "opacity-0",
+          )}
+          style={{ minHeight: '56px', minWidth: '56px' }}
+        ><ChevronLeft className="h-7 w-7" /></button>
+      )}
+      {onNext && (
+        <button
+          onClick={onNext}
+          aria-label="Next lesson"
+          className={cn(
+            "flex sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
+            showControls ? "opacity-100" : "opacity-0",
+          )}
+          style={{ minHeight: '56px', minWidth: '56px' }}
+        ><ChevronRight className="h-7 w-7" /></button>
+      )}
+      {/* Desktop prev/next */}
       {onPrev && (
         <button
           onClick={onPrev}
@@ -566,26 +668,26 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           >
             <ScrubBar current={currentTime} duration={duration} buffered={buffered} onSeek={adapterSeek} />
 
-            <div className="flex items-center gap-1 sm:gap-2 text-white">
-              <Button onClick={togglePlay} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9">
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-white" />}
+            <div className="flex items-center gap-2 sm:gap-3 text-white">
+              <Button onClick={togglePlay} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 sm:min-h-11 sm:min-w-11 lg:min-h-9 lg:min-w-9 touch-none">
+                {isPlaying ? <Pause className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4" /> : <Play className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4 fill-white" />}
               </Button>
 
               {onPrev && (
-                <Button onClick={onPrev} variant="ghost" size="icon" className="sm:hidden text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11">
-                  <ChevronLeft className="h-5 w-5" />
+                <Button onClick={onPrev} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Previous lesson">
+                  <ChevronLeft className="h-6 w-6" />
                 </Button>
               )}
               {onNext && (
-                <Button onClick={onNext} variant="ghost" size="icon" className="sm:hidden text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11">
-                  <ChevronRight className="h-5 w-5" />
+                <Button onClick={onNext} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Next lesson">
+                  <ChevronRight className="h-6 w-6" />
                 </Button>
               )}
 
-              <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="hidden xs:inline-flex text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Rewind 10 seconds">
+              <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Rewind 10 seconds">
                 <RotateCcw className="h-5 w-5" />
               </Button>
-              <Button onClick={() => skip(10)} variant="ghost" size="icon" className="hidden xs:inline-flex text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Forward 10 seconds">
+              <Button onClick={() => skip(10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Forward 10 seconds">
                 <RotateCw className="h-5 w-5" />
               </Button>
 

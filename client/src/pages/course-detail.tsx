@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
 import Confetti from "@/components/ui/confetti";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import {
   Star,
   Clock,
@@ -26,7 +27,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
-import { calculateEligibilityClientSide } from "@shared/enrollmentEligibility";
+import { useEligibility } from "@/hooks/useEligibility";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -98,16 +99,43 @@ export default function CourseDetail() {
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // Check if user has paid/enrolled via course_enrollments
+      const { data: paymentEnrollment, error: paymentError } = await (supabase as any)
+        .from("course_enrollments")
+        .select("*")
+        .eq("course_id", id!)
+        .eq("user_id", user?.id!)
+        .neq("payment_status", "cancelled")
+        .maybeSingle();
+      if (paymentError) throw paymentError;
+      
+      // Also check if they have progress enrollment (for backward compatibility)
+      const { data: progressEnrollment, error: progressError } = await (supabase as any)
         .from("enrollments")
         .select("*")
         .eq("course_id", id!)
         .eq("user_id", user?.id!)
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (progressError) throw progressError;
+      
+      // Return payment enrollment if exists, otherwise progress enrollment
+      return paymentEnrollment || progressEnrollment;
     },
     enabled: !!id && !!user,
+  });
+
+  // Fetch lesson progress for enrolled users
+  const { data: progress = [] } = useQuery<any[]>({
+    queryKey: ["lesson-progress", id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("progress")
+        .select("lesson_id, completed")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id && !!user && !!enrollment,
   });
 
   const { data: reviews = [] } = useQuery<any[]>({
@@ -138,58 +166,28 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
-  // Check eligibility on page load - use client-side calculation for instant feedback
-  const { data: eligibility, isLoading: eligibilityLoading, error: eligibilityError } = useQuery<EligibilityResponse>({
-    queryKey: ["course-eligibility", id, user?.id],
-    queryFn: async () => {
-      console.log("Checking eligibility for course:", id, "user:", user?.id);
-      if (!user?.id) return { status: "ELIGIBLE", reasonCode: "OK", ui: { title: "", message: "" }, progression: { track: "ARBITRATION", currentLevel: "NONE", targetLevel: "ASSOCIATE" } };
-      
-      // Use client-side calculation first for instant feedback
-      const clientSideResult = calculateEligibilityClientSide(
-        course?.track || null,
-        course?.level || null,
-        trackProgress,
-        !!enrollment
-      );
-      
-      console.log("Client-side eligibility result:", clientSideResult);
-      
-      // API call as fallback/validation
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch("/api/enrollments/check-eligibility", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ courseId: id }),
-      });
-
-      console.log("Eligibility check response status:", response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Eligibility check failed:", response.status, errorText);
-        // Return client-side result on API error
-        return clientSideResult;
+  // Calculate next lesson to continue from
+  const nextLessonId = useMemo(() => {
+    if (!course?.modules) return course?.modules?.[0]?.lessons?.[0]?.id ?? "1";
+    
+    // Flatten all lessons in order
+    const allLessons: any[] = [];
+    course.modules.forEach((module: any) => {
+      if (module.lessons) {
+        allLessons.push(...module.lessons);
       }
-
-      const result = await response.json();
-      console.log("Eligibility check result:", result);
-      console.log("Eligibility progression:", result.progression);
-      return result;
-    },
-    enabled: !!id && !!user && !!course,
-    retry: false,
-  });
-
-  // Log eligibility error
-  if (eligibilityError) {
-    console.error("Eligibility query error:", eligibilityError);
-  }
+    });
+    
+    // Sort lessons by order
+    allLessons.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    // Find first incomplete lesson
+    const completedLessonIds = new Set(progress.filter(p => p.completed).map(p => p.lesson_id));
+    const nextIncompleteLesson = allLessons.find(lesson => !completedLessonIds.has(lesson.id));
+    
+    // If all completed or no progress, return first lesson
+    return nextIncompleteLesson?.id ?? allLessons[0]?.id ?? "1";
+  }, [course, progress]);
 
   // Fetch user's track progress
   const { data: trackProgress = {} } = useQuery({
@@ -208,6 +206,16 @@ export default function CourseDetail() {
       return progress;
     },
     enabled: !!user?.id,
+  });
+
+  // Check eligibility using unified hook
+  const { eligibility, isLoading: eligibilityLoading } = useEligibility({
+    courseId: id,
+    courseTrack: course?.track,
+    courseLevel: course?.level,
+    isEnrolled: !!enrollment,
+    trackProgress,
+    enabled: !!id && !!course,
   });
 
   // Fetch prerequisite course if locked
@@ -318,6 +326,24 @@ export default function CourseDetail() {
       <div className="min-h-screen bg-background">
         <Header />
 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{course.title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -364,6 +390,12 @@ export default function CourseDetail() {
                     <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
                   </div>
                 )}
+                {course.duration_hours && (
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4" />
+                    <span>{course.duration_hours} hours</span>
+                  </div>
+                )}
                 {/* Reviews and student count commented out until substantial user base */}
                 {/* <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 fill-current" />
@@ -383,7 +415,25 @@ export default function CourseDetail() {
                   <CardContent className="p-6 text-center">
                     <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
                     <h3 className="text-lg font-bold text-foreground mb-2">You're Enrolled</h3>
-                    <Link href={`/learn/${course.id}/${course.modules?.[0]?.lessons?.[0]?.id ?? "1"}`}>
+                    {totalLessons > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-semibold">
+                            {progress.filter(p => p.completed).length} / {totalLessons} lessons
+                          </span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{
+                              width: `${Math.round((progress.filter(p => p.completed).length / totalLessons) * 100)}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <Link href={`/learn/${course.id}/${nextLessonId}`}>
                       <Button className="w-full" size="lg">
                         <PlayCircle className="w-4 h-4 mr-2" /> Continue Learning
                       </Button>

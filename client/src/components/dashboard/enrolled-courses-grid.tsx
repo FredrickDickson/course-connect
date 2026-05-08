@@ -1,9 +1,8 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { GraduationCap, Play, RotateCcw } from "lucide-react";
+import CourseCardStatus, { type CourseStatus } from "@/components/course-card-status";
+import { GraduationCap } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Enrollment {
   id: string;
@@ -16,10 +15,16 @@ interface Enrollment {
     thumbnail_url?: string;
     duration_hours?: number;
     level?: string;
+    price?: string;
+    currency?: string;
+    avg_rating?: string;
+    rating_count?: number;
+    enrollment_count?: number;
+    category?: { name: string };
+    instructor?: { first_name?: string; last_name?: string };
+    tags?: string[];
   };
 }
-
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=250&fit=crop";
 
 export default function EnrolledCoursesGrid({
   enrollments,
@@ -66,39 +71,32 @@ export default function EnrolledCoursesGrid({
       {enrollments.map((e) => {
         const pct = Number(e.progress || 0);
         const done = pct >= 100;
+        
+        // Transform enrollment data to match CourseCardStatus props
+        const courseData = {
+          id: e.course?.id || "",
+          title: e.course?.title || "",
+          subtitle: e.course?.subtitle,
+          thumbnail_url: e.course?.thumbnail_url,
+          duration_hours: e.course?.duration_hours,
+          level: e.course?.level || "associate",
+          price: e.course?.price || "0",
+          currency: e.course?.currency || "USD",
+          avg_rating: e.course?.avg_rating || "0",
+          rating_count: e.course?.rating_count || 0,
+          enrollment_count: e.course?.enrollment_count || 0,
+          category: e.course?.category,
+          instructor: e.course?.instructor,
+          tags: e.course?.tags,
+        };
+
         return (
-          <Card key={e.id} className="overflow-hidden hover:shadow-lg transition-shadow group">
-            <CardContent className="p-0">
-              <div className="relative">
-                <img
-                  src={e.course?.thumbnail_url || FALLBACK_IMG}
-                  alt={e.course?.title}
-                  className="w-full h-36 object-cover"
-                />
-                {/* Overlay play button */}
-                <Link href={`/course/${e.course?.id}`}>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full p-3 shadow-lg">
-                      {done ? <RotateCcw className="h-5 w-5 text-primary" /> : <Play className="h-5 w-5 text-primary" />}
-                    </div>
-                  </div>
-                </Link>
-                {e.course?.level && (
-                  <Badge className="absolute top-2 right-2 text-[10px] capitalize" variant="secondary">
-                    {e.course.level}
-                  </Badge>
-                )}
-              </div>
-              <div className="p-4">
-                <h4 className="font-semibold text-sm line-clamp-2 mb-1">{e.course?.title}</h4>
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                  <span>{e.course?.duration_hours ? `${e.course.duration_hours}h` : ""}</span>
-                  <span className={done ? "text-green-600 font-semibold" : ""}>{pct.toFixed(0)}%</span>
-                </div>
-                <Progress value={pct} className="h-1.5" />
-              </div>
-            </CardContent>
-          </Card>
+          <CourseCardStatus
+            key={e.id}
+            course={courseData}
+            userLevel="NONE"
+            status="ENROLLED"
+          />
         );
       })}
     </div>

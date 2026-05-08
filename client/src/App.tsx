@@ -182,6 +182,10 @@ function Router() {
         path="/learn/:courseId/:lessonId"
         component={VideoPlayer}
       />
+      <ProtectedRoute
+        path="/learn/:courseId"
+        component={VideoPlayer}
+      />
       <ProtectedRoute path="/quiz/:quizId" component={QuizPage} />
       <ProtectedRoute path="/community" component={Community} />
       <ProtectedRoute path="/community/forums/:slug" component={CommunityForumCategory} />

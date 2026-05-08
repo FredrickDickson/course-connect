@@ -689,7 +689,7 @@ export default function Community() {
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>{new Date(event.start_date).toLocaleDateString()}</span>
                             <Link href={`/checkout/${event.course?.id}`}>
-                              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                              <Button variant="ghost" size="sm" className="h-8 px-3 text-xs min-h-[44px]">
                                 Register →
                               </Button>
                             </Link>

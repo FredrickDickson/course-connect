@@ -8,13 +8,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import Confetti from "@/components/ui/confetti";
 
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const [reference, setReference] = useState<string | null>(null);
   const { isAuthenticated, isLoading } = useAuth();
-  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -40,12 +38,6 @@ export default function PaymentSuccess() {
           sessionStorage.setItem('confettiCourseId', enrolledCourseId);
           console.log('Stored confetti flag for course:', enrolledCourseId);
         }
-
-        // Trigger confetti animation on successful payment
-        setShowConfetti(true);
-
-        // Auto-hide confetti after 3 seconds
-        setTimeout(() => setShowConfetti(false), 3000);
 
         // Invalidate every enrollment-related cache so gated pages unlock immediately
         await Promise.all([
@@ -172,9 +164,7 @@ export default function PaymentSuccess() {
     paymentData?.data?.metadata?.courseId;
 
   return (
-    <>
-      <Confetti isActive={showConfetti} duration={3000} zIndex={100} />
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <Card className="border-primary">
@@ -259,6 +249,6 @@ export default function PaymentSuccess() {
         </div>
         <Footer />
       </div>
-    </>
+    </div>
   );
 }

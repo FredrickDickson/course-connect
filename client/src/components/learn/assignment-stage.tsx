@@ -35,13 +35,7 @@ export default function AssignmentStage({ lesson, onComplete }: { lesson: LearnL
     },
   });
 
-  const firedRef = useRef(false);
-  useEffect(() => {
-    if (submission && !firedRef.current) {
-      firedRef.current = true;
-      onComplete?.();
-    }
-  }, [submission, onComplete]);
+  // Removed auto-completion - users must explicitly mark lesson as complete after reviewing submission
 
   return (
     <div className="bg-background min-h-[60vh] py-8 px-4">
