@@ -365,7 +365,7 @@ export default function AdminUsersProfiles() {
                   <div className="flex items-start gap-4">
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                       {(selectedProfile as ProfileRow | null)?.profile_photo_url ? (
-                        <img src={(selectedProfile as ProfileRow).profile_photo_url!} className="w-full h-full object-cover" />
+                        <img src={(selectedProfile as ProfileRow).profile_photo_url!} alt={`${(selectedProfile as ProfileRow)?.full_name || 'User'} profile photo`} className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-7 h-7 text-primary" />
                       )}

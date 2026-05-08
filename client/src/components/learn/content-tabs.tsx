@@ -47,19 +47,38 @@ function detectType(filename: string): ResourceType {
 }
 
 function ResourceIcon({ type }: { type: string }) {
-  const cls = "h-5 w-5 text-[#B91C1C] shrink-0";
-  switch (type) {
-    case "pdf":
-    case "doc": return <FileText className={cls} />;
-    case "xls": return <FileSpreadsheet className={cls} />;
-    case "ppt": return <Presentation className={cls} />;
-    case "zip": return <FileArchive className={cls} />;
-    case "image": return <ImageIcon className={cls} />;
-    case "video": return <VideoIcon className={cls} />;
-    case "audio": return <Music className={cls} />;
-    case "link": return <Link2 className={cls} />;
-    default: return <FileIcon className={cls} />;
-  }
+  const cls = "h-5 w-5 text-destructive shrink-0";
+  const getAriaLabel = (type: string) => {
+    switch (type) {
+      case "pdf": return "PDF document";
+      case "doc": return "Document";
+      case "xls": return "Spreadsheet";
+      case "ppt": return "Presentation";
+      case "zip": return "Archive file";
+      case "image": return "Image file";
+      case "video": return "Video file";
+      case "audio": return "Audio file";
+      case "link": return "External link";
+      default: return "File";
+    }
+  };
+  
+  const IconComponent = (() => {
+    switch (type) {
+      case "pdf":
+      case "doc": return FileText;
+      case "xls": return FileSpreadsheet;
+      case "ppt": return Presentation;
+      case "zip": return FileArchive;
+      case "image": return ImageIcon;
+      case "video": return VideoIcon;
+      case "audio": return Music;
+      case "link": return Link2;
+      default: return FileIcon;
+    }
+  })();
+  
+  return <IconComponent className={cls} aria-label={getAriaLabel(type)} />;
 }
 
 export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVideoTime }: Props) {
@@ -294,12 +313,14 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4">
+      <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4" role="tablist">
         {["overview", /* "notes", "activities", */ "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#B91C1C] data-[state=active]:text-[#B91C1C] data-[state=active]:bg-transparent py-3 px-2 capitalize text-sm font-medium"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent py-3 px-2 capitalize text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            role="tab"
+            aria-selected={false}
           >
             {t}
           </TabsTrigger>
@@ -431,13 +452,29 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
             <Card key={a.id} onClick={() => unread && markRead.mutate(a.id)}>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  {unread && <span className="h-2 w-2 rounded-full bg-[#B91C1C]" />}
+                  {unread && <span className="h-2 w-2 rounded-full bg-destructive" aria-label="Unread announcement" />}
                   <h4 className="font-semibold">{a.title}</h4>
                   <span className="text-xs text-muted-foreground ml-auto">{new Date(a.created_at).toLocaleDateString()}</span>
                   {isInstructor && (
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openAnnDialog(a)} aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("Delete this announcement?")) deleteAnnouncement.mutate(a.id); }} aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()} role="group" aria-label="Announcement actions">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8" 
+                        onClick={() => openAnnDialog(a)} 
+                        aria-label="Edit announcement"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 text-destructive hover:text-destructive" 
+                        onClick={() => { if (confirm("Delete this announcement?")) deleteAnnouncement.mutate(a.id); }} 
+                        aria-label="Delete announcement"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -448,12 +485,40 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         })}
 
         <Dialog open={annOpen} onOpenChange={setAnnOpen}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{annEditing ? "Edit announcement" : "New announcement"}</DialogTitle></DialogHeader>
-            <Input placeholder="Title" value={annTitle} onChange={e => setAnnTitle(e.target.value)} />
-            <Textarea placeholder="Message..." value={annBody} onChange={e => setAnnBody(e.target.value)} className="min-h-[140px]" />
+          <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setAnnOpen(false)}>
+            <DialogHeader>
+              <DialogTitle>{annEditing ? "Edit announcement" : "New announcement"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="announcement-title" className="text-sm font-medium">Title</label>
+                <Input 
+                  id="announcement-title"
+                  placeholder="Enter announcement title" 
+                  value={annTitle} 
+                  onChange={e => setAnnTitle(e.target.value)} 
+                  aria-required="true"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label htmlFor="announcement-body" className="text-sm font-medium">Message</label>
+                <Textarea 
+                  id="announcement-body"
+                  placeholder="Enter your message..." 
+                  value={annBody} 
+                  onChange={e => setAnnBody(e.target.value)} 
+                  className="min-h-[140px] mt-1"
+                  aria-required="true"
+                />
+              </div>
+            </div>
             <DialogFooter>
-              <Button onClick={() => saveAnnouncement.mutate()} disabled={!annTitle.trim() || !annBody.trim() || saveAnnouncement.isPending}>
+              <Button 
+                onClick={() => saveAnnouncement.mutate()} 
+                disabled={!annTitle.trim() || !annBody.trim() || saveAnnouncement.isPending}
+                aria-describedby={(!annTitle.trim() || !annBody.trim()) ? "form-error" : undefined}
+              >
                 {saveAnnouncement.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                 {annEditing ? "Save changes" : "Post"}
               </Button>
@@ -468,24 +533,52 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
           <div className="flex justify-end">
             <Dialog open={resOpen} onOpenChange={setResOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#B91C1C] hover:bg-[#A01818]" onClick={openResDialog}>
+                <Button className="bg-destructive hover:bg-destructive/90" onClick={openResDialog}>
                   <Plus className="h-4 w-4 mr-1" />Add resource
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setResOpen(false)}>
                 <DialogHeader><DialogTitle>Add resource</DialogTitle></DialogHeader>
-                <Input placeholder="Display name" value={resName} onChange={e => setResName(e.target.value)} />
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">File</label>
-                  <Input type="file" onChange={e => setResFile(e.target.files?.[0] || null)} />
-                </div>
-                <div className="text-center text-xs text-muted-foreground">— or —</div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">External link</label>
-                  <Input placeholder="https://..." value={resLink} onChange={e => setResLink(e.target.value)} />
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="resource-name" className="text-sm font-medium">Display name</label>
+                    <Input 
+                      id="resource-name"
+                      placeholder="Enter resource name" 
+                      value={resName} 
+                      onChange={e => setResName(e.target.value)} 
+                      aria-required="true"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="resource-file" className="text-sm font-medium">File</label>
+                    <Input 
+                      id="resource-file"
+                      type="file" 
+                      onChange={e => setResFile(e.target.files?.[0] || null)}
+                      className="mt-1"
+                      accept=".pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx,.key,.zip,.rar,.7z,.tar,.gz,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.mkv,.avi,.mp3,.wav,.m4a,.ogg,.flac"
+                    />
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground">— or —</div>
+                  <div>
+                    <label htmlFor="resource-link" className="text-sm font-medium">External link</label>
+                    <Input 
+                      id="resource-link"
+                      placeholder="https://example.com/resource" 
+                      value={resLink} 
+                      onChange={e => setResLink(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={submitResource} disabled={resBusy}>
+                  <Button 
+                    onClick={submitResource} 
+                    disabled={resBusy || (!resName.trim() || (!resFile && !resLink.trim()))}
+                    aria-describedby={(!resName.trim() || (!resFile && !resLink.trim())) ? "form-error" : undefined}
+                  >
                     {resBusy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
                     Add
                   </Button>
@@ -505,17 +598,33 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
               <p className="text-xs text-muted-foreground">{(r.resource_type || "file").toUpperCase()}{r.file_size_mb ? ` · ${r.file_size_mb} MB` : ""}</p>
             </div>
             {canPreview(r.resource_type) && (
-              <Button size="sm" variant="ghost" onClick={() => handlePreview(r)}>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => handlePreview(r)}
+                className="min-h-[44px] min-w-[44px] sm:h-9 sm:px-3"
+                aria-label={`Preview ${r.name}`}
+              >
                 <Eye className="h-4 w-4 mr-1" />Preview
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => handleDownload(r)}>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleDownload(r)}
+              className="min-h-[44px] min-w-[44px] sm:h-9 sm:px-3"
+              aria-label={`Download ${r.name}`}
+            >
               <Download className="h-4 w-4 mr-1" />Download
             </Button>
             {isInstructor && (
-              <Button size="icon" variant="ghost" className="text-destructive"
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px] sm:h-10 sm:w-10"
                 onClick={() => { if (confirm("Delete this resource?")) deleteResource.mutate(r); }}
-                aria-label="Delete">
+                aria-label={`Delete ${r.name}`}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
@@ -523,17 +632,40 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         ))}
 
         <Dialog open={!!previewing} onOpenChange={(o) => { if (!o) { setPreviewing(null); setPreviewUrl(null); } }}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader><DialogTitle className="truncate">{previewing?.name}</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl" onEscapeKeyDown={() => { setPreviewing(null); setPreviewUrl(null); }}>
+            <DialogHeader>
+              <DialogTitle className="truncate">{previewing?.name}</DialogTitle>
+            </DialogHeader>
             {previewing && previewUrl && (
-              <div className="w-full">
-                {previewing.resource_type === "image" && <img src={previewUrl} alt={previewing.name} className="max-h-[70vh] mx-auto" />}
-                {previewing.resource_type === "video" && <video src={previewUrl} controls className="w-full max-h-[70vh]" />}
-                {previewing.resource_type === "audio" && <audio src={previewUrl} controls className="w-full" />}
-                {previewing.resource_type === "pdf" && <iframe src={previewUrl} className="w-full h-[70vh]" title={previewing.name} />}
+              <div className="w-full" role="document">
+                {previewing.resource_type === "image" && (
+                  <img src={previewUrl} alt={previewing.name} className="max-h-[70vh] mx-auto rounded-lg" />
+                )}
+                {previewing.resource_type === "video" && (
+                  <video src={previewUrl} controls className="w-full max-h-[70vh] rounded-lg" aria-label={`Video: ${previewing.name}`}>
+                    Your browser does not support video tag.
+                  </video>
+                )}
+                {previewing.resource_type === "audio" && (
+                  <audio src={previewUrl} controls className="w-full" aria-label={`Audio: ${previewing.name}`}>
+                    Your browser does not support audio tag.
+                  </audio>
+                )}
+                {previewing.resource_type === "pdf" && (
+                  <iframe src={previewUrl} className="w-full h-[70vh] rounded-lg" title={previewing.name} aria-label={`PDF document: ${previewing.name}`} />
+                )}
                 {previewing.resource_type === "link" && (
                   <div className="text-center py-6">
-                    <a href={previewUrl} target="_blank" rel="noreferrer" className="text-[#B91C1C] underline break-all">{previewUrl}</a>
+                    <p className="text-sm text-muted-foreground mb-4">External link:</p>
+                    <a 
+                      href={previewUrl} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-destructive underline break-all hover:text-destructive/80"
+                      aria-label={`Open external link: ${previewUrl}`}
+                    >
+                      {previewUrl}
+                    </a>
                   </div>
                 )}
               </div>

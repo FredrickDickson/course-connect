@@ -20,12 +20,16 @@ export default function BookmarkButton({ postId, isBookmarked: initialBookmarked
     queryKey: ['bookmark-status', postId, user?.id],
     queryFn: async () => {
       if (!user) return false;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_bookmarks' as any)
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', user.id)
         .single();
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking bookmark status:", error);
+        return false;
+      }
       return !!data;
     },
     enabled: !!user,

@@ -105,7 +105,11 @@ function parseYearsFromBucket(bucket: string): number {
 }
 
 async function authHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error("Error getting session:", error);
+    return {};
+  }
   const token = data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

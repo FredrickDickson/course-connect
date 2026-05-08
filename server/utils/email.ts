@@ -191,3 +191,183 @@ export async function sendUnderReviewEmail(data: {
     templateData: data,
   });
 }
+
+/**
+ * Send welcome email
+ */
+export async function sendWelcomeEmail(data: {
+  to: string;
+  firstName: string;
+  membershipLevel?: string;
+  isApproved: boolean;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Welcome to CIMA Learn!",
+    template: "welcome",
+    templateData: data,
+  });
+}
+
+/**
+ * Send application rejection email
+ */
+export async function sendApplicationRejectionEmail(data: {
+  to: string;
+  firstName: string;
+  targetLevel: string;
+  isRejected: boolean;
+  rejectionReason?: string;
+  alternativeLevel?: string;
+  alternativeOfferUrl?: string;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Application Update - CIMA Learn",
+    template: "application-rejection",
+    templateData: data,
+  });
+}
+
+/**
+ * Send failed payment email
+ */
+export async function sendFailedPaymentEmail(data: {
+  to: string;
+  firstName: string;
+  itemName: string;
+  amount: string;
+  currency: string;
+  reference: string;
+  attemptDate: string;
+  failureReason: string;
+  retryAvailable: boolean;
+  maxRetriesReached?: boolean;
+  retryUrl?: string;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Payment Issue - CIMA Learn",
+    template: "payment-failed",
+    templateData: data,
+  });
+}
+
+/**
+ * Send course completion email
+ */
+export async function sendCourseCompletionEmail(data: {
+  to: string;
+  firstName: string;
+  courseTitle: string;
+  instructorName: string;
+  completionDate: string;
+  duration: string;
+  grade?: string;
+  gradeComments?: string;
+  certificateAvailable: boolean;
+  certificateUrl?: string;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Course Completed - CIMA Learn",
+    template: "course-completion",
+    templateData: data,
+  });
+}
+
+/**
+ * Send progress report email
+ */
+export async function sendProgressReportEmail(data: {
+  to: string;
+  firstName: string;
+  reportPeriod: string;
+  currentLevel: string;
+  coursesCompleted: number;
+  totalHours: number;
+  progressScore: number;
+  streakDays: number;
+  achievements?: Array<{
+    icon: string;
+    title: string;
+    description: string;
+    earnedDate: string;
+  }>;
+  recommendations?: Array<{
+    type: string;
+    title: string;
+    description: string;
+  }>;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Learning Progress Report - CIMA Learn",
+    template: "progress-report",
+    templateData: data,
+  });
+}
+
+/**
+ * Send assignment due reminder email
+ */
+export async function sendAssignmentDueEmail(data: {
+  to: string;
+  firstName: string;
+  assignmentTitle: string;
+  courseTitle: string;
+  dueDate: string;
+  timeRemaining: string;
+  estimatedDuration: string;
+  pointsValue: number;
+  submissionFormat: string;
+  fileSizeLimit: string;
+  latePolicy: string;
+  isUrgent: boolean;
+  assignmentUrl: string;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Assignment Due Soon - CIMA Learn",
+    template: "assignment-due",
+    templateData: data,
+  });
+}
+
+/**
+ * Send grade posted email
+ */
+export async function sendGradePostedEmail(data: {
+  to: string;
+  firstName: string;
+  assignmentTitle: string;
+  courseTitle: string;
+  grade: string;
+  gradeLetter: string;
+  gradeDescription: string;
+  gradeColor: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  submissionDate: string;
+  gradedDate: string;
+  hasFeedback: boolean;
+  instructorFeedback?: string;
+  strengths?: string[];
+  improvements?: string[];
+  assignmentUrl: string;
+  dashboardUrl: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return sendEmail({
+    to: data.to,
+    subject: "Grade Posted - CIMA Learn",
+    template: "grade-posted",
+    templateData: data,
+  });
+}

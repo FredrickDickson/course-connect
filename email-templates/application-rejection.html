@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Update</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Application Update</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Thank you for your interest in joining the Center for International Mediators and Arbitrators. 
+        Our admissions committee has carefully reviewed your application for {{targetLevel}} level membership.
+      </p>
+      
+      <div style="background: #fff5f5; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #e53e3e;">
+        <h3 style="margin-top: 0; color: #c53030; font-size: 18px;">Application Decision</h3>
+        <p style="margin: 10px 0; color: #c53030; font-size: 16px; font-weight: bold;">
+          {{#if isRejected}}
+          We are unable to approve your application at this time.
+          {{else}}
+          We would like to offer you an alternative membership level.
+          {{/if}}
+        </p>
+      </div>
+      
+      {{#if rejectionReason}}
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 16px;">Review Feedback</h3>
+        <p style="margin: 10px 0; color: #4a5568; font-style: italic;">{{rejectionReason}}</p>
+      </div>
+      {{/if}}
+      
+      {{#if alternativeLevel}}
+      <div style="background: #ebf8ff; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #3182ce;">
+        <h3 style="margin-top: 0; color: #2c5282; font-size: 18px;">Alternative Opportunity</h3>
+        <p style="margin: 10px 0; color: #2c5282; font-size: 16px;">
+          Based on your qualifications and experience, we would like to offer you membership at the 
+          <strong>{{alternativeLevel}}</strong> level. This will provide you with:
+        </p>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2c5282;">
+          <li style="margin-bottom: 10px;">Access to foundational courses and resources</li>
+          <li style="margin-bottom: 10px;">Community participation and networking</li>
+          <li style="margin-bottom: 10px;">Pathway to advance to higher levels</li>
+          <li style="margin-bottom: 0;">Professional development opportunities</li>
+        </ul>
+      </div>
+      {{/if}}
+      
+      <div style="background: #fef5e7; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d69e2e;">
+        <h3 style="margin-top: 0; color: #744210; font-size: 18px;">Next Steps</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #744210;">
+          {{#if isRejected}}
+          <li style="margin-bottom: 10px;">You may reapply after 6 months with additional qualifications</li>
+          <li style="margin-bottom: 10px;">Consider our foundational courses to build your profile</li>
+          <li style="margin-bottom: 0;">Contact our admissions team for guidance</li>
+          {{else}}
+          <li style="margin-bottom: 10px;">Accept the alternative offer within 14 days</li>
+          <li style="margin-bottom: 10px;">Complete any additional documentation if requested</li>
+          <li style="margin-bottom: 0;">Begin your learning journey with CIMA</li>
+          {{/if}}
+        </ul>
+      </div>
+      
+      {{#if alternativeLevel}}
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{alternativeOfferUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          Review Alternative Offer
+        </a>
+      </div>
+      {{else}}
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          View Application Details
+        </a>
+      </div>
+      {{/if}}
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        If you have any questions about this decision or would like to discuss your application further, 
+        please reply to this email or contact our admissions team.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>
