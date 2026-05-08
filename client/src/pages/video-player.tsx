@@ -29,6 +29,7 @@ export default function VideoPlayerPage() {
   const [completedShown, setCompletedShown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const lastSavedSec = useRef(0);
+  const resumeToastShown = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -93,7 +94,19 @@ export default function VideoPlayerPage() {
       }, { onConflict: "user_id,lesson_id" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["learn-progress", courseId] }),
+    onMutate: async ({ id, completed, watch }) => {
+      // Optimistic update so checkbox/progress tick immediately
+      const key = ["learn-progress", courseId, user?.id];
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<ProgressRow[]>(key) || [];
+      const next = prev.some(p => p.lesson_id === id)
+        ? prev.map(p => p.lesson_id === id ? { ...p, completed, watch_time_seconds: Math.floor(watch) } : p)
+        : [...prev, { lesson_id: id, completed, watch_time_seconds: Math.floor(watch) } as ProgressRow];
+      qc.setQueryData(key, next);
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => { if (ctx?.prev) qc.setQueryData(["learn-progress", courseId, user?.id], ctx.prev); },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["learn-progress", courseId] }),
   });
 
   const currentLesson = allLessons.find(l => l.id === lessonId);
@@ -106,6 +119,36 @@ export default function VideoPlayerPage() {
   const goToLesson = (id: string) => navigate(`/learn/${courseId}/${id}`);
   const handleToggleComplete = (id: string, completed: boolean) =>
     upsertProgress.mutate({ id, completed, watch: progress.find(p => p.lesson_id === id)?.watch_time_seconds || 0 });
+
+  const resumeSeconds = currentLesson
+    ? (progress.find(p => p.lesson_id === currentLesson.id)?.watch_time_seconds || 0)
+    : 0;
+
+  // Reset autosave clock when switching lesson; show resume toast once.
+  useEffect(() => {
+    lastSavedSec.current = 0;
+    if (currentLesson && resumeSeconds > 5 && resumeToastShown.current !== currentLesson.id) {
+      resumeToastShown.current = currentLesson.id;
+      const mm = Math.floor(resumeSeconds / 60);
+      const ss = String(Math.floor(resumeSeconds % 60)).padStart(2, "0");
+      toast({ title: "Resumed playback", description: `Continuing from ${mm}:${ss}` });
+    }
+  }, [currentLesson?.id]);
+
+  // Save on tab close
+  useEffect(() => {
+    const onUnload = () => {
+      const cur = videoRef.current?.currentTime || 0;
+      const dur = videoRef.current?.duration || 0;
+      if (!currentLesson || !cur) return;
+      try {
+        navigator.sendBeacon?.; // no-op guard
+        upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
+      } catch {}
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, [currentLesson?.id]);
 
   // External-video auto-complete after 30s
   const isExternal = !!(currentLesson?.video_platform && currentLesson?.video_id);
@@ -166,18 +209,25 @@ export default function VideoPlayerPage() {
                 videoPlatform={currentLesson.video_platform || undefined}
                 videoId={currentLesson.video_id || undefined}
                 title={currentLesson.title}
+                startAt={resumeSeconds}
                 onPrev={prevLesson ? () => goToLesson(prevLesson.id) : undefined}
                 onNext={nextLesson ? () => goToLesson(nextLesson.id) : undefined}
                 onTimeUpdate={() => {
                   const cur = videoRef.current?.currentTime || 0;
                   const dur = videoRef.current?.duration || 0;
                   if (!dur) return;
-                  // Save every 10s
-                  if (Math.floor(cur) - lastSavedSec.current >= 10) {
+                  // Save every 5s
+                  if (Math.floor(cur) - lastSavedSec.current >= 5) {
                     lastSavedSec.current = Math.floor(cur);
                     const completed = cur >= dur * 0.9;
                     upsertProgress.mutate({ id: currentLesson.id, completed, watch: cur });
                   }
+                }}
+                onPause={() => {
+                  const cur = videoRef.current?.currentTime || 0;
+                  const dur = videoRef.current?.duration || 0;
+                  if (!cur) return;
+                  upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
                 }}
                 onEnded={() => {
                   upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
