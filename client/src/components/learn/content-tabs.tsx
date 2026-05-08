@@ -295,7 +295,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4">
-        {["overview", /* "notes", */ "activities", "announcements", "resources"].map(t => (
+        {["overview", /* "notes", "activities", */ "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
@@ -359,7 +359,8 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
       </TabsContent>
       )}
 
-      {/* Activities */}
+      {/* Activities — temporarily disabled (duplicates lesson stages + sidebar) */}
+      {false && (
       <TabsContent value="activities" className="pt-4 space-y-3">
         {!hasActivities ? (
           <p className="text-sm text-muted-foreground py-8 text-center">No quizzes or assignments for this lesson.</p>

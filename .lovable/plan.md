@@ -1,101 +1,51 @@
-# Quiz Submission & UX Hardening Plan
+## Goal
 
-## Goals
-1. Move quiz submission to a Supabase Edge Function (current `/api/quizzes/:id/submit` 404s on Vercel preview → "Failed to submit").
-2. Disable submit after first click + show loading.
-3. Persist in-progress quiz state across refresh.
-4. Comment out the Notes tab in the lesson player.
-5. Retry flow that preserves answers + clear error messages.
-6. Front-end validation for unanswered required questions with inline prompts.
+When a learner completes the activity that defines a lesson, the sidebar checkbox for that lesson auto-ticks. Hide the Activities tab to remove the duplicated entry point.
 
----
+## Current behavior
 
-## 1. New Edge Function: `supabase/functions/quiz-submit/index.ts`
+- Sidebar checkbox is driven by `progress` rows (`user_id`, `lesson_id`, `completed`).
+- Auto-complete today fires only for: video at ≥90% watched, external video after 30s, manual checkbox click, and a "Mark complete" button on article stages.
+- Quiz and assignment lessons never auto-complete — the user has to manually tick the box, even after passing/submitting.
+- The Activities tab in `content-tabs.tsx` duplicates the per-lesson quiz/assignment cards already shown by `QuizStage` / `AssignmentStage`, plus the sidebar.
 
-Auth-protected (validate JWT in code, `verify_jwt = false` per Lovable convention). Uses `SUPABASE_SERVICE_ROLE_KEY` internally.
+## Best-practice rule for quiz / assignment lessons
 
-Input:
-```ts
-{ quizId: string,
-  responses: Array<{ questionId: string; answerId?: string; responseText?: string }>,
-  timeSpentSeconds: number }
-```
+Industry standard (Udemy, Coursera, Moodle):
 
-Logic:
-- Validate body with zod.
-- Resolve user from JWT (`supabase.auth.getUser(jwt)`).
-- Load quiz + questions + answers via service role.
-- Check `attempts < max_attempts` for this user/quiz; reject if exceeded.
-- For each question:
-  - `multiple_choice`/`true_false`: lookup `answerId` → `is_correct` → award `points` if correct.
-  - `fill_blank`: case-insensitive trim compare against any `is_correct=true` answer text.
-  - `essay`: 0 points (manual grade later), `is_correct = null`.
-- Insert `quiz_attempts` row, then `quiz_responses` rows referencing it.
-- Compute `score = round(earned/total * 100)`, `passed = score >= passing_score`.
-- Update attempt with `score`, `passed`, `time_spent_minutes = ceil(timeSpentSeconds/60)`, `completed_at = now()`.
-- Return `{ attemptId, score, passed, totalPoints, earnedPoints }`.
-- CORS headers on every response (incl. errors); zod 400 on invalid input.
+- **Quiz lesson** → marked complete the moment the learner records a **passing** attempt (`quiz_attempts.passed = true`). Failed attempts do not complete it; retakes after passing don't un-complete it.
+- **Assignment lesson** → marked complete the moment a submission exists (`assignment_submissions` row for that user). Grading/score is tracked separately and does not gate completion. (If you'd rather wait for a passing grade, say so and we'll switch to `graded_at IS NOT NULL AND score >= passing`.)
 
-Register in `supabase/config.toml`:
-```toml
-[functions.quiz-submit]
-verify_jwt = false
-```
+This keeps "lesson complete" = "learner did the required action," while certificates/level upgrades remain gated on the existing course-completion logic.
 
-(Course-completion / certificate progression deferred — existing triggers on `enrollments.status='COMPLETED'` already cover it; this function only writes attempts.)
+## Changes
 
-## 2. `client/src/pages/quiz.tsx` rewrites
+### 1. `client/src/components/learn/content-tabs.tsx`
+- Remove `"activities"` from the tabs array on line 298 and wrap the `<TabsContent value="activities">` block (lines 363–411) in `{false && (...)}`, mirroring the Notes pattern. Leaves Overview, Announcements, Resources visible.
 
-### Submission
-- Replace `fetch('/api/quizzes/...')` with `supabase.functions.invoke('quiz-submit', { body: {...} })`.
-- On `error` from invoke OR error in `data`, throw with server message.
+### 2. `client/src/components/learn/quiz-stage.tsx`
+- After loading `attempts`, add a `useEffect` that, when `passed === true` and the current lesson's progress row is not yet `completed`, calls a new `onComplete?: () => void` prop passed in from `video-player.tsx`. Idempotent — only fires once per lesson per session.
 
-### Submit guard
-- Button: `disabled={submitQuizMutation.isPending || quizSubmitted}`.
-- Label: spinner + "Submitting..." while pending.
-- `handleSubmitQuiz` early-returns if `isPending` or `quizSubmitted`.
+### 3. `client/src/components/learn/assignment-stage.tsx`
+- Same pattern: when `submission` exists and lesson not yet completed, call `onComplete?.()`.
 
-### Refresh persistence
-- `localStorage` key: `quiz-state:<quizId>:<userId>`.
-- Persist `{ answers, currentQuestion, startedAt, timeLimitSeconds }` whenever they change (useEffect).
-- On mount, if entry exists and not expired (startedAt + timeLimit > now), restore: `quizStarted=true`, recompute `timeRemaining = timeLimitSeconds - (now - startedAt)`.
-- Clear on successful submit, on max-attempts exceeded, or when user clicks "Retake Quiz".
+### 4. `client/src/pages/video-player.tsx`
+- Pass `onComplete={() => handleToggleComplete(currentLesson.id, true)}` into `<QuizStage>` and `<AssignmentStage>`.
+- No changes to existing video / article auto-complete logic.
 
-### Front-end validation
-- Before calling mutation, compute `unanswered = questions.filter(q => !hasAnswer(q))`.
-  - `hasAnswer`: for choice/true_false → `answers[id]` truthy; for fill_blank/essay → `(answers[id] ?? '').trim().length > 0`.
-- If any unanswered:
-  - Toast: "Please answer all questions before submitting."
-  - Jump to first unanswered (`setCurrentQuestion(idx)`).
-  - Render inline alert under that question: "This question requires an answer." (red text + border highlight on the card).
-- Track `attemptedSubmit` boolean; only show inline prompts after first submit attempt.
-- Show small "Answered N of M" counter beside the timer.
+### 5. (Optional, defensive) `client/src/pages/quiz.tsx`
+- After a successful `quiz-submit` invoke that returns `passed: true`, upsert the `progress` row directly so completion ticks even if the learner never re-opens the lesson page. Uses the same `supabase.from("progress").upsert(...)` shape already used in `video-player.tsx`.
 
-### Retry flow
-- On mutation error: keep `answers` intact (already kept), set `lastError` state.
-- Render an alert above the submit button: "Submission failed: {message}" with a "Retry submission" button that re-invokes the mutation with the same `answers`.
-- Auto-retry once on network/5xx after 1s; subsequent retries are manual.
-- Toast uses sonner-style destructive variant via existing `useToast`.
+## Out of scope
 
-## 3. `client/src/components/learn/content-tabs.tsx`
+- No DB schema changes.
+- No changes to the `quiz-submit` edge function.
+- No change to certificate/level-upgrade triggers — those still depend on `enrollments.status = 'COMPLETED'` via the existing trigger.
 
-- Remove `"notes"` from the tabs array on line 298 (leave a `// "notes",` comment).
-- Wrap the entire `<TabsContent value="notes">` block (lines 332–358) in `{false && (...)}` or comment it out with `{/* ... */}`.
-- Leave `notes` query, `addNote`, `deleteNote`, `noteDraft`, `withTimestamp` state in place but unreferenced (TS will complain about unused — prefix with `_` or wrap with `// eslint-disable-next-line`). Simpler: comment out those declarations too with a `// TODO: re-enable notes tab` marker.
+## QA checklist
 
-## 4. No DB schema changes
-All required columns (`quiz_attempts.score|passed|time_spent_minutes|completed_at|user_id|quiz_id`, `quiz_responses.attempt_id|question_id|answer_id|response_text|is_correct|points_earned`) already exist.
-
-## 5. Files touched
-- `supabase/functions/quiz-submit/index.ts` (new)
-- `supabase/config.toml` (register function)
-- `client/src/pages/quiz.tsx` (submit, persistence, validation, retry, guard)
-- `client/src/components/learn/content-tabs.tsx` (comment out notes tab)
-
-## 6. Manual QA checklist
-- [ ] Submit once → button disables, shows spinner, succeeds → results screen.
-- [ ] Refresh mid-quiz → answers + question index + timer restored.
-- [ ] Try submit with 1 unanswered → toast + jump to question + inline prompt.
-- [ ] Force network failure → "Retry submission" button preserves answers.
-- [ ] Notes tab no longer visible in lesson player.
-- [ ] Max attempts still enforced server-side.
+1. Open a video lesson → watch ≥90% → sidebar ticks (unchanged).
+2. Open a quiz lesson → pass quiz → return to lesson → checkbox is ticked. Fail an attempt → checkbox stays empty.
+3. Open an assignment lesson → submit → checkbox ticks.
+4. Confirm Activities tab no longer renders; Overview/Announcements/Resources still work.
+5. Manual uncheck in sidebar still works and persists.
