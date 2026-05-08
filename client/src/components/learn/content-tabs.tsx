@@ -412,6 +412,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         )}
         <AssignmentSubmitDialog open={!!submitFor} onOpenChange={(o) => !o && setSubmitFor(null)} assignment={submitFor} />
       </TabsContent>
+      )}
 
       {/* Announcements */}
       <TabsContent value="announcements" className="pt-4 space-y-3">
