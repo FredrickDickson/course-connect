@@ -16,6 +16,14 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 
+function hasAnswer(q: QuizQuestion, answers: Record<string, string>): boolean {
+  const v = answers[q.id];
+  if (q.question_type === "multiple_choice" || q.question_type === "true_false") {
+    return typeof v === "string" && v.length > 0;
+  }
+  return typeof v === "string" && v.trim().length > 0;
+}
+
 interface QuizQuestion {
   id: string;
   question: string;
