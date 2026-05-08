@@ -295,7 +295,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4">
-        {["overview", "notes", "activities", "announcements", "resources"].map(t => (
+        {["overview", /* "notes", */ "activities", "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
@@ -328,7 +328,8 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         </CardContent></Card>
       </TabsContent>
 
-      {/* Notes */}
+      {/* Notes — temporarily disabled */}
+      {false && (
       <TabsContent value="notes" className="pt-4 space-y-3">
         <Card><CardContent className="p-4 space-y-3">
           <Textarea placeholder="Take notes for this lesson..." value={noteDraft} onChange={e => setNoteDraft(e.target.value)} className="min-h-[100px]" />
@@ -356,6 +357,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
           </CardContent></Card>
         ))}
       </TabsContent>
+      )}
 
       {/* Activities */}
       <TabsContent value="activities" className="pt-4 space-y-3">

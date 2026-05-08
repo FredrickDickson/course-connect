@@ -1,63 +1,101 @@
-## Goal
-Fix YouTube embeds appearing too small and Vimeo embeds appearing zoomed/cropped on `/learn/:courseId/:lessonId`. Keep the existing unified Udemy-style custom controls (already approved earlier) — only fix the underlying iframe sizing.
+# Quiz Submission & UX Hardening Plan
 
-## Root cause
-`client/src/components/ui/video-player.tsx` mounts external players into a `<div ref={externalContainerRef} className="absolute inset-0 w-full h-full" />`:
+## Goals
+1. Move quiz submission to a Supabase Edge Function (current `/api/quizzes/:id/submit` 404s on Vercel preview → "Failed to submit").
+2. Disable submit after first click + show loading.
+3. Persist in-progress quiz state across refresh.
+4. Comment out the Notes tab in the lesson player.
+5. Retry flow that preserves answers + clear error messages.
+6. Front-end validation for unanswered required questions with inline prompts.
 
-- **YouTube**: `new YT.Player(div.id, { videoId, playerVars: ... })` is called without `width`/`height`. The YouTube IFrame API replaces the div with an `<iframe>` that defaults to `width="640" height="360"` attributes, so the iframe is a small fixed box inside a full-size container → "video too small."
-- **Vimeo**: `new Vimeo(container, { responsive: true, ... })` injects its own `padding-bottom: 56.25%` wrapper. Because the parent already has `aspect-video` + `absolute inset-0`, the responsive-mode wrapper computes height against the parent width, then the player letter-pillarbox math collides with the fixed container height → visible zoom/crop. Also `transparent` is not explicitly set.
+---
 
-The outer `aspect-video` wrapper itself is correct and matches the user's `pb-[56.25%]` intent.
+## 1. New Edge Function: `supabase/functions/quiz-submit/index.ts`
 
-## Fix (file: `client/src/components/ui/video-player.tsx`)
+Auth-protected (validate JWT in code, `verify_jwt = false` per Lovable convention). Uses `SUPABASE_SERVICE_ROLE_KEY` internally.
 
-1. **Force injected iframes to fill the container.** Add a CSS rule to the external container so that any nested `iframe` (whether injected by YT API or Vimeo SDK) is absolutely sized 100%/100% with no border:
+Input:
+```ts
+{ quizId: string,
+  responses: Array<{ questionId: string; answerId?: string; responseText?: string }>,
+  timeSpentSeconds: number }
+```
 
-   ```tsx
-   <div
-     ref={externalContainerRef}
-     className="absolute inset-0 w-full h-full
-                [&>iframe]:absolute [&>iframe]:top-0 [&>iframe]:left-0
-                [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0
-                [&_iframe]:!w-full [&_iframe]:!h-full"
-   />
-   ```
+Logic:
+- Validate body with zod.
+- Resolve user from JWT (`supabase.auth.getUser(jwt)`).
+- Load quiz + questions + answers via service role.
+- Check `attempts < max_attempts` for this user/quiz; reject if exceeded.
+- For each question:
+  - `multiple_choice`/`true_false`: lookup `answerId` → `is_correct` → award `points` if correct.
+  - `fill_blank`: case-insensitive trim compare against any `is_correct=true` answer text.
+  - `essay`: 0 points (manual grade later), `is_correct = null`.
+- Insert `quiz_attempts` row, then `quiz_responses` rows referencing it.
+- Compute `score = round(earned/total * 100)`, `passed = score >= passing_score`.
+- Update attempt with `score`, `passed`, `time_spent_minutes = ceil(timeSpentSeconds/60)`, `completed_at = now()`.
+- Return `{ attemptId, score, passed, totalPoints, earnedPoints }`.
+- CORS headers on every response (incl. errors); zod 400 on invalid input.
 
-2. **YouTube — pass explicit 100% sizing and richer playerVars.** In the `new YT.Player(...)` call:
-   - Add `width: "100%"`, `height: "100%"`.
-   - Extend `playerVars` with `color: "white"`, `autohide: 1` (existing `modestbranding`, `rel:0`, `iv_load_policy:3`, `playsinline:1`, `controls:0`, `disablekb:1`, `fs:0` stay).
-   - After `onReady`, also call `e.target.getIframe().setAttribute("allowfullscreen", "true")` and remove any width/height attributes the API may have set (`iframe.removeAttribute('width'); iframe.removeAttribute('height')`).
+Register in `supabase/config.toml`:
+```toml
+[functions.quiz-submit]
+verify_jwt = false
+```
 
-3. **Vimeo — disable responsive mode and set transparent:false.** Switch the constructor options to:
-   ```ts
-   new Vimeo(externalContainerRef.current, {
-     id: Number(videoId),
-     controls: false,
-     responsive: false,   // we own the aspect ratio via parent
-     playsinline: true,
-     autopause: false,
-     transparent: false,  // solid black bg, fixes zoom/crop artefact
-     dnt: true,
-     title: false, byline: false, portrait: false,
-   } as any);
-   ```
-   Then after `ready()`, grab the injected iframe (`externalContainerRef.current.querySelector('iframe')`) and add `allowfullscreen` + clear any inline width/height attributes the SDK set, so our CSS rule wins.
+(Course-completion / certificate progression deferred — existing triggers on `enrollments.status='COMPLETED'` already cover it; this function only writes attempts.)
 
-4. **Allow native fullscreen on the iframe** for both platforms by setting on the iframe element after creation:
-   - `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"`
-   - `allowFullscreen = true`
+## 2. `client/src/pages/quiz.tsx` rewrites
 
-5. **Audit ancestor containers for fullscreen blockers** in `client/src/pages/video-player.tsx`:
-   - The current player is wrapped in `<div className="bg-black relative">` inside `<main className="flex-1 flex flex-col overflow-y-auto">`. `overflow-y-auto` on `<main>` does not block native fullscreen on a descendant (fullscreen targets `wrapperRef` directly), but the wrapper's own `overflow-hidden` on `aspect-video` is fine because that is the element that goes fullscreen.
-   - No `transform`/`filter` classes are present on ancestors. No change required, but confirm during implementation.
+### Submission
+- Replace `fetch('/api/quizzes/...')` with `supabase.functions.invoke('quiz-submit', { body: {...} })`.
+- On `error` from invoke OR error in `data`, throw with server message.
 
-## Out of scope
-- Replacing the unified custom-controls player with raw iframes (would regress the previously approved Udemy-style controls, autosave, resume, prev/next).
-- Changes to native `<video>` rendering — already correct (`object-contain`, `w-full h-full`).
-- DB or routing changes.
+### Submit guard
+- Button: `disabled={submitQuizMutation.isPending || quizSubmitted}`.
+- Label: spinner + "Submitting..." while pending.
+- `handleSubmitQuiz` early-returns if `isPending` or `quizSubmitted`.
 
-## Verification checklist
-- YouTube lesson: iframe fills container at all viewport widths; 16:9; fullscreen works; no related videos at end.
-- Vimeo lesson: full frame visible (no crop/zoom); 16:9; black background; fullscreen works; no Vimeo badge/title/byline.
-- Sidebar open/collapsed, tablet, mobile (<768px): no horizontal scroll, video maintains 16:9.
-- Resume playback, autosave, prev/next, custom controls (play/pause, scrub, speed, volume, fullscreen) continue to work for both providers.
+### Refresh persistence
+- `localStorage` key: `quiz-state:<quizId>:<userId>`.
+- Persist `{ answers, currentQuestion, startedAt, timeLimitSeconds }` whenever they change (useEffect).
+- On mount, if entry exists and not expired (startedAt + timeLimit > now), restore: `quizStarted=true`, recompute `timeRemaining = timeLimitSeconds - (now - startedAt)`.
+- Clear on successful submit, on max-attempts exceeded, or when user clicks "Retake Quiz".
+
+### Front-end validation
+- Before calling mutation, compute `unanswered = questions.filter(q => !hasAnswer(q))`.
+  - `hasAnswer`: for choice/true_false → `answers[id]` truthy; for fill_blank/essay → `(answers[id] ?? '').trim().length > 0`.
+- If any unanswered:
+  - Toast: "Please answer all questions before submitting."
+  - Jump to first unanswered (`setCurrentQuestion(idx)`).
+  - Render inline alert under that question: "This question requires an answer." (red text + border highlight on the card).
+- Track `attemptedSubmit` boolean; only show inline prompts after first submit attempt.
+- Show small "Answered N of M" counter beside the timer.
+
+### Retry flow
+- On mutation error: keep `answers` intact (already kept), set `lastError` state.
+- Render an alert above the submit button: "Submission failed: {message}" with a "Retry submission" button that re-invokes the mutation with the same `answers`.
+- Auto-retry once on network/5xx after 1s; subsequent retries are manual.
+- Toast uses sonner-style destructive variant via existing `useToast`.
+
+## 3. `client/src/components/learn/content-tabs.tsx`
+
+- Remove `"notes"` from the tabs array on line 298 (leave a `// "notes",` comment).
+- Wrap the entire `<TabsContent value="notes">` block (lines 332–358) in `{false && (...)}` or comment it out with `{/* ... */}`.
+- Leave `notes` query, `addNote`, `deleteNote`, `noteDraft`, `withTimestamp` state in place but unreferenced (TS will complain about unused — prefix with `_` or wrap with `// eslint-disable-next-line`). Simpler: comment out those declarations too with a `// TODO: re-enable notes tab` marker.
+
+## 4. No DB schema changes
+All required columns (`quiz_attempts.score|passed|time_spent_minutes|completed_at|user_id|quiz_id`, `quiz_responses.attempt_id|question_id|answer_id|response_text|is_correct|points_earned`) already exist.
+
+## 5. Files touched
+- `supabase/functions/quiz-submit/index.ts` (new)
+- `supabase/config.toml` (register function)
+- `client/src/pages/quiz.tsx` (submit, persistence, validation, retry, guard)
+- `client/src/components/learn/content-tabs.tsx` (comment out notes tab)
+
+## 6. Manual QA checklist
+- [ ] Submit once → button disables, shows spinner, succeeds → results screen.
+- [ ] Refresh mid-quiz → answers + question index + timer restored.
+- [ ] Try submit with 1 unanswered → toast + jump to question + inline prompt.
+- [ ] Force network failure → "Retry submission" button preserves answers.
+- [ ] Notes tab no longer visible in lesson player.
+- [ ] Max attempts still enforced server-side.

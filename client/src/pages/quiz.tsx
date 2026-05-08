@@ -8,11 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
+
+function hasAnswer(q: QuizQuestion, answers: Record<string, string>): boolean {
+  const v = answers[q.id];
+  if (q.question_type === "multiple_choice" || q.question_type === "true_false") {
+    return typeof v === "string" && v.length > 0;
+  }
+  return typeof v === "string" && v.trim().length > 0;
+}
 
 interface QuizQuestion {
   id: string;
@@ -60,6 +70,67 @@ export default function QuizPage() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+
+  const storageKey =
+    quizId && user?.id ? `quiz-state:${quizId}:${user.id}` : null;
+
+  // Restore in-progress quiz state on mount
+  useEffect(() => {
+    if (!storageKey || restored) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) {
+        setRestored(true);
+        return;
+      }
+      const saved = JSON.parse(raw) as {
+        answers: Record<string, string>;
+        currentQuestion: number;
+        startedAt: number;
+        timeLimitSeconds: number;
+      };
+      const elapsed = Math.floor((Date.now() - saved.startedAt) / 1000);
+      const remaining = saved.timeLimitSeconds - elapsed;
+      if (remaining > 0) {
+        setAnswers(saved.answers || {});
+        setCurrentQuestion(saved.currentQuestion || 0);
+        setTimeRemaining(remaining);
+        setQuizStarted(true);
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch {
+      // ignore corrupt state
+    }
+    setRestored(true);
+  }, [storageKey, restored]);
+
+  // Persist state while quiz is in progress
+  useEffect(() => {
+    if (!storageKey || !quizStarted || quizSubmitted) return;
+    try {
+      const existingRaw = localStorage.getItem(storageKey);
+      const startedAt = existingRaw
+        ? (JSON.parse(existingRaw).startedAt as number) ||
+          Date.now() - ((quiz?.time_limit_minutes ?? 30) * 60 - timeRemaining) * 1000
+        : Date.now() - ((quiz?.time_limit_minutes ?? 30) * 60 - timeRemaining) * 1000;
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          answers,
+          currentQuestion,
+          startedAt,
+          timeLimitSeconds: (quiz?.time_limit_minutes ?? 30) * 60,
+        }),
+      );
+    } catch {
+      // storage full / disabled — ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, currentQuestion, quizStarted, quizSubmitted, storageKey]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -146,32 +217,27 @@ export default function QuizPage() {
         return { questionId: q.id, responseText: value };
       });
 
-      const response = await fetch(`/api/quizzes/${quizId}/submit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-        body: JSON.stringify({
-          responses,
-          timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0,
-        }),
+      const timeSpentSeconds = quiz
+        ? quiz.time_limit_minutes * 60 - timeRemaining
+        : 0;
+      const { data, error } = await supabase.functions.invoke("quiz-submit", {
+        body: { quizId, responses, timeSpentSeconds },
       });
-      if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(text || "Failed to submit quiz");
-      }
-      return response.json();
+      if (error) throw new Error(error.message || "Failed to submit quiz");
+      if (data && (data as any).error) throw new Error((data as any).error);
+      return data;
     },
     onSuccess: () => {
       setQuizSubmitted(true);
+      setSubmitError(null);
+      if (storageKey) localStorage.removeItem(storageKey);
       queryClient.invalidateQueries({ queryKey: ["quiz-attempts", quizId] });
       toast({
         title: "Quiz Submitted",
         description: "Your quiz has been submitted successfully!",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -185,9 +251,11 @@ export default function QuizPage() {
         }, 500);
         return;
       }
+      const message = error?.message || "Failed to submit quiz. Please try again.";
+      setSubmitError(message);
       toast({
         title: "Error",
-        description: "Failed to submit quiz. Please try again.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -208,7 +276,27 @@ export default function QuizPage() {
   };
 
   const handleSubmitQuiz = () => {
-    if (quizSubmitted) return;
+    if (quizSubmitted || submitQuizMutation.isPending) return;
+    setAttemptedSubmit(true);
+
+    // Front-end validation: ensure every question has an answer
+    const questions = (quiz?.questions || []) as QuizQuestion[];
+    const firstUnanswered = questions.findIndex((q) => !hasAnswer(q, answers));
+    if (firstUnanswered !== -1) {
+      setCurrentQuestion(firstUnanswered);
+      toast({
+        title: "Unanswered questions",
+        description: "Please answer all questions before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSubmitError(null);
+    submitQuizMutation.mutate(answers);
+  };
+
+  const handleRetrySubmit = () => {
+    setSubmitError(null);
     submitQuizMutation.mutate(answers);
   };
 
@@ -327,6 +415,9 @@ export default function QuizPage() {
                         setQuizStarted(false);
                         setAnswers({});
                         setCurrentQuestion(0);
+                        setAttemptedSubmit(false);
+                        setSubmitError(null);
+                        if (storageKey) localStorage.removeItem(storageKey);
                       }}
                       data-testid="retake-quiz"
                     >
@@ -406,6 +497,12 @@ export default function QuizPage() {
   const currentQ = quiz.questions?.[currentQuestion];
   const progressPercentage =
     ((currentQuestion + 1) / (quiz.questions?.length || 1)) * 100;
+  const totalQuestions = quiz.questions?.length || 0;
+  const answeredCount = (quiz.questions || []).filter((q: QuizQuestion) =>
+    hasAnswer(q, answers),
+  ).length;
+  const showUnansweredPrompt =
+    attemptedSubmit && currentQ && !hasAnswer(currentQ, answers);
 
   return (
     <div className="min-h-screen bg-background">
@@ -424,7 +521,7 @@ export default function QuizPage() {
                 {formatTime(timeRemaining)}
               </div>
               <div className="text-sm text-muted-foreground">
-                Time Remaining
+                Time Remaining · Answered {answeredCount}/{totalQuestions}
               </div>
             </div>
           </div>
@@ -446,7 +543,12 @@ export default function QuizPage() {
 
         {/* Current Question */}
         {currentQ && (
-          <Card className="mb-6" data-testid="current-question">
+          <Card
+            className={`mb-6 ${
+              showUnansweredPrompt ? "border-destructive" : ""
+            }`}
+            data-testid="current-question"
+          >
             <CardHeader>
               <CardTitle className="text-lg">
                 {currentQ.question}
@@ -456,6 +558,14 @@ export default function QuizPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {showUnansweredPrompt && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    This question requires an answer.
+                  </AlertDescription>
+                </Alert>
+              )}
               {currentQ.question_type === "multiple_choice" &&
                 currentQ.answers && (
                   <RadioGroup
@@ -574,14 +684,38 @@ export default function QuizPage() {
             ) : (
               <Button
                 onClick={handleSubmitQuiz}
-                disabled={submitQuizMutation.isPending}
+                disabled={submitQuizMutation.isPending || quizSubmitted}
                 data-testid="submit-quiz"
               >
-                {submitQuizMutation.isPending ? "Submitting..." : "Submit Quiz"}
+                {submitQuizMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Quiz"
+                )}
               </Button>
             )}
           </div>
         </div>
+
+        {submitError && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>Submission failed: {submitError}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRetrySubmit}
+                disabled={submitQuizMutation.isPending}
+              >
+                {submitQuizMutation.isPending ? "Retrying..." : "Retry submission"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Question Overview */}
         <Card className="mt-6" data-testid="question-overview">
