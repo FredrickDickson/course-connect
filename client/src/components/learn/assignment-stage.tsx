@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import AssignmentSubmitDialog from "./assignment-submit-dialog";
 
 const sb: any = supabase;
 
-export default function AssignmentStage({ lesson }: { lesson: LearnLesson }) {
+export default function AssignmentStage({ lesson, onComplete }: { lesson: LearnLesson; onComplete?: () => void }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
@@ -34,6 +34,14 @@ export default function AssignmentStage({ lesson }: { lesson: LearnLesson }) {
       return data;
     },
   });
+
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (submission && !firedRef.current) {
+      firedRef.current = true;
+      onComplete?.();
+    }
+  }, [submission, onComplete]);
 
   return (
     <div className="bg-background min-h-[60vh] py-8 px-4">
