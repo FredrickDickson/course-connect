@@ -36,6 +36,7 @@ export default function VideoPlayerPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const lastSavedSec = useRef(0);
   const resumeToastShown = useRef<string | null>(null);
+  const completionModalShownThisSession = useRef(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -161,7 +162,8 @@ export default function VideoPlayerPage() {
   // Update enrollment completion status when course is complete
   const updateEnrollmentCompletion = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      // Update enrollment
+      const { error: enrollmentError } = await supabase
         .from("enrollments")
         .update({
           completed_at: new Date().toISOString(),
@@ -170,11 +172,36 @@ export default function VideoPlayerPage() {
         })
         .eq("user_id", user!.id)
         .eq("course_id", courseId);
-      if (error) throw error;
+      if (enrollmentError) throw enrollmentError;
+
+      // Create course completion record
+      try {
+        const { data: courseData } = await supabase
+          .from("courses")
+          .select("track, level")
+          .eq("id", courseId!)
+          .single();
+
+        if (courseData) {
+          await supabase.from("course_completion_records").insert({
+            user_id: user!.id,
+            course_id: courseId!,
+            track: (courseData.track || "ARBITRATION").toUpperCase(),
+            level_achieved: (courseData.level || "ASSOCIATE").toUpperCase(),
+            assessment_passed: true,
+            completed_at: new Date().toISOString(),
+            is_supplementary: false,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to create course completion record:", err);
+        // Non-fatal - enrollment update succeeded
+      }
     },
     onSuccess: () => {
       toast({ title: "Course completed!", description: "Your certificate is now available." });
       qc.invalidateQueries({ queryKey: ["enrollments", user?.id] });
+      qc.invalidateQueries({ queryKey: ["course-completion-records", user?.id] });
     },
     onError: (e: Error) => {
       console.error("Failed to update enrollment completion:", e);
@@ -223,14 +250,15 @@ export default function VideoPlayerPage() {
 
   // External videos require manual completion - removed auto-complete to ensure users actually watch the content
 
-  // Course complete modal
+  // Course complete modal - show only once per session
   useEffect(() => {
-    if (!completedShown && allLessons.length > 0 && completedCount === allLessons.length) {
+    if (!completionModalShownThisSession.current && allLessons.length > 0 && completedCount === allLessons.length) {
+      completionModalShownThisSession.current = true;
       setCompletedShown(true);
       // Update enrollment completion status when course is complete
       updateEnrollmentCompletion.mutate();
     }
-  }, [completedCount, allLessons.length, completedShown]);
+  }, [completedCount, allLessons.length]);
 
   if (isLoading || courseLoading || !course) {
     return (
