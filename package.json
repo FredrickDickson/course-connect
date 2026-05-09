@@ -26,6 +26,8 @@
     "@hookform/resolvers": "^3.10.0",
     "@internationalized/date": "^3.12.1",
     "@jridgewell/trace-mapping": "^0.3.25",
+    "@mux/mux-node": "^8.8.0",
+    "@mux/mux-player-react": "^2.9.1",
     "@paystack/checkout-js": "^1.48.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
