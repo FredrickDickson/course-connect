@@ -249,6 +249,5 @@ export default function PaymentSuccess() {
         </div>
         <Footer />
       </div>
-    </div>
   );
 }

@@ -25,6 +25,8 @@ export default {
         serif: ["var(--font-serif)", "serif"],
         mono: ["var(--font-mono)", "monospace"],
         display: ["'Playfair Display'", "serif"],
+        'sf-pro-display': ["SF Pro Display", "serif"],
+        'sf-pro-text': ["SF Pro Text", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
