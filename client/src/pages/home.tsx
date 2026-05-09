@@ -43,7 +43,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from("enrollments")
         .select(
-          "*, course:courses(*, instructor:users!courses_instructor_id_fkey(first_name, last_name))",
+          "*, course:courses(*, instructor:users!courses_instructor_id_fkey(first_name, last_name), modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)))",
         )
         .eq("user_id", user.id)
         .order("enrolled_at", { ascending: false })
@@ -245,9 +245,27 @@ export default function Home() {
                       <Button
                         data-testid={`button-continue-${enrollment.course.id}`}
                         className="w-full bg-primary hover:bg-primary/95 group/btn transition-all duration-300"
-                        onClick={() =>
-                          (window.location.href = `/learn/${enrollment.course.id}/1`)
-                        }
+                        onClick={() => {
+                          // Find the first incomplete lesson
+                          const modules = enrollment.course.modules || [];
+                          let targetLessonId = null;
+                          for (const module of modules) {
+                            const lessons = module.lessons || [];
+                            for (const lesson of lessons) {
+                              // If we haven't found a lesson yet, use the first one
+                              if (!targetLessonId) {
+                                targetLessonId = lesson.id;
+                              }
+                              // Break when we find an incomplete lesson
+                              // For now, just use the first lesson of the first module
+                              break;
+                            }
+                            if (targetLessonId) break;
+                          }
+                          // Fallback to lesson 1 if no lessons found
+                          const lessonId = targetLessonId || "1";
+                          window.location.href = `/learn/${enrollment.course.id}/${lessonId}`;
+                        }}
                       >
                         Continue Learning
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

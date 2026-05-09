@@ -73,6 +73,9 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
         html,
         from: from || "CIMA Learn <noreply@thecima.org>",
       },
+      headers: {
+        Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
+      },
     });
     
     if (error) {
