@@ -51,20 +51,17 @@ export default function VideoPlayerPage() {
       const startTime = Date.now();
       
       // Combine course data and enrollment check in parallel
-      const [courseResult, paymentEnrollmentResult, progressEnrollmentResult] = await Promise.all([
+      const [courseResult, progressEnrollmentResult] = await Promise.all([
         supabase
           .from("courses")
           .select(`*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*))`)
           .eq("id", courseId!)
           .single(),
-        (supabase as any).from("course_enrollments").select("*")
-          .eq("course_id", courseId!).eq("user_id", user!.id).neq("payment_status", "cancelled").maybeSingle(),
         (supabase as any).from("enrollments").select("*")
           .eq("course_id", courseId!).eq("user_id", user!.id).maybeSingle()
       ]);
 
       if (courseResult.error) throw courseResult.error;
-      if (paymentEnrollmentResult.error) throw paymentEnrollmentResult.error;
       if (progressEnrollmentResult.error) throw progressEnrollmentResult.error;
 
       // Sort modules + lessons by order
@@ -78,8 +75,8 @@ export default function VideoPlayerPage() {
       return {
         course,
         enrollment: {
-          isEnrolled: !!(paymentEnrollmentResult.data || progressEnrollmentResult.data),
-          paymentEnrollment: paymentEnrollmentResult.data,
+          isEnrolled: !!progressEnrollmentResult.data,
+          paymentEnrollment: null,
           progressEnrollment: progressEnrollmentResult.data
         }
       };

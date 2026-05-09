@@ -99,17 +99,7 @@ export default function CourseDetail() {
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
-      // Check if user has paid/enrolled via course_enrollments
-      const { data: paymentEnrollment, error: paymentError } = await (supabase as any)
-        .from("course_enrollments")
-        .select("*")
-        .eq("course_id", id!)
-        .eq("user_id", user?.id!)
-        .neq("payment_status", "cancelled")
-        .maybeSingle();
-      if (paymentError) throw paymentError;
-      
-      // Also check if they have progress enrollment (for backward compatibility)
+      // Source of truth: the unified `enrollments` table.
       const { data: progressEnrollment, error: progressError } = await (supabase as any)
         .from("enrollments")
         .select("*")
@@ -117,9 +107,8 @@ export default function CourseDetail() {
         .eq("user_id", user?.id!)
         .maybeSingle();
       if (progressError) throw progressError;
-      
-      // Return payment enrollment if exists, otherwise progress enrollment
-      return paymentEnrollment || progressEnrollment;
+
+      return progressEnrollment;
     },
     enabled: !!id && !!user,
   });
@@ -156,10 +145,9 @@ export default function CourseDetail() {
     queryKey: ["course-enrollment-count", id],
     queryFn: async () => {
       const { count, error } = await (supabase as any)
-        .from("course_enrollments")
+        .from("enrollments")
         .select("id", { count: "exact", head: true })
-        .eq("course_id", id!)
-        .neq("payment_status", "cancelled");
+        .eq("course_id", id!);
       if (error) return 0;
       return count || 0;
     },
