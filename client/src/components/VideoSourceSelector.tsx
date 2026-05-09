@@ -1,9 +1,9 @@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Link2 } from "lucide-react";
+import { Upload, Link2, Zap } from "lucide-react";
 
-export type VideoSource = "upload" | "external";
+export type VideoSource = "upload" | "external" | "mux";
 
 interface VideoSourceSelectorProps {
   value: VideoSource;
@@ -19,7 +19,7 @@ export function VideoSourceSelector({ value, onChange, disabled }: VideoSourceSe
         value={value}
         onValueChange={(val) => onChange(val as VideoSource)}
         disabled={disabled}
-        className="grid grid-cols-2 gap-4"
+        className="grid grid-cols-3 gap-4"
       >
         <Card
           className={`cursor-pointer transition-colors ${
@@ -57,6 +57,27 @@ export function VideoSourceSelector({ value, onChange, disabled }: VideoSourceSe
                 <span className="font-medium">External URL</span>
                 <p className="text-xs text-muted-foreground mt-1">
                   YouTube or Vimeo link
+                </p>
+              </div>
+            </Label>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={`cursor-pointer transition-colors ${
+            value === "mux"
+              ? "border-primary bg-primary/5"
+              : "border-border hover:bg-muted/50"
+          }`}
+        >
+          <CardContent className="p-4">
+            <Label htmlFor="mux" className="flex items-center space-x-3 cursor-pointer">
+              <RadioGroupItem value="mux" id="mux" onClick={(e) => e.stopPropagation()} />
+              <Zap className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <span className="font-medium">Mux Streaming</span>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Professional video hosting with analytics
                 </p>
               </div>
             </Label>

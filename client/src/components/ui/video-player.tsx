@@ -8,6 +8,7 @@ import {
   RotateCcw, RotateCw, Maximize, Minimize, Settings,
   ChevronLeft, ChevronRight, Maximize2, Minimize2, Loader2,
 } from "lucide-react";
+import { MuxPlayer } from "@mux/mux-player-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -98,7 +99,7 @@ const ScrubBar: React.FC<ScrubBarProps> = ({ current, duration, buffered, onSeek
 export interface VideoPlayerProps {
   src?: string;
   videoUrl?: string;
-  videoPlatform?: "youtube" | "vimeo";
+  videoPlatform?: "youtube" | "vimeo" | "mux";
   videoId?: string;
   poster?: string;
   title?: string;
@@ -114,6 +115,9 @@ export interface VideoPlayerProps {
   onPrev?: () => void;
   onNext?: () => void;
   className?: string;
+  // Mux-specific props
+  muxPlaybackId?: string;
+  muxToken?: string;
 }
 
 export interface VideoPlayerRef {
@@ -148,6 +152,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
     src, videoUrl, videoPlatform, videoId, poster, title, startAt = 0,
     onTimeUpdate, onLoadedMetadata, onPlay, onPause, onEnded, onError, onLoadStart, onCanPlay,
     onPrev, onNext, className,
+    muxPlaybackId, muxToken,
   } = props;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -155,6 +160,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const externalContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const vimeoPlayerRef = useRef<any>(null);
+  const muxPlayerRef = useRef<any>(null);
   const pollRef = useRef<number | null>(null);
   const seekedRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
@@ -180,16 +186,19 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const adapterPlay = () => {
     if (videoPlatform === "youtube") ytPlayerRef.current?.playVideo?.();
     else if (videoPlatform === "vimeo") vimeoPlayerRef.current?.play?.();
+    else if (videoPlatform === "mux") muxPlayerRef.current?.play?.();
     else videoRef.current?.play();
   };
   const adapterPause = () => {
     if (videoPlatform === "youtube") ytPlayerRef.current?.pauseVideo?.();
     else if (videoPlatform === "vimeo") vimeoPlayerRef.current?.pause?.();
+    else if (videoPlatform === "mux") muxPlayerRef.current?.pause?.();
     else videoRef.current?.pause();
   };
   const adapterSeek = (t: number) => {
     if (videoPlatform === "youtube") ytPlayerRef.current?.seekTo?.(t, true);
     else if (videoPlatform === "vimeo") vimeoPlayerRef.current?.setCurrentTime?.(t);
+    else if (videoPlatform === "mux") muxPlayerRef.current?.seekTo?.(t);
     else if (videoRef.current) videoRef.current.currentTime = t;
     setCurrentTime(t);
   };
@@ -199,6 +208,8 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
       if (v === 0) ytPlayerRef.current?.mute?.(); else ytPlayerRef.current?.unMute?.();
     } else if (videoPlatform === "vimeo") {
       vimeoPlayerRef.current?.setVolume?.(v);
+    } else if (videoPlatform === "mux") {
+      // Mux player volume controlled via props
     } else if (videoRef.current) {
       videoRef.current.volume = v; videoRef.current.muted = v === 0;
     }
@@ -210,6 +221,8 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
       next ? ytPlayerRef.current?.mute?.() : ytPlayerRef.current?.unMute?.();
     } else if (videoPlatform === "vimeo") {
       vimeoPlayerRef.current?.setMuted?.(next);
+    } else if (videoPlatform === "mux") {
+      // Mux player mute controlled via props
     } else if (videoRef.current) {
       videoRef.current.muted = next;
     }
@@ -218,7 +231,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const adapterSetRate = (r: number) => {
     if (videoPlatform === "youtube") ytPlayerRef.current?.setPlaybackRate?.(r);
     else if (videoPlatform === "vimeo") vimeoPlayerRef.current?.setPlaybackRate?.(r);
-    else if (videoRef.current) videoRef.current.playbackRate = r;
+    else if (videoPlatform === "mux") {
+      // Mux player playback rate controlled via props
+    } else if (videoRef.current) videoRef.current.playbackRate = r;
     setSpeedState(r);
   };
 
@@ -307,7 +322,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
 
   // Imperative API
   useImperativeHandle(ref, () => ({
-    videoElement: videoRef.current,
+    videoElement: videoPlatform === "mux" ? null : videoRef.current,
     play: () => adapterPlay(),
     pause: () => adapterPause(),
     get currentTime() { return currentTime; },
@@ -538,6 +553,33 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         <div
           ref={externalContainerRef}
           className="absolute inset-0 w-full h-full [&_iframe]:absolute [&_iframe]:top-0 [&_iframe]:left-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0"
+        />
+      ) : videoPlatform === "mux" ? (
+        <MuxPlayer
+          ref={muxPlayerRef}
+          playbackId={muxPlaybackId}
+          token={muxToken}
+          poster={poster}
+          title={title}
+          startTime={startAt}
+          volume={isMuted ? 0 : volume}
+          muted={isMuted}
+          playbackRate={speed}
+          onTimeUpdate={(e: any) => {
+            if (!e || !e.target) return;
+            setCurrentTime(e.target.currentTime);
+            onTimeUpdate?.();
+          }}
+          onLoadedMetadata={(e: any) => {
+            if (!e || !e.target) return;
+            setDuration(e.target.duration);
+            onLoadedMetadata?.();
+          }}
+          onPlay={() => { setIsPlaying(true); scheduleHide(); onPlay?.(); }}
+          onPause={() => { setIsPlaying(false); setShowControls(true); onPause?.(); }}
+          onEnded={() => { setIsPlaying(false); setShowControls(true); onEnded?.(); }}
+          onError={() => { setError("Failed to load Mux video"); setIsLoading(false); onError?.(); }}
+          onCanPlay={() => { setIsLoading(false); onCanPlay?.(); }}
         />
       ) : (
         <video
