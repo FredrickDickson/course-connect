@@ -245,26 +245,43 @@ export default function Home() {
                       <Button
                         data-testid={`button-continue-${enrollment.course.id}`}
                         className="w-full bg-primary hover:bg-primary/95 group/btn transition-all duration-300"
-                        onClick={() => {
-                          // Find the first incomplete lesson
+                        onClick={async () => {
+                          // Find the first incomplete lesson based on actual progress
                           const modules = enrollment.course.modules || [];
-                          let targetLessonId = null;
-                          for (const module of modules) {
-                            const lessons = module.lessons || [];
-                            for (const lesson of lessons) {
-                              // If we haven't found a lesson yet, use the first one
-                              if (!targetLessonId) {
-                                targetLessonId = lesson.id;
-                              }
-                              // Break when we find an incomplete lesson
-                              // For now, just use the first lesson of the first module
-                              break;
+                          const allLessons: any[] = [];
+                          
+                          // Flatten all lessons in order
+                          modules.forEach((module: any) => {
+                            if (module.lessons) {
+                              allLessons.push(...module.lessons);
                             }
-                            if (targetLessonId) break;
+                          });
+                          
+                          if (allLessons.length > 0) {
+                            try {
+                              // Get user's progress for this course
+                              const { data: progress } = await supabase
+                                .from("progress")
+                                .select("lesson_id, completed")
+                                .eq("user_id", user!.id)
+                                .in("lesson_id", allLessons.map(l => l.id));
+                              
+                              const completedLessonIds = new Set((progress || []).filter((p: any) => p.completed).map((p: any) => p.lesson_id));
+                              const nextIncompleteLesson = allLessons.find((lesson: any) => !completedLessonIds.has(lesson.id));
+                              
+                              // Navigate to first incomplete or first lesson
+                              const targetLessonId = nextIncompleteLesson?.id ?? allLessons[0]?.id;
+                              if (targetLessonId) {
+                                window.location.href = `/learn/${enrollment.course.id}/${targetLessonId}`;
+                              }
+                            } catch (error) {
+                              console.error("Error fetching progress:", error);
+                              // Fallback to first lesson
+                              if (allLessons[0]?.id) {
+                                window.location.href = `/learn/${enrollment.course.id}/${allLessons[0].id}`;
+                              }
+                            }
                           }
-                          // Fallback to lesson 1 if no lessons found
-                          const lessonId = targetLessonId || "1";
-                          window.location.href = `/learn/${enrollment.course.id}/${lessonId}`;
                         }}
                       >
                         Continue Learning
