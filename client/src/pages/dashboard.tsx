@@ -60,10 +60,10 @@ export default function Dashboard() {
       const [favoritesResult, certificatesResult, qualificationResult] = await Promise.all([
         supabase.from("favorites").select("id").eq("user_id", user!.id),
         supabase
-          .from("certificates")
-          .select("*, course_completion_records!inner(course_id, courses(title))")
+          .from("course_completion_records")
+          .select("*, courses!inner(title, track, level)")
           .eq("user_id", user!.id)
-          .eq("is_revoked", false),
+          .order("completed_at", { ascending: false }),
         (async () => {
           const token = (await supabase.auth.getSession()).data.session?.access_token;
           const response = await fetch("/api/qualifications/get-user-state", {
@@ -213,14 +213,15 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       {certificates.map((cert: any) => {
                         const trackColor = cert.track === "ARBITRATION" ? "#1e40af" : "#059669";
-                        const courseTitle = cert.course_completion_records?.[0]?.courses?.title || "Course";
+                        const courseTitle = cert.courses?.title || "Course";
+                        const levelInitial = cert.level_achieved?.[0] || "A";
                         return (
                           <div key={cert.id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
                             <div
                               className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                               style={{ backgroundColor: trackColor }}
                             >
-                              {cert.post_nominal?.[0] || "C"}
+                              {levelInitial}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-medium truncate">{courseTitle}</p>
@@ -228,10 +229,10 @@ export default function Dashboard() {
                                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
                                   {cert.track}
                                 </span>
-                                <p className="text-xs font-semibold">{cert.post_nominal}</p>
+                                <p className="text-xs font-semibold">{cert.level_achieved}</p>
                               </div>
                               <p className="text-[10px] text-muted-foreground">
-                                {cert.level} • {new Date(cert.issued_at).toLocaleDateString()}
+                                Completed {new Date(cert.completed_at).toLocaleDateString()}
                               </p>
                             </div>
                           </div>

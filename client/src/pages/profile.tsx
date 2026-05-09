@@ -167,14 +167,14 @@ export default function Profile() {
         .eq("user_id", user!.id)
         .neq("payment_status", "cancelled");
       if (paymentError) throw paymentError;
-      
+
       // Get progress enrollments from enrollments table
       const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id);
       if (progressError) throw progressError;
-      
+
       // Combine and deduplicate by course_id
       const allEnrollments = [...(paymentEnrollments || []), ...(progressEnrollments || [])];
       const uniqueEnrollments = allEnrollments.reduce((acc: any[], enrollment) => {
@@ -184,8 +184,23 @@ export default function Profile() {
         }
         return acc;
       }, []);
-      
+
       return uniqueEnrollments;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch course completion records for certificate history
+  const { data: completionRecords = [], isLoading: isLoadingCompletions } = useQuery<any[]>({
+    queryKey: ["course-completion-records", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("course_completion_records")
+        .select("*, courses!inner(title, thumbnail_url, track, level)")
+        .eq("user_id", user!.id)
+        .order("completed_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -340,14 +355,17 @@ export default function Profile() {
   }
 
   // Handle opening certificate preview
-  const openPreview = async (course: any, completedAt: string) => {
+  const openPreview = async (record: any) => {
+    const course = record.courses;
+    const completedAt = record.completed_at;
+
     // Best-effort: record issuance so admins can audit. Ignore failures (e.g., unique conflict).
     try {
       await supabase.from("certificates").upsert(
         {
           user_id: user!.id,
-          track: (course.track || "ARBITRATION").toUpperCase(),
-          level: (course.level || "associate").toUpperCase(),
+          track: (record.track || "ARBITRATION").toUpperCase(),
+          level: (record.level_achieved || "associate").toUpperCase(),
           pathway: "STANDARD",
           post_nominal: "",
           certificate_number: `${course.id.slice(0, 8).toUpperCase()}-${user!.id.slice(0, 6).toUpperCase()}`,
@@ -366,11 +384,11 @@ export default function Profile() {
 
     setActiveCertData({
       fullName,
-      membershipLevel: normaliseLevel(course.level),
+      membershipLevel: normaliseLevel(record.level_achieved),
       memberId: `${course.id.slice(0, 8).toUpperCase()}`,
       issueDate: completedAt,
       expiryDate: new Date(new Date(completedAt).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      pathway: normalisePathway(course.track),
+      pathway: normalisePathway(record.track),
     });
     setCertModalOpen(true);
   };
@@ -381,16 +399,16 @@ export default function Profile() {
     const courseId = params.get("course");
     const tab = params.get("tab");
 
-    if (courseId && tab === "certificates" && completedCourses.length > 0) {
-      const targetCourse = completedCourses.find((e: any) => e.course_id === courseId);
-      if (targetCourse && targetCourse.completed_at) {
+    if (courseId && tab === "certificates" && completionRecords.length > 0) {
+      const targetRecord = completionRecords.find((r: any) => r.course_id === courseId);
+      if (targetRecord) {
         // Auto-open certificate preview
-        openPreview(targetCourse.course, targetCourse.completed_at);
+        openPreview(targetRecord);
         // Clean up URL
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [completedCourses]);
+  }, [completionRecords]);
 
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
@@ -788,24 +806,30 @@ export default function Profile() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {completedCourses.length > 0 ? (
+                {completionRecords.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {completedCourses.map((enrollment: any) => (
-                      <div key={enrollment.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                    {completionRecords.map((record: any) => (
+                      <div key={record.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                             <Award className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{enrollment.course.title}</h4>
-                            <p className="text-xs text-muted-foreground">{new Date(enrollment.completed_at!).toLocaleDateString()}</p>
+                            <h4 className="font-semibold text-sm">{record.courses.title}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white bg-primary">
+                                {record.track}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">{record.level_achieved}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{new Date(record.completed_at).toLocaleDateString()}</p>
                           </div>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="w-full"
-                          onClick={() => openPreview(enrollment.course, enrollment.completed_at!)}
+                          onClick={() => openPreview(record)}
                         >
                           View Certificate
                         </Button>
