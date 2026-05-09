@@ -30,33 +30,23 @@ export default function Dashboard() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      // Get payment enrollments from course_enrollments
-      const { data: paymentEnrollments, error: paymentError } = await supabase
-        .from("course_enrollments")
-        .select("*, course:courses(*)")
-        .eq("user_id", user!.id)
-        .neq("payment_status", "cancelled")
-        .order("created_at", { ascending: false });
-      if (paymentError) throw paymentError;
-      
-      // Get progress enrollments from enrollments table
+      // Source of truth: the unified `enrollments` table.
       const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id)
         .order("enrolled_at", { ascending: false });
       if (progressError) throw progressError;
-      
-      // Combine and deduplicate by course_id
-      const allEnrollments = [...(paymentEnrollments || []), ...(progressEnrollments || [])];
-      const uniqueEnrollments = allEnrollments.reduce((acc: any[], enrollment) => {
+
+      // Deduplicate by course_id (defensive; should already be unique)
+      const uniqueEnrollments = (progressEnrollments || []).reduce((acc: any[], enrollment) => {
         const existing = acc.find(e => e.course_id === enrollment.course_id);
         if (!existing) {
           acc.push(enrollment);
         }
         return acc;
       }, []);
-      
+
       return uniqueEnrollments;
     },
     enabled: !!user,
