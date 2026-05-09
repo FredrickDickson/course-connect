@@ -554,31 +554,32 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           className="absolute inset-0 w-full h-full [&_iframe]:absolute [&_iframe]:top-0 [&_iframe]:left-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0"
         />
       ) : videoPlatform === "mux" ? (
-        <MuxPlayer
-          ref={muxPlayerRef}
-          playbackId={muxPlaybackId}
-          poster={poster}
-          title={title}
-          startTime={startAt}
-          volume={isMuted ? 0 : volume}
-          muted={isMuted}
-          playbackRate={speed}
-          onTimeUpdate={(e: any) => {
-            if (!e || !e.target) return;
-            setCurrentTime(e.target.currentTime);
-            onTimeUpdate?.();
-          }}
-          onLoadedMetadata={(e: any) => {
-            if (!e || !e.target) return;
-            setDuration(e.target.duration);
-            onLoadedMetadata?.();
-          }}
-          onPlay={() => { setIsPlaying(true); scheduleHide(); onPlay?.(); }}
-          onPause={() => { setIsPlaying(false); setShowControls(true); onPause?.(); }}
-          onEnded={() => { setIsPlaying(false); setShowControls(true); onEnded?.(); }}
-          onError={() => { setError("Failed to load Mux video"); setIsLoading(false); onError?.(); }}
-          onCanPlay={() => { setIsLoading(false); onCanPlay?.(); }}
-        />
+        <div className="w-full h-full">
+          <MuxPlayer
+            playbackId={muxPlaybackId}
+            poster={poster}
+            title={title}
+            startTime={startAt}
+            volume={isMuted ? 0 : volume}
+            muted={isMuted}
+            playbackRate={speed}
+            onTimeUpdate={(e: any) => {
+              if (!e || !e.target) return;
+              setCurrentTime(e.target.currentTime);
+              onTimeUpdate?.();
+            }}
+            onLoadedMetadata={(e: any) => {
+              if (!e || !e.target) return;
+              setDuration(e.target.duration);
+              onLoadedMetadata?.();
+            }}
+            onPlay={() => { setIsPlaying(true); scheduleHide(); onPlay?.(); }}
+            onPause={() => { setIsPlaying(false); setShowControls(true); onPause?.(); }}
+            onEnded={() => { setIsPlaying(false); setShowControls(true); onEnded?.(); }}
+            onError={() => { setError("Failed to load Mux video"); setIsLoading(false); onError?.(); }}
+            onCanPlay={() => { setIsLoading(false); onCanPlay?.(); }}
+          />
+        </div>
       ) : (
         <video
           ref={videoRef}

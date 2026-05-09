@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Award, Linkedin, Compass, Download } from "lucide-react";
 import { Link } from "wouter";
@@ -109,6 +109,9 @@ export default function CourseCompleteModal({ open, onOpenChange, courseTitle, c
         <DialogContent className="max-w-md text-center">
           <DialogHeader>
             <DialogTitle className="text-2xl">🎉 Course Complete!</DialogTitle>
+            <DialogDescription>
+              Congratulations! You've successfully completed the course and can now download your certificate.
+            </DialogDescription>
           </DialogHeader>
           <p className="text-muted-foreground">You've completed</p>
           <p className="font-semibold text-lg">{courseTitle}</p>
