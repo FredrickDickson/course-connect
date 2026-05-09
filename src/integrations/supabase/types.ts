@@ -3913,6 +3913,10 @@ export type Database = {
         Args: { achievement_type: string; points: number; user_id: string }
         Returns: undefined
       }
+      calculate_enrollment_progress: {
+        Args: { course_id: string; user_id: string }
+        Returns: number
+      }
       calculate_member_level: { Args: { p_user_id: string }; Returns: string }
       create_lesson: {
         Args: {
@@ -3944,6 +3948,7 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      recalculate_all_enrollment_progress: { Args: never; Returns: undefined }
       user_can_view_lesson: {
         Args: { _lesson_id: string; _user_id: string }
         Returns: boolean
@@ -3979,7 +3984,7 @@ export type Database = {
           full_name: string
           issue_date: string
           member_id: string
-          part: Database["public"]["Enums"]["membership_level"]
+          part: string
           post_nominal: string
           status: Database["public"]["Enums"]["membership_status"]
         }[]
