@@ -194,13 +194,53 @@ export default function Profile() {
   const { data: completionRecords = [], isLoading: isLoadingCompletions } = useQuery<any[]>({
     queryKey: ["course-completion-records", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("course_completion_records")
-        .select("*, courses!inner(title, thumbnail_url, track, level)")
-        .eq("user_id", user!.id)
-        .order("completed_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      // Fetch from both course_completion_records and enrollments for backwards compatibility
+      const [completionRecordsResult, enrollmentsResult] = await Promise.all([
+        supabase
+          .from("course_completion_records")
+          .select("*, courses!inner(title, thumbnail_url, track, level)")
+          .eq("user_id", user!.id)
+          .order("completed_at", { ascending: false }),
+        supabase
+          .from("enrollments")
+          .select("id, course_id, completed_at")
+          .eq("user_id", user!.id)
+          .not("completed_at", "is", null)
+          .order("completed_at", { ascending: false })
+      ]);
+
+      if (completionRecordsResult.error) throw completionRecordsResult.error;
+      if (enrollmentsResult.error) throw enrollmentsResult.error;
+
+      // Fetch course details for enrollments
+      const completedEnrollments = enrollmentsResult.data || [];
+      const courseIds = completedEnrollments.map((e: any) => e.course_id);
+      let enrichedEnrollments: any[] = [];
+      if (courseIds.length > 0) {
+        const { data: courses } = await supabase
+          .from("courses")
+          .select("id, title, thumbnail_url, track, level")
+          .in("id", courseIds);
+        const courseMap = new Map((courses || []).map((c: any) => [c.id, c]));
+        enrichedEnrollments = completedEnrollments.map((e: any) => ({
+          ...e,
+          course: courseMap.get(e.course_id),
+          track: courseMap.get(e.course_id)?.track,
+          level_achieved: courseMap.get(e.course_id)?.level,
+        }));
+      }
+
+      // Merge and deduplicate by course_id
+      const allRecords = [...(completionRecordsResult.data || []), ...enrichedEnrollments];
+      const uniqueRecords = allRecords.reduce((acc: any[], record) => {
+        const courseId = record.course_id || (record as any).course?.id;
+        if (!acc.find(r => (r.course_id || (r as any).course?.id) === courseId)) {
+          acc.push(record);
+        }
+        return acc;
+      }, []);
+
+      return uniqueRecords;
     },
     enabled: !!user?.id,
   });
@@ -356,16 +396,18 @@ export default function Profile() {
 
   // Handle opening certificate preview
   const openPreview = async (record: any) => {
-    const course = record.courses;
+    const course = record.courses || (record as any).course;
     const completedAt = record.completed_at;
+    const track = record.track || course?.track;
+    const level = record.level_achieved || course?.level || "associate";
 
     // Best-effort: record issuance so admins can audit. Ignore failures (e.g., unique conflict).
     try {
       await supabase.from("certificates").upsert(
         {
           user_id: user!.id,
-          track: (record.track || "ARBITRATION").toUpperCase(),
-          level: (record.level_achieved || "associate").toUpperCase(),
+          track: (track || "ARBITRATION").toUpperCase(),
+          level: (level || "associate").toUpperCase(),
           pathway: "STANDARD",
           post_nominal: "",
           certificate_number: `${course.id.slice(0, 8).toUpperCase()}-${user!.id.slice(0, 6).toUpperCase()}`,
@@ -384,11 +426,11 @@ export default function Profile() {
 
     setActiveCertData({
       fullName,
-      membershipLevel: normaliseLevel(record.level_achieved),
+      membershipLevel: normaliseLevel(level),
       memberId: `${course.id.slice(0, 8).toUpperCase()}`,
       issueDate: completedAt,
       expiryDate: new Date(new Date(completedAt).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      pathway: normalisePathway(record.track),
+      pathway: normalisePathway(track),
     });
     setCertModalOpen(true);
   };
@@ -808,33 +850,40 @@ export default function Profile() {
               <CardContent>
                 {completionRecords.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {completionRecords.map((record: any) => (
-                      <div key={record.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Award className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{record.courses.title}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white bg-primary">
-                                {record.track}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">{record.level_achieved}</span>
+                    {completionRecords.map((record: any) => {
+                      const courses = record.courses || (record as any).course;
+                      const track = record.track || courses?.track;
+                      const level = record.level_achieved || courses?.level || "ASSOCIATE";
+                      const completedAt = record.completed_at;
+                      const trackColor = track === "ARBITRATION" ? "#1e40af" : "#059669";
+                      return (
+                        <div key={record.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Award className="h-6 w-6 text-primary" />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">{new Date(record.completed_at).toLocaleDateString()}</p>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-sm">{courses?.title || "Course"}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
+                                  {track}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">{level}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{new Date(completedAt).toLocaleDateString()}</p>
+                            </div>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openPreview(record)}
+                          >
+                            View Certificate
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => openPreview(record)}
-                        >
-                          View Certificate
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12">
