@@ -171,7 +171,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
             {[
               { icon: BookOpen, value: enrollments.length, label: "Enrolled" },
               { icon: Trophy, value: completedCount, label: "Completed" },
