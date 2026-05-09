@@ -17,7 +17,6 @@ import CourseCompleteModal from "@/components/learn/course-complete-modal";
 import ArticleStage from "@/components/learn/article-stage";
 import QuizStage from "@/components/learn/quiz-stage";
 import AssignmentStage from "@/components/learn/assignment-stage";
-import MobileLearningNav from "@/components/learn/mobile-learning-nav";
 import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -403,16 +402,6 @@ export default function VideoPlayerPage() {
         onOpenChange={(o) => !o && setCompletedShown(false)}
         courseTitle={course.title}
         courseId={course.id}
-      />
-
-      <MobileLearningNav
-        course={course}
-        courseId={courseId!}
-        currentLessonId={currentLesson.id}
-        progress={progress}
-        onToggleComplete={handleToggleComplete}
-        onNextLesson={nextLesson ? () => goToLesson(nextLesson.id) : undefined}
-        hasNextLesson={!!nextLesson}
       />
     </div>
   );
