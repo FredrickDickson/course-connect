@@ -39,18 +39,22 @@ const postNominals: Record<string, Record<string, string>> = {
 export function TrackCard({ track, level, pathway, certificates, enrollments, color }: TrackCardProps) {
   const colors = trackColors[track];
   const postNominal = postNominals[track][level] || "";
-  const completedEnrollments = enrollments.filter((e: any) => e.status === 'COMPLETED' || Number(e.progress) >= 100);
-  const activeEnrollments = enrollments.filter((e: any) => e.status === 'ACTIVE' && Number(e.progress) > 0 && Number(e.progress) < 100);
+  const completedEnrollments = enrollments.filter(
+    (e: any) => e.status === "COMPLETED" || Number(e.progress) >= 100,
+  );
+  const activeEnrollments = enrollments.filter(
+    (e: any) => Number(e.progress) > 0 && Number(e.progress) < 100,
+  );
 
   return (
     <Card className={`${colors.bg} ${colors.border} border`}>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg" style={{ color: colors.primary }}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base sm:text-lg" style={{ color: colors.primary }}>
             {track} Track
           </CardTitle>
           <div
-            className="px-3 py-1 rounded-full text-white text-sm font-semibold"
+            className="px-3 py-1 rounded-full text-white text-xs sm:text-sm font-semibold"
             style={{ backgroundColor: colors.primary }}
           >
             {levelLabels[level] || level}
@@ -91,17 +95,21 @@ export function TrackCard({ track, level, pathway, certificates, enrollments, co
         {activeEnrollments.length > 0 && (
           <div className="p-3 rounded bg-white/50 border border-gray-200">
             <p className="text-xs font-semibold text-muted-foreground mb-1">Currently Learning</p>
-            <p className="text-sm font-medium truncate">{activeEnrollments[0].courses?.title}</p>
+            <p className="text-sm font-medium truncate">
+              {activeEnrollments[0].course?.title || activeEnrollments[0].courses?.title}
+            </p>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
                 className="h-2 rounded-full transition-all"
                 style={{
-                  width: `${activeEnrollments[0].progress}%`,
+                  width: `${Number(activeEnrollments[0].progress) || 0}%`,
                   backgroundColor: colors.primary,
                 }}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{activeEnrollments[0].progress}% complete</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {Math.round(Number(activeEnrollments[0].progress) || 0)}% complete
+            </p>
           </div>
         )}
 
