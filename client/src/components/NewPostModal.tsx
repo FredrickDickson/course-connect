@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -401,6 +401,9 @@ export default function NewPostModal({ open, onOpenChange, preSelectedCategory }
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none h-full sm:h-auto fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
           <DialogHeader>
             <DialogTitle>Create a New Post</DialogTitle>
+            <DialogDescription>
+              Share your thoughts, questions, or insights with the community.
+            </DialogDescription>
           </DialogHeader>
 
           {/* Draft Banner */}
