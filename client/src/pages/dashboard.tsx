@@ -109,6 +109,12 @@ export default function Dashboard() {
   const completedCount = enrollments.filter((e: any) => Number(e.progress) >= 100).length;
   const enrolledCourseIds = enrollments.map((e: any) => e.course?.id).filter(Boolean);
 
+  // Derive per-track data from the live enrollments + certificates (no hard-coded values).
+  const arbEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "ARBITRATION");
+  const medEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "MEDIATION");
+  const arbCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "ARBITRATION");
+  const medCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "MEDIATION");
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -129,7 +135,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             {[
               { icon: BookOpen, value: enrollments.length, label: "Enrolled" },
               { icon: Trophy, value: completedCount, label: "Completed" },
@@ -155,21 +161,21 @@ export default function Dashboard() {
             {/* Left col */}
             <div className="lg:col-span-2 space-y-6">
               {/* Track Cards */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <TrackCard
                   track="ARBITRATION"
                   level={userQualificationState?.tracks?.arbitration?.level || "NONE"}
                   pathway={userQualificationState?.tracks?.arbitration?.pathway || null}
-                  certificates={userQualificationState?.tracks?.arbitration?.certificates || []}
-                  enrollments={userQualificationState?.tracks?.arbitration?.enrollments || []}
+                  certificates={arbCertificates}
+                  enrollments={arbEnrollments}
                   color="#1e40af"
                 />
                 <TrackCard
                   track="MEDIATION"
                   level={userQualificationState?.tracks?.mediation?.level || "NONE"}
                   pathway={userQualificationState?.tracks?.mediation?.pathway || null}
-                  certificates={userQualificationState?.tracks?.mediation?.certificates || []}
-                  enrollments={userQualificationState?.tracks?.mediation?.enrollments || []}
+                  certificates={medCertificates}
+                  enrollments={medEnrollments}
                   color="#059669"
                 />
               </div>
