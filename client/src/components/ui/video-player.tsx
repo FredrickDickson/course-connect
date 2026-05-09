@@ -525,7 +525,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
       ref={wrapperRef}
       className={cn(
         "group/player relative w-full bg-black overflow-hidden select-none",
-        "aspect-video max-h-full",
+        "aspect-video",
         isTheatre && !isFullscreen && "!aspect-auto h-[calc(100vh-8rem)]",
         isFullscreen && "!aspect-auto h-screen",
         !isFullscreen && "rounded-lg",
