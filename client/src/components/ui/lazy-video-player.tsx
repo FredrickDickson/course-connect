@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, forwardRef } from "react";
 import { LoadingState } from "./loading-state";
 
 const VideoPlayer = lazy(() => import("./video-player"));
@@ -24,7 +24,7 @@ interface LazyVideoPlayerProps {
   className?: string;
 }
 
-export function LazyVideoPlayer(props: LazyVideoPlayerProps) {
+export const LazyVideoPlayer = forwardRef<any, LazyVideoPlayerProps>((props, ref) => {
   return (
     <Suspense 
       fallback={
@@ -33,10 +33,12 @@ export function LazyVideoPlayer(props: LazyVideoPlayerProps) {
         </div>
       }
     >
-      <VideoPlayer {...props} />
+      <VideoPlayer {...props} ref={ref} />
     </Suspense>
   );
-}
+});
+
+LazyVideoPlayer.displayName = "LazyVideoPlayer";
 
 export type VideoPlayerRef = any;
 export { VideoPlayer };
