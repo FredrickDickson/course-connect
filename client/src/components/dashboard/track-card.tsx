@@ -73,7 +73,7 @@ export function TrackCard({ track, level, pathway, certificates, enrollments, co
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Progress Summary */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="text-center p-2 rounded bg-white/50">
             <BookOpen className="w-4 h-4 mx-auto mb-1" style={{ color: colors.primary }} />
             <div className="text-lg font-bold">{enrollments.length}</div>

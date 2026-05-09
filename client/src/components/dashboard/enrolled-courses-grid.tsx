@@ -35,7 +35,7 @@ export default function EnrolledCoursesGrid({
 }) {
   if (isLoading) {
     return (
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[0, 1].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-0">
@@ -67,7 +67,7 @@ export default function EnrolledCoursesGrid({
   }
 
   return (
-    <div className="grid sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {enrollments.map((e) => {
         const pct = Number(e.progress || 0);
         const done = pct >= 100;
