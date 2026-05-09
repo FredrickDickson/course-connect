@@ -28,6 +28,8 @@ export default {
         headline: ["Noto Serif", "serif"],
         body: ["Inter", "sans-serif"],
         label: ["Work Sans", "sans-serif"],
+        "sf-pro-display": ["'SF Pro Display'", "serif"],
+        "sf-pro-text": ["'SF Pro Text'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
