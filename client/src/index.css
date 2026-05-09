@@ -144,6 +144,9 @@
 
 @layer base {
   :root {
+    --font-sans: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-serif: 'SF Pro Display', -apple-system, BlinkMacSystemFont, Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --background: 0 10% 97%;
     --foreground: 0 20% 10%;
     --card: 0 0% 100%;

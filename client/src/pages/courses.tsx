@@ -61,7 +61,10 @@ export default function Courses() {
     queryKey: ["user-enrollments", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase.from("course_enrollments").select("course_id, status").eq("user_id", user.id).neq("payment_status", "cancelled");
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("course_id, status")
+        .eq("user_id", user.id);
       if (error) throw error;
       return data || [];
     },
