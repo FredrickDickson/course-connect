@@ -8,7 +8,7 @@ import {
   RotateCcw, RotateCw, Maximize, Minimize, Settings,
   ChevronLeft, ChevronRight, Maximize2, Minimize2, Loader2,
 } from "lucide-react";
-import { MuxPlayer } from "@mux/mux-player-react";
+import MuxPlayer from "@mux/mux-player-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -117,7 +117,6 @@ export interface VideoPlayerProps {
   className?: string;
   // Mux-specific props
   muxPlaybackId?: string;
-  muxToken?: string;
 }
 
 export interface VideoPlayerRef {
@@ -152,7 +151,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
     src, videoUrl, videoPlatform, videoId, poster, title, startAt = 0,
     onTimeUpdate, onLoadedMetadata, onPlay, onPause, onEnded, onError, onLoadStart, onCanPlay,
     onPrev, onNext, className,
-    muxPlaybackId, muxToken,
+    muxPlaybackId,
   } = props;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -526,7 +525,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
       ref={wrapperRef}
       className={cn(
         "group/player relative w-full bg-black overflow-hidden select-none",
-        "aspect-video",
+        "aspect-video max-h-full",
         isTheatre && !isFullscreen && "!aspect-auto h-[calc(100vh-8rem)]",
         isFullscreen && "!aspect-auto h-screen",
         !isFullscreen && "rounded-lg",
@@ -558,7 +557,6 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         <MuxPlayer
           ref={muxPlayerRef}
           playbackId={muxPlaybackId}
-          token={muxToken}
           poster={poster}
           title={title}
           startTime={startAt}

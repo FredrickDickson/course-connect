@@ -324,7 +324,7 @@ export default function VideoPlayerPage() {
           </div>
 
           {isVideoLesson ? (
-            <div className="flex-1 bg-black relative">
+            <div className="flex-1 bg-black relative min-h-0">
               <ErrorBoundary>
                 <VP
                   ref={videoRef}
