@@ -171,7 +171,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
             {[
               { icon: BookOpen, value: enrollments.length, label: "Enrolled" },
               { icon: Trophy, value: completedCount, label: "Completed" },
@@ -193,11 +193,11 @@ export default function Dashboard() {
       {/* Main content */}
       <section className="py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Left col */}
             <div className="lg:col-span-2 space-y-6">
               {/* Track Cards */}
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <TrackCard
                   track="ARBITRATION"
                   level={userQualificationState?.tracks?.arbitration?.level || "NONE"}
