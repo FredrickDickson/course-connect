@@ -138,7 +138,6 @@ export default function NotificationSettings() {
                       Security alerts, maintenance, and platform updates
                     </p>
                   </div>
-                </div>
               </TabsContent>
 
                 <TabsContent value="in-app" className="space-y-6">
@@ -205,12 +204,10 @@ export default function NotificationSettings() {
                       Platform updates and security alerts
                     </p>
                   </div>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
-      </div>
 
         {/* Quiet Hours */}
         <Card>
