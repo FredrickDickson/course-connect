@@ -130,17 +130,25 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
             { body: { muxAssetId } },
           );
           const muxAsset = statusData?.muxAsset;
+          const asset = statusData?.asset;
 
-          if (muxAsset?.upload_status === 'ready') {
+          // Check DB record (updated by webhook) OR live Mux API status as fallback
+          const dbReady = muxAsset?.upload_status === 'ready';
+          const apiReady = asset?.status === 'ready';
+          const dbErrored = muxAsset?.upload_status === 'errored';
+          const apiErrored = asset?.status === 'errored';
+
+          if (dbReady || apiReady) {
             clearInterval(pollInterval);
             setUploadProgress({
               progress: 100,
               status: 'ready',
               message: 'Upload complete!'
             });
-            onUploadComplete(muxAssetId, muxAsset.mux_playback_id);
+            const playbackId = muxAsset?.mux_playback_id || asset?.playback_ids?.[0]?.id || '';
+            onUploadComplete(muxAssetId, playbackId);
             setIsUploading(false);
-          } else if (muxAsset?.upload_status === 'errored') {
+          } else if (dbErrored || apiErrored) {
             clearInterval(pollInterval);
             setUploadProgress({
               progress: 0,
