@@ -2160,6 +2160,11 @@ export type Database = {
           is_free: boolean | null
           is_preview: boolean
           module_id: string | null
+          mux_asset_id: string | null
+          mux_playback_id: string | null
+          mux_status: string | null
+          mux_thumbnail_time: number | null
+          mux_upload_id: string | null
           order: number
           title: string
           video_id: string | null
@@ -2176,6 +2181,11 @@ export type Database = {
           is_free?: boolean | null
           is_preview?: boolean
           module_id?: string | null
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_status?: string | null
+          mux_thumbnail_time?: number | null
+          mux_upload_id?: string | null
           order: number
           title: string
           video_id?: string | null
@@ -2192,6 +2202,11 @@ export type Database = {
           is_free?: boolean | null
           is_preview?: boolean
           module_id?: string | null
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_status?: string | null
+          mux_thumbnail_time?: number | null
+          mux_upload_id?: string | null
           order?: number
           title?: string
           video_id?: string | null
@@ -2449,6 +2464,171 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mux_assets: {
+        Row: {
+          asset_status: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string
+          lesson_id: string | null
+          mux_asset_id: string
+          mux_playback_id: string
+          updated_at: string | null
+          upload_status: string | null
+          upload_url: string | null
+        }
+        Insert: {
+          asset_status?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          lesson_id?: string | null
+          mux_asset_id: string
+          mux_playback_id: string
+          updated_at?: string | null
+          upload_status?: string | null
+          upload_url?: string | null
+        }
+        Update: {
+          asset_status?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          lesson_id?: string | null
+          mux_asset_id?: string
+          mux_playback_id?: string
+          updated_at?: string | null
+          upload_status?: string | null
+          upload_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mux_assets_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_academic: boolean | null
+          email_administrative: boolean | null
+          email_social: boolean | null
+          email_system: boolean | null
+          id: string
+          in_app_academic: boolean | null
+          in_app_administrative: boolean | null
+          in_app_social: boolean | null
+          in_app_system: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_academic?: boolean | null
+          email_administrative?: boolean | null
+          email_social?: boolean | null
+          email_system?: boolean | null
+          id?: string
+          in_app_academic?: boolean | null
+          in_app_administrative?: boolean | null
+          in_app_social?: boolean | null
+          in_app_system?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_academic?: boolean | null
+          email_administrative?: boolean | null
+          email_social?: boolean | null
+          email_system?: boolean | null
+          id?: string
+          in_app_academic?: boolean | null
+          in_app_administrative?: boolean | null
+          in_app_social?: boolean | null
+          in_app_system?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_text: string | null
+          action_url: string | null
+          created_at: string | null
+          data: Json | null
+          expires_at: string | null
+          id: string
+          message: string
+          priority: string | null
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          priority?: string | null
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          priority?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -3842,49 +4022,6 @@ export type Database = {
           },
         ]
       }
-      course_enrollments_legacy: {
-        Row: {
-          address: string | null
-          admin_notes: string | null
-          booking_ref: string | null
-          confirmed_at: string | null
-          country: string | null
-          course_id: string | null
-          created_at: string | null
-          currency: string | null
-          email: string | null
-          full_name: string | null
-          id: string | null
-          institution: string | null
-          invoice_expiry_date: string | null
-          payment_method: string | null
-          payment_status: string | null
-          paystack_reference: string | null
-          personal_statement: string | null
-          phone: string | null
-          programme_selected: string | null
-          ticket_price: number | null
-          ticket_type: string | null
-          user_id: string | null
-          whatsapp: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "course_catalog_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       pathway_analytics: {
         Row: {
           avg_progress: number | null
@@ -3918,20 +4055,38 @@ export type Database = {
         Returns: number
       }
       calculate_member_level: { Args: { p_user_id: string }; Returns: string }
-      create_lesson: {
-        Args: {
-          _content?: string
-          _content_type?: string
-          _description?: string
-          _duration_seconds?: number
-          _module_id: string
-          _title: string
-          _video_id?: string
-          _video_platform?: string
-          _video_url?: string
-        }
-        Returns: string
-      }
+      create_lesson:
+        | {
+            Args: {
+              _content?: string
+              _content_type?: string
+              _description?: string
+              _duration_seconds?: number
+              _module_id: string
+              _title: string
+              _video_id?: string
+              _video_platform?: string
+              _video_url?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _content?: string
+              _content_type?: string
+              _description?: string
+              _duration_seconds?: number
+              _module_id: string
+              _mux_asset_id?: string
+              _mux_playback_id?: string
+              _mux_status?: string
+              _title: string
+              _video_id?: string
+              _video_platform?: string
+              _video_url?: string
+            }
+            Returns: string
+          }
       debug_lessons_insert: { Args: { _module_id: string }; Returns: Json }
       debug_whoami: { Args: never; Returns: Json }
       generate_certificate_verification_code: { Args: never; Returns: string }
