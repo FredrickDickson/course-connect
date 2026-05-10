@@ -329,8 +329,9 @@ export default function VideoPlayerPage() {
                 <VP
                   ref={videoRef}
                   src={currentLesson.video_url}
-                  platform={currentLesson.video_platform}
+                  platform={currentLesson.mux_playback_id ? 'mux' : currentLesson.video_platform}
                   videoId={currentLesson.video_id}
+                  muxPlaybackId={currentLesson.mux_playback_id}
                   onTimeUpdate={(cur: number, dur: number) => {
                     if (!cur) return;
                     upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });

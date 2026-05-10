@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { VideoUploader } from './VideoUploader';
+import { MuxUploader } from './MuxUploader';
 import { RichTextEditor } from './RichTextEditor';
 import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
@@ -29,6 +30,9 @@ interface LectureContentEditorProps {
     videoUrl?: string;
     videoPlatform?: 'youtube' | 'vimeo';
     videoId?: string;
+    muxAssetId?: string;
+    muxPlaybackId?: string;
+    muxStatus?: string;
     content?: string;
     duration?: number;
   };
@@ -44,6 +48,9 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [videoId, setVideoId] = useState(lesson?.videoId || '');
   const [videoDuration, setVideoDuration] = useState<number | undefined>(lesson?.duration || undefined);
   const [videoSource, setVideoSource] = useState<VideoSource>(lesson?.videoUrl ? 'upload' : (lesson?.videoPlatform ? 'external' : 'upload'));
+  const [muxAssetId, setMuxAssetId] = useState<string>('');
+  const [muxPlaybackId, setMuxPlaybackId] = useState<string>('');
+  const [muxStatus, setMuxStatus] = useState<string>('pending');
   const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>('video');
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
   const [existingQuiz, setExistingQuiz] = useState<any>(null);
@@ -58,10 +65,13 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setTitle(lesson?.title || '');
     setDescription(lesson?.description || '');
     setContentType(lesson?.contentType || 'video');
-    setVideoSource(lesson?.videoPlatform && lesson?.videoId ? 'external' : 'upload');
+    setVideoSource(lesson?.videoPlatform && lesson?.videoId ? 'external' : (lesson?.muxAssetId ? 'mux' : 'upload'));
     setVideoUrl(lesson?.videoUrl || '');
     setVideoPlatform(lesson?.videoPlatform || null);
     setVideoId(lesson?.videoId || '');
+    setMuxAssetId(lesson?.muxAssetId || '');
+    setMuxPlaybackId(lesson?.muxPlaybackId || '');
+    setMuxStatus(lesson?.muxStatus || 'pending');
     setVideoDuration(lesson?.duration || 0);
     setArticleContent(lesson?.content || '');
     setSavedLessonId(lesson?.id || null);
@@ -157,15 +167,31 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           lessonData.video_url = videoUrl || null;
           lessonData.video_platform = null;
           lessonData.video_id = null;
+          lessonData.mux_asset_id = null;
+          lessonData.mux_playback_id = null;
+          lessonData.mux_status = null;
         } else if (videoSource === 'external') {
           lessonData.video_url = videoUrl || null; // Store original URL for reference
           lessonData.video_platform = videoPlatform;
           lessonData.video_id = videoId || null;
+          lessonData.mux_asset_id = null;
+          lessonData.mux_playback_id = null;
+          lessonData.mux_status = null;
+        } else if (videoSource === 'mux') {
+          lessonData.video_url = null;
+          lessonData.video_platform = null;
+          lessonData.video_id = null;
+          lessonData.mux_asset_id = muxAssetId || null;
+          lessonData.mux_playback_id = muxPlaybackId || null;
+          lessonData.mux_status = muxStatus || 'pending';
         }
       } else {
         lessonData.video_url = null;
         lessonData.video_platform = null;
         lessonData.video_id = null;
+        lessonData.mux_asset_id = null;
+        lessonData.mux_playback_id = null;
+        lessonData.mux_status = null;
       }
 
       if (savedLessonId) {
@@ -252,9 +278,46 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     if (source === 'upload') {
       setVideoPlatform(null);
       setVideoId('');
-    } else {
+      setMuxAssetId('');
+      setMuxPlaybackId('');
+      setMuxStatus('pending');
+    } else if (source === 'external') {
       setVideoUrl('');
+      setMuxAssetId('');
+      setMuxPlaybackId('');
+      setMuxStatus('pending');
+    } else if (source === 'mux') {
+      setVideoUrl('');
+      setVideoPlatform(null);
+      setVideoId('');
     }
+  };
+
+  const handleMuxUploadComplete = async (assetId: string, playbackId: string) => {
+    setMuxAssetId(assetId);
+    setMuxPlaybackId(playbackId);
+    setMuxStatus('ready');
+
+    // Auto-save mux data to lesson if it exists
+    if (savedLessonId && assetId) {
+      const { error } = await supabase.from('lessons').update({
+        video_url: null,
+        video_platform: null,
+        video_id: null,
+        mux_asset_id: assetId,
+        mux_playback_id: playbackId,
+        mux_status: 'ready',
+      }).eq('id', savedLessonId);
+      if (error) {
+        console.error('Error saving mux asset:', error);
+        toast({ title: 'Error', description: 'Failed to save Mux asset', variant: 'destructive' });
+      }
+    }
+  };
+
+  const handleMuxUploadError = (errorMessage: string) => {
+    toast({ title: 'Mux Upload Error', description: errorMessage, variant: 'destructive' });
+    setMuxStatus('error');
   };
 
   const handleTabChange = async (value: string) => {
@@ -316,6 +379,12 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                         lessonId={currentLessonId || undefined}
                         currentVideoUrl={videoUrl}
                         onUploadComplete={handleVideoUpload}
+                      />
+                    ) : videoSource === 'mux' ? (
+                      <MuxUploader
+                        lessonId={currentLessonId || ''}
+                        onUploadComplete={handleMuxUploadComplete}
+                        onError={handleMuxUploadError}
                       />
                     ) : (
                       <VideoUrlInput
