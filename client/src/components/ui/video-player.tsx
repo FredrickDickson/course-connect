@@ -765,7 +765,11 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
                       <Settings className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-neutral-900 text-white border-neutral-700">
+                  <DropdownMenuContent
+                    align="end"
+                    container={isFullscreen ? wrapperRef.current : undefined}
+                    className="bg-neutral-900 text-white border-neutral-700"
+                  >
                     <DropdownMenuLabel>Playback speed</DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-neutral-700" />
                     {SPEEDS.map((s) => (
