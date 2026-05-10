@@ -42,35 +42,53 @@ Deno.serve(async (req) => {
     }
 
     let assetId: string | null = null;
+    let muxAssetId: string | null = null;
     if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       assetId = body?.assetId ?? null;
+      muxAssetId = body?.muxAssetId ?? null;
     } else {
       const url = new URL(req.url);
       assetId = url.searchParams.get("assetId");
+      muxAssetId = url.searchParams.get("muxAssetId");
     }
 
-    if (!assetId || typeof assetId !== "string") {
-      return new Response(JSON.stringify({ error: "assetId is required" }), {
+    if (!assetId && !muxAssetId) {
+      return new Response(JSON.stringify({ error: "assetId or muxAssetId is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: muxAsset } = await admin
-      .from("mux_assets")
-      .select("*")
-      .eq("mux_asset_id", assetId)
-      .maybeSingle();
+
+    let muxAsset: unknown = null;
+    if (muxAssetId) {
+      const { data } = await admin
+        .from("mux_assets")
+        .select("*")
+        .eq("id", muxAssetId)
+        .maybeSingle();
+      muxAsset = data;
+      assetId = muxAsset?.mux_asset_id ?? assetId;
+    } else if (assetId) {
+      const { data } = await admin
+        .from("mux_assets")
+        .select("*")
+        .eq("mux_asset_id", assetId)
+        .maybeSingle();
+      muxAsset = data;
+    }
 
     let asset: unknown = null;
-    const muxRes = await fetch(`https://api.mux.com/video/v1/assets/${assetId}`, {
-      headers: { Authorization: muxAuthHeader() },
-    });
-    if (muxRes.ok) {
-      const json = await muxRes.json();
-      asset = json.data;
+    if (assetId) {
+      const muxRes = await fetch(`https://api.mux.com/video/v1/assets/${assetId}`, {
+        headers: { Authorization: muxAuthHeader() },
+      });
+      if (muxRes.ok) {
+        const json = await muxRes.json();
+        asset = json.data;
+      }
     }
 
     return new Response(JSON.stringify({ asset, muxAsset }), {
