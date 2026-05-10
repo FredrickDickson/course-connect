@@ -100,12 +100,12 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         message: 'Processing video...'
       });
 
-      // Poll for asset readiness
+      // Poll for asset readiness using muxAssetId (assetId is null until upload completes)
       const pollInterval = setInterval(async () => {
         try {
           const { data: statusData } = await supabase.functions.invoke(
             'mux-asset-status',
-            { body: { assetId } },
+            { body: { muxAssetId } },
           );
           const muxAsset = statusData?.muxAsset;
 
