@@ -28,6 +28,7 @@ interface AuthContextType {
   isInstructor: () => boolean;
   isAdmin: () => boolean;
   isStudent: () => boolean;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -63,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("User role fetch error:", userError);
     }
 
+    console.log("[Auth] users query result:", { userRow, userError });
+
     const profileData = profile as any;
     const nameParts = (profileData?.full_name || "").split(" ");
     const metadataRole = currentAuthUser.user_metadata?.role
@@ -71,6 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userTableRole = userRow?.role ? String(userRow.role).toLowerCase() : null;
     // Database role is source of truth; metadata is fallback
     const derivedRole = userTableRole || metadataRole || profileData?.status || "student";
+
+    console.log("[Auth] Role resolution:", {
+      userId: currentAuthUser.id,
+      userTableRole,
+      metadataRole,
+      profileStatus: profileData?.status,
+      derivedRole,
+    });
 
     return {
       id: currentAuthUser.id,
@@ -87,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",
     };
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -174,12 +185,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [authUser, fetchUserProfile, isAuthReady]);
 
+  const refreshUser = useCallback(async () => {
+    if (!authUser) return;
+    profileFetchedRef.current = null;
+    setIsProfileLoading(true);
+    try {
+      const nextUser = await fetchUserProfile(authUser);
+      setUser(nextUser);
+      profileFetchedRef.current = authUser.id;
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }, [authUser, fetchUserProfile]);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
     setIsProfileLoading(false);
     setIsAuthReady(true);
+    profileFetchedRef.current = null;
   }, []);
 
   const isLoading = !isAuthReady || (!!authUser && (isProfileLoading || !user));
@@ -200,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isInstructor,
         isAdmin,
         isStudent,
+        refreshUser,
         signOut,
       }}
     >
