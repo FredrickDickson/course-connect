@@ -26,7 +26,7 @@ router.post(
   [
     body('lessonId').isUUID().withMessage('Valid lesson ID required'),
     body('fileName').notEmpty().withMessage('File name required'),
-    body('fileSize').isInt({ min: 1, max: 2 * 1024 * 1024 * 1024 }).withMessage('File size must be between 1 byte and 2GB'),
+    body('fileSize').isInt({ min: 1, max: 5 * 1024 * 1024 * 1024 }).withMessage('File size must be between 1 byte and 5GB'),
   ],
   asyncHandler(async (req: any, res: any) => {
     const errors = validationResult(req);
