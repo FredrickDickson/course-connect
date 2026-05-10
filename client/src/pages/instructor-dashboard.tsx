@@ -11,7 +11,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
 import {
-  BookOpen, Users, DollarSign, Star, Plus, Edit, Eye,
+  BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, Settings,
   TrendingUp, BarChart3, Target, MessageSquare, CheckCircle, Shield
 } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -249,6 +249,9 @@ export default function InstructorDashboard() {
                               <Link href={`/course/${course.id}`}><Eye className="h-4 w-4" /></Link>
                             </Button>
                             <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/instructor/courses/${course.id}/edit`}><Settings className="h-4 w-4" /></Link>
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
                               <Link href={`/instructor/courses/${course.id}/curriculum`}><Edit className="h-4 w-4" /></Link>
                             </Button>
                           </div>
@@ -313,6 +316,9 @@ export default function InstructorDashboard() {
                       <div className="flex items-center gap-1 mt-3">
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/course/${course.id}`}><Eye className="h-4 w-4" /></Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/instructor/courses/${course.id}/edit`}><Settings className="h-4 w-4" /></Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/instructor/courses/${course.id}/curriculum`}><Edit className="h-4 w-4" /></Link>

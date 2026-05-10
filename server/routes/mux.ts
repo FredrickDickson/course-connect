@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { Mux } from "@mux/mux-node";
 import { body, validationResult } from "express-validator";
 import { asyncHandler } from "../middleware/security";
+import { requireSupabaseAuth } from "../supabaseAuth";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../shared/database.types";
 
@@ -23,6 +24,7 @@ const mux = new Mux({
 // Generate direct upload URL for Mux
 router.post(
   '/upload-url',
+  requireSupabaseAuth,
   [
     body('lessonId').isUUID().withMessage('Valid lesson ID required'),
     body('fileName').notEmpty().withMessage('File name required'),
@@ -77,6 +79,9 @@ router.post(
           playback_policy: ['signed'],
           mp4_support: 'standard',
           passthrough: lessonId, // Pass lesson ID for webhook correlation
+          // Enable adaptive streaming with multiple resolutions
+          encoding_tier: 'smart', // Smart encoding for optimal quality/size
+          max_resolution_tier: '1080p', // Support up to 1080p (can be '720p', '1080p', '1440p', '2160p')
         },
         cors_origin: process.env.CLIENT_URL || 'http://localhost:5173',
         timeout: 3600, // 1 hour timeout
@@ -130,10 +135,8 @@ router.post(
       console.warn('Mux webhook signing secret not configured, skipping signature verification');
     } else if (signature) {
       try {
-        const isValid = mux.webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
-        if (!isValid) {
-          return res.status(401).json({ error: 'INVALID_SIGNATURE' });
-        }
+        mux.webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
+        // If no error thrown, signature is valid
       } catch (error) {
         return res.status(401).json({ error: 'SIGNATURE_VERIFICATION_FAILED' });
       }

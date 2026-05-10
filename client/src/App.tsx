@@ -231,6 +231,7 @@ function Router() {
       {/* Instructor-only routes */}
       <ProtectedRoute path="/instructor" requiredRole="instructor" component={LazyInstructorDashboard} />
       <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
+      <ProtectedRoute path="/instructor/courses/:courseId/edit" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}

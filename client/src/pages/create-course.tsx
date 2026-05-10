@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +27,7 @@ import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
@@ -71,6 +71,11 @@ export default function CreateCourse() {
   const [customCategory, setCustomCategory] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
 
+  // Edit mode detection
+  const [, editParams] = useRoute("/instructor/courses/:courseId/edit");
+  const courseId = editParams?.courseId;
+  const isEditMode = !!courseId;
+
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<
     Category[]
   >({
@@ -84,6 +89,22 @@ export default function CreateCourse() {
       return data || [];
     },
     enabled: hasAccess,
+  });
+
+  // Fetch course data in edit mode
+  const { data: courseData, isLoading: courseLoading } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: async () => {
+      if (!courseId) return null;
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("id", courseId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEditMode && !!courseId,
   });
 
   const form = useForm<CourseFormData>({
@@ -103,7 +124,26 @@ export default function CreateCourse() {
     },
   });
 
-  const createCourse = useMutation({
+  // Pre-fill form when course data loads
+  useEffect(() => {
+    if (courseData) {
+      form.reset({
+        title: courseData.title || "",
+        subtitle: courseData.subtitle || "",
+        description: courseData.description || "",
+        categoryId: courseData.category_id || "",
+        level: (courseData.level as "associate" | "member" | "fellow") || "associate",
+        track: (courseData.track as "ARBITRATION" | "MEDIATION") || "ARBITRATION",
+        price: Number(courseData.price) || 0,
+        currency: courseData.currency || "USD",
+        thumbnailUrl: courseData.thumbnail_url || "",
+        isPublished: courseData.is_published || false,
+        isFeatured: courseData.is_featured || false,
+      });
+    }
+  }, [courseData, form]);
+
+  const saveCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
       if (!user) throw new Error("Not authenticated");
 
@@ -125,8 +165,7 @@ export default function CreateCourse() {
         categoryId = newCat.id;
       }
 
-      // Create course via hardened backend API
-      const courseRes = await apiRequest("POST", "/api/instructor/courses", {
+      const payload = {
         title: data.title,
         subtitle: data.subtitle,
         description: data.description,
@@ -138,24 +177,36 @@ export default function CreateCourse() {
         thumbnailUrl: data.thumbnailUrl || null,
         isPublished: data.isPublished,
         isFeatured: data.isFeatured,
-      });
+      };
 
-      return await courseRes.json();
+      if (isEditMode) {
+        // Update existing course
+        const courseRes = await apiRequest("PUT", `/api/instructor/courses/${courseId}`, payload);
+        return await courseRes.json();
+      } else {
+        // Create new course
+        const courseRes = await apiRequest("POST", "/api/instructor/courses", payload);
+        return await courseRes.json();
+      }
     },
     onSuccess: (course) => {
-      // Fix: Use correct query key to match instructor dashboard
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
       toast({
         title: "Success",
-        description: "Course created successfully. Now add your curriculum!",
+        description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",
       });
-      setLocation(`/instructor/courses/${course.id}/curriculum`);
+      if (isEditMode) {
+        setLocation(`/instructor/courses/${course.id}/curriculum`);
+      } else {
+        setLocation(`/instructor/courses/${course.id}/curriculum`);
+      }
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to create course: ${error.message}`,
+        description: `Failed to ${isEditMode ? "update" : "create"} course: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -170,7 +221,7 @@ export default function CreateCourse() {
       });
       return;
     }
-    createCourse.mutate(data);
+    saveCourse.mutate(data);
   };
 
   const handleCategoryChange = (
@@ -182,7 +233,7 @@ export default function CreateCourse() {
     if (value !== CUSTOM_CATEGORY_VALUE) setCustomCategory("");
   };
 
-  if (authLoading) {
+  if (authLoading || (isEditMode && courseLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -205,10 +256,10 @@ export default function CreateCourse() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Create New Course
+              {isEditMode ? "Edit Course" : "Create New Course"}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Fill in the details to create your new course
+              {isEditMode ? "Update your course details" : "Fill in the details to create your new course"}
             </p>
           </div>
         </div>
@@ -520,18 +571,18 @@ export default function CreateCourse() {
                   <Button type="button" variant="outline" asChild>
                     <Link href="/instructor">Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={createCourse.isPending}>
-                    {createCourse.isPending ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Create Course
-                      </>
-                    )}
+                  <Button type="submit" disabled={saveCourse.isPending}>
+                        {saveCourse.isPending ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                            {isEditMode ? "Updating..." : "Creating..."}
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            {isEditMode ? "Update Course" : "Create Course"}
+                          </>
+                        )}
                   </Button>
                 </div>
               </form>
