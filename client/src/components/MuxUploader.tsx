@@ -80,24 +80,46 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         message: 'Uploading to Mux...'
       });
 
-      // Upload file directly to Mux using the authenticated URL
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file, // Direct file upload, not FormData
-        headers: {
-          'Content-Type': file.type,
-        },
-        signal: abortControllerRef.current?.signal,
-      });
+      // Upload file directly to Mux with progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to Mux');
-      }
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 40) + 10; // 10% -> 50%
+            setUploadProgress({
+              progress: percent,
+              status: 'uploading',
+              message: `Uploading: ${(event.loaded / 1024 / 1024).toFixed(1)} MB / ${(event.total / 1024 / 1024).toFixed(1)} MB`
+            });
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed: ${xhr.statusText}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+
+        // Wire up abort controller
+        if (abortControllerRef.current) {
+          abortControllerRef.current.signal.addEventListener('abort', () => xhr.abort());
+        }
+      });
 
       setUploadProgress({
         progress: 50,
         status: 'processing',
-        message: 'Processing video...'
+        message: 'Processing video... this may take a few minutes'
       });
 
       // Poll for asset readiness using muxAssetId (assetId is null until upload completes)
@@ -133,19 +155,19 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         }
       }, 2000);
 
-      // Cleanup after 30 seconds
+      // Cleanup after 30 minutes (5GB uploads + processing can take 15-25 min)
       setTimeout(() => {
         clearInterval(pollInterval);
         if (uploadProgress?.status !== 'ready') {
           setUploadProgress({
             progress: 0,
             status: 'error',
-            message: 'Upload timeout'
+            message: 'Upload timeout — please try again'
           });
-          onError('Upload timed out');
+          onError('Upload timed out after 30 minutes');
           setIsUploading(false);
         }
-      }, 30000);
+      }, 1800000);
 
     } catch (error) {
       console.error('Upload error:', error);
