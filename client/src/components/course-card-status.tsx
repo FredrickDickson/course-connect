@@ -317,7 +317,11 @@ export default function CourseCardStatus({
               className={config.buttonClass}
               onClick={(e) => {
                 e.stopPropagation();
-                onLockedClick?.();
+                if (onLockedClick) {
+                  onLockedClick();
+                } else {
+                  window.location.href = `/course/${course.id}`;
+                }
               }}
               data-testid="locked-course-button"
             >
