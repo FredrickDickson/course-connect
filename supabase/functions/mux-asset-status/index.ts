@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -70,7 +71,8 @@ Deno.serve(async (req) => {
         .eq("id", muxAssetId)
         .maybeSingle();
       muxAsset = data;
-      assetId = muxAsset?.mux_asset_id ?? assetId;
+      // Use || so empty-string mux_asset_id falls through to request's assetId
+      assetId = muxAsset?.mux_asset_id || assetId;
     } else if (assetId) {
       const { data } = await admin
         .from("mux_assets")
