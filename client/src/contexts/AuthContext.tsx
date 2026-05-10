@@ -66,12 +66,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     console.log("[Auth] users query result:", { userRow, userError });
 
+    // Fallback: if direct query fails (RLS), fetch from server endpoint
+    // which uses service-role key and bypasses RLS
+    let serverUser: any = null;
+    if (userError && !userRow) {
+      try {
+        const res = await fetch("/api/auth/user", {
+          headers: {
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+        });
+        if (res.ok) {
+          serverUser = await res.json();
+          console.log("[Auth] Server fallback user:", serverUser);
+        }
+      } catch (e) {
+        console.error("[Auth] Server fallback failed:", e);
+      }
+    }
+
     const profileData = profile as any;
     const nameParts = (profileData?.full_name || "").split(" ");
     const metadataRole = currentAuthUser.user_metadata?.role
       ? String(currentAuthUser.user_metadata.role).toLowerCase()
       : null;
-    const userTableRole = userRow?.role ? String(userRow.role).toLowerCase() : null;
+    const userTableRole = userRow?.role
+      ? String(userRow.role).toLowerCase()
+      : serverUser?.role
+        ? String(serverUser.role).toLowerCase()
+        : null;
     // Database role is source of truth; metadata is fallback
     const derivedRole = userTableRole || metadataRole || profileData?.status || "student";
 
@@ -86,14 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       id: currentAuthUser.id,
       email: currentAuthUser.email || "",
-      firstName: userRow?.first_name || nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
-      middleName: userRow?.middle_name || currentAuthUser.user_metadata?.middle_name || "",
-      lastName: userRow?.last_name || nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
+      firstName: userRow?.first_name || serverUser?.first_name || nameParts[0] || currentAuthUser.user_metadata?.first_name || currentAuthUser.email?.split("@")[0] || "",
+      middleName: userRow?.middle_name || serverUser?.middle_name || currentAuthUser.user_metadata?.middle_name || "",
+      lastName: userRow?.last_name || serverUser?.last_name || nameParts.slice(1).join(" ") || currentAuthUser.user_metadata?.last_name || "",
       profileImageUrl: profileData?.avatar_url || currentAuthUser.user_metadata?.avatar_url || "",
       role: derivedRole,
       membershipLevel: profileData?.part || null,
-      assignedLevel: userRow?.assigned_level || null,
-      currentLevel: userRow?.current_level || null,
+      assignedLevel: userRow?.assigned_level || serverUser?.assigned_level || null,
+      currentLevel: userRow?.current_level || serverUser?.current_level || null,
       country: profileData?.country || "",
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",
