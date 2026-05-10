@@ -20,7 +20,7 @@ import {
 import {
   Search, User, Mail, Phone, MapPin, Briefcase, GraduationCap,
   Building2, Globe, MessageSquare, BookOpen, CheckCircle, AlertCircle,
-  Eye, Users, Download, Filter, Bell, History, Activity,
+  Eye, Users, Download, Filter, Bell, History, Activity, ShieldCheck,
 } from "lucide-react";
 
 interface UserRow {
@@ -112,6 +112,26 @@ export default function AdminUsersProfiles() {
   const [profileFilter, setProfileFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const updateRole = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const res = await fetch(`/api/admin/users/${id}/role`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) throw new Error("Failed to update role");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users-profiles"] });
+      toast({ title: "Role updated" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Update failed", description: e.message, variant: "destructive" });
+    },
+  });
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["admin-users-profiles"],
@@ -388,6 +408,30 @@ export default function AdminUsersProfiles() {
                           {(selectedProfile as ProfileRow | null)?.part || "No Part"}
                         </Badge>
                         <ProfileCompletionMeter profile={selectedProfile} />
+                      </div>
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Change role</span>
+                          <Select
+                            value={selectedUser.role || "student"}
+                            onValueChange={(role) => {
+                              if (selectedUser && role !== (selectedUser.role || "student")) {
+                                updateRole.mutate({ id: selectedUser.id, role });
+                              }
+                            }}
+                            disabled={updateRole.isPending}
+                          >
+                            <SelectTrigger className="h-7 text-xs w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="student">Student</SelectItem>
+                              <SelectItem value="instructor">Instructor</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
