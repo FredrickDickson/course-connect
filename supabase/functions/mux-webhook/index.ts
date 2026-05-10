@@ -73,11 +73,28 @@ Deno.serve(async (req) => {
     const passthrough: string | undefined = data.passthrough;
     const playbackId: string = data.playback_ids?.[0]?.id ?? "";
 
-    if (type === "video.asset.created") {
+    if (type === "video.upload.asset_created") {
+      // Asset created from upload — link it to the pending row via lesson_id
+      if (passthrough) {
+        await admin
+          .from("mux_assets")
+          .update({ mux_asset_id: id, upload_status: "preparing", asset_status: "preparing" })
+          .eq("lesson_id", passthrough)
+          .eq("upload_status", "pending");
+      }
+    } else if (type === "video.asset.created") {
       await admin
         .from("mux_assets")
         .update({ upload_status: "preparing", asset_status: "preparing" })
         .eq("mux_asset_id", id);
+      // Fallback: update by lesson_id if mux_asset_id was initially null
+      if (passthrough) {
+        await admin
+          .from("mux_assets")
+          .update({ mux_asset_id: id, upload_status: "preparing", asset_status: "preparing" })
+          .eq("lesson_id", passthrough)
+          .eq("upload_status", "pending");
+      }
     } else if (type === "video.asset.ready") {
       await admin
         .from("mux_assets")
@@ -88,6 +105,20 @@ Deno.serve(async (req) => {
           duration_seconds: Math.round(data.duration ?? 0),
         })
         .eq("mux_asset_id", id);
+      // Fallback: update by lesson_id if mux_asset_id was not yet set
+      if (passthrough) {
+        await admin
+          .from("mux_assets")
+          .update({
+            upload_status: "ready",
+            asset_status: "ready",
+            mux_playback_id: playbackId,
+            duration_seconds: Math.round(data.duration ?? 0),
+            mux_asset_id: id,
+          })
+          .eq("lesson_id", passthrough)
+          .eq("upload_status", "preparing");
+      }
 
       const lessonUpdate = {
         mux_playback_id: playbackId,
@@ -103,6 +134,14 @@ Deno.serve(async (req) => {
         .from("mux_assets")
         .update({ upload_status: "errored", asset_status: "errored" })
         .eq("mux_asset_id", id);
+      // Fallback: update by lesson_id
+      if (passthrough) {
+        await admin
+          .from("mux_assets")
+          .update({ upload_status: "errored", asset_status: "errored", mux_asset_id: id })
+          .eq("lesson_id", passthrough)
+          .eq("upload_status", "pending");
+      }
 
       if (passthrough) {
         await admin.from("lessons").update({ mux_status: "errored" }).eq("id", passthrough);
