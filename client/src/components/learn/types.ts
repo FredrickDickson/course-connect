@@ -6,6 +6,9 @@ export interface LearnLesson {
   video_url: string | null;
   video_platform: string | null;
   video_id: string | null;
+  mux_asset_id: string | null;
+  mux_playback_id: string | null;
+  mux_status: string | null;
   duration_seconds: number | null;
   order: number | null;
   content?: string | null;

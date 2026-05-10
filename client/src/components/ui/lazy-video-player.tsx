@@ -6,8 +6,9 @@ const VideoPlayer = lazy(() => import("./video-player"));
 interface LazyVideoPlayerProps {
   src?: string;
   videoUrl?: string;
-  videoPlatform?: 'youtube' | 'vimeo';
+  videoPlatform?: 'youtube' | 'vimeo' | 'mux';
   videoId?: string;
+  muxPlaybackId?: string;
   poster?: string;
   title?: string;
   startAt?: number;
