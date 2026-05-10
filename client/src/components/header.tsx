@@ -88,6 +88,14 @@ export default function Header() {
             {t('nav.dashboard')}
           </Link>
         </DropdownMenuItem>
+        {isInstructor() && (
+          <DropdownMenuItem asChild>
+            <Link href="/instructor" className="cursor-pointer">
+              <Presentation className="mr-2 h-4 w-4" />
+              Instructor
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <button 
