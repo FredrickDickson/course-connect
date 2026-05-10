@@ -12,7 +12,7 @@ import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
 import { VideoSourceSelector, VideoSource } from './VideoSourceSelector';
 import { VideoUrlInput } from './VideoUrlInput';
-import { Video, FileText, ClipboardCheck, FileUp, Save } from 'lucide-react';
+import { Video, FileText, ClipboardCheck, FileUp, Save, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchQuizForLesson, fetchAssignmentForLesson } from '@/lib/curriculum-mutations';
@@ -110,6 +110,9 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         _title: title,
         _description: description || null,
         _content_type: contentType,
+        _mux_asset_id: muxAssetId || null,
+        _mux_playback_id: muxPlaybackId || null,
+        _mux_status: muxStatus || null,
       });
       if (error) throw error;
       setSavedLessonId(newId as string);
@@ -211,6 +214,9 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           _video_platform: lessonData.video_platform ?? null,
           _video_id: lessonData.video_id ?? null,
           _duration_seconds: lessonData.duration_seconds ?? null,
+          _mux_asset_id: lessonData.mux_asset_id ?? null,
+          _mux_playback_id: lessonData.mux_playback_id ?? null,
+          _mux_status: lessonData.mux_status ?? null,
         });
         if (error) throw error;
         setSavedLessonId(newId as string);
@@ -381,11 +387,28 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                         onUploadComplete={handleVideoUpload}
                       />
                     ) : videoSource === 'mux' ? (
-                      <MuxUploader
-                        lessonId={currentLessonId || ''}
-                        onUploadComplete={handleMuxUploadComplete}
-                        onError={handleMuxUploadError}
-                      />
+                      currentLessonId ? (
+                        <MuxUploader
+                          lessonId={currentLessonId}
+                          onUploadComplete={handleMuxUploadComplete}
+                          onError={handleMuxUploadError}
+                        />
+                      ) : (
+                        <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                          <p className="font-medium mb-2">Enter a lecture title first</p>
+                          <p className="text-sm text-muted-foreground">Type a title above, then the Mux uploader will appear automatically</p>
+                          {title.trim() && (
+                            <Button className="mt-4" onClick={async () => {
+                              try { await ensureLessonExists(); } catch (err) {
+                                toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                              }
+                            }}>
+                              Create Lecture & Upload Video
+                            </Button>
+                          )}
+                        </div>
+                      )
                     ) : (
                       <VideoUrlInput
                         value={videoUrl}
