@@ -1,38 +1,46 @@
-# Plan
+## Goal
 
-## 1. Apply SF Pro Display / SF Pro Text across the entire app
+Make Mux video uploads work for instructors on the deployed site (`cimalearn.thecima.org`). The frontend currently calls `/api/mux/upload-url`, which is an Express route that does not exist on Vercel — hence the 404. We will port the Mux endpoints to Supabase Edge Functions (consistent with the rest of the platform) and update the uploader to call them.
 
-Today, SF Pro fonts are loaded via `@font-face` and applied only to `<body>` (`font-sf-pro-text`) and `h1–h4`. Many shadcn/ui components and pages use Tailwind's `font-sans` / `font-serif` / `font-display` utilities, which currently resolve to `var(--font-sans)` / `var(--font-serif)` (undefined → falls back to system fonts) and `'Playfair Display'`. That's why text outside headings/body still looks like a non-Apple font.
+## Steps
 
-Changes:
-- In `client/src/index.css`, define CSS variables on `:root`:
-  - `--font-sans: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;`
-  - `--font-serif: 'SF Pro Display', -apple-system, serif;`
-  - `--font-mono` left as-is (mono blocks unaffected).
-- In `client/tailwind.config.ts` and `tailwind.config.ts` (root), repoint:
-  - `display`, `headline`, `sf-pro-display` → `'SF Pro Display'` chain
-  - `body`, `label`, `sf-pro-text` → `'SF Pro Text'` chain
-  - `sans` already reads `var(--font-sans)` (now SF Pro Text), `serif` reads `var(--font-serif)` (now SF Pro Display) — no change needed there.
-- Keep the existing `body { @apply font-sf-pro-text }` and `h1–h4 { font-family: 'SF Pro Display' }` rules.
+### 1. Get Mux credentials from you
+You'll create a Mux access token at **dashboard.mux.com → Settings → Access Tokens** with **Video read + write** scope. After the plan is approved, I'll request these as Supabase secrets:
+- `MUX_TOKEN_ID`
+- `MUX_TOKEN_SECRET`
+- `MUX_WEBHOOK_SIGNING_SECRET` (added after step 3 once Mux gives you the value)
 
-Result: every component using `font-sans`, `font-display`, `font-headline`, `font-body`, `font-label` (and untouched defaults) renders in SF Pro across the app, in both light and dark modes.
+### 2. Create three Supabase edge functions
 
-## 2. Fix "My Courses" not showing enrolled courses
+**`supabase/functions/mux-upload-url/index.ts`** (auth-required)
+- Validates JWT, parses `{ lessonId, fileName, fileSize }` with Zod.
+- Confirms caller owns the course (`courses.instructor_id`) the lesson belongs to.
+- Calls Mux `POST /video/v1/uploads` with smart encoding, 1080p max, signed playback policy, `passthrough = lessonId`, `cors_origin = origin header`.
+- Inserts row into `mux_assets` (status `pending`).
+- Returns `{ uploadId, uploadUrl, assetId, muxAssetId }`.
 
-Root cause: the dashboard's enrollments query (and several other pages) reads from `public.course_enrollments`, which does not exist in the database (only `enrollments`, `course_enrollments_archive`, and `course_enrollments_legacy` exist). Supabase returns `relation "course_enrollments" does not exist`, the `useQuery` throws, and the dashboard renders the empty state. The same bug blocks course access checks on `/courses` and the catalog/detail pages.
+**`supabase/functions/mux-asset-status/index.ts`** (auth-required)
+- Accepts `?assetId=…`, fetches Mux asset + `mux_assets` row, returns combined payload (so the polling fallback in `MuxUploader` keeps working).
 
-Scope of fix (client only — no schema changes):
+**`supabase/functions/mux-webhook/index.ts`** (public, `verify_jwt = false` in `supabase/config.toml`)
+- Reads raw body, verifies the `mux-signature` header against `MUX_WEBHOOK_SIGNING_SECRET`.
+- Handles `video.asset.created`, `video.asset.ready`, `video.asset.errored` — updates `mux_assets` and `lessons` (using `passthrough` for the lesson id) exactly like the Express handlers do today.
 
-- `client/src/pages/dashboard.tsx`: remove the `course_enrollments` branch; rely solely on `enrollments` (which already has `progress`, `enrolled_at`, `course:courses(*)`). Keep dedup logic for safety.
-- `client/src/pages/courses.tsx`: switch the user-enrollment lookup to the `enrollments` table (`select course_id, status` from `enrollments` keyed on `user_id`).
-- `client/src/pages/course-detail.tsx`, `client/src/pages/course-browser.tsx`, `client/src/pages/course-search.tsx`, `client/src/pages/checkout.tsx`, `client/src/pages/profile.tsx`, `client/src/pages/video-player.tsx`, and `client/src/components/enrollment-form.tsx`: replace `from("course_enrollments")` reads/writes with `from("enrollments")`, mapping fields (`payment_status` filter dropped where it has no equivalent — use `status` where applicable).
-- Admin components (`admin-enrollments-*.tsx`, `admin-courses-table.tsx`, `admin-users-profiles.tsx`, `admin-overview-stats.tsx`, `admin-notifications.tsx`): same swap to `enrollments` so admin views stop silently failing.
+All functions call Mux with `fetch` + Basic auth (`btoa(`${id}:${secret}`)`) — no `@mux/mux-node` SDK needed in Deno.
 
-Out of scope: schema/migration work, payment-status reporting changes, RLS edits, or rewriting the enrollment data model.
+### 3. Wire up the Mux webhook
+After deploy, the webhook URL will be:
+`https://emvibxbcrvritkwkguya.supabase.co/functions/v1/mux-webhook`
 
-## Verification
+You'll paste it into **Mux dashboard → Settings → Webhooks**, then copy the signing secret it gives you. I'll add it as `MUX_WEBHOOK_SIGNING_SECRET`.
 
-- Reload `/dashboard` while logged in as the affected learner → "My Courses" tab lists the enrollment, "Continue Learning" links work.
-- `/courses` shows the same enrolled course with the correct CTA.
-- Inspect any page (e.g. `/`, `/course-catalog`, a button, an input) — text renders in SF Pro Display (headings) / SF Pro Text (body, buttons, labels).
-- Console shows no `relation "course_enrollments" does not exist` errors.
+### 4. Update `client/src/components/MuxUploader.tsx`
+Replace the two `fetch('/api/mux/...')` calls with `supabase.functions.invoke('mux-upload-url', { body: {...} })` and `supabase.functions.invoke('mux-asset-status', { body: { assetId } })`. No other behavioural change.
+
+### 5. Verify
+- Reproduce upload from `/instructor/courses/.../curriculum`, confirm 200 from `mux-upload-url`, the PUT to Mux succeeds, and the lesson row gets a `mux_playback_id` once the webhook fires.
+- Check `mux-upload-url` and `mux-webhook` edge function logs.
+
+## Out of scope
+- The legacy `server/routes/mux.ts` Express route stays in the repo (other dev environments still use it). Production traffic just stops hitting it.
+- No changes to the `mux_assets` table schema or RLS — service role is used inside the edge functions.
