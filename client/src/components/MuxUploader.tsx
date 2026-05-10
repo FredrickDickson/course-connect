@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -23,6 +23,7 @@ interface UploadProgress {
 export function MuxUploader({ lessonId, onUploadComplete, onError, className }: MuxUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,6 +41,12 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       return;
     }
 
+    // Cancel any existing upload
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    abortControllerRef.current = new AbortController();
     setIsUploading(true);
     setUploadProgress({
       progress: 0,
@@ -73,13 +80,14 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         message: 'Uploading to Mux...'
       });
 
-      // Upload file directly to Mux
-      const formData = new FormData();
-      formData.append('file', file);
-
+      // Upload file directly to Mux using the authenticated URL
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
-        body: formData,
+        body: file, // Direct file upload, not FormData
+        headers: {
+          'Content-Type': file.type,
+        },
+        signal: abortControllerRef.current?.signal,
       });
 
       if (!uploadResponse.ok) {
@@ -145,6 +153,8 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       });
       onError(error instanceof Error ? error.message : 'Upload failed');
       setIsUploading(false);
+    } finally {
+      abortControllerRef.current = null;
     }
   }, [lessonId, onUploadComplete, onError]);
 

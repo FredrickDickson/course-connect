@@ -28,6 +28,7 @@ CREATE INDEX IF NOT EXISTS mux_assets_lesson_id_idx ON public.mux_assets(lesson_
 ALTER TABLE public.mux_assets ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for mux_assets
+DROP POLICY IF EXISTS "Instructors can manage their own mux assets" ON public.mux_assets;
 CREATE POLICY "Instructors can manage their own mux assets"
 ON public.mux_assets
 FOR ALL
@@ -38,7 +39,7 @@ USING (
         JOIN public.modules m ON m.id = l.module_id
         JOIN public.courses c ON c.id = m.course_id
         WHERE l.id = mux_assets.lesson_id
-        AND c.instructor_id = auth.uid()
+        AND c.instructor_id::text = auth.uid()::text
     )
 )
 WITH CHECK (
@@ -47,10 +48,11 @@ WITH CHECK (
         JOIN public.modules m ON m.id = l.module_id
         JOIN public.courses c ON c.id = m.course_id
         WHERE l.id = mux_assets.lesson_id
-        AND c.instructor_id = auth.uid()
+        AND c.instructor_id::text = auth.uid()::text
     )
 );
 
+DROP POLICY IF EXISTS "Students can view mux assets for enrolled courses" ON public.mux_assets;
 CREATE POLICY "Students can view mux assets for enrolled courses"
 ON public.mux_assets
 FOR SELECT
@@ -62,11 +64,12 @@ USING (
         JOIN public.courses c ON c.id = m.course_id
         JOIN public.enrollments e ON e.course_id = c.id
         WHERE l.id = mux_assets.lesson_id
-        AND e.user_id = auth.uid()
+        AND e.user_id::text = auth.uid()::text
     )
 );
 
 -- Allow service role full access
+DROP POLICY IF EXISTS "Service role can manage mux assets" ON public.mux_assets;
 CREATE POLICY "Service role can manage mux assets"
 ON public.mux_assets
 FOR ALL
@@ -83,6 +86,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_mux_assets_updated_at ON public.mux_assets;
 CREATE TRIGGER update_mux_assets_updated_at
     BEFORE UPDATE ON public.mux_assets
     FOR EACH ROW

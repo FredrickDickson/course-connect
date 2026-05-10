@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_lessons_mux_asset_id ON public.lessons(mux_asset_
 CREATE INDEX IF NOT EXISTS idx_lessons_mux_status ON public.lessons(mux_status);
 
 -- Create mux_assets table for tracking Mux uploads and processing
-CREATE TABLE public.mux_assets (
+CREATE TABLE IF NOT EXISTS public.mux_assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   lesson_id UUID REFERENCES public.lessons(id) ON DELETE CASCADE,
   mux_asset_id TEXT NOT NULL UNIQUE,

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Download, Plus, FileText, FileSpreadsheet, FileArchive, Image as ImageIcon,
@@ -253,7 +253,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
       let resource_type: ResourceType = "link";
       let file_size_mb: number | null = null;
       if (resFile) {
-        const path = `${course.id}/${lesson.id}/${crypto.randomUUID()}-${resFile.name}`;
+        const path = `${course.instructor_id}/${course.id}/${lesson.id}/${crypto.randomUUID()}-${resFile.name}`;
         const { error: upErr } = await sb.storage.from("lesson-resources").upload(path, resFile, { upsert: false });
         if (upErr) throw upErr;
         file_url = path;
@@ -488,6 +488,9 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
           <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setAnnOpen(false)}>
             <DialogHeader>
               <DialogTitle>{annEditing ? "Edit announcement" : "New announcement"}</DialogTitle>
+              <DialogDescription>
+                {annEditing ? "Edit the announcement title and message for your course." : "Create a new announcement to share with your course participants."}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -538,7 +541,12 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setResOpen(false)}>
-                <DialogHeader><DialogTitle>Add resource</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>Add resource</DialogTitle>
+                  <DialogDescription>
+                    Upload a file or provide an external link to add a learning resource for this lesson.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="resource-name" className="text-sm font-medium">Display name</label>
@@ -635,6 +643,9 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
           <DialogContent className="max-w-[95vw] sm:max-w-4xl" onEscapeKeyDown={() => { setPreviewing(null); setPreviewUrl(null); }}>
             <DialogHeader>
               <DialogTitle className="truncate">{previewing?.name}</DialogTitle>
+              <DialogDescription>
+                Preview of the selected learning resource.
+              </DialogDescription>
             </DialogHeader>
             {previewing && previewUrl && (
               <div className="w-full" role="document">

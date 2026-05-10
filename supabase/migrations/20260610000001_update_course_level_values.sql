@@ -29,6 +29,9 @@ ALTER COLUMN level SET DEFAULT 'associate';
 -- ============================================
 
 ALTER TABLE public.courses
+DROP CONSTRAINT IF EXISTS courses_level_check;
+
+ALTER TABLE public.courses
 ADD CONSTRAINT courses_level_check
 CHECK (level IN ('associate', 'member', 'fellow'));
 
