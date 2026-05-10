@@ -67,6 +67,7 @@ import { ObjectPermission } from "./objectAcl";
 import enrollmentsRouter from "./routes/enrollments";
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
+import muxRouter from "./routes/mux";
 import {
   insertCourseSchema,
 
@@ -176,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount renewal and certificate routes
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
+  app.use("/api/mux", muxRouter);
 
 
 
