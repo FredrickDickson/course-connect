@@ -35,9 +35,9 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       return;
     }
 
-    // Validate file size (500MB limit)
-    if (file.size > 500 * 1024 * 1024) {
-      onError('Video file must be less than 500MB');
+    // Validate file size (2GB limit)
+    if (file.size > 2 * 1024 * 1024 * 1024) {
+      onError('Video file must be less than 2GB');
       return;
     }
 
@@ -208,8 +208,8 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
 
         <div className="text-sm text-gray-600 space-y-2">
           <p><strong>Supported formats:</strong> MP4, MOV, WebM</p>
-          <p><strong>File size limit:</strong> 500MB</p>
-          <p><strong>Processing time:</strong> 2-5 minutes depending on file size</p>
+          <p><strong>File size limit:</strong> 2GB</p>
+          <p><strong>Processing time:</strong> 2-10 minutes depending on file size</p>
         </div>
       </CardContent>
     </Card>
