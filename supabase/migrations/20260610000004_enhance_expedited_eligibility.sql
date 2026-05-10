@@ -87,6 +87,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Add triggers for updated_at
+DROP TRIGGER IF EXISTS update_assessment_modules_updated_at ON assessment_modules;
 CREATE TRIGGER update_assessment_modules_updated_at
   BEFORE UPDATE ON assessment_modules
   FOR EACH ROW
@@ -98,60 +99,66 @@ ALTER TABLE assessment_rubrics ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for assessment_modules
 -- Users can view modules for their own applications
+DROP POLICY IF EXISTS "Users can view own assessment modules" ON assessment_modules;
 CREATE POLICY "Users can view own assessment modules"
   ON assessment_modules FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM expedited_applications
       WHERE expedited_applications.id = assessment_modules.application_id
-      AND expedited_applications.user_id = auth.uid()
+      AND expedited_applications.user_id::text = auth.uid()::text
     )
   );
 
 -- Admins can view all modules
+DROP POLICY IF EXISTS "Admins can view all assessment modules" ON assessment_modules;
 CREATE POLICY "Admins can view all assessment modules"
   ON assessment_modules FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE users.id = auth.uid()
+      WHERE users.id::text = auth.uid()::text
       AND users.role = 'admin'
     )
   );
 
 -- Users can insert modules for their own applications
+DROP POLICY IF EXISTS "Users can insert own assessment modules" ON assessment_modules;
 CREATE POLICY "Users can insert own assessment modules"
   ON assessment_modules FOR INSERT
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM expedited_applications
       WHERE expedited_applications.id = assessment_modules.application_id
-      AND expedited_applications.user_id = auth.uid()
+      AND expedited_applications.user_id::text = auth.uid()::text
     )
   );
 
 -- Admins can update all modules
+DROP POLICY IF EXISTS "Admins can update assessment modules" ON assessment_modules;
 CREATE POLICY "Admins can update assessment modules"
   ON assessment_modules FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE users.id = auth.uid()
+      WHERE users.id::text = auth.uid()::text
       AND users.role = 'admin'
     )
   );
 
 -- RLS Policies for assessment_rubrics (read-only for all users, write-only for admins)
+DROP POLICY IF EXISTS "All users can view assessment rubrics" ON assessment_rubrics;
 CREATE POLICY "All users can view assessment rubrics"
   ON assessment_rubrics FOR SELECT
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "Admins can manage assessment rubrics" ON assessment_rubrics;
 CREATE POLICY "Admins can manage assessment rubrics"
   ON assessment_rubrics FOR ALL
   USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE users.id = auth.uid()
+      WHERE users.id::text = auth.uid()::text
       AND users.role = 'admin'
     )
   );

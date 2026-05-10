@@ -51,7 +51,7 @@ export default function InstructorResourceUpload() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title")
+        .select("id, title, instructor_id")
         .eq("instructor_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -116,11 +116,19 @@ export default function InstructorResourceUpload() {
       let resource_type = "link";
       let file_size_mb: number | null = null;
       if (file) {
-        const path = `${courseId}/${lessonId}/${crypto.randomUUID()}-${file.name}`;
+        // Get the instructor_id from the selected course
+        const selectedCourse = courses.find((c: any) => c.id === courseId);
+        const instructorId = selectedCourse?.instructor_id || user!.id;
+        const path = `${instructorId}/${courseId}/${lessonId}/${crypto.randomUUID()}-${file.name}`;
+        console.log('Uploading to path:', path);
+        console.log('instructorId:', instructorId, 'courseId:', courseId, 'lessonId:', lessonId);
         const { error: upErr } = await supabase.storage
           .from("lesson-resources")
           .upload(path, file, { upsert: false });
-        if (upErr) throw upErr;
+        if (upErr) {
+          console.error('Upload error:', upErr);
+          throw upErr;
+        }
         file_url = path;
         resource_type = detectType(file.name);
         file_size_mb = +(file.size / 1024 / 1024).toFixed(2);

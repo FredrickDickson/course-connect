@@ -19,7 +19,7 @@ export function VideoSourceSelector({ value, onChange, disabled }: VideoSourceSe
         value={value}
         onValueChange={(val) => onChange(val as VideoSource)}
         disabled={disabled}
-        className="grid grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
         <Card
           className={`cursor-pointer transition-colors ${
