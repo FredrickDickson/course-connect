@@ -34,6 +34,7 @@ export default function VideoPlayerPage() {
   const [showUpNext, setShowUpNext] = useState(false);
   const [completedShown, setCompletedShown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [theatreMode, setTheatreMode] = useState(false);
   const lastSavedSec = useRef(0);
   const resumeToastShown = useRef<string | null>(null);
   const completionModalShownThisSession = useRef(false);
@@ -292,16 +293,19 @@ export default function VideoPlayerPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <CourseTopBar
-        course={course}
-        completed={completedCount}
-        total={allLessons.length}
-        nextLessonHref={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : undefined}
-      />
+      {!theatreMode && (
+        <CourseTopBar
+          course={course}
+          completed={completedCount}
+          total={allLessons.length}
+          nextLessonHref={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : undefined}
+        />
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col overflow-y-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-3 border-b bg-background">
+          {!theatreMode && (
+            <div className="px-4 sm:px-6 lg:px-8 py-3 border-b bg-background">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -322,6 +326,7 @@ export default function VideoPlayerPage() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
+          )}
 
           {isVideoLesson ? (
             <div className="flex-1 bg-black relative">
@@ -329,7 +334,7 @@ export default function VideoPlayerPage() {
                 <VP
                   ref={videoRef}
                   src={currentLesson.video_url}
-                  platform={currentLesson.mux_playback_id ? 'mux' : currentLesson.video_platform}
+                  videoPlatform={currentLesson.mux_playback_id ? 'mux' : currentLesson.video_platform}
                   videoId={currentLesson.video_id}
                   muxPlaybackId={currentLesson.mux_playback_id}
                   onTimeUpdate={(cur: number, dur: number) => {
@@ -340,6 +345,7 @@ export default function VideoPlayerPage() {
                     upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
                     if (nextLesson) setShowUpNext(true);
                   }}
+                  onTheatreModeChange={setTheatreMode}
                 />
                 {showUpNext && nextLesson && (
                   <UpNextOverlay
@@ -406,7 +412,7 @@ export default function VideoPlayerPage() {
           </div>
         </main>
 
-        {sidebarOpen && (
+        {sidebarOpen && !theatreMode && (
           <div className="hidden lg:block">
             <CourseSidebar
               course={course} courseId={courseId!} currentLessonId={currentLesson.id}
@@ -415,7 +421,7 @@ export default function VideoPlayerPage() {
             />
           </div>
         )}
-        {!sidebarOpen && (
+        {!sidebarOpen && !theatreMode && (
           <button onClick={() => setSidebarOpen(true)}
             className="hidden lg:flex fixed right-3 top-20 z-20 bg-[#1C1D1F] text-white px-3 py-2 rounded-l-md shadow items-center gap-2 text-sm">
             <ListVideo className="h-4 w-4" /> Course content

@@ -15,6 +15,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const formatTime = (seconds: number) => {
   if (!isFinite(seconds) || seconds < 0) return "0:00";
@@ -115,6 +116,7 @@ export interface VideoPlayerProps {
   onPrev?: () => void;
   onNext?: () => void;
   className?: string;
+  onTheatreModeChange?: (isTheatre: boolean) => void;
   // Mux-specific props
   muxPlaybackId?: string;
 }
@@ -150,7 +152,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const {
     src, videoUrl, videoPlatform, videoId, poster, title, startAt = 0,
     onTimeUpdate, onLoadedMetadata, onPlay, onPause, onEnded, onError, onLoadStart, onCanPlay,
-    onPrev, onNext, className,
+    onPrev, onNext, className, onTheatreModeChange,
     muxPlaybackId,
   } = props;
 
@@ -176,6 +178,12 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isTheatre, setIsTheatre] = useState(false);
+
+  const handleTheatreToggle = () => {
+    const newTheatre = !isTheatre;
+    setIsTheatre(newTheatre);
+    onTheatreModeChange?.(newTheatre);
+  };
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const actualSrc = src || videoUrl;
@@ -655,47 +663,67 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
 
       {/* Side prev/next */}
       {onPrev && (
-        <button
-          onClick={onPrev}
-          aria-label="Previous lesson"
-          className={cn(
-            "flex sm:hidden absolute left-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
-            showControls ? "opacity-100" : "opacity-0",
-          )}
-          style={{ minHeight: '56px', minWidth: '56px' }}
-        ><ChevronLeft className="h-7 w-7" /></button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onPrev}
+              aria-label="Previous lesson"
+              className={cn(
+                "flex sm:hidden absolute left-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
+                showControls ? "opacity-100" : "opacity-0",
+              )}
+              style={{ minHeight: '56px', minWidth: '56px' }}
+            ><ChevronLeft className="h-7 w-7" /></button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Previous lesson</TooltipContent>
+        </Tooltip>
       )}
       {onNext && (
-        <button
-          onClick={onNext}
-          aria-label="Next lesson"
-          className={cn(
-            "flex sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
-            showControls ? "opacity-100" : "opacity-0",
-          )}
-          style={{ minHeight: '56px', minWidth: '56px' }}
-        ><ChevronRight className="h-7 w-7" /></button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onNext}
+              aria-label="Next lesson"
+              className={cn(
+                "flex sm:hidden absolute right-2 top-1/2 -translate-y-1/2 z-20 h-14 w-14 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 text-white transition-opacity touch-none",
+                showControls ? "opacity-100" : "opacity-0",
+              )}
+              style={{ minHeight: '56px', minWidth: '56px' }}
+            ><ChevronRight className="h-7 w-7" /></button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Next lesson</TooltipContent>
+        </Tooltip>
       )}
       {/* Desktop prev/next */}
       {onPrev && (
-        <button
-          onClick={onPrev}
-          aria-label="Previous lesson"
-          className={cn(
-            "hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-opacity",
-            showControls ? "opacity-100" : "opacity-0",
-          )}
-        ><ChevronLeft className="h-6 w-6" /></button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onPrev}
+              aria-label="Previous lesson"
+              className={cn(
+                "hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-opacity",
+                showControls ? "opacity-100" : "opacity-0",
+              )}
+            ><ChevronLeft className="h-6 w-6" /></button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Previous lesson</TooltipContent>
+        </Tooltip>
       )}
       {onNext && (
-        <button
-          onClick={onNext}
-          aria-label="Next lesson"
-          className={cn(
-            "hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-opacity",
-            showControls ? "opacity-100" : "opacity-0",
-          )}
-        ><ChevronRight className="h-6 w-6" /></button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onNext}
+              aria-label="Next lesson"
+              className={cn(
+                "hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 h-12 w-12 items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-opacity",
+                showControls ? "opacity-100" : "opacity-0",
+              )}
+            ><ChevronRight className="h-6 w-6" /></button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Next lesson</TooltipContent>
+        </Tooltip>
       )}
 
       {/* Controls bar */}
@@ -710,36 +738,66 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             <ScrubBar current={currentTime} duration={duration} buffered={buffered} onSeek={adapterSeek} />
 
             <div className="flex items-center gap-2 sm:gap-3 text-white">
-              <Button onClick={togglePlay} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 sm:min-h-11 sm:min-w-11 lg:min-h-9 lg:min-w-9 touch-none">
-                {isPlaying ? <Pause className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4" /> : <Play className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4 fill-white" />}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={togglePlay} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 sm:min-h-11 sm:min-w-11 lg:min-h-9 lg:min-w-9 touch-none">
+                    {isPlaying ? <Pause className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4" /> : <Play className="h-5 w-5 sm:h-5 sm:w-5 lg:h-4 lg:w-4 fill-white" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{isPlaying ? "Pause" : "Play"}</TooltipContent>
+              </Tooltip>
 
               {onPrev && (
-                <Button onClick={onPrev} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Previous lesson">
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={onPrev} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Previous lesson">
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Previous lesson</TooltipContent>
+                </Tooltip>
               )}
               {onNext && (
-                <Button onClick={onNext} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Next lesson">
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={onNext} variant="ghost" size="icon" className="flex sm:hidden text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-12 min-w-12 touch-none" aria-label="Next lesson">
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Next lesson</TooltipContent>
+                </Tooltip>
               )}
 
-              <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Rewind 10 seconds">
-                <RotateCcw className="h-5 w-5" />
-              </Button>
-              <Button onClick={() => skip(10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Forward 10 seconds">
-                <RotateCw className="h-5 w-5" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={() => skip(-10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Rewind 10 seconds">
+                    <RotateCcw className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Rewind 10s</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={() => skip(10)} variant="ghost" size="icon" className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white active:bg-white/20 min-h-11 min-w-11 lg:min-h-9 lg:min-w-9 touch-none" aria-label="Forward 10 seconds">
+                    <RotateCw className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Forward 10s</TooltipContent>
+              </Tooltip>
 
               <div
                 className="hidden sm:flex items-center"
                 onMouseEnter={() => setShowVolumeSlider(true)}
                 onMouseLeave={() => setShowVolumeSlider(false)}
               >
-                <Button onClick={adapterToggleMute} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white">
-                  {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : volume > 0.5 ? <Volume2 className="h-5 w-5" /> : <Volume1 className="h-5 w-5" />}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={adapterToggleMute} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white">
+                      {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : volume > 0.5 ? <Volume2 className="h-5 w-5" /> : <Volume1 className="h-5 w-5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isMuted || volume === 0 ? "Unmute" : "Mute"}</TooltipContent>
+                </Tooltip>
                 <div className={cn("overflow-hidden transition-all", showVolumeSlider ? "w-20 ml-1" : "w-0")}>
                   <input
                     type="range" min={0} max={1} step={0.05}
@@ -750,9 +808,14 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
                   />
                 </div>
               </div>
-              <Button onClick={adapterToggleMute} variant="ghost" size="icon" className="sm:hidden text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11">
-                {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={adapterToggleMute} variant="ghost" size="icon" className="sm:hidden text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11">
+                    {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : volume > 0.5 ? <Volume2 className="h-5 w-5" /> : <Volume1 className="h-5 w-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{isMuted || volume === 0 ? "Unmute" : "Mute"}</TooltipContent>
+              </Tooltip>
 
               <span className="text-xs sm:text-sm tabular-nums px-1">
                 {formatTime(currentTime)} <span className="text-white/60">/ {formatTime(duration)}</span>
@@ -760,11 +823,16 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
 
               <div className="ml-auto flex items-center gap-1">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Settings">
-                      <Settings className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Settings">
+                          <Settings className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Playback speed</TooltipContent>
+                  </Tooltip>
                   <DropdownMenuContent
                     align="end"
                     container={isFullscreen ? wrapperRef.current : undefined}
@@ -784,18 +852,28 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button
-                  onClick={() => setIsTheatre((t) => !t)}
-                  variant="ghost" size="icon"
-                  className="hidden md:inline-flex text-white hover:bg-white/10 hover:text-white"
-                  aria-label="Theatre mode"
-                >
-                  {isTheatre ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleTheatreToggle}
+                      variant="ghost" size="icon"
+                      className="hidden md:inline-flex text-white hover:bg-white/10 hover:text-white"
+                      aria-label="Theatre mode"
+                    >
+                      {isTheatre ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isTheatre ? "Exit theatre mode" : "Theatre mode"}</TooltipContent>
+                </Tooltip>
 
-                <Button onClick={toggleFullscreen} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Fullscreen">
-                  {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={toggleFullscreen} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white min-h-11 min-w-11 lg:min-h-9 lg:min-w-9" aria-label="Fullscreen">
+                      {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isFullscreen ? "Exit fullscreen" : "Fullscreen"}</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </motion.div>

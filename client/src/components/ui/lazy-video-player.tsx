@@ -23,6 +23,7 @@ interface LazyVideoPlayerProps {
   onPrev?: () => void;
   onNext?: () => void;
   className?: string;
+  onTheatreModeChange?: (isTheatre: boolean) => void;
 }
 
 export const LazyVideoPlayer = forwardRef<any, LazyVideoPlayerProps>((props, ref) => {
