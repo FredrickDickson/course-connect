@@ -41,9 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const profileFetchedRef = useRef<string | null>(null);
 
   const fetchUserProfile = useCallback(async (currentAuthUser: User): Promise<UserProfile> => {
-    // Avoid redundant fetches for the same user if we already have data
-    if (user && user.id === currentAuthUser.id) return user;
-    
     console.log("Fetching profile for user:", currentAuthUser.id);
     const [{ data: profile, error: profileError }, { data: userRow, error: userError }] = await Promise.all([
       supabase
@@ -72,7 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? String(currentAuthUser.user_metadata.role).toLowerCase()
       : null;
     const userTableRole = userRow?.role ? String(userRow.role).toLowerCase() : null;
-    const derivedRole = metadataRole || userTableRole || profileData?.status || "student";
+    // Database role is source of truth; metadata is fallback
+    const derivedRole = userTableRole || metadataRole || profileData?.status || "student";
 
     return {
       id: currentAuthUser.id,
