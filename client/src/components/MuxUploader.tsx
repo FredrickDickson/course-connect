@@ -96,18 +96,18 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       const pollInterval = setInterval(async () => {
         try {
           const statusResponse = await fetch(`/api/mux/asset/${assetId}`);
-          const { asset } = await statusResponse.json();
+          const { muxAsset } = await statusResponse.json();
 
-          if (asset.upload_status === 'ready') {
+          if (muxAsset?.upload_status === 'ready') {
             clearInterval(pollInterval);
             setUploadProgress({
               progress: 100,
               status: 'ready',
               message: 'Upload complete!'
             });
-            onUploadComplete(muxAssetId, asset.mux_playback_id);
+            onUploadComplete(muxAssetId, muxAsset.mux_playback_id);
             setIsUploading(false);
-          } else if (asset.upload_status === 'errored') {
+          } else if (muxAsset?.upload_status === 'errored') {
             clearInterval(pollInterval);
             setUploadProgress({
               progress: 0,
