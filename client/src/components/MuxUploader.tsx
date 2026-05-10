@@ -56,31 +56,23 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
     });
 
     try {
-      // Get auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      // Get upload URL via Supabase edge function
+      const { data: initData, error: initError } = await supabase.functions.invoke(
+        'mux-upload-url',
+        {
+          body: {
+            lessonId,
+            fileName: file.name,
+            fileSize: file.size,
+          },
+        },
+      );
+
+      if (initError || !initData?.uploadUrl) {
+        throw new Error(initError?.message || 'Failed to get upload URL');
       }
 
-      // Get upload URL from server
-      const response = await fetch('/api/mux/upload-url', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          lessonId,
-          fileName: file.name,
-          fileSize: file.size,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      const { uploadUrl, uploadId, assetId, muxAssetId } = await response.json();
+      const { uploadUrl, assetId, muxAssetId } = initData;
 
       setUploadProgress({
         progress: 10,
@@ -111,8 +103,11 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       // Poll for asset readiness
       const pollInterval = setInterval(async () => {
         try {
-          const statusResponse = await fetch(`/api/mux/asset/${assetId}`);
-          const { muxAsset } = await statusResponse.json();
+          const { data: statusData } = await supabase.functions.invoke(
+            'mux-asset-status',
+            { body: { assetId } },
+          );
+          const muxAsset = statusData?.muxAsset;
 
           if (muxAsset?.upload_status === 'ready') {
             clearInterval(pollInterval);
