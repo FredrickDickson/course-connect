@@ -238,7 +238,7 @@ router.delete(
             )
           )
         `)
-        .eq('id', muxAsset.lesson_id)
+        .eq('id', muxAsset.lesson_id!)
         .single();
 
       if (lessonError || !lesson) {
