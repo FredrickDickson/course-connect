@@ -22,7 +22,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("mux-upload-url called");
     if (!MUX_TOKEN_ID || !MUX_TOKEN_SECRET) {
+      console.error("Mux credentials missing: TOKEN_ID", !!MUX_TOKEN_ID, "TOKEN_SECRET", !!MUX_TOKEN_SECRET);
       return new Response(
         JSON.stringify({ error: "Mux credentials are not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -77,6 +79,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (lessonErr || !lesson) {
+      console.error("Lesson lookup failed:", lessonErr, "lessonId:", lessonId);
       return new Response(JSON.stringify({ error: "Lesson not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
