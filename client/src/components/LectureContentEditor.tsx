@@ -12,7 +12,7 @@ import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
 import { VideoSourceSelector, VideoSource } from './VideoSourceSelector';
 import { VideoUrlInput } from './VideoUrlInput';
-import { Video, FileText, ClipboardCheck, FileUp, Save, Upload } from 'lucide-react';
+import { Video, FileText, ClipboardCheck, FileUp, Save, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchQuizForLesson, fetchAssignmentForLesson } from '@/lib/curriculum-mutations';
@@ -56,6 +56,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [existingQuiz, setExistingQuiz] = useState<any>(null);
   const [existingAssignment, setExistingAssignment] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingVideo, setDeletingVideo] = useState(false);
   const { toast } = useToast();
   const ensureLessonPromiseRef = useRef<Promise<string> | null>(null);
 
@@ -326,6 +327,56 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setMuxStatus('error');
   };
 
+  const handleDeleteMuxVideo = async () => {
+    if (!muxAssetId || !savedLessonId) return;
+
+    setDeletingVideo(true);
+    try {
+      // Get the mux_assets record to find the mux_asset_id (database ID)
+      const { data: muxAsset, error: muxAssetError } = await supabase
+        .from('mux_assets')
+        .select('id')
+        .eq('lesson_id', savedLessonId)
+        .maybeSingle();
+
+      if (muxAssetError || !muxAsset) {
+        toast({ title: 'Error', description: 'Video record not found', variant: 'destructive' });
+        return;
+      }
+
+      // Call the server endpoint to delete the asset
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/mux/asset/${muxAsset.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete video');
+      }
+
+      // Clear local state
+      setMuxAssetId('');
+      setMuxPlaybackId('');
+      setMuxStatus('pending');
+
+      toast({ title: 'Success', description: 'Video deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting Mux video:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete video',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingVideo(false);
+    }
+  };
+
   const handleTabChange = async (value: string) => {
     setContentType(value as any);
     // For quiz/assignment tabs, auto-save the lesson first if it has a title
@@ -388,11 +439,36 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                       />
                     ) : videoSource === 'mux' ? (
                       currentLessonId ? (
-                        <MuxUploader
-                          lessonId={currentLessonId}
-                          onUploadComplete={handleMuxUploadComplete}
-                          onError={handleMuxUploadError}
-                        />
+                        <div className="space-y-4">
+                          {muxAssetId && muxStatus === 'ready' && (
+                            <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2">
+                                <Video className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                <span className="text-sm font-medium text-green-800 dark:text-green-200">Video uploaded successfully</span>
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleDeleteMuxVideo}
+                                disabled={deletingVideo}
+                              >
+                                {deletingVideo ? (
+                                  <>Deleting...</>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete Video
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                          <MuxUploader
+                            lessonId={currentLessonId}
+                            onUploadComplete={handleMuxUploadComplete}
+                            onError={handleMuxUploadError}
+                          />
+                        </div>
                       ) : (
                         <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
                           <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />

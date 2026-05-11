@@ -68,8 +68,34 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         },
       );
 
-      if (initError || !initData?.uploadUrl) {
-        throw new Error(initError?.message || 'Failed to get upload URL');
+      if (initError) {
+        console.error('Edge function error:', initError);
+        console.error('Error context:', (initError as any).context);
+        // Try to get the actual error message from the response body
+        const response = (initError as any).context;
+        let errorMessage = initError.message || 'Unknown error';
+        if (response && response.body) {
+          try {
+            const text = await response.text();
+            console.error('Response body text:', text);
+            if (text) {
+              try {
+                const json = JSON.parse(text);
+                errorMessage = json.error || json.message || text;
+              } catch {
+                errorMessage = text;
+              }
+            }
+          } catch (e) {
+            console.error('Failed to read response body:', e);
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (!initData?.uploadUrl) {
+        console.error('No upload URL in response:', initData);
+        throw new Error('No upload URL returned from edge function');
       }
 
       const { uploadUrl, assetId, muxAssetId, uploadId } = initData;

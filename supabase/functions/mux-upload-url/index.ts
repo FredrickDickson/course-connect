@@ -134,8 +134,8 @@ Deno.serve(async (req) => {
       .from("mux_assets")
       .insert({
         lesson_id: lessonId,
-        mux_asset_id: upload.asset_id ?? "",
-        mux_playback_id: "",
+        mux_asset_id: upload.asset_id ?? null,
+        mux_playback_id: null,
         upload_status: "pending",
         upload_url: upload.url ?? "",
         mux_upload_id: upload.id ?? null,
