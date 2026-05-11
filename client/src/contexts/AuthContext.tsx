@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     console.log("[Auth] users query result:", { userRow, userError });
 
-    // Fallback: if direct query fails (RLS), fetch from server endpoint
+    // Fallback 1: if direct query fails (RLS), fetch from server endpoint
     // which uses service-role key and bypasses RLS
     let serverUser: any = null;
     if (userError && !userRow) {
@@ -82,6 +82,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (e) {
         console.error("[Auth] Server fallback failed:", e);
+      }
+    }
+
+    // Fallback 2: if server endpoint also fails (e.g. static deployment),
+    // use Supabase Edge Function which runs independently
+    if (userError && !userRow && !serverUser) {
+      try {
+        const { data: edgeUser, error: edgeErr } = await supabase.functions.invoke(
+          "get-user-role",
+          {}
+        );
+        if (!edgeErr && edgeUser) {
+          serverUser = edgeUser;
+          console.log("[Auth] Edge function fallback user:", serverUser);
+        } else if (edgeErr) {
+          console.error("[Auth] Edge function fallback error:", edgeErr);
+        }
+      } catch (e) {
+        console.error("[Auth] Edge function fallback failed:", e);
       }
     }
 
