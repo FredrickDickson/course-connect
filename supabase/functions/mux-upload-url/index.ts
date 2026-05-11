@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
         mux_playback_id: "",
         upload_status: "pending",
         upload_url: upload.url ?? "",
+        mux_upload_id: upload.id ?? null,
       })
       .select()
       .single();
