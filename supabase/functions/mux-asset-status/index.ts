@@ -44,45 +44,73 @@ Deno.serve(async (req) => {
 
     let assetId: string | null = null;
     let muxAssetId: string | null = null;
+    let muxUploadId: string | null = null;
     if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       assetId = body?.assetId ?? null;
       muxAssetId = body?.muxAssetId ?? null;
+      muxUploadId = body?.uploadId ?? null;
     } else {
       const url = new URL(req.url);
       assetId = url.searchParams.get("assetId");
       muxAssetId = url.searchParams.get("muxAssetId");
+      muxUploadId = url.searchParams.get("uploadId");
     }
 
-    if (!assetId && !muxAssetId) {
-      return new Response(JSON.stringify({ error: "assetId or muxAssetId is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!assetId && !muxAssetId && !muxUploadId) {
+      return new Response(
+        JSON.stringify({ error: "assetId, muxAssetId or uploadId is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    let muxAsset: unknown = null;
+    let muxAsset: any = null;
     if (muxAssetId) {
-      const { data } = await admin
-        .from("mux_assets")
-        .select("*")
-        .eq("id", muxAssetId)
-        .maybeSingle();
+      const { data } = await admin.from("mux_assets").select("*").eq("id", muxAssetId).maybeSingle();
       muxAsset = data;
-      // Use || so empty-string mux_asset_id falls through to request's assetId
       assetId = muxAsset?.mux_asset_id || assetId;
+      muxUploadId = muxAsset?.mux_upload_id || muxUploadId;
     } else if (assetId) {
-      const { data } = await admin
-        .from("mux_assets")
-        .select("*")
-        .eq("mux_asset_id", assetId)
-        .maybeSingle();
+      const { data } = await admin.from("mux_assets").select("*").eq("mux_asset_id", assetId).maybeSingle();
       muxAsset = data;
+      muxUploadId = muxAsset?.mux_upload_id || muxUploadId;
+    } else if (muxUploadId) {
+      const { data } = await admin.from("mux_assets").select("*").eq("mux_upload_id", muxUploadId).maybeSingle();
+      muxAsset = data;
+      assetId = muxAsset?.mux_asset_id || assetId;
     }
 
-    let asset: unknown = null;
+    // Resolve assetId from Mux upload if we still don't have one
+    if (!assetId && muxUploadId) {
+      try {
+        const upRes = await fetch(`https://api.mux.com/video/v1/uploads/${muxUploadId}`, {
+          headers: { Authorization: muxAuthHeader() },
+        });
+        if (upRes.ok) {
+          const upJson = await upRes.json();
+          const resolved = upJson?.data?.asset_id ?? null;
+          if (resolved) {
+            assetId = resolved;
+            if (muxAsset?.id) {
+              await admin
+                .from("mux_assets")
+                .update({
+                  mux_asset_id: resolved,
+                  upload_status: muxAsset.upload_status === "pending" ? "preparing" : muxAsset.upload_status,
+                })
+                .eq("id", muxAsset.id);
+              muxAsset = { ...muxAsset, mux_asset_id: resolved };
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Mux upload lookup failed:", e);
+      }
+    }
+
+    let asset: any = null;
     if (assetId) {
       const muxRes = await fetch(`https://api.mux.com/video/v1/assets/${assetId}`, {
         headers: { Authorization: muxAuthHeader() },
@@ -90,6 +118,48 @@ Deno.serve(async (req) => {
       if (muxRes.ok) {
         const json = await muxRes.json();
         asset = json.data;
+
+        // Webhook fallback: sync DB if Mux already advanced
+        if (asset?.status === "ready" && muxAsset?.id) {
+          const playbackId = asset.playback_ids?.[0]?.id ?? muxAsset.mux_playback_id ?? "";
+          if (muxAsset.upload_status !== "ready" || !muxAsset.mux_playback_id) {
+            await admin
+              .from("mux_assets")
+              .update({
+                upload_status: "ready",
+                asset_status: "ready",
+                mux_playback_id: playbackId,
+                mux_asset_id: assetId,
+                duration_seconds: Math.round(asset.duration ?? 0),
+              })
+              .eq("id", muxAsset.id);
+            muxAsset = {
+              ...muxAsset,
+              upload_status: "ready",
+              asset_status: "ready",
+              mux_playback_id: playbackId,
+              mux_asset_id: assetId,
+            };
+            if (muxAsset.lesson_id && playbackId) {
+              await admin
+                .from("lessons")
+                .update({ mux_playback_id: playbackId, mux_asset_id: assetId, mux_status: "ready" })
+                .eq("id", muxAsset.lesson_id);
+            }
+          }
+        } else if (asset?.status === "errored" && muxAsset?.id && muxAsset.upload_status !== "errored") {
+          await admin
+            .from("mux_assets")
+            .update({
+              upload_status: "errored",
+              asset_status: "errored",
+              error_message: JSON.stringify(asset.errors ?? null),
+            })
+            .eq("id", muxAsset.id);
+          if (muxAsset.lesson_id) {
+            await admin.from("lessons").update({ mux_status: "errored" }).eq("id", muxAsset.lesson_id);
+          }
+        }
       }
     }
 

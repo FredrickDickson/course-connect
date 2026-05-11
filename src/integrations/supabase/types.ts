@@ -2473,10 +2473,12 @@ export type Database = {
           asset_status: string | null
           created_at: string | null
           duration_seconds: number | null
+          error_message: string | null
           id: string
           lesson_id: string | null
-          mux_asset_id: string
+          mux_asset_id: string | null
           mux_playback_id: string
+          mux_upload_id: string | null
           updated_at: string | null
           upload_status: string | null
           upload_url: string | null
@@ -2485,10 +2487,12 @@ export type Database = {
           asset_status?: string | null
           created_at?: string | null
           duration_seconds?: number | null
+          error_message?: string | null
           id?: string
           lesson_id?: string | null
-          mux_asset_id: string
+          mux_asset_id?: string | null
           mux_playback_id: string
+          mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
           upload_url?: string | null
@@ -2497,10 +2501,12 @@ export type Database = {
           asset_status?: string | null
           created_at?: string | null
           duration_seconds?: number | null
+          error_message?: string | null
           id?: string
           lesson_id?: string | null
-          mux_asset_id?: string
+          mux_asset_id?: string | null
           mux_playback_id?: string
+          mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
           upload_url?: string | null

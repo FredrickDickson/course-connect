@@ -72,7 +72,7 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         throw new Error(initError?.message || 'Failed to get upload URL');
       }
 
-      const { uploadUrl, assetId, muxAssetId } = initData;
+      const { uploadUrl, assetId, muxAssetId, uploadId } = initData;
 
       setUploadProgress({
         progress: 10,
@@ -122,12 +122,13 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         message: 'Processing video... this may take a few minutes'
       });
 
-      // Poll for asset readiness using muxAssetId (assetId is null until upload completes)
+      // Poll for asset readiness. assetId is null until Mux finishes ingest,
+      // so we send uploadId too — the edge function will resolve the asset.
       const pollInterval = setInterval(async () => {
         try {
           const { data: statusData } = await supabase.functions.invoke(
             'mux-asset-status',
-            { body: { muxAssetId } },
+            { body: { muxAssetId, uploadId } },
           );
           const muxAsset = statusData?.muxAsset;
           const asset = statusData?.asset;
@@ -146,7 +147,8 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
               message: 'Upload complete!'
             });
             const playbackId = muxAsset?.mux_playback_id || asset?.playback_ids?.[0]?.id || '';
-            onUploadComplete(muxAssetId, playbackId);
+            const finalAssetId = muxAsset?.mux_asset_id || asset?.id || assetId || '';
+            onUploadComplete(finalAssetId, playbackId);
             setIsUploading(false);
           } else if (dbErrored || apiErrored) {
             clearInterval(pollInterval);
