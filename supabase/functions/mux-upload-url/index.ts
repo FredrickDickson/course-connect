@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
         cors_origin: origin,
         timeout: 3600,
         new_asset_settings: {
-          playback_policy: ["signed"],
+          playback_policy: ["public"],
           mp4_support: "standard",
           passthrough: lessonId,
           encoding_tier: "smart",

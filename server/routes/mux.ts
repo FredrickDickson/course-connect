@@ -238,7 +238,7 @@ router.delete(
             )
           )
         `)
-        .eq('id', muxAsset.lesson_id!)
+        .eq('id', muxAsset.lesson_id)
         .single();
 
       if (lessonError || !lesson) {
@@ -294,6 +294,51 @@ router.delete(
       res.status(500).json({ 
         error: 'DELETE_ERROR',
         message: 'Failed to delete asset' 
+      });
+    }
+  }),
+);
+
+// Update Mux asset to public playback policy
+router.post(
+  '/asset/:muxAssetId/make-public',
+  requireSupabaseAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const { muxAssetId } = req.params;
+
+    try {
+      // Get the mux_asset record
+      const { data: muxAsset, error: muxAssetError } = await supabase
+        .from('mux_assets')
+        .select('*')
+        .eq('id', muxAssetId)
+        .single();
+
+      if (muxAssetError || !muxAsset) {
+        return res.status(404).json({ 
+          error: 'ASSET_NOT_FOUND',
+          message: 'Asset record not found' 
+        });
+      }
+
+      if (!muxAsset.mux_asset_id) {
+        return res.status(400).json({ 
+          error: 'NO_MUX_ASSET_ID',
+          message: 'No Mux asset ID found' 
+        });
+      }
+
+      // Update asset to public playback policy
+      await mux.video.assets.update(muxAsset.mux_asset_id, {
+        playback_policy: 'public',
+      } as any);
+
+      res.json({ message: 'Asset updated to public playback policy' });
+    } catch (error) {
+      console.error('Update asset error:', error);
+      res.status(500).json({ 
+        error: 'UPDATE_ERROR',
+        message: 'Failed to update asset' 
       });
     }
   }),
