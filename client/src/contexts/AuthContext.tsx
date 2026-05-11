@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileFetchedRef.current = null;
   }, []);
 
-  const isLoading = !isAuthReady || (!!authUser && (isProfileLoading || !user));
+  const isLoading = !isAuthReady || isProfileLoading || (!!authUser && !user);
 
   const hasRole = (role: string) => user?.role === role;
   const isInstructor = () => hasRole("instructor") || hasRole("admin");
