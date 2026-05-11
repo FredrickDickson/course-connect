@@ -204,6 +204,101 @@ router.get(
   }),
 );
 
+// Delete Mux asset
+router.delete(
+  '/asset/:muxAssetId',
+  requireSupabaseAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const { muxAssetId } = req.params;
+
+    try {
+      // Get the mux_asset record
+      const { data: muxAsset, error: muxAssetError } = await supabase
+        .from('mux_assets')
+        .select('*')
+        .eq('id', muxAssetId)
+        .single();
+
+      if (muxAssetError || !muxAsset) {
+        return res.status(404).json({ 
+          error: 'ASSET_NOT_FOUND',
+          message: 'Asset record not found' 
+        });
+      }
+
+      // Verify user is instructor of the lesson
+      const { data: lesson, error: lessonError } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          modules!inner(
+            course_id,
+            courses!inner(
+              instructor_id
+            )
+          )
+        `)
+        .eq('id', muxAsset.lesson_id!)
+        .single();
+
+      if (lessonError || !lesson) {
+        return res.status(404).json({ 
+          error: 'LESSON_NOT_FOUND',
+          message: 'Lesson not found' 
+        });
+      }
+
+      if (lesson.modules?.courses?.instructor_id !== req.user?.id) {
+        return res.status(403).json({ 
+          error: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only instructors can delete videos' 
+        });
+      }
+
+      // Delete asset from Mux if it exists
+      if (muxAsset.mux_asset_id) {
+        try {
+          await mux.video.assets.delete(muxAsset.mux_asset_id);
+        } catch (muxError) {
+          console.error('Mux asset deletion error:', muxError);
+          // Continue with database cleanup even if Mux deletion fails
+        }
+      }
+
+      // Delete the mux_asset record
+      const { error: deleteError } = await supabase
+        .from('mux_assets')
+        .delete()
+        .eq('id', muxAssetId);
+
+      if (deleteError) {
+        return res.status(500).json({ 
+          error: 'DATABASE_ERROR',
+          message: 'Failed to delete asset record' 
+        });
+      }
+
+      // Clear the lesson's mux_playback_id and mux_status
+      await supabase
+        .from('lessons')
+        .update({
+          mux_playback_id: null,
+          mux_status: null,
+          mux_asset_id: null,
+        })
+        .eq('id', muxAsset.lesson_id!);
+
+      res.json({ message: 'Asset deleted successfully' });
+    } catch (error) {
+      console.error('Delete asset error:', error);
+      res.status(500).json({ 
+        error: 'DELETE_ERROR',
+        message: 'Failed to delete asset' 
+      });
+    }
+  }),
+);
+
 // Helper functions for webhook handling
 async function handleAssetReady(data: any) {
   const { id, playback_ids, passthrough } = data;
