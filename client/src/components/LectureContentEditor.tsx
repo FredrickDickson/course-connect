@@ -332,32 +332,10 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
 
     setDeletingVideo(true);
     try {
-      // Get the mux_assets record to find the mux_asset_id (database ID)
-      const { data: muxAsset, error: muxAssetError } = await supabase
-        .from('mux_assets')
-        .select('id')
-        .eq('lesson_id', savedLessonId)
-        .maybeSingle();
-
-      if (muxAssetError || !muxAsset) {
-        toast({ title: 'Error', description: 'Video record not found', variant: 'destructive' });
-        return;
-      }
-
-      // Call the server endpoint to delete the asset
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/mux/asset/${muxAsset.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
+      const { error } = await supabase.functions.invoke('mux-delete-asset', {
+        body: { lessonId: savedLessonId },
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete video');
-      }
+      if (error) throw new Error(error.message || 'Failed to delete video');
 
       // Clear local state
       setMuxAssetId('');
