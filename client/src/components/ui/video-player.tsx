@@ -529,6 +529,54 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   }, [volume, isPlaying, currentTime, duration]);
 
   return (
+    videoPlatform === "mux" ? (
+      <div
+        ref={wrapperRef}
+        className={cn(
+          "group/player relative w-full bg-black overflow-hidden select-none",
+          "aspect-video",
+          isTheatre && !isFullscreen && "!aspect-auto h-[calc(100vh-8rem)]",
+          isFullscreen && "!aspect-auto h-screen",
+          !isFullscreen && "rounded-lg",
+          className,
+        )}
+      >
+        <MuxPlayer
+          ref={muxPlayerRef}
+          streamType="on-demand"
+          playbackId={muxPlaybackId}
+          poster={poster}
+          startTime={startAt}
+          metadata={title ? { video_title: title } : undefined}
+          style={{
+            width: "100%",
+            height: "100%",
+            // @ts-ignore CSS custom property
+            "--media-primary-color": "#B91C1C",
+            "--controls-backdrop-color": "rgba(0,0,0,0.6)",
+          } as React.CSSProperties}
+          onLoadedMetadata={(e: any) => {
+            const d = e?.target?.duration;
+            if (d && isFinite(d)) setDuration(d);
+            onLoadedMetadata?.();
+          }}
+          onDurationChange={(e: any) => {
+            const d = e?.target?.duration;
+            if (d && isFinite(d)) setDuration(d);
+          }}
+          onTimeUpdate={(e: any) => {
+            const t = e?.target?.currentTime;
+            if (typeof t === "number") setCurrentTime(t);
+            onTimeUpdate?.();
+          }}
+          onPlay={() => { setIsPlaying(true); onPlay?.(); }}
+          onPause={() => { setIsPlaying(false); onPause?.(); }}
+          onEnded={() => { setIsPlaying(false); onEnded?.(); }}
+          onCanPlay={() => { setIsLoading(false); onCanPlay?.(); }}
+          onError={() => { setError("Failed to load Mux video"); setIsLoading(false); onError?.(); }}
+        />
+      </div>
+    ) : (
     <div
       ref={wrapperRef}
       className={cn(
@@ -562,32 +610,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           className="absolute inset-0 w-full h-full [&_iframe]:absolute [&_iframe]:top-0 [&_iframe]:left-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0"
         />
       ) : videoPlatform === "mux" ? (
-        <div className="w-full h-full">
-          <MuxPlayer
-            playbackId={muxPlaybackId}
-            poster={poster}
-            title={title}
-            startTime={startAt}
-            volume={isMuted ? 0 : volume}
-            muted={isMuted}
-            playbackRate={speed}
-            onTimeUpdate={(e: any) => {
-              if (!e || !e.target) return;
-              setCurrentTime(e.target.currentTime);
-              onTimeUpdate?.();
-            }}
-            onLoadedMetadata={(e: any) => {
-              if (!e || !e.target) return;
-              setDuration(e.target.duration);
-              onLoadedMetadata?.();
-            }}
-            onPlay={() => { setIsPlaying(true); scheduleHide(); onPlay?.(); }}
-            onPause={() => { setIsPlaying(false); setShowControls(true); onPause?.(); }}
-            onEnded={() => { setIsPlaying(false); setShowControls(true); onEnded?.(); }}
-            onError={() => { setError("Failed to load Mux video"); setIsLoading(false); onError?.(); }}
-            onCanPlay={() => { setIsLoading(false); onCanPlay?.(); }}
-          />
-        </div>
+        null
       ) : (
         <video
           ref={videoRef}
