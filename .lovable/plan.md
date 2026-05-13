@@ -1,46 +1,38 @@
-## Plan
+# Fix the Mux video player
 
-I found two likely root causes:
-- **Mux:** recent `mux_assets` rows are stuck in `pending` with no `mux_asset_id`, which means the handoff from direct upload to asset creation is not being persisted. The current polling path only checks asset status, so it can wait forever if the asset ID is never backfilled.
-- **Instructor access:** your current user already has `users.role = instructor`, so this is likely a **frontend role-resolution/loading bug**, not a missing role in the database.
+## Problem
 
-### 1) Make the Mux upload flow resilient
-- Update the upload flow so it tracks the **Mux upload ID** as well as the eventual asset ID.
-- Change the status function to poll **Mux upload state first**, discover the created asset ID when it becomes available, save it back to `mux_assets`/`lessons`, then continue polling the asset until playback is ready.
-- Keep the webhook, but make it **idempotent** and treat it as a fast-path instead of the only path.
-- Improve the client uploader so it shows accurate states (`uploading`, `processing`, `ready`, `failed`) and stops hanging at 50% when Mux has already advanced.
+In `client/src/components/ui/video-player.tsx`, when a lesson is a Mux video the wrapper renders:
+1. The official `<MuxPlayer>` component — which ships with **its own** play/pause button, scrub bar, time display, volume, settings, and fullscreen UI.
+2. Our **custom** overlay on top — center play button, bottom control bar, scrub bar, time `0:00 / 0:00`, settings, fullscreen — driven by local state.
 
-### 2) Fix instructor role gating
-- Refactor auth state so **session readiness** and **role readiness** are handled separately.
-- Resolve the role from the database deterministically and avoid redirecting/hiding instructor UI while role data is still loading.
-- Update the header, protected routes, and instructor dashboard checks so a real instructor is not bounced out during transient auth/profile fetch states.
+That is the "two video players" the user sees. It also explains the missing duration: our custom bar reads duration from `e.target.duration` on `onLoadedMetadata`, but `@mux/mux-player-react` does not always populate `e.target.duration` on that event in the same way HTML5 `<video>` does, so the bottom strip stays at `0:00`. The Mux player's own UI shows the correct duration — it is just hidden behind our overlay.
 
-### 3) Validate both fixes end-to-end
-- Verify a real upload moves through: `pending -> preparing/processing -> ready` and writes `mux_playback_id` back to the lesson.
-- Verify an instructor account sees the **Instructor** nav item and can open `/instructor` without being redirected.
-- Check edge-function logs after the changes to confirm the webhook and polling fallback are both working.
+## Fix
 
-## Technical details
+When `videoPlatform === "mux"`, render **only** the Mux Player with its native controls and skip every piece of the custom UI. For all other sources (HTML5, YouTube, Vimeo) keep the existing behavior unchanged.
 
-### Expected code changes
-- `supabase/functions/mux-upload-url/index.ts`
-- `supabase/functions/mux-asset-status/index.ts`
-- `supabase/functions/mux-webhook/index.ts`
-- `client/src/components/MuxUploader.tsx`
-- `client/src/contexts/AuthContext.tsx`
-- `client/src/components/ProtectedRoute.tsx`
-- `client/src/components/header.tsx`
-- possibly `client/src/pages/instructor-dashboard.tsx`
+### Changes in `client/src/components/ui/video-player.tsx`
 
-### Database change likely needed first
-To make Mux polling reliable, I’ll likely add fields like:
-- `mux_upload_id`
-- optional `error_message` / last failure detail
+1. Add an early-return branch inside the component's `return (...)` so that when `videoPlatform === "mux"` the JSX is only:
+   - `wrapperRef` div with the same outer classes (aspect-video, rounded, fullscreen handling, theatre handling).
+   - A single `<MuxPlayer>` filling the wrapper with `controls` left at default (its built-in UI), accent color set to brand crimson via `--media-primary-color: #B91C1C`, `streamType="on-demand"`, `playbackId={muxPlaybackId}`, `poster`, `metadata={{ video_title: title }}`, `startTime={startAt}`.
+   - Wire its events to still call the parent props: `onPlay`, `onPause`, `onEnded`, `onError`, `onCanPlay`, `onLoadedMetadata`, `onTimeUpdate`. Update local `currentTime`/`duration` state from these so the imperative ref (`videoRef.current.duration`) keeps working for the page that records progress.
+   - Expose `play()` / `pause()` via the existing `useImperativeHandle` by reading from `muxPlayerRef.current` (already declared).
+   - Skip: the loading spinner overlay, the center play button, the prev/next side buttons, the bottom controls bar, the title overlay, the keyboard shortcut handler, and the auto-hide controls timer (Mux Player handles all of this itself).
 
-That lets the app recover even when the webhook is delayed or missed.
+2. Keep the existing non-Mux render path exactly as it is so YouTube, Vimeo, and HTML5 video continue to use the custom overlay.
 
-### Success criteria
-- Upload no longer sits forever at 50%.
-- `mux_assets` records no longer accumulate in permanent `pending` state.
-- Lessons receive `mux_playback_id` automatically once ready.
-- Instructors can consistently see and open the instructor area.
+3. Read duration directly from the Mux player element on `loadedmetadata` (`e.target.duration`) **and** also listen to its `durationchange` event (Mux fires this once HLS manifest is parsed) so the parent always gets the real value for progress tracking.
+
+### Why this matches the user's request
+
+- "Use the mux player only for mux videos" → done; for Mux we render only `<MuxPlayer>` with no custom overlay.
+- "Two video players being played" → eliminated because there is now only one set of controls.
+- "Duration is not being pulled or shown" → the Mux Player's own time display shows duration correctly, and we also push it back through `onLoadedMetadata` / `durationchange` for any progress logic that depends on it.
+
+## Files touched
+
+- `client/src/components/ui/video-player.tsx` (only file).
+
+No DB, no edge functions, no other components affected. `lazy-video-player.tsx` and `pages/video-player.tsx` already pass `videoPlatform="mux"` and `muxPlaybackId` correctly, so no call-site changes are needed.
