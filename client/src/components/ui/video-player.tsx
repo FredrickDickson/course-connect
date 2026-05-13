@@ -903,6 +903,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         )}
       </AnimatePresence>
     </div>
+    )
   );
 });
 
