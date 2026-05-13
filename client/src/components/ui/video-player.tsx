@@ -609,8 +609,6 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           ref={externalContainerRef}
           className="absolute inset-0 w-full h-full [&_iframe]:absolute [&_iframe]:top-0 [&_iframe]:left-0 [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0"
         />
-      ) : videoPlatform === "mux" ? (
-        null
       ) : (
         <video
           ref={videoRef}
