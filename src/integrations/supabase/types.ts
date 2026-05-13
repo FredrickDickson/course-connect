@@ -2477,7 +2477,7 @@ export type Database = {
           id: string
           lesson_id: string | null
           mux_asset_id: string | null
-          mux_playback_id: string
+          mux_playback_id: string | null
           mux_upload_id: string | null
           updated_at: string | null
           upload_status: string | null
@@ -2491,7 +2491,7 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           mux_asset_id?: string | null
-          mux_playback_id: string
+          mux_playback_id?: string | null
           mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
@@ -2505,7 +2505,7 @@ export type Database = {
           id?: string
           lesson_id?: string | null
           mux_asset_id?: string | null
-          mux_playback_id?: string
+          mux_playback_id?: string | null
           mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
