@@ -105,7 +105,7 @@ export interface VideoPlayerProps {
   poster?: string;
   title?: string;
   startAt?: number;
-  onTimeUpdate?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
   onLoadedMetadata?: () => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -165,6 +165,17 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const pollRef = useRef<number | null>(null);
   const seekedRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
+  const lastEmittedTimeRef = useRef(0);
+
+  // Throttle parent onTimeUpdate to ~once every 5s so we don't spam Supabase.
+  const emitTime = (cur: number, dur: number) => {
+    if (!onTimeUpdate) return;
+    if (!isFinite(cur)) return;
+    const last = lastEmittedTimeRef.current;
+    if (Math.abs(cur - last) < 5) return;
+    lastEmittedTimeRef.current = cur;
+    onTimeUpdate(cur, dur || 0);
+  };
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -461,7 +472,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           onLoadedMetadata?.();
           vimeoPlayerRef.current.on("timeupdate", (d: any) => {
             setCurrentTime(d.seconds);
-            onTimeUpdate?.();
+            emitTime(d.seconds, duration);
           });
           vimeoPlayerRef.current.on("play", () => { setIsPlaying(true); onPlay?.(); scheduleHide(); });
           vimeoPlayerRef.current.on("pause", () => { setIsPlaying(false); onPause?.(); setShowControls(true); });
@@ -494,7 +505,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         setCurrentTime(p.getCurrentTime() || 0);
         const d = p.getDuration() || 0;
         if (d && d !== duration) setDuration(d);
-        onTimeUpdate?.();
+        emitTime(p.getCurrentTime() || 0, d || duration);
       } catch {}
     }, 500);
     return () => { if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; } };
@@ -505,6 +516,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   useEffect(() => {
     if (isExternal) return;
     seekedRef.current = false;
+    lastEmittedTimeRef.current = 0;
   }, [isExternal, actualSrc]);
 
   // Keyboard shortcuts
@@ -566,8 +578,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           }}
           onTimeUpdate={(e: any) => {
             const t = e?.target?.currentTime;
+            const d = e?.target?.duration;
             if (typeof t === "number") setCurrentTime(t);
-            onTimeUpdate?.();
+            emitTime(typeof t === "number" ? t : 0, isFinite(d) ? d : duration);
           }}
           onPlay={() => { setIsPlaying(true); onPlay?.(); }}
           onPause={() => { setIsPlaying(false); onPause?.(); }}
@@ -621,7 +634,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             const v = videoRef.current; if (!v) return;
             setCurrentTime(v.currentTime);
             if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1));
-            onTimeUpdate?.();
+            emitTime(v.currentTime, v.duration || duration);
           }}
           onLoadedMetadata={() => {
             const v = videoRef.current; if (!v) return;

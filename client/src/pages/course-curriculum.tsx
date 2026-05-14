@@ -60,6 +60,12 @@ interface Lesson {
   description: string;
   contentType: "video" | "text" | "quiz" | "assignment";
   videoUrl?: string;
+  videoPlatform?: "youtube" | "vimeo";
+  videoId?: string;
+  muxAssetId?: string;
+  muxPlaybackId?: string;
+  muxStatus?: string;
+  content?: string;
   duration?: number;
   order: number;
   resources: Resource[];
@@ -163,7 +169,7 @@ export default function CourseCurriculum() {
         const { data: lessons, error: lesErr } = await supabase
           .from("lessons")
           .select(
-            'id, title, description, content_type, video_url, duration_seconds, "order", module_id',
+            'id, title, description, content_type, content, video_url, video_platform, video_id, mux_asset_id, mux_playback_id, mux_status, duration_seconds, "order", module_id',
           )
           .in(
             "module_id",
@@ -187,6 +193,12 @@ export default function CourseCurriculum() {
             description: l.description || "",
             contentType: (l.content_type || "video") as any,
             videoUrl: l.video_url || undefined,
+            videoPlatform: (l.video_platform || undefined) as any,
+            videoId: l.video_id || undefined,
+            muxAssetId: l.mux_asset_id || undefined,
+            muxPlaybackId: l.mux_playback_id || undefined,
+            muxStatus: l.mux_status || undefined,
+            content: l.content || undefined,
             duration: l.duration_seconds || undefined,
             order: l.order,
             resources: [],
