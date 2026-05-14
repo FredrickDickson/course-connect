@@ -165,6 +165,17 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const pollRef = useRef<number | null>(null);
   const seekedRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
+  const lastEmittedTimeRef = useRef(0);
+
+  // Throttle parent onTimeUpdate to ~once every 5s so we don't spam Supabase.
+  const emitTime = (cur: number, dur: number) => {
+    if (!onTimeUpdate) return;
+    if (!isFinite(cur)) return;
+    const last = lastEmittedTimeRef.current;
+    if (Math.abs(cur - last) < 5) return;
+    lastEmittedTimeRef.current = cur;
+    onTimeUpdate(cur, dur || 0);
+  };
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
