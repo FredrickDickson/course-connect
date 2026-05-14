@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
       const lessonUpdate = {
         mux_playback_id: playbackId,
         mux_status: "ready",
+        duration_seconds: Math.round(data.duration ?? 0) || null,
       };
       if (passthrough) {
         await admin.from("lessons").update(lessonUpdate).eq("id", passthrough);
