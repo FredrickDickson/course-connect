@@ -516,6 +516,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   useEffect(() => {
     if (isExternal) return;
     seekedRef.current = false;
+    lastEmittedTimeRef.current = 0;
   }, [isExternal, actualSrc]);
 
   // Keyboard shortcuts
