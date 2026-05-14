@@ -472,7 +472,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           onLoadedMetadata?.();
           vimeoPlayerRef.current.on("timeupdate", (d: any) => {
             setCurrentTime(d.seconds);
-            onTimeUpdate?.();
+            emitTime(d.seconds, duration);
           });
           vimeoPlayerRef.current.on("play", () => { setIsPlaying(true); onPlay?.(); scheduleHide(); });
           vimeoPlayerRef.current.on("pause", () => { setIsPlaying(false); onPause?.(); setShowControls(true); });
@@ -505,7 +505,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         setCurrentTime(p.getCurrentTime() || 0);
         const d = p.getDuration() || 0;
         if (d && d !== duration) setDuration(d);
-        onTimeUpdate?.();
+        emitTime(p.getCurrentTime() || 0, d || duration);
       } catch {}
     }, 500);
     return () => { if (pollRef.current) { window.clearInterval(pollRef.current); pollRef.current = null; } };
@@ -577,8 +577,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
           }}
           onTimeUpdate={(e: any) => {
             const t = e?.target?.currentTime;
+            const d = e?.target?.duration;
             if (typeof t === "number") setCurrentTime(t);
-            onTimeUpdate?.();
+            emitTime(typeof t === "number" ? t : 0, isFinite(d) ? d : duration);
           }}
           onPlay={() => { setIsPlaying(true); onPlay?.(); }}
           onPause={() => { setIsPlaying(false); onPause?.(); }}
@@ -632,7 +633,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             const v = videoRef.current; if (!v) return;
             setCurrentTime(v.currentTime);
             if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1));
-            onTimeUpdate?.();
+            emitTime(v.currentTime, v.duration || duration);
           }}
           onLoadedMetadata={() => {
             const v = videoRef.current; if (!v) return;
