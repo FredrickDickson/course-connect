@@ -1,38 +1,47 @@
-# Fix the Mux video player
+## Goal
 
-## Problem
+1. Mux videos resume from saved playback time per lecture (already partially wired but currently broken).
+2. Mux video durations show in the course sidebar and course content list.
+3. Instructor can rename a lesson without losing/re‑uploading the Mux video.
 
-In `client/src/components/ui/video-player.tsx`, when a lesson is a Mux video the wrapper renders:
-1. The official `<MuxPlayer>` component — which ships with **its own** play/pause button, scrub bar, time display, volume, settings, and fullscreen UI.
-2. Our **custom** overlay on top — center play button, bottom control bar, scrub bar, time `0:00 / 0:00`, settings, fullscreen — driven by local state.
+## Findings
 
-That is the "two video players" the user sees. It also explains the missing duration: our custom bar reads duration from `e.target.duration` on `onLoadedMetadata`, but `@mux/mux-player-react` does not always populate `e.target.duration` on that event in the same way HTML5 `<video>` does, so the bottom strip stays at `0:00`. The Mux player's own UI shows the correct duration — it is just hidden behind our overlay.
+- `client/src/pages/video-player.tsx` already reads `resumeSeconds` from `progress.watch_time_seconds`, but never passes it to the player (`startAt` prop is missing on the `LazyVideoPlayer` call). Result: no resume for any source.
+- `client/src/components/ui/video-player.tsx` (Mux branch) does support `startTime={startAt}`, but its `onTimeUpdate` callback fires with no arguments, while the page handler expects `(cur, dur)`. Result: progress is never persisted, so even after fixing `startAt` there's nothing to resume to.
+- `lessons.duration_seconds` is never set for Mux uploads. `mux-asset-status` and `mux-webhook` write `duration_seconds` only into the `mux_assets` row, while the sidebar reads `lessons.duration_seconds`. Result: Mux lessons render with no duration in the sidebar / course content list.
+- `course-curriculum.tsx`'s `Lesson` interface and the data it passes to `LectureContentEditor` omit `muxAssetId`, `muxPlaybackId`, `muxStatus`. When the editor opens for an existing Mux lesson, those fields default to empty, and saving wipes `mux_asset_id` / `mux_playback_id` / `mux_status` to `null` — appearing as if the video was lost. This is why simply changing the title currently requires re‑uploading.
 
-## Fix
+## Changes
 
-When `videoPlatform === "mux"`, render **only** the Mux Player with its native controls and skip every piece of the custom UI. For all other sources (HTML5, YouTube, Vimeo) keep the existing behavior unchanged.
+### 1. Resume playback for Mux (and all sources)
 
-### Changes in `client/src/components/ui/video-player.tsx`
+`client/src/components/ui/video-player.tsx`
+- In the Mux `<MuxPlayer>` `onTimeUpdate`, call `onTimeUpdate?.(t, duration)` with currentTime + duration.
+- Do the same in the YouTube, Vimeo, and HTML5 native `onTimeUpdate` handlers so progress persistence works for every source.
+- Throttle: only invoke parent `onTimeUpdate` roughly every 5s (compare to a ref) to avoid flooding Supabase.
 
-1. Add an early-return branch inside the component's `return (...)` so that when `videoPlatform === "mux"` the JSX is only:
-   - `wrapperRef` div with the same outer classes (aspect-video, rounded, fullscreen handling, theatre handling).
-   - A single `<MuxPlayer>` filling the wrapper with `controls` left at default (its built-in UI), accent color set to brand crimson via `--media-primary-color: #B91C1C`, `streamType="on-demand"`, `playbackId={muxPlaybackId}`, `poster`, `metadata={{ video_title: title }}`, `startTime={startAt}`.
-   - Wire its events to still call the parent props: `onPlay`, `onPause`, `onEnded`, `onError`, `onCanPlay`, `onLoadedMetadata`, `onTimeUpdate`. Update local `currentTime`/`duration` state from these so the imperative ref (`videoRef.current.duration`) keeps working for the page that records progress.
-   - Expose `play()` / `pause()` via the existing `useImperativeHandle` by reading from `muxPlayerRef.current` (already declared).
-   - Skip: the loading spinner overlay, the center play button, the prev/next side buttons, the bottom controls bar, the title overlay, the keyboard shortcut handler, and the auto-hide controls timer (Mux Player handles all of this itself).
+`client/src/pages/video-player.tsx`
+- Pass `startAt={resumeSeconds}` to `<VP>`.
+- Keep the existing autosave + resume‑toast logic.
 
-2. Keep the existing non-Mux render path exactly as it is so YouTube, Vimeo, and HTML5 video continue to use the custom overlay.
+### 2. Show Mux duration in sidebar / course content
 
-3. Read duration directly from the Mux player element on `loadedmetadata` (`e.target.duration`) **and** also listen to its `durationchange` event (Mux fires this once HLS manifest is parsed) so the parent always gets the real value for progress tracking.
+`supabase/functions/mux-webhook/index.ts` and `supabase/functions/mux-asset-status/index.ts`
+- When the asset becomes `ready` and we update the `lessons` row (set `mux_playback_id`, `mux_asset_id`, `mux_status`), also set `duration_seconds = Math.round(asset.duration)` so the sidebar and course content list pick it up.
 
-### Why this matches the user's request
+Backfill (one‑time): a small migration update copies `mux_assets.duration_seconds` into `lessons.duration_seconds` for existing rows where the lesson currently has no duration but a Mux playback id exists.
 
-- "Use the mux player only for mux videos" → done; for Mux we render only `<MuxPlayer>` with no custom overlay.
-- "Two video players being played" → eliminated because there is now only one set of controls.
-- "Duration is not being pulled or shown" → the Mux Player's own time display shows duration correctly, and we also push it back through `onLoadedMetadata` / `durationchange` for any progress logic that depends on it.
+### 3. Edit lesson title without losing the Mux video
 
-## Files touched
+`client/src/pages/course-curriculum.tsx`
+- Extend the `Lesson` interface with `muxAssetId?`, `muxPlaybackId?`, `muxStatus?`, `videoPlatform?`, `videoId?`.
+- Where the lessons list is built from the query result, map the snake_case DB fields (`mux_asset_id`, `mux_playback_id`, `mux_status`, `video_platform`, `video_id`) to those camelCase fields so they reach `LectureContentEditor`.
 
-- `client/src/components/ui/video-player.tsx` (only file).
+`client/src/components/LectureContentEditor.tsx`
+- The existing `useEffect` already hydrates `muxAssetId / muxPlaybackId / muxStatus` from `lesson?.*`, so once the parent passes them, edits (including title‑only) preserve the Mux asset.
+- Defensive guard: in `handleSave`, when `videoSource === 'mux'`, fall back to the previously loaded `lesson?.muxAssetId / muxPlaybackId / muxStatus` if local state is empty, so we never write `null` over an existing asset by accident.
 
-No DB, no edge functions, no other components affected. `lazy-video-player.tsx` and `pages/video-player.tsx` already pass `videoPlatform="mux"` and `muxPlaybackId` correctly, so no call-site changes are needed.
+## Out of scope
+
+- No DB schema changes (only data backfill and edge‑function field updates).
+- No changes to the upload flow itself or to the non‑Mux video player chrome (already finalized in the previous turn).
