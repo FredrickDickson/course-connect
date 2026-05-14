@@ -105,7 +105,7 @@ export interface VideoPlayerProps {
   poster?: string;
   title?: string;
   startAt?: number;
-  onTimeUpdate?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
   onLoadedMetadata?: () => void;
   onPlay?: () => void;
   onPause?: () => void;
