@@ -185,9 +185,10 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           lessonData.video_url = null;
           lessonData.video_platform = null;
           lessonData.video_id = null;
-          lessonData.mux_asset_id = muxAssetId || null;
-          lessonData.mux_playback_id = muxPlaybackId || null;
-          lessonData.mux_status = muxStatus || 'pending';
+          // Preserve existing Mux asset if local state is empty (e.g. title-only edit)
+          lessonData.mux_asset_id = muxAssetId || lesson?.muxAssetId || null;
+          lessonData.mux_playback_id = muxPlaybackId || lesson?.muxPlaybackId || null;
+          lessonData.mux_status = muxStatus || lesson?.muxStatus || 'pending';
         }
       } else {
         lessonData.video_url = null;
