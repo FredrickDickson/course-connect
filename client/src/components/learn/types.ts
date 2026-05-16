@@ -9,6 +9,7 @@ export interface LearnLesson {
   mux_asset_id: string | null;
   mux_playback_id: string | null;
   mux_status: string | null;
+  mux_thumbnail_time?: number | null;
   duration_seconds: number | null;
   order: number | null;
   content?: string | null;
