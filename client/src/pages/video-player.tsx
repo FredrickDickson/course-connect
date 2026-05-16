@@ -34,6 +34,7 @@ export default function VideoPlayerPage() {
   const [showUpNext, setShowUpNext] = useState(false);
   const [completedShown, setCompletedShown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [theatreMode, setTheatreMode] = useState(false);
   const lastSavedSec = useRef(0);
   const resumeToastShown = useRef<string | null>(null);
@@ -375,14 +376,15 @@ export default function VideoPlayerPage() {
                 <h2 className="text-xl sm:text-2xl font-bold font-serif">{currentLesson.title}</h2>
               </div>
               <div className="lg:hidden">
-                <Sheet>
+                <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="default" className="lg:hidden"><ListVideo className="h-4 w-4 mr-2" />Course content</Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-[#1C1D1F] border-l-0">
+                  <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-[#1C1D1F] border-l-0 text-white [&>button]:text-white [&>button]:opacity-100 [&>button]:right-3 [&>button]:top-3 [&>button]:h-10 [&>button]:w-10 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-md [&>button]:hover:bg-white/10 [&>button>svg]:h-5 [&>button>svg]:w-5">
                     <CourseSidebar
                       course={course} courseId={courseId!} currentLessonId={currentLesson.id}
                       progress={progress} onToggleComplete={handleToggleComplete}
+                      onLessonClick={() => setMobileSheetOpen(false)}
                     />
                   </SheetContent>
                 </Sheet>
