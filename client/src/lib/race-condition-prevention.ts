@@ -297,10 +297,11 @@ export const RaceConditionUtils = {
     
     return {
       execute: <T>(fn: () => Promise<T>): Promise<T> => {
-        promiseChain = promiseChain.then(() => fn()).catch(() => {
+        const next = promiseChain.then(() => fn()).catch(() => {
           // Continue chain even if one operation fails
-        });
-        return promiseChain as Promise<T>;
+        }) as Promise<T>;
+        promiseChain = next.then(() => undefined, () => undefined);
+        return next;
       },
       
       reset: () => {

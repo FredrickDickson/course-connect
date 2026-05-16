@@ -161,7 +161,7 @@ export default function Profile() {
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
       // Get payment enrollments from course_enrollments
-      const { data: paymentEnrollments, error: paymentError } = await supabase
+      const { data: paymentEnrollments, error: paymentError } = await (supabase as any)
         .from("course_enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id)
