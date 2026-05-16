@@ -13,6 +13,7 @@ interface Props {
   progress: ProgressRow[];
   onClose?: () => void;
   onToggleComplete: (lessonId: string, completed: boolean) => void;
+  onLessonClick?: (lessonId: string) => void;
 }
 
 const lessonIcon = (t?: string | null) => {
@@ -30,7 +31,7 @@ const muxThumbnailUrl = (lesson: LearnLesson) => {
   return `https://image.mux.com/${lesson.mux_playback_id}/thumbnail.jpg?time=${time}&width=160&height=90&fit_mode=preserve`;
 };
 
-export default function CourseSidebar({ course, courseId, currentLessonId, progress, onClose, onToggleComplete }: Props) {
+export default function CourseSidebar({ course, courseId, currentLessonId, progress, onClose, onToggleComplete, onLessonClick }: Props) {
   const allLessons = useMemo(
     () => course.modules?.flatMap(m => m.lessons || []) || [],
     [course]
@@ -101,6 +102,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                       <li key={lesson.id}>
                         <Link
                           href={`/learn/${courseId}/${lesson.id}`}
+                          onClick={() => onLessonClick?.(lesson.id)}
                           className={cn(
                             "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] active:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11 touch-none",
                             isActive && "bg-[#2D2F31] border-l-[3px] border-[#B91C1C] pl-[13px]",
