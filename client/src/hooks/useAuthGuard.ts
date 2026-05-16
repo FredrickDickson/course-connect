@@ -36,7 +36,7 @@ export function useAuthGuard() {
 
     const checkProfile = async () => {
       // Check if user has a professional profile
-      const { data: profProfile } = await supabase
+      const { data: profProfile } = await (supabase as any)
         .from("professional_profiles")
         .select("review_status")
         .eq("user_id", user.id)
