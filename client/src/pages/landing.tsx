@@ -205,7 +205,7 @@ function QualificationPathwaySection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-landing-outline-variant/10">
           {/* Card 1 */}
           <div className="bg-white p-6 sm:p-8 lg:p-12 hover:bg-gray-50 transition-all duration-300 group">
-            <div className="mb-8 sm:mb-12 font-sf-pro-text text-landing-secondary font-semibold tracking-widest text-xs uppercase">Excellence Recognized</div>
+            <div className="mb-8 sm:mb-12 font-sf-pro-text text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part I</div>
             <h3 className="font-sf-pro-display text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Gateway to Distinction (Associate)</h3>
             <p className="font-sf-pro-text text-landing-on-surface-variant leading-relaxed text-left">Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.</p>
           </div>
