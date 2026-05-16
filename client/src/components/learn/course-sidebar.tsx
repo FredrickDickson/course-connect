@@ -24,6 +24,12 @@ const lessonIcon = (t?: string | null) => {
   }
 };
 
+const muxThumbnailUrl = (lesson: LearnLesson) => {
+  if (!lesson.mux_playback_id || lesson.mux_status !== "ready") return null;
+  const time = lesson.mux_thumbnail_time ?? Math.min(10, Math.max(0, Math.floor((lesson.duration_seconds || 0) * 0.1)));
+  return `https://image.mux.com/${lesson.mux_playback_id}/thumbnail.jpg?time=${time}&width=160&height=90&fit_mode=preserve`;
+};
+
 export default function CourseSidebar({ course, courseId, currentLessonId, progress, onClose, onToggleComplete }: Props) {
   const allLessons = useMemo(
     () => course.modules?.flatMap(m => m.lessons || []) || [],
@@ -90,6 +96,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                     const done = !!lp?.completed;
                     const isActive = lesson.id === currentLessonId;
                     const Icon = lessonIcon(lesson.content_type);
+                    const thumbnailUrl = muxThumbnailUrl(lesson);
                     return (
                       <li key={lesson.id}>
                         <Link
@@ -110,7 +117,16 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                           >
                             {done && <Check className="h-3 w-3 text-white" />}
                           </button>
-                          <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
+                          {thumbnailUrl ? (
+                            <div className="relative mt-0.5 h-10 w-[72px] shrink-0 overflow-hidden rounded bg-black/40">
+                              <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Play className="h-3.5 w-3.5 fill-white text-white" />
+                              </div>
+                            </div>
+                          ) : (
+                            <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className={cn("truncate", isActive ? "font-semibold text-white" : "text-white/90")}>
                               {lIdx + 1}. {lesson.title}

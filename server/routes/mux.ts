@@ -347,6 +347,7 @@ router.post(
 // Helper functions for webhook handling
 async function handleAssetReady(data: any) {
   const { id, playback_ids, passthrough } = data;
+  const durationSeconds = data.duration ? Math.round(data.duration) : null;
 
   // Update mux_assets table
   await supabase
@@ -355,7 +356,7 @@ async function handleAssetReady(data: any) {
       upload_status: 'ready',
       mux_playback_id: playback_ids[0]?.id || '',
       asset_status: 'ready',
-      duration_seconds: data.duration,
+      duration_seconds: durationSeconds,
     })
     .eq('mux_asset_id', id);
 
@@ -366,6 +367,7 @@ async function handleAssetReady(data: any) {
       .update({
         mux_playback_id: playback_ids[0]?.id || '',
         mux_status: 'ready',
+        duration_seconds: durationSeconds,
       })
       .eq('id', passthrough);
   } else {
@@ -375,6 +377,7 @@ async function handleAssetReady(data: any) {
       .update({
         mux_playback_id: playback_ids[0]?.id || '',
         mux_status: 'ready',
+        duration_seconds: durationSeconds,
       })
       .eq('mux_asset_id', id);
   }
