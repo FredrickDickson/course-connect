@@ -384,7 +384,6 @@ export default function VideoPlayerPage() {
                     <CourseSidebar
                       course={course} courseId={courseId!} currentLessonId={currentLesson.id}
                       progress={progress} onToggleComplete={handleToggleComplete}
-                      onClose={() => setMobileSheetOpen(false)}
                       onLessonClick={() => setMobileSheetOpen(false)}
                     />
                   </SheetContent>
