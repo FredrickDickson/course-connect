@@ -47,7 +47,7 @@ router.get(
       }
 
       // Fetch Mux Data insights
-      const insights = await mux.data.insights.list({
+      const insights = await (mux.data as any).insights.list({
         filter: [`asset_id:${lesson.mux_asset_id}`],
         timeframe: ['30:days'],
       });
@@ -207,7 +207,7 @@ router.get(
 
     try {
       // Fetch current viewers from Mux Data
-      const views = await mux.data.views.list({
+      const views = await (mux.data as any).views.list({
         filter: [`playback_id:${playbackId}`],
         timeframe: ['1:minutes'],
       });

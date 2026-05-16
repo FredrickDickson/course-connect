@@ -50,11 +50,15 @@ class PushNotificationService {
           });
 
           // Create custom subscription object
+          const p256dhKey = pushSubscription.getKey('p256dh');
+          const authKey = pushSubscription.getKey('auth');
+          const toB64 = (buf: ArrayBuffer | null) =>
+            buf ? btoa(String.fromCharCode(...new Uint8Array(buf))) : '';
           this.subscription = {
             endpoint: pushSubscription.endpoint,
             keys: {
-              p256dh: pushSubscription.keys?.p256dh || '',
-              auth: pushSubscription.keys?.auth || '',
+              p256dh: toB64(p256dhKey),
+              auth: toB64(authKey),
             },
             unsubscribe: async () => {
               await pushSubscription.unsubscribe();
@@ -62,7 +66,7 @@ class PushNotificationService {
           };
 
           // Send subscription to server
-          await this.sendSubscriptionToServer(this.subscription);
+          await this.sendSubscriptionToServer(this.subscription as any);
         }
       } catch (error) {
         console.error('Push notification initialization error:', error);
@@ -75,7 +79,7 @@ class PushNotificationService {
     return process.env.VITE_VAPID_PUBLIC_KEY || 'test-vapid-key';
   }
 
-  private async sendSubscriptionToServer(subscription: PushSubscription) {
+  private async sendSubscriptionToServer(subscription: CustomPushSubscription) {
     try {
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
