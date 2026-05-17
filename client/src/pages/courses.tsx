@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCoursePrice } from "@/lib/format-price";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -563,7 +564,7 @@ export default function Courses() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="text-2xl font-bold text-foreground">${course.price.toLocaleString()}</div>
+                          <div className="text-2xl font-bold text-foreground">{formatCoursePrice(course.price, "$")}</div>
                           <div className="text-sm text-muted-foreground">
                             {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>
