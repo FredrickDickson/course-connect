@@ -246,6 +246,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoUpload = async (url: string, duration?: number) => {
+    setVideoDirty(true);
     setVideoUrl(url);
     if (duration) setVideoDuration(duration);
 
@@ -265,6 +266,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoUrlChange = (url: string, metadata?: { platform: 'youtube' | 'vimeo'; videoId: string }) => {
+    setVideoDirty(true);
     setVideoUrl(url);
     if (metadata) {
       setVideoPlatform(metadata.platform);
@@ -287,6 +289,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoSourceChange = (source: VideoSource) => {
+    setVideoDirty(true);
     setVideoSource(source);
     // Clear video data when switching sources
     if (source === 'upload') {
@@ -308,6 +311,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleMuxUploadComplete = async (assetId: string, playbackId: string) => {
+    setVideoDirty(true);
     setMuxAssetId(assetId);
     setMuxPlaybackId(playbackId);
     setMuxStatus('ready');
@@ -348,6 +352,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
       setMuxAssetId('');
       setMuxPlaybackId('');
       setMuxStatus('pending');
+      setVideoDirty(true);
 
       toast({ title: 'Success', description: 'Video deleted successfully' });
     } catch (error) {
