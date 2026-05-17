@@ -59,6 +59,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [deletingVideo, setDeletingVideo] = useState(false);
   const { toast } = useToast();
   const ensureLessonPromiseRef = useRef<Promise<string> | null>(null);
+  const [videoDirty, setVideoDirty] = useState(false);
 
   // Reset full editor state when the dialog (re)opens
   useEffect(() => {
@@ -79,6 +80,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setExistingQuiz(null);
     setExistingAssignment(null);
     ensureLessonPromiseRef.current = null;
+    setVideoDirty(false);
   }, [open, lesson?.id]);
 
   const refreshAttachments = async (lessonId: string) => {
