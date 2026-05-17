@@ -168,7 +168,11 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
       };
 
       // Handle video data based on source
-      if (contentType === 'video') {
+      // When editing an existing lesson, only touch video columns if the user
+      // actually interacted with the video controls. This prevents a pure
+      // title-edit from wiping the existing video.
+      const shouldWriteVideoFields = !savedLessonId || videoDirty || contentType !== 'video';
+      if (contentType === 'video' && shouldWriteVideoFields) {
         if (videoSource === 'upload') {
           lessonData.video_url = videoUrl || null;
           lessonData.video_platform = null;
@@ -192,7 +196,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           lessonData.mux_playback_id = muxPlaybackId || lesson?.muxPlaybackId || null;
           lessonData.mux_status = muxStatus || lesson?.muxStatus || 'pending';
         }
-      } else {
+      } else if (contentType !== 'video' && shouldWriteVideoFields) {
         lessonData.video_url = null;
         lessonData.video_platform = null;
         lessonData.video_id = null;
