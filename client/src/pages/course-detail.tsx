@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import { useEligibility } from "@/hooks/useEligibility";
+import { formatCoursePrice } from "@/lib/format-price";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -251,6 +252,32 @@ export default function CourseDetail() {
       return;
     }
 
+    // Instructors can self-enroll in their own courses for free so they
+    // can access course resources/announcements without going through checkout.
+    if (course && user.id === course.instructor_id) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "INSTRUCTOR",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled as the instructor");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
+      }
+      return;
+    }
+
     // If not eligible, show inline locked state (already displayed)
     if (eligibility && eligibility.status !== "ELIGIBLE") {
       return;
@@ -302,6 +329,7 @@ export default function CourseDetail() {
   }
 
   const isEnrolled = !!enrollment;
+  const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
@@ -433,7 +461,7 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Course Price</p>
-                      <p className="text-3xl font-bold text-primary">{course.currency || 'USD'} {parseFloat(course.price || '0').toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-primary">{formatCoursePrice(course.price, course.currency || 'USD')}</p>
                     </div>
                     {prerequisiteCourse && (
                       <div className="mb-4">
@@ -469,13 +497,13 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Course Price</p>
-                      <p className="text-3xl font-bold text-primary">{course.currency || 'USD'} {parseFloat(course.price || '0').toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleEnroll}>
-                      Enroll Now
+                      {isInstructorOfCourse ? 'Enroll as Instructor' : 'Enroll Now'}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-3 text-center">
-                      Secure checkout · Instant access
+                      {isInstructorOfCourse ? 'No payment required · Manage your course' : 'Secure checkout · Instant access'}
                     </p>
                   </CardContent>
                 </Card>
