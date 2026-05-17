@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import { useEligibility } from "@/hooks/useEligibility";
+import { formatCoursePrice } from "@/lib/format-price";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -251,6 +252,32 @@ export default function CourseDetail() {
       return;
     }
 
+    // Instructors can self-enroll in their own courses for free so they
+    // can access course resources/announcements without going through checkout.
+    if (course && user.id === course.instructor_id) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "INSTRUCTOR",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled as the instructor");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
+      }
+      return;
+    }
+
     // If not eligible, show inline locked state (already displayed)
     if (eligibility && eligibility.status !== "ELIGIBLE") {
       return;
@@ -302,6 +329,7 @@ export default function CourseDetail() {
   }
 
   const isEnrolled = !!enrollment;
+  const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
