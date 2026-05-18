@@ -283,6 +283,32 @@ export default function CourseDetail() {
       return;
     }
 
+    // Free courses skip Paystack entirely — directly create an ACTIVE enrollment.
+    const priceNum = Number(course?.price ?? 0);
+    if (course && (course.price == null || priceNum === 0)) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "COURSE",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled — enjoy the course!");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
+      }
+      return;
+    }
+
     // Proceed to checkout
     setLocation(`/checkout/${id}`);
   };
