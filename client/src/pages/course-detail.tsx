@@ -283,6 +283,32 @@ export default function CourseDetail() {
       return;
     }
 
+    // Free courses skip Paystack entirely — directly create an ACTIVE enrollment.
+    const priceNum = Number(course?.price ?? 0);
+    if (course && (course.price == null || priceNum === 0)) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "COURSE",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled — enjoy the course!");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
+      }
+      return;
+    }
+
     // Proceed to checkout
     setLocation(`/checkout/${id}`);
   };
@@ -330,6 +356,7 @@ export default function CourseDetail() {
 
   const isEnrolled = !!enrollment;
   const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
+  const isFreeCourse = !!course && (course.price == null || Number(course.price) === 0);
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
@@ -500,10 +527,10 @@ export default function CourseDetail() {
                       <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleEnroll}>
-                      {isInstructorOfCourse ? 'Enroll as Instructor' : 'Enroll Now'}
+                      {isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now')}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-3 text-center">
-                      {isInstructorOfCourse ? 'No payment required · Manage your course' : 'Secure checkout · Instant access'}
+                      {isInstructorOfCourse ? 'No payment required · Manage your course' : (isFreeCourse ? 'No payment required · Instant access' : 'Secure checkout · Instant access')}
                     </p>
                   </CardContent>
                 </Card>
