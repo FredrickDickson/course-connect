@@ -13,6 +13,7 @@ import { Link, useLocation } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, MapPin, Users, ArrowRight, X, Star, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCoursePrice } from "@/lib/format-price";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import EnrollmentGateModal from "@/components/enrollment-gate-modal";
 import { 
@@ -551,7 +552,7 @@ export default function CourseSearch() {
 
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-lg text-foreground">
-                          {course.currency || "GHS"} {Number(course.price).toLocaleString()}
+                          {formatCoursePrice(course.price, course.currency || "GHS")}
                         </span>
                       </div>
 
