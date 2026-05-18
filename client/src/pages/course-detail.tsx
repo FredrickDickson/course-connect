@@ -526,10 +526,10 @@ export default function CourseDetail() {
                       <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleEnroll}>
-                      {isInstructorOfCourse ? 'Enroll as Instructor' : 'Enroll Now'}
+                      {isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now')}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-3 text-center">
-                      {isInstructorOfCourse ? 'No payment required · Manage your course' : 'Secure checkout · Instant access'}
+                      {isInstructorOfCourse ? 'No payment required · Manage your course' : (isFreeCourse ? 'No payment required · Instant access' : 'Secure checkout · Instant access')}
                     </p>
                   </CardContent>
                 </Card>
