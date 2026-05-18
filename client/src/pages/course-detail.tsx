@@ -356,6 +356,7 @@ export default function CourseDetail() {
 
   const isEnrolled = !!enrollment;
   const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
+  const isFreeCourse = !!course && (course.price == null || Number(course.price) === 0);
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
