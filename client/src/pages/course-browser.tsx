@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCoursePrice } from "@/lib/format-price";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/header";
@@ -211,7 +212,7 @@ export default function CourseBrowser() {
 
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-lg text-foreground">
-                          {course.currency || "GHS"} {Number(course.price).toLocaleString()}
+                          {formatCoursePrice(course.price, course.currency || "GHS")}
                         </span>
                         {/* Spots left display removed */}
                       </div>
