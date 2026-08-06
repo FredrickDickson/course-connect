@@ -18,7 +18,6 @@ import {
   Calendar,
   PlayCircle,
   Target,
-  Sparkles,
   Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -420,29 +419,6 @@ export default function DashboardRedesigned() {
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* AI Assistant */}
-          <section>
-            <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#8b6f47]" />
-              AI Learning Assistant
-            </h2>
-            <Card className="bg-gradient-to-br from-[#f5f3ed] to-[#faf9f6] border-2 border-[#8b6f47]/20 rounded-[20px]">
-              <CardContent className="p-6">
-                <p className="text-sm text-[#4a3828] leading-relaxed mb-4">
-                  Based on your progress in Arbitration, we recommend exploring
-                  advanced negotiation techniques next.
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full border-[#8b6f47] text-[#610000] hover:bg-white"
-                >
-                  Get Personalized Recommendations
-                </Button>
               </CardContent>
             </Card>
           </section>
