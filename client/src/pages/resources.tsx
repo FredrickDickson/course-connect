@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import InstructorResourceUpload from "@/components/resources/instructor-resource-upload";
@@ -100,35 +100,27 @@ export default function Resources() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/">
-              <Button variant="ghost" data-testid="button-back">
-                <i className="fas fa-arrow-left mr-2"></i>
-                Back to Home
-              </Button>
-            </Link>
+    <StudentLayout>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold font-sf-pro-display" data-testid="title">Professional Resources</h1>
+            <p className="text-xl text-white/80 max-w-3xl mx-auto font-sf-pro-text">
+              Access comprehensive materials, guidelines, and tools to support your ADR practice and professional development.
+            </p>
           </div>
         </div>
-      </header>
+      </section>
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-16">
           <InstructorResourceUpload />
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Resources</h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Access comprehensive materials, guidelines, and tools to support your ADR practice and professional development.
-            </p>
-          </div>
 
           {/* Featured Resources */}
           <section className="space-y-8">
-            <h2 className="text-3xl font-bold text-foreground text-center">Featured Resources</h2>
+            <h2 className="text-3xl font-bold text-[#2c2015] text-center font-sf-pro-display">Featured Resources</h2>
             
             <div className="grid md:grid-cols-3 gap-6">
               {featuredResources.map((resource) => (
@@ -165,7 +157,7 @@ export default function Resources() {
 
           {/* Resource Categories */}
           <section className="space-y-8">
-            <h2 className="text-3xl font-bold text-foreground text-center">Resource Categories</h2>
+            <h2 className="text-3xl font-bold text-[#2c2015] text-center font-sf-pro-display">Resource Categories</h2>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {resourceCategories.map((category) => (
@@ -203,9 +195,9 @@ export default function Resources() {
           </section>
 
           {/* Quick Access Tools */}
-          <section className="bg-muted/30 rounded-xl p-8 space-y-6">
+          <section className="bg-[#faf9f6] rounded-xl p-8 space-y-6">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold text-foreground">Quick Access Tools</h2>
+              <h2 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Quick Access Tools</h2>
               <p className="text-lg text-muted-foreground">
                 Essential tools and calculators for ADR professionals
               </p>
@@ -248,21 +240,21 @@ export default function Resources() {
 
           {/* Member Access Notice */}
           <section className="text-center space-y-6">
-            <Card className="max-w-2xl mx-auto border-primary/20">
+            <Card className="max-w-2xl mx-auto border-[#d4c5b0]/30">
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <i className="fas fa-info-circle text-primary text-3xl"></i>
-                  <h3 className="text-xl font-bold text-foreground">Member Access Required</h3>
-                  <p className="text-muted-foreground">
+                  <i className="fas fa-info-circle text-[#610000] text-3xl"></i>
+                  <h3 className="text-xl font-bold text-[#2c2015] font-sf-pro-display">Member Access Required</h3>
+                  <p className="text-[#6b5d4f] font-sf-pro-text">
                     Some resources are exclusively available to CIMA certified members and enrolled students. 
                     Please log in to access your personalized resource library.
                   </p>
                   <div className="flex justify-center space-x-4">
-                    <Button data-testid="button-login-access">
+                    <Button className="bg-[#610000] hover:bg-[#7d0000]" data-testid="button-login-access">
                       <i className="fas fa-sign-in-alt mr-2"></i>
                       Member Login
                     </Button>
-                    <Button variant="outline" data-testid="button-become-member">
+                    <Button variant="outline" className="border-[#d4c5b0] text-[#610000] hover:bg-[#faf9f6]" data-testid="button-become-member">
                       Become a Member
                     </Button>
                   </div>
@@ -272,8 +264,6 @@ export default function Resources() {
           </section>
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </StudentLayout>
   );
 }

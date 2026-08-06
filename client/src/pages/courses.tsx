@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users, X } from "lucide-react";
 import { Link } from "wouter";
@@ -257,11 +256,9 @@ export default function Courses() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <StudentLayout noPadding>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground py-20">
+      <section className="bg-gradient-to-br from-[#610000] via-[#8b0000] to-[#610000] text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <div className="space-y-4">
@@ -269,8 +266,8 @@ export default function Courses() {
                 <BookOpen className="w-4 h-4 mr-2" />
                 {stats?.totalCourses || "50+"} Professional Courses
               </Badge>
-              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">{t("courses.title")}</h1>
-              <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight font-sf-pro-display">{t("courses.title")}</h1>
+              <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
                 {t("courses.subtitle")}
               </p>
             </div>
@@ -278,19 +275,19 @@ export default function Courses() {
             {/* Quick Stats */}
             <div className="flex flex-wrap justify-center gap-8 mt-8 text-sm">
               <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-yellow-300" />
+                <Users className="w-4 h-4 text-[#c5a572]" />
                 <span>5,000+ Global Members</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Star className="w-4 h-4 text-yellow-300" />
+                <Star className="w-4 h-4 text-[#c5a572]" />
                 <span>4.8 Average Rating</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-yellow-300" />
+                <Clock className="w-4 h-4 text-[#c5a572]" />
                 <span>International Recognition</span>
               </div>
               <div className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4 text-yellow-300" />
+                <BookOpen className="w-4 h-4 text-[#c5a572]" />
                 <span>Expert-Led Courses</span>
               </div>
             </div>
@@ -769,8 +766,6 @@ export default function Courses() {
           )}
         </div>
       </section>
-
-      <Footer />
-    </div>
+    </StudentLayout>
   );
 }

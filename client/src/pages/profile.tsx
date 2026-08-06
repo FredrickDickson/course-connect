@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import StudentLayout from "@/components/student-layout";
 import {
   User,
   Mail,
@@ -37,7 +38,6 @@ import {
   Edit2,
   Save,
   X,
-  ArrowLeft,
   Building2,
   Briefcase,
   GraduationCap,
@@ -453,20 +453,19 @@ export default function Profile() {
   }, [completionRecords]);
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <LoadingState message="Loading profile..." size="lg" />
+        </div>
+      </StudentLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Button>
-        </Link>
-
-        {/* Profile Header Card */}
-        <Card className="mb-6">
+    <StudentLayout>
+      {/* Profile Header Card */}
+      <Card className="mb-6 border-2 border-[#d4c5b0]/20 rounded-[24px]">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start gap-6">
               <AvatarUpload
@@ -906,6 +905,6 @@ export default function Profile() {
           data={activeCertData}
         />
       )}
-    </div>
+    </StudentLayout>
   );
 }

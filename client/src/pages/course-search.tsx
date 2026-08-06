@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import { Link, useLocation } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, MapPin, Users, ArrowRight, X, Star, Filter } from "lucide-react";
@@ -272,14 +271,12 @@ export default function CourseSearch() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <StudentLayout noPadding>
       {/* Hero Strip */}
-      <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-10">
+      <section className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl lg:text-4xl font-bold mb-2">Course Catalog</h1>
-          <p className="text-primary-foreground/80">{courses.length} courses available</p>
+          <h1 className="text-3xl lg:text-4xl font-bold mb-2 font-sf-pro-display">Course Catalog</h1>
+          <p className="text-white/80">{courses.length} courses available</p>
         </div>
       </section>
 
@@ -570,8 +567,6 @@ export default function CourseSearch() {
           )}
         </div>
       </section>
-
-      <Footer />
       
       {/* Enrollment Gate Modal */}
       <EnrollmentGateModal
@@ -592,6 +587,6 @@ export default function CourseSearch() {
           track: getNextCourse(userLevel)!.track
         } : undefined}
       />
-    </div>
+    </StudentLayout>
   );
 }

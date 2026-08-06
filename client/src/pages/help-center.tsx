@@ -1,53 +1,45 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function HelpCenter() {
   const { t, isRTL } = useLanguage();
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/">
-              <Button variant="ghost" data-testid="button-back">
-                <i className="fas fa-arrow-left mr-2"></i>
-                {t("legal.backToHome")}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="space-y-12">
+    <StudentLayout>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8" dir={isRTL ? "rtl" : "ltr"}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4">
             <h1
-              className="text-4xl font-bold text-foreground"
+              className="text-4xl font-bold font-sf-pro-display"
               data-testid="title"
             >
               {t("helpCenter.title")}
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-white/80 max-w-2xl mx-auto font-sf-pro-text">
               {t("helpCenter.subtitle")}
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="space-y-12">
 
           {/* Quick Links */}
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-[#d4c5b0]/30">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-3">
-                  <i className="fas fa-graduation-cap text-primary"></i>
+                <CardTitle className="flex items-center space-x-3 font-sf-pro-display">
+                  <i className="fas fa-graduation-cap text-[#610000]"></i>
                   <span>{t("helpCenter.gettingStarted")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
+                <p className="text-[#6b5d4f] font-sf-pro-text">
                   Learn how to enroll in courses, navigate the platform, and
                   begin your ADR education journey.
                 </p>
@@ -148,16 +140,16 @@ export default function HelpCenter() {
           </div>
 
           {/* Contact Support */}
-          <div className="bg-muted p-8 rounded-lg text-center space-y-4">
-            <h3 className="text-2xl font-bold text-foreground">
+          <div className="bg-[#faf9f6] p-8 rounded-lg text-center space-y-4">
+            <h3 className="text-2xl font-bold text-[#2c2015] font-sf-pro-display">
               {t("helpCenter.stillNeedHelp")}
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-[#6b5d4f] font-sf-pro-text">
               {t("helpCenter.supportTeam")}
             </p>
             <div className="flex justify-center space-x-4">
               <Link href="/contact">
-                <Button data-testid="button-contact-support">
+                <Button className="bg-[#610000] hover:bg-[#7d0000]" data-testid="button-contact-support">
                   <i className="fas fa-envelope mr-2"></i>
                   {t("helpCenter.contactSupport")}
                 </Button>
@@ -165,6 +157,7 @@ export default function HelpCenter() {
               <Link href="/technical-support">
                 <Button
                   variant="outline"
+                  className="border-[#d4c5b0] text-[#610000] hover:bg-white"
                   data-testid="button-technical-support"
                 >
                   <i className="fas fa-tools mr-2"></i>
@@ -175,8 +168,6 @@ export default function HelpCenter() {
           </div>
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </StudentLayout>
   );
 }

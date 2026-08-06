@@ -7,8 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import { useLocation } from "wouter";
 import { Plus, Users, MessageSquare, TrendingUp, Calendar, ChevronRight, Clock, Eye, BookOpen, HelpCircle, Lightbulb, Briefcase, GraduationCap, Coffee, Search, Sparkles, Trophy, Zap } from "lucide-react";
 import { Link } from "wouter";
@@ -301,26 +300,22 @@ export default function Community() {
 
   if (authLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <StudentLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#610000]"></div>
         </div>
-        <Footer />
-      </div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <StudentLayout fullWidth>
     <ErrorBoundary>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground py-16">
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <h1 className="text-3xl lg:text-4xl font-bold">CIMA Community</h1>
-          <p className="text-xl text-primary-foreground/80 max-w-3xl mx-auto">
+          <h1 className="text-3xl lg:text-4xl font-bold font-sf-pro-display">CIMA Community</h1>
+          <p className="text-xl text-white/80 max-w-3xl mx-auto font-sf-pro-text">
             Connect with ADR professionals in 33+ countries
           </p>
           <div className="max-w-2xl mx-auto mt-6">
@@ -334,19 +329,19 @@ export default function Community() {
       </section>
 
       {/* Sub-navigation */}
-      <div className="bg-white border-b sticky top-0 z-40">
+      <div className="bg-white border-b sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex gap-6 py-3 overflow-x-auto">
-            <Link href="/community" className="text-sm font-medium text-primary border-b-2 border-primary pb-3 whitespace-nowrap">
+            <Link href="/community" className="text-sm font-medium font-sf-pro-text text-[#610000] border-b-2 border-[#610000] pb-3 whitespace-nowrap">
               All Forums
             </Link>
-            <Link href="/community/my-boards" className="text-sm font-medium text-muted-foreground hover:text-primary pb-3 whitespace-nowrap">
+            <Link href="/community/my-boards" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap">
               My Course Boards
             </Link>
-            <Link href="/community/my-posts" className="text-sm font-medium text-muted-foreground hover:text-primary pb-3 whitespace-nowrap">
+            <Link href="/community/my-posts" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap">
               My Posts
             </Link>
-            <Link href="/community/notifications" className="text-sm font-medium text-muted-foreground hover:text-primary pb-3 whitespace-nowrap flex items-center gap-1">
+            <Link href="/community/notifications" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap flex items-center gap-1">
               Notifications
               <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
             </Link>
@@ -744,11 +739,9 @@ export default function Community() {
       </section>
       </ErrorBoundary>
 
-      <Footer />
-      
       {/* Mobile FAB */}
       <Button
-        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-red-600 hover:bg-red-700 z-50"
+        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-[#610000] hover:bg-[#7d0000] z-50"
         size="icon"
         onClick={() => setShowNewPostModal(true)}
       >
@@ -760,6 +753,6 @@ export default function Community() {
         open={showNewPostModal} 
         onOpenChange={setShowNewPostModal} 
       />
-    </div>
+    </StudentLayout>
   );
 }

@@ -832,9 +832,15 @@ export default function Onboarding() {
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-[#faf9f6]">
 
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+
+          <Loader2 className="w-12 h-12 animate-spin text-[#610000] mx-auto" />
+
+          <p className="text-[#6b5d4f] font-sf-pro-text">Loading your profile...</p>
+
+        </div>
 
       </div>
 
@@ -858,9 +864,39 @@ export default function Onboarding() {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-6 px-3 sm:py-8 sm:px-4">
+    <div className="min-h-screen bg-[#faf9f6] py-8 px-3 sm:py-12 sm:px-4">
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
+
+        {/* Header */}
+
+        <div className="text-center mb-8">
+
+          <div className="flex items-center justify-center mb-4">
+
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg">
+
+              <User className="w-8 h-8 text-white" />
+
+            </div>
+
+          </div>
+
+          <h1 className="text-3xl lg:text-4xl font-bold text-[#2c2015] font-sf-pro-display mb-2">
+
+            Complete Your Profile
+
+          </h1>
+
+          <p className="text-lg text-[#6b5d4f] font-sf-pro-text">
+
+            {step === 1 ? "Tell us about yourself" : "Your professional background"}
+
+          </p>
+
+        </div>
+
+
 
         {/* Progress Bar */}
 
@@ -868,17 +904,17 @@ export default function Onboarding() {
 
           <div className="flex items-center justify-between mb-3">
 
-            <span className="text-sm font-medium text-muted-foreground">Step {step} of 2</span>
+            <span className="text-sm font-semibold text-[#610000] font-sf-pro-text">Step {step} of 2</span>
 
-            <span className="text-sm text-muted-foreground">{step === 1 ? "Personal" : "Professional"}</span>
+            <span className="text-sm text-[#8b6f47] font-sf-pro-text">{step === 1 ? "Personal Information" : "Professional Details"}</span>
 
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
 
-            <div className={`h-2 flex-1 rounded-full transition-all duration-300 ease-out ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
+            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 1 ? "bg-gradient-to-r from-[#610000] to-[#8b0000]" : "bg-[#d4c5b0]"}`} />
 
-            <div className={`h-2 flex-1 rounded-full transition-all duration-300 ease-out ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
+            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 2 ? "bg-gradient-to-r from-[#610000] to-[#8b0000]" : "bg-[#d4c5b0]"}`} />
 
           </div>
 
@@ -888,23 +924,23 @@ export default function Onboarding() {
 
         {step === 1 && (
 
-          <Card className="transition-shadow duration-200 hover:shadow-lg">
+          <Card className="transition-all duration-300 hover:shadow-xl border-[#d4c5b0]/30 bg-white">
 
-            <CardHeader>
+            <CardHeader className="border-b border-[#d4c5b0]/20">
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
 
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                  <User className="w-5 h-5 text-primary" aria-hidden="true" />
+                  <User className="w-6 h-6 text-[#610000]" aria-hidden="true" />
 
                 </div>
 
                 <div>
 
-                  <CardTitle>Personal Information</CardTitle>
+                  <CardTitle className="text-xl font-sf-pro-display text-[#2c2015]">Personal Information</CardTitle>
 
-                  <CardDescription>Tell us about yourself</CardDescription>
+                  <CardDescription className="font-sf-pro-text text-[#6b5d4f]">We need a few details to set up your account</CardDescription>
 
                 </div>
 
@@ -912,25 +948,25 @@ export default function Onboarding() {
 
             </CardHeader>
 
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-6 pt-6">
 
               {/* Pre-filled read-only fields */}
 
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg transition-colors duration-200 hover:bg-muted">
+              <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#faf9f6] to-[#f5f3ed] rounded-xl transition-all duration-200 hover:shadow-md border border-[#d4c5b0]/20">
 
-                <Avatar className="w-14 h-14">
+                <Avatar className="w-16 h-16 ring-2 ring-[#d4c5b0] ring-offset-2">
 
                   <AvatarImage src={form.profile_photo_url} alt={form.full_name} />
 
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white text-lg font-semibold">{initials}</AvatarFallback>
 
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
 
-                  <p className="font-medium text-foreground truncate">{form.full_name}</p>
+                  <p className="font-semibold text-[#2c2015] font-sf-pro-display truncate text-lg">{form.full_name}</p>
 
-                  <p className="text-sm text-muted-foreground truncate">{form.email}</p>
+                  <p className="text-sm text-[#8b6f47] font-sf-pro-text truncate">{form.email}</p>
 
                 </div>
 
@@ -1245,7 +1281,7 @@ export default function Onboarding() {
 
                 onClick={saveStep1} 
 
-                className="w-full min-h-[44px] transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                className="w-full min-h-[48px] bg-gradient-to-r from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold text-base" 
 
                 disabled={isSaving}
 
@@ -1253,11 +1289,11 @@ export default function Onboarding() {
 
               >
 
-                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : null}
+                {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" /> : null}
 
                 Save & Continue
 
-                <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+                <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
 
               </Button>
 
@@ -1273,23 +1309,23 @@ export default function Onboarding() {
 
           <div className="space-y-6">
 
-            <Card className="transition-shadow duration-200 hover:shadow-lg">
+            <Card className="transition-all duration-300 hover:shadow-xl border-[#d4c5b0]/30 bg-white">
 
-              <CardHeader>
+              <CardHeader className="border-b border-[#d4c5b0]/20">
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
 
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                    <ShieldCheck className="w-5 h-5 text-primary" aria-hidden="true" />
+                    <ShieldCheck className="w-6 h-6 text-[#610000]" aria-hidden="true" />
 
                   </div>
 
                   <div>
 
-                    <CardTitle>Do you already have ADR experience?</CardTitle>
+                    <CardTitle className="text-xl font-sf-pro-display text-[#2c2015]">ADR Experience</CardTitle>
 
-                    <CardDescription>Answer to unlock the right onboarding path.</CardDescription>
+                    <CardDescription className="font-sf-pro-text text-[#6b5d4f]">Help us determine your starting level</CardDescription>
 
                   </div>
 
@@ -1297,23 +1333,23 @@ export default function Onboarding() {
 
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 pt-6">
 
-                <p className="text-sm text-muted-foreground">Selecting <strong>Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong>No</strong> grants instant Associate access so you can start learning right away.</p>
+                <p className="text-sm text-[#4a3828] font-sf-pro-text leading-relaxed">Selecting <strong className="text-[#610000]">Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong className="text-[#610000]">No</strong> grants instant Associate access so you can start learning right away.</p>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-xl border-2 border-[#610000]/20 bg-gradient-to-br from-[#610000]/5 to-[#8b6f47]/5 p-5">
                   <div className="flex items-start gap-3">
-                    <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">Associate access unlocked instantly</p>
-                      <p className="text-sm text-muted-foreground">
+                    <ShieldCheck className="w-6 h-6 text-[#610000] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-bold text-[#610000] font-sf-pro-display">Associate Access Unlocked Instantly</p>
+                      <p className="text-sm text-[#4a3828] font-sf-pro-text leading-relaxed">
                         Submit these details so our admissions team can review you for Member or Fellow access while you keep progressing.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
 
                   <Button
 
@@ -1323,9 +1359,13 @@ export default function Onboarding() {
 
                     className={cn(
 
-                      "h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 border-dashed whitespace-normal",
+                      "h-auto min-h-[100px] py-5 px-5 justify-start text-left flex-col items-start gap-2 border-2 rounded-xl transition-all duration-300 font-sf-pro-text",
 
-                      experienceChoice === "no" ? "border-destructive bg-destructive/10 text-destructive" : "border-muted-foreground/40"
+                      experienceChoice === "no" 
+
+                        ? "border-[#610000] bg-[#610000]/5 hover:bg-[#610000]/10 shadow-md" 
+
+                        : "border-[#d4c5b0] hover:border-[#8b6f47] hover:shadow-md bg-white"
 
                     )}
 
@@ -1335,15 +1375,15 @@ export default function Onboarding() {
 
                   >
 
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 text-base font-semibold text-[#2c2015]">
 
                       {isExperienceSubmitting && experienceChoice === "no" ? (
 
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        <Loader2 className="h-5 w-5 animate-spin text-[#610000]" aria-hidden="true" />
 
                       ) : (
 
-                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                        <ShieldCheck className="h-5 w-5 text-[#610000]" aria-hidden="true" />
 
                       )}
 
@@ -1351,7 +1391,7 @@ export default function Onboarding() {
 
                     </div>
 
-                    <p className="text-xs text-muted-foreground break-words whitespace-normal">We'll grant Associate-level content immediately so you can explore the core pathway.</p>
+                    <p className="text-sm text-[#6b5d4f] break-words whitespace-normal leading-relaxed">We'll grant Associate-level content immediately so you can explore the core pathway.</p>
 
                   </Button>
 
@@ -1359,7 +1399,13 @@ export default function Onboarding() {
 
                     type="button"
 
-                    className="h-auto min-h-[88px] py-4 px-4 justify-start text-left flex-col items-start gap-1 whitespace-normal"
+                    className={cn(
+
+                      "h-auto min-h-[100px] py-5 px-5 justify-start text-left flex-col items-start gap-2 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg font-sf-pro-text",
+
+                      "bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white border-0"
+
+                    )}
 
                     onClick={() => handleExperienceSelection("yes")}
 
@@ -1367,23 +1413,23 @@ export default function Onboarding() {
 
                   >
 
-                    <div className="flex items-center gap-2 text-sm font-medium">
+                    <div className="flex items-center gap-2 text-base font-semibold">
 
                       {isExperienceSubmitting && experienceChoice === "yes" ? (
 
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
 
                       ) : (
 
-                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                        <Sparkles className="h-5 w-5" aria-hidden="true" />
 
                       )}
 
-                      <span>Yes, I have ADR  experience</span>
+                      <span>Yes, I have ADR experience</span>
 
                     </div>
 
-                    <p className="text-xs text-primary-foreground/90 break-words whitespace-normal">Submit a quick professional profile. You'll keep Associate access while we review.</p>
+                    <p className="text-sm text-white/90 break-words whitespace-normal leading-relaxed">Submit a quick professional profile. You'll keep Associate access while we review.</p>
 
                   </Button>
 
@@ -1391,7 +1437,7 @@ export default function Onboarding() {
 
                 {experienceChoiceLocked && reviewStatusCopy && (
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-[#6b5d4f] font-sf-pro-text">
 
                     Your answer is locked while your profile is {reviewStatusCopy.title.toLowerCase()}.
 
@@ -1409,7 +1455,7 @@ export default function Onboarding() {
 
                     size="sm"
 
-                    className="px-0 text-muted-foreground"
+                    className="px-0 text-[#8b6f47] hover:text-[#610000] font-sf-pro-text"
 
                     onClick={resetExperienceFlow}
 
@@ -1427,23 +1473,23 @@ export default function Onboarding() {
 
             {showProfessionalForm && (
 
-              <Card id="professional-form-card" className="transition-shadow duration-200 hover:shadow-lg">
+              <Card id="professional-form-card" className="transition-all duration-300 hover:shadow-xl border-[#d4c5b0]/30 bg-white">
 
-                <CardHeader>
+                <CardHeader className="border-b border-[#d4c5b0]/20">
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
 
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                      <Briefcase className="w-5 h-5 text-primary" aria-hidden="true" />
+                      <Briefcase className="w-6 h-6 text-[#610000]" aria-hidden="true" />
 
                     </div>
 
                     <div>
 
-                      <CardTitle>Professional Background</CardTitle>
+                      <CardTitle className="text-xl font-sf-pro-display text-[#2c2015]">Professional Background</CardTitle>
 
-                      <CardDescription>Help us understand your experience</CardDescription>
+                      <CardDescription className="font-sf-pro-text text-[#6b5d4f]">Help us understand your experience</CardDescription>
 
                     </div>
 
@@ -1451,7 +1497,7 @@ export default function Onboarding() {
 
                 </CardHeader>
 
-                <CardContent className="space-y-5">
+                <CardContent className="space-y-6 pt-6">
 
                   {reviewStatusCopy ? (
 
@@ -1665,11 +1711,13 @@ export default function Onboarding() {
 
 
 
-                  <div className="flex flex-col-reverse sm:flex-row gap-3">
+                  <div className="flex flex-col-reverse sm:flex-row gap-4">
 
                     <Button 
 
-                      className="flex-1 min-h-[44px] border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                      variant="outline"
+
+                      className="flex-1 min-h-[48px] border-2 border-[#d4c5b0] text-[#610000] hover:bg-[#faf9f6] hover:border-[#8b6f47] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
 
                       onClick={() => setStep(1)}
 
@@ -1677,7 +1725,7 @@ export default function Onboarding() {
 
                     >
 
-                      <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+                      <ArrowLeft className="w-5 h-5 mr-2" aria-hidden="true" />
 
                       Back
 
@@ -1687,7 +1735,7 @@ export default function Onboarding() {
 
                       onClick={saveStep2} 
 
-                      className="flex-1 min-h-[44px] transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                      className="flex-1 min-h-[48px] bg-gradient-to-r from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
 
                       disabled={isSaving}
 
@@ -1695,9 +1743,9 @@ export default function Onboarding() {
 
                     >
 
-                      {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : <CheckCircle className="w-4 h-4 mr-2" aria-hidden="true" />}
+                      {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" /> : <CheckCircle className="w-5 h-5 mr-2" aria-hidden="true" />}
 
-                      Submit for review
+                      Submit for Review
 
                     </Button>
 

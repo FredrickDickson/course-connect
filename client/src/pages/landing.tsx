@@ -41,101 +41,233 @@ export default function Landing() {
   // }, []);
 
   return (
-    <div className="bg-white text-landing-on-surface font-sf-pro-text selection:bg-[#ffdad4] selection:text-[#410000] min-h-screen">
-      {/* Header - Floating Rounded Navbar with Animated LCD Border */}
-      <header className="fixed top-0 left-0 right-0 z-50 pt-4 px-4 lg:px-8">
-        <div className="max-w-[1400px] mx-auto">
-          <nav className="navbar-lcd-border bg-white/90 backdrop-blur-2xl rounded-2xl shadow-lg shadow-neutral-900/5">
-            <div className="flex h-20 items-center justify-between px-6 lg:px-10">
-              {/* Logo */}
-              <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-300 group">
-                <img 
-                  src={cimaLogo} 
-                  alt="CIMA Logo" 
-                  className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
-                />
-                <div>
-                  {/* Mobile: Stacked CIMA/Learn */}
-                  <div className="sm:hidden">
-                    <h1 className="text-base font-semibold text-landing-primary font-sf-pro-display tracking-tight leading-tight">CIMA</h1>
-                    <h1 className="text-base font-semibold text-landing-primary font-sf-pro-display tracking-tight leading-tight">Learn</h1>
-                  </div>
-                  {/* Desktop: Inline with subtitle */}
-                  <div className="hidden sm:block">
-                    <h1 className="text-xl font-semibold text-landing-primary font-sf-pro-display tracking-tight">CIMA Learn</h1>
-                    <p className="text-[11px] text-neutral-500 -mt-0.5 font-sf-pro-text tracking-wide">Professional ADR Education</p>
-                  </div>
-                </div>
+    <div className="bg-[#faf9f6] text-[#2c2015] font-sf-pro-text selection:bg-[#8b0000]/10 selection:text-[#610000] min-h-screen">
+      {/* Premium Navigation - Enhanced Mobile Experience */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#d4c5b0]/20 transition-all duration-300">
+        <div className="max-w-[1600px] mx-auto">
+          <nav className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-12">
+            {/* Logo - Optimized for Mobile */}
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-all duration-300 group">
+              <img 
+                src={cimaLogo} 
+                alt="CIMA Logo" 
+                className="h-10 sm:h-11 w-auto transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="flex flex-col leading-none">
+                <span className="text-base sm:text-lg font-bold text-[#610000] font-sf-pro-display tracking-tight">CIMA</span>
+                <span className="text-base sm:text-lg font-bold text-[#610000] font-sf-pro-display tracking-tight">Learn</span>
+              </div>
+            </Link>
+            
+            {/* Center Navigation Links - Desktop Only */}
+            <div className="hidden md:flex items-center space-x-10">
+              <Link href="/courses">
+                <button className="text-sm font-semibold text-[#4a3828] hover:text-[#610000] transition-colors duration-300 relative group">
+                  Courses
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#610000] transition-all duration-300 group-hover:w-full"></span>
+                </button>
               </Link>
-              
-              {/* Navigation Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-1">
-                <Link href="/courses">
-                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
-                    Courses
-                  </button>
-                </Link>
-                <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
-                    Pathways
-                  </button>
-                </a>
-                <Link href="/contact">
-                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
-                    Contact
-                  </button>
-                </Link>
-              </div>
-              
-              {/* CTA Buttons */}
-              <div className="flex items-center space-x-3">
-                <Link href="/login">
-                  <button className="hidden sm:block text-sm font-medium text-neutral-700 hover:text-landing-primary transition-colors duration-300 px-5 py-2.5 rounded-lg hover:bg-neutral-50">
-                    Member Portal
-                  </button>
-                </Link>
-                <Link href="/register">
-                  <button className="bg-landing-primary text-white px-6 py-2.5 text-sm font-semibold rounded-xl hover:bg-landing-primary-container transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95">
-                    Enroll Now
-                  </button>
-                </Link>
-              </div>
+              <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
+                <button className="text-sm font-semibold text-[#4a3828] hover:text-[#610000] transition-colors duration-300 relative group">
+                  Pathways
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#610000] transition-all duration-300 group-hover:w-full"></span>
+                </button>
+              </a>
+              <Link href="/contact">
+                <button className="text-sm font-semibold text-[#4a3828] hover:text-[#610000] transition-colors duration-300 relative group">
+                  Contact
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#610000] transition-all duration-300 group-hover:w-full"></span>
+                </button>
+              </Link>
+            </div>
+            
+            {/* Right Side - CTA Buttons */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link href="/login">
+                <button className="hidden sm:block text-sm font-semibold text-[#4a3828] hover:text-[#610000] transition-colors duration-300 px-4 sm:px-6 py-2.5">
+                  Member Portal
+                </button>
+              </Link>
+              <Link href="/register">
+                <button className="bg-[#610000] hover:bg-[#8b0000] text-white text-xs sm:text-sm font-bold px-4 sm:px-7 py-2.5 sm:py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]">
+                  Get Started
+                </button>
+              </Link>
             </div>
           </nav>
         </div>
       </header>
 
-      <main className="pt-28">
-        {/* Hero Section: The Definitive Standard */}
-        <section className="relative min-h-[85vh] flex items-center px-6 lg:px-12 overflow-hidden bg-gradient-to-b from-neutral-50 to-white">
-          <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16 py-20">
-            <div className="z-10 text-left space-y-8">
-              <h1 className="font-sf-pro-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] text-landing-primary tracking-tight">
-                The Definitive Standard in <span className="italic font-light">Self-Paced Learning</span>
-              </h1>
-              <p className="font-sf-pro-text text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-xl">
+      <main className="pt-20">
+        {/* Premium Hero Section - Mobile Optimized Spacing */}
+        <section className="relative min-h-screen flex items-center px-4 sm:px-6 lg:px-12 overflow-hidden pt-6 sm:pt-8 lg:pt-0 pb-8">
+          {/* Elegant Background with Enhanced Depth */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#faf9f6] via-[#f5f3ed] to-[#f0ede4]"></div>
+          
+          {/* Refined Pattern Overlay */}
+          <div className="absolute inset-0 opacity-[0.015]" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, #610000 1.5px, transparent 0)',
+            backgroundSize: '48px 48px'
+          }}></div>
+
+          {/* Enhanced Decorative Elements */}
+          <div className="absolute top-1/4 -right-80 w-[700px] h-[700px] rounded-full bg-gradient-to-br from-[#8b6f47]/12 to-transparent blur-3xl animate-pulse" style={{animationDuration: '8s'}}></div>
+          <div className="absolute bottom-1/4 -left-80 w-[650px] h-[650px] rounded-full bg-gradient-to-br from-[#610000]/8 to-transparent blur-3xl animate-pulse" style={{animationDuration: '10s', animationDelay: '2s'}}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#8b6f47]/5 to-transparent blur-3xl"></div>
+
+          <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
+            {/* Left: Content - Enhanced Typography with Better Contrast */}
+            <div className="lg:col-span-6 space-y-6">
+              {/* Overline Badge - Refined */}
+              <div className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-white/90 backdrop-blur-sm border border-[#8b6f47]/30 shadow-[0_4px_20px_rgba(139,111,71,0.12)] animate-fade-in hover:shadow-[0_6px_24px_rgba(139,111,71,0.16)] transition-all duration-500">
+                <div className="w-2 h-2 rounded-full bg-[#8b6f47] animate-pulse"></div>
+                <span className="font-sf-pro-text text-xs font-bold tracking-[0.04em] text-[#610000]">
+                  Center for International Mediators & Arbitrators
+                </span>
+              </div>
+
+              {/* Hero Headline - Enhanced Hierarchy with Better Contrast */}
+              <div className="space-y-4 animate-fade-in" style={{animationDelay: '0.1s'}}>
+                <h1 className="font-sf-pro-display text-[2.75rem] sm:text-[3.25rem] lg:text-[3.75rem] xl:text-[4.25rem] leading-[0.95] text-[#610000] tracking-[-0.025em] font-bold">
+                  The Definitive Standard in{" "}
+                  <span className="block mt-2 font-light italic text-[#8b0000] relative">
+                    Self-Paced Learning
+                    <span className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-[#8b6f47] to-transparent rounded-full"></span>
+                  </span>
+                </h1>
+              </div>
+
+              {/* Description - Improved Readability with Darker Text */}
+              <p className="font-sf-pro-text text-lg text-[#2c2015] leading-[1.7] max-w-2xl animate-fade-in font-normal" style={{animationDelay: '0.2s'}}>
                 Join a global cadre of legal elite. Elevate your practice through rigorous ADR training and certifications recognized by the world's leading arbitral institutions.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+
+              {/* CTA Buttons - Enhanced Interaction */}
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{animationDelay: '0.3s'}}>
                 <Link href="/courses">
-                  <button className="bg-landing-primary text-white px-8 py-4 rounded-lg font-sf-pro-text font-medium text-sm tracking-wide hover:bg-landing-primary-container hover:shadow-lg transition-all duration-300">
-                    Browse Courses
+                  <button className="group relative bg-gradient-to-br from-[#610000] to-[#8b0000] text-white px-8 py-4 rounded-2xl font-sf-pro-text font-bold text-base tracking-wide overflow-hidden hover:shadow-[0_20px_48px_rgba(97,0,0,0.28)] transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#610000] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                      Browse Courses
+                      <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </span>
                   </button>
                 </Link>
                 <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-                  <button className="border-2 border-neutral-200 text-landing-primary px-8 py-4 rounded-lg font-sf-pro-text font-medium text-sm tracking-wide hover:border-landing-primary hover:bg-neutral-50 transition-all duration-300">
-                    Explore Pathways
+                  <button className="group relative bg-white border-2 border-[#610000]/30 text-[#610000] px-8 py-4 rounded-2xl font-sf-pro-text font-bold text-base tracking-wide hover:border-[#610000]/50 hover:shadow-[0_12px_36px_rgba(97,0,0,0.15)] transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm bg-white/95">
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                      Explore Pathways
+                      <svg className="w-5 h-5 transform group-hover:translate-x-2 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </span>
                   </button>
                 </a>
               </div>
+
+              {/* Trust Metrics - Enhanced Visual Weight with Better Contrast */}
+              <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-[#d4c5b0]/50 animate-fade-in" style={{animationDelay: '0.4s'}}>
+                <div className="flex items-center gap-3 group cursor-default">
+                  <div className="w-12 h-12 rounded-2xl bg-[#8b6f47]/15 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-[#8b6f47]/30">
+                    <Star className="w-6 h-6 text-[#8b6f47] fill-[#8b6f47]" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">4.9</div>
+                    <div className="text-xs font-sf-pro-text text-[#4a3828] font-semibold">Average Rating</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 group cursor-default">
+                  <div className="w-12 h-12 rounded-2xl bg-[#8b6f47]/15 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-[#8b6f47]/30">
+                    <Users className="w-6 h-6 text-[#8b6f47]" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">4,800+</div>
+                    <div className="text-xs font-sf-pro-text text-[#4a3828] font-semibold">Active Members</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 group cursor-default">
+                  <div className="w-12 h-12 rounded-2xl bg-[#8b6f47]/15 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 border border-[#8b6f47]/30">
+                    <Globe className="w-6 h-6 text-[#8b6f47]" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">38</div>
+                    <div className="text-xs font-sf-pro-text text-[#4a3828] font-semibold">Jurisdictions</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="relative h-[450px] sm:h-[550px] lg:h-[650px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-landing-primary/5 to-transparent rounded-2xl"></div>
-              <img 
-                className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-2xl hover:scale-[1.02] transition-transform duration-700" 
-                alt="ultra-modern international arbitration courtroom with mahogany paneling, circular bench, and glass accents in soft dramatic architectural lighting" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAniyrUTHdC71fW7ywKJUtxTZZko09EKrJDSMaW0C8HkY09fzWNAv_toRk2neLKvqnxp6y-GBQaGROj_4Nz-cFWYlrtfQj6YRBB40druRUyUt80KAAbclHld0z822peFM9ZCJbD6BkMtyuMlZDGBmhnINe0ZUXMYKos3_NPjrhmKyKcgbGXO9w9WYc79I7wstGWC3tihp7vK9JeSRGVFfr9ZwqYm8R3eqwMPzraVR4VJfL0tBIP9sG2I-zqCXrvHaz3N-NjJRIIc28" 
-              />
+
+            {/* Right: Premium Image - Optimized Height */}
+            <div className="lg:col-span-6 relative animate-fade-in" style={{animationDelay: '0.2s'}}>
+              {/* Enhanced Decorative Frame */}
+              <div className="absolute -inset-6 bg-gradient-to-br from-[#8b6f47]/12 to-[#610000]/8 rounded-[36px] blur-3xl animate-pulse" style={{animationDuration: '6s'}}></div>
+              
+              {/* Main Image Container - Reduced Height for Above Fold */}
+              <div className="relative h-[450px] lg:h-[500px] rounded-[32px] overflow-hidden shadow-[0_32px_80px_rgba(97,0,0,0.18)] border-2 border-white/60 group">
+                {/* Enhanced Gradient Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#610000]/8 via-transparent to-[#8b6f47]/8"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2c2015]/30 via-transparent to-transparent"></div>
+                
+                <img 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-110" 
+                  alt="Modern law library with legal professionals studying international arbitration and ADR materials" 
+                  src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&auto=format&fit=crop&q=80" 
+                />
+                
+                {/* Enhanced Bottom Gradient */}
+                <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
+                
+                {/* Decorative Corner Elements */}
+                <div className="absolute top-6 left-6 w-24 h-24 border-t-2 border-l-2 border-white/30 rounded-tl-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute bottom-6 right-6 w-24 h-24 border-b-2 border-r-2 border-white/30 rounded-br-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              </div>
+
+              {/* Enhanced Floating Credential Badge - Improved Contrast */}
+              <div className="absolute -bottom-6 -left-6 bg-white rounded-[24px] shadow-[0_20px_60px_rgba(97,0,0,0,0.24)] border-2 border-[#d4c5b0]/30 p-6 hidden lg:block hover:scale-105 transition-transform duration-500 cursor-default">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-500">
+                    <Star className="w-8 h-8 text-white fill-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-sf-pro-display font-bold text-[#610000] mb-1">ICC Recognized</div>
+                    <div className="text-xs font-sf-pro-text text-[#4a3828] font-bold">Global Certification</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Trust Indicators Bar - Enhanced Visual Authority */}
+        <section className="py-20 px-6 lg:px-12 border-y border-[#d4c5b0]/20 bg-gradient-to-b from-white to-[#faf9f6]">
+          <div className="max-w-[1600px] mx-auto">
+            <div className="flex flex-wrap justify-center items-center gap-16 lg:gap-24">
+              <div className="text-center group cursor-default">
+                <div className="text-5xl font-sf-pro-display font-bold text-[#610000] mb-3 group-hover:scale-110 transition-transform duration-500">ICC</div>
+                <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-semibold uppercase tracking-wider">Recognized</div>
+              </div>
+              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#d4c5b0] to-transparent hidden lg:block"></div>
+              <div className="text-center group cursor-default">
+                <div className="text-5xl font-sf-pro-display font-bold text-[#610000] mb-3 group-hover:scale-110 transition-transform duration-500">LCIA</div>
+                <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-semibold uppercase tracking-wider">Accredited</div>
+              </div>
+              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#d4c5b0] to-transparent hidden lg:block"></div>
+              <div className="text-center group cursor-default">
+                <div className="text-5xl font-sf-pro-display font-bold text-[#610000] mb-3 group-hover:scale-110 transition-transform duration-500">SIAC</div>
+                <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-semibold uppercase tracking-wider">Certified</div>
+              </div>
+              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#d4c5b0] to-transparent hidden lg:block"></div>
+              <div className="text-center group cursor-default">
+                <div className="text-5xl font-sf-pro-display font-bold text-[#610000] mb-3 group-hover:scale-110 transition-transform duration-500">RIAC</div>
+                <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-semibold uppercase tracking-wider">Partner</div>
+              </div>
+              <div className="h-16 w-px bg-gradient-to-b from-transparent via-[#d4c5b0] to-transparent hidden lg:block"></div>
+              <div className="text-center group cursor-default">
+                <div className="text-5xl font-sf-pro-display font-bold text-[#610000] mb-3 group-hover:scale-110 transition-transform duration-500">CIArb</div>
+                <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-semibold uppercase tracking-wider">Approved</div>
+              </div>
             </div>
           </div>
         </section>
@@ -181,57 +313,95 @@ export default function Landing() {
         <FinalCTASection />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-neutral-200 w-full py-12 px-6 lg:px-12">
-        <div className="max-w-[1400px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 mb-8">
-            {/* Left Column - Branding */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
+      {/* Footer - Enhanced Premium Design */}
+      <footer className="bg-gradient-to-b from-[#faf9f6] via-[#f5f3ed] to-[#f0ede4] border-t-2 border-[#d4c5b0]/40 w-full py-24 lg:py-28 px-6 lg:px-12">
+        <div className="max-w-[1600px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-20 mb-24">
+            {/* Left Column - Enhanced Branding */}
+            <div className="lg:col-span-2 space-y-10">
+              <div className="flex items-center space-x-4 group cursor-default">
                 <img 
                   src={cimaLogo} 
                   alt="CIMA Logo" 
-                  className="h-11 w-auto"
+                  className="h-16 w-auto transition-transform duration-500 group-hover:scale-105"
                 />
                 <div>
-                  <h1 className="text-lg font-semibold text-landing-primary font-sf-pro-display">CIMA Learn</h1>
-                  <p className="text-xs text-neutral-500 font-sf-pro-text">Professional ADR Education</p>
+                  <h1 className="text-2xl font-bold text-[#610000] font-sf-pro-display tracking-tight">CIMA Learn</h1>
+                  <p className="text-xs text-[#8b6f47] font-sf-pro-text tracking-wide uppercase font-bold">Professional ADR Education</p>
                 </div>
               </div>
-              <p className="font-sf-pro-text text-sm text-neutral-600 leading-relaxed max-w-sm">
+              <p className="font-sf-pro-text text-xl text-[#4a3828] leading-relaxed max-w-md">
                 Center for International Mediators and Arbitrators - Leading global alternative dispute resolution education and certification.
               </p>
-            </div>
-
-            {/* Middle Column - Quick Links */}
-            <div className="space-y-4">
-              <h3 className="font-sf-pro-display text-sm font-semibold text-landing-primary uppercase tracking-wider">Quick Links</h3>
-              <div className="flex flex-col space-y-2.5 font-sf-pro-text text-sm">
-                <Link href="/privacy-policy" className="text-neutral-600 hover:text-landing-primary transition-colors">Privacy Policy</Link>
-                <Link href="/terms-of-service" className="text-neutral-600 hover:text-landing-primary transition-colors">Terms of Service</Link>
-                <Link href="/contact" className="text-neutral-600 hover:text-landing-primary transition-colors">Contact Us</Link>
-                <Link href="/help-center" className="text-neutral-600 hover:text-landing-primary transition-colors">Help Center</Link>
+              
+              {/* Enhanced Trust Badges */}
+              <div className="flex flex-wrap items-center gap-5 pt-6">
+                <div className="inline-flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border-2 border-[#d4c5b0]/40 shadow-sm hover:shadow-md hover:border-[#8b6f47]/50 transition-all duration-500">
+                  <Gavel className="w-6 h-6 text-[#610000]" />
+                  <span className="text-sm font-sf-pro-text font-bold text-[#610000]">ICC Recognized</span>
+                </div>
+                <div className="inline-flex items-center gap-3 px-5 py-4 rounded-2xl bg-white border-2 border-[#d4c5b0]/40 shadow-sm hover:shadow-md hover:border-[#8b6f47]/50 transition-all duration-500">
+                  <Globe className="w-6 h-6 text-[#610000]" />
+                  <span className="text-sm font-sf-pro-text font-bold text-[#610000]">38 Jurisdictions</span>
+                </div>
               </div>
             </div>
 
-            {/* Right Column - Additional Links */}
-            <div className="space-y-4">
-              <h3 className="font-sf-pro-display text-sm font-semibold text-landing-primary uppercase tracking-wider">For Professionals</h3>
-              <div className="flex flex-col space-y-2.5 font-sf-pro-text text-sm">
-                <Link href="/become-instructor" className="text-neutral-600 hover:text-landing-primary transition-colors">Become an Instructor</Link>
-                <Link href="/courses" className="text-neutral-600 hover:text-landing-primary transition-colors">Browse Courses</Link>
-                <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-neutral-600 hover:text-landing-primary transition-colors">
+            {/* Middle Column - Enhanced Quick Links */}
+            <div className="space-y-7">
+              <h3 className="font-sf-pro-display text-base font-bold text-[#610000] uppercase tracking-wider">Quick Links</h3>
+              <div className="flex flex-col space-y-5 font-sf-pro-text text-base">
+                <Link href="/privacy-policy" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Privacy Policy
+                </Link>
+                <Link href="/terms-of-service" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Terms of Service
+                </Link>
+                <Link href="/contact" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Contact Us
+                </Link>
+                <Link href="/help-center" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Help Center
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column - Enhanced Additional Links */}
+            <div className="space-y-7">
+              <h3 className="font-sf-pro-display text-base font-bold text-[#610000] uppercase tracking-wider">For Professionals</h3>
+              <div className="flex flex-col space-y-5 font-sf-pro-text text-base">
+                <Link href="/become-instructor" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Become an Instructor
+                </Link>
+                <Link href="/courses" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
+                  Browse Courses
+                </Link>
+                <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-[#4a3828] hover:text-[#610000] transition-colors duration-500 flex items-center gap-3 group">
+                  <span className="w-0 group-hover:w-4 h-[2px] bg-[#8b6f47] transition-all duration-500"></span>
                   Qualification Pathways
                 </a>
               </div>
             </div>
           </div>
 
-          {/* Bottom Bar - Copyright */}
-          <div className="border-t border-neutral-100 pt-6">
-            <p className="font-sf-pro-text text-xs text-neutral-500 text-center">
-              © {new Date().getFullYear()} CIMA LEARN. All rights reserved.
-            </p>
+          {/* Enhanced Bottom Bar - Copyright */}
+          <div className="border-t-2 border-[#d4c5b0]/40 pt-12">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+              <p className="font-sf-pro-text text-base text-[#6b5d4f]">
+                © {new Date().getFullYear()} CIMA LEARN. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4 text-base text-[#6b5d4f] font-sf-pro-text">
+                <span>Designed with</span>
+                <span className="text-[#8b6f47] text-2xl">♦</span>
+                <span>for legal professionals worldwide</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
@@ -247,48 +417,134 @@ function QualificationPathwaySection() {
   return (
     <section 
       ref={ref}
-      className={`py-24 lg:py-32 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="max-w-2xl mb-20">
-          <h2 className="font-sf-pro-display text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight tracking-tight">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header - Enhanced Typography */}
+        <div className="max-w-5xl mb-24">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-20 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.15em] text-[#8b6f47]">
+              Qualification Pathway
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-12 leading-[1.05] tracking-tight font-bold">
             A journey of mastery from foundational principles to elite international certification.
           </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed font-light">
+            Three progressive stages designed to elevate your professional standing in the global ADR community.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-100">
-          {/* Card 1 */}
-          <div className="bg-white p-10 lg:p-12 hover:bg-neutral-50 transition-all duration-500 group border-b md:border-b-0 md:border-r border-neutral-100">
-            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part I</div>
-            <h3 className="font-sf-pro-display text-2xl text-landing-on-surface mb-5 group-hover:translate-x-1 transition-transform duration-300">
-              The Gateway to Distinction (Associate)
+        
+        {/* Pathway Cards - Enhanced Visual Design */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Card 1: Associate - Refined */}
+          <div className="group bg-white rounded-[28px] border-2 border-[#d4c5b0]/40 p-12 hover:border-[#8b6f47]/50 hover:shadow-[0_28px_72px_rgba(97,0,0,0.14)] hover:-translate-y-3 transition-all duration-700 relative overflow-hidden">
+            {/* Enhanced Number Badge */}
+            <div className="absolute top-8 right-8 w-16 h-16 rounded-full bg-gradient-to-br from-[#faf9f6] to-white border-2 border-[#d4c5b0]/40 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-700">
+              <span className="font-sf-pro-display text-3xl font-bold text-[#8b6f47]">I</span>
+            </div>
+            
+            {/* Level Badge */}
+            <div className="inline-flex items-center gap-2 mb-10 px-5 py-3 rounded-full bg-[#8b6f47]/8 border-2 border-[#8b6f47]/25">
+              <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.15em] text-[#8b6f47]">
+                Part I
+              </span>
+            </div>
+            
+            {/* Title */}
+            <h3 className="font-sf-pro-display text-3xl text-[#610000] mb-7 leading-tight group-hover:translate-x-1 transition-transform duration-700 font-bold">
+              The Gateway to Distinction
             </h3>
-            <p className="font-sf-pro-text text-neutral-600 leading-relaxed text-[15px]">
+            
+            {/* Subtitle */}
+            <div className="font-sf-pro-text text-lg font-bold text-[#8b6f47] mb-7">
+              Associate Member
+            </div>
+            
+            {/* Description */}
+            <p className="font-sf-pro-text text-[#4a3828] leading-relaxed text-base mb-12">
               Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.
             </p>
+            
+            {/* Enhanced Bottom Accent */}
+            <div className="h-1 w-28 bg-gradient-to-r from-[#8b6f47] to-transparent rounded-full opacity-50 group-hover:opacity-100 group-hover:w-48 transition-all duration-700"></div>
           </div>
-          {/* Card 2 */}
-          <div className="bg-white p-10 lg:p-12 hover:bg-neutral-50 transition-all duration-500 group border-b md:border-b-0 md:border-r border-neutral-100">
-            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part II</div>
-            <h3 className="font-sf-pro-display text-2xl text-landing-on-surface mb-5 group-hover:translate-x-1 transition-transform duration-300">
-              Strategic Mastery (Member)
+          
+          {/* Card 2: Member - Refined */}
+          <div className="group bg-white rounded-[28px] border-2 border-[#d4c5b0]/40 p-12 hover:border-[#8b6f47]/50 hover:shadow-[0_28px_72px_rgba(97,0,0,0.14)] hover:-translate-y-3 transition-all duration-700 relative overflow-hidden">
+            {/* Enhanced Number Badge */}
+            <div className="absolute top-8 right-8 w-16 h-16 rounded-full bg-gradient-to-br from-[#faf9f6] to-white border-2 border-[#d4c5b0]/40 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-700">
+              <span className="font-sf-pro-display text-3xl font-bold text-[#8b6f47]">II</span>
+            </div>
+            
+            {/* Level Badge */}
+            <div className="inline-flex items-center gap-2 mb-10 px-5 py-3 rounded-full bg-[#8b6f47]/8 border-2 border-[#8b6f47]/25">
+              <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.15em] text-[#8b6f47]">
+                Part II
+              </span>
+            </div>
+            
+            {/* Title */}
+            <h3 className="font-sf-pro-display text-3xl text-[#610000] mb-7 leading-tight group-hover:translate-x-1 transition-transform duration-700 font-bold">
+              Strategic Mastery
             </h3>
-            <p className="font-sf-pro-text text-neutral-600 leading-relaxed text-[15px]">
+            
+            {/* Subtitle */}
+            <div className="font-sf-pro-text text-lg font-bold text-[#8b6f47] mb-7">
+              Full Member
+            </div>
+            
+            {/* Description */}
+            <p className="font-sf-pro-text text-[#4a3828] leading-relaxed text-base mb-12">
               Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.
             </p>
+            
+            {/* Enhanced Bottom Accent */}
+            <div className="h-1 w-28 bg-gradient-to-r from-[#8b6f47] to-transparent rounded-full opacity-50 group-hover:opacity-100 group-hover:w-48 transition-all duration-700"></div>
           </div>
-          {/* Card 3 */}
-          <div className="bg-white p-10 lg:p-12 relative overflow-hidden group hover:bg-gradient-to-br hover:from-neutral-50 hover:to-white transition-all duration-500">
-            <div className="absolute top-0 right-0 bg-landing-primary text-white px-4 py-1.5 text-[10px] font-sf-pro-text uppercase tracking-[0.15em] font-semibold rounded-bl-lg">
+          
+          {/* Card 3: Fellow - Maximum Contrast for Visibility */}
+          <div className="group bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-[28px] border-2 border-[#610000] p-12 hover:shadow-[0_32px_80px_rgba(97,0,0,0.36)] hover:scale-[1.03] transition-all duration-700 relative overflow-hidden">
+            {/* Enhanced Premium Badge */}
+            <div className="absolute top-0 right-0 bg-gradient-to-br from-[#8b6f47] to-[#9f7d4f] text-white px-6 py-3 text-[10px] font-sf-pro-text uppercase tracking-[0.15em] font-bold rounded-bl-[24px] flex items-center gap-2 shadow-lg">
+              <Star className="w-4 h-4 fill-current" />
               Most Prestigious
             </div>
-            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part III</div>
-            <h3 className="font-sf-pro-display text-2xl text-landing-primary mb-5 group-hover:translate-x-1 transition-transform duration-300 font-semibold">
-              The Pinnacle of Practice (Fellow)
+            
+            {/* Enhanced Number Badge */}
+            <div className="absolute top-8 right-8 w-16 h-16 rounded-full bg-white/25 backdrop-blur-xl flex items-center justify-center border-2 border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-700">
+              <span className="font-sf-pro-display text-3xl font-bold text-white">III</span>
+            </div>
+            
+            {/* Level Badge */}
+            <div className="inline-flex items-center gap-2 mb-10 px-5 py-3 rounded-full bg-white/25 backdrop-blur-xl border-2 border-white/50">
+              <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.15em] text-white">
+                Part III
+              </span>
+            </div>
+            
+            {/* Title - Pure White */}
+            <h3 className="font-sf-pro-display text-3xl text-white mb-7 leading-tight group-hover:translate-x-1 transition-transform duration-700 font-bold">
+              The Pinnacle of Practice
             </h3>
-            <p className="font-sf-pro-text text-landing-on-surface leading-relaxed mb-6 text-[15px]">
+            
+            {/* Subtitle - Bright Gold */}
+            <div className="font-sf-pro-text text-lg font-bold text-[#ffd700] mb-7">
+              Fellow (FCIMArb)
+            </div>
+            
+            {/* Description - Maximum Contrast White with Shadow */}
+            <p className="font-sf-pro-text text-white leading-relaxed text-base mb-12 [text-shadow:_0_1px_3px_rgb(0_0_0_/_40%)]">
               Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.
             </p>
-            <Star className="w-5 h-5 text-landing-primary/20 group-hover:text-landing-primary/40 transition-colors duration-500" />
+            
+            {/* Enhanced Icon Grid - Bright Gold */}
+            <div className="flex items-center gap-5">
+              <Star className="w-8 h-8 text-[#ffd700] fill-[#ffd700]" />
+              <Star className="w-8 h-8 text-[#ffd700] fill-[#ffd700]" />
+              <Star className="w-8 h-8 text-[#ffd700] fill-[#ffd700]" />
+            </div>
           </div>
         </div>
       </div>
@@ -302,16 +558,48 @@ function CIMAAdvantageSection() {
   return (
     <section 
       ref={ref}
-      className={`py-24 px-6 lg:px-12 bg-neutral-50 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="relative w-full h-[500px] lg:h-[650px] overflow-hidden rounded-3xl shadow-2xl">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Image Container with Enhanced Premium Treatment and Maximum Text Visibility */}
+        <div className="relative w-full h-[650px] lg:h-[850px] overflow-hidden rounded-[36px] group">
+          {/* Main Image */}
           <img 
-            className="w-full h-full object-cover object-bottom hover:scale-105 transition-transform duration-1000" 
+            className="w-full h-full object-cover object-center transition-transform duration-[3000ms] group-hover:scale-110" 
             data-alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+          
+          {/* Enhanced Gradient Overlays for Better Text Contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-transparent mix-blend-multiply"></div>
+          
+          {/* Content Overlay with Enhanced Spacing */}
+          <div className="absolute inset-0 flex items-end justify-start p-14 lg:p-24">
+            <div className="max-w-5xl space-y-10">
+              {/* Enhanced Badge with Solid Background */}
+              <div className="inline-flex items-center gap-3 mb-8 px-6 py-4 rounded-full bg-white/95 backdrop-blur-xl border-2 border-white/50 hover:bg-white transition-all duration-500">
+                <Gavel className="w-6 h-6 text-[#610000]" />
+                <span className="font-sf-pro-text text-sm font-bold uppercase tracking-[0.1em] text-[#610000]">
+                  The CIMA Advantage
+                </span>
+              </div>
+              
+              {/* Enhanced Heading - Pure White with Text Shadow */}
+              <h2 className="font-sf-pro-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl text-white mb-10 leading-[1.05] tracking-tight font-bold [text-shadow:_0_2px_8px_rgb(0_0_0_/_60%)]">
+                Unparalleled Pedigree
+              </h2>
+              
+              {/* Enhanced Description - Pure White with Shadow */}
+              <p className="font-sf-pro-text text-2xl lg:text-3xl text-white leading-relaxed max-w-4xl font-light [text-shadow:_0_2px_8px_rgb(0_0_0_/_60%)]">
+                Built on decades of excellence in international dispute resolution. Our programs represent the gold standard in alternative dispute resolution education worldwide.
+              </p>
+            </div>
+          </div>
+          
+          {/* Enhanced Decorative Corner Elements */}
+          <div className="absolute top-0 left-0 w-40 h-40 border-t-2 border-l-2 border-white/30 rounded-tl-[36px] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="absolute bottom-0 right-0 w-40 h-40 border-b-2 border-r-2 border-white/30 rounded-br-[36px] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
         </div>
       </div>
     </section>
@@ -324,36 +612,111 @@ function TestimonialsSection() {
   return (
     <section 
       ref={ref}
-      className={`py-24 lg:py-32 px-6 lg:px-12 bg-white border-y border-neutral-100 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-gradient-to-b from-[#faf9f6] to-white border-y-2 border-[#d4c5b0]/25 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center space-x-4 mb-16">
-          <span className="w-12 h-[1px] bg-neutral-300"></span>
-          <span className="font-sf-pro-text text-xs uppercase tracking-[0.3em] text-neutral-500">Excellence Recognized</span>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header - Enhanced */}
+        <div className="mb-24">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-20 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.15em] text-[#8b6f47]">
+              Excellence Recognized
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-12 leading-[1.05] tracking-tight font-bold">
+            Trusted by legal elites worldwide
+          </h2>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20">
-          <div className="relative">
-            <span className="text-8xl font-sf-pro-display text-landing-secondary/10 absolute -top-12 -left-6">"</span>
+        
+        {/* Testimonials Grid - Enhanced */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          {/* Testimonial 1 - Enhanced */}
+          <div className="relative group bg-white border-2 border-[#d4c5b0]/40 rounded-[32px] p-14 hover:border-[#8b6f47]/50 hover:shadow-[0_28px_72px_rgba(97,0,0,0.14)] hover:-translate-y-3 transition-all duration-700">
+            {/* Enhanced Quote Mark */}
+            <div className="absolute -top-8 -left-8">
+              <svg className="w-28 h-28 text-[#8b6f47]/10 transform -rotate-12 group-hover:scale-110 transition-transform duration-700" fill="currentColor" viewBox="0 0 32 32">
+                <path d="M10 8c-3.3 0-6 2.7-6 6v10h8V14h-4c0-2.2 1.8-4 4-4V8zm14 0c-3.3 0-6 2.7-6 6v10h8V14h-4c0-2.2 1.8-4 4-4V8z"/>
+              </svg>
+            </div>
+            
             <blockquote className="relative">
-              <p className="font-sf-pro-display italic text-2xl lg:text-3xl text-landing-on-surface mb-8 leading-snug">
+              {/* Enhanced Quote Content */}
+              <p className="font-sf-pro-display text-2xl lg:text-3xl text-[#610000] mb-14 leading-[1.4] tracking-tight font-light">
                 The CIMA curriculum offers a depth of intellectual rigor that is simply unparalleled. It was the catalyst for my elevation to the international arbitral tribunal.
               </p>
-              <cite className="not-italic">
-                <span className="block font-semibold text-landing-primary uppercase tracking-[0.15em] text-xs mb-2">Mohammed Talib</span>
-                <span className="block font-sf-pro-text text-neutral-500 text-sm">Partner, Pinsent Masons, Hong Kong | FCIArb, FCIMArb</span>
+              
+              {/* Enhanced Author Info */}
+              <cite className="not-italic flex items-start gap-6 pt-10 border-t-2 border-[#d4c5b0]/40">
+                {/* Enhanced Avatar */}
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-700">
+                  <span className="text-white font-sf-pro-display font-bold text-3xl">MT</span>
+                </div>
+                
+                <div className="flex-1">
+                  <span className="block font-sf-pro-display text-xl font-bold text-[#610000] mb-2">
+                    Mohammed Talib
+                  </span>
+                  <span className="block font-sf-pro-text text-base text-[#6b5d4f] mb-5">
+                    Partner, Pinsent Masons, Hong Kong
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#8b6f47]/10 text-xs font-sf-pro-text font-bold uppercase tracking-wider text-[#610000] border border-[#8b6f47]/20">
+                      FCIArb
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#8b6f47]/10 text-xs font-sf-pro-text font-bold uppercase tracking-wider text-[#610000] border border-[#8b6f47]/20">
+                      FCIMArb
+                    </span>
+                  </div>
+                </div>
               </cite>
+              
+              {/* Enhanced Decorative Line */}
+              <div className="absolute bottom-0 left-0 h-1 w-36 bg-gradient-to-r from-[#8b6f47] to-transparent rounded-full opacity-50 group-hover:opacity-100 group-hover:w-56 transition-all duration-700"></div>
             </blockquote>
           </div>
-          <div className="relative">
-            <span className="text-8xl font-sf-pro-display text-landing-secondary/10 absolute -top-12 -left-6">"</span>
+          
+          {/* Testimonial 2 - Enhanced */}
+          <div className="relative group bg-white border-2 border-[#d4c5b0]/40 rounded-[32px] p-14 hover:border-[#8b6f47]/50 hover:shadow-[0_28px_72px_rgba(97,0,0,0.14)] hover:-translate-y-3 transition-all duration-700">
+            {/* Enhanced Quote Mark */}
+            <div className="absolute -top-8 -left-8">
+              <svg className="w-28 h-28 text-[#8b6f47]/10 transform -rotate-12 group-hover:scale-110 transition-transform duration-700" fill="currentColor" viewBox="0 0 32 32">
+                <path d="M10 8c-3.3 0-6 2.7-6 6v10h8V14h-4c0-2.2 1.8-4 4-4V8zm14 0c-3.3 0-6 2.7-6 6v10h8V14h-4c0-2.2 1.8-4 4-4V8z"/>
+              </svg>
+            </div>
+            
             <blockquote className="relative">
-              <p className="font-sf-pro-display italic text-2xl lg:text-3xl text-landing-on-surface mb-8 leading-snug">
+              {/* Enhanced Quote Content */}
+              <p className="font-sf-pro-display text-2xl lg:text-3xl text-[#610000] mb-14 leading-[1.4] tracking-tight font-light">
                 A sophisticated program that masterfully bridges the gap between theoretical jurisprudence and high-stakes practical application. Truly world-class.
               </p>
-              <cite className="not-italic">
-                <span className="block font-semibold text-landing-primary uppercase tracking-[0.15em] text-xs mb-2">Iain Sharp</span>
-                <span className="block font-sf-pro-text text-neutral-500 text-sm">Partner, Hill Dickinson | FCIArb, FCIMArb</span>
+              
+              {/* Enhanced Author Info */}
+              <cite className="not-italic flex items-start gap-6 pt-10 border-t-2 border-[#d4c5b0]/40">
+                {/* Enhanced Avatar */}
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-700">
+                  <span className="text-white font-sf-pro-display font-bold text-3xl">IS</span>
+                </div>
+                
+                <div className="flex-1">
+                  <span className="block font-sf-pro-display text-xl font-bold text-[#610000] mb-2">
+                    Iain Sharp
+                  </span>
+                  <span className="block font-sf-pro-text text-base text-[#6b5d4f] mb-5">
+                    Partner, Hill Dickinson
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#8b6f47]/10 text-xs font-sf-pro-text font-bold uppercase tracking-wider text-[#610000] border border-[#8b6f47]/20">
+                      FCIArb
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#8b6f47]/10 text-xs font-sf-pro-text font-bold uppercase tracking-wider text-[#610000] border border-[#8b6f47]/20">
+                      FCIMArb
+                    </span>
+                  </div>
+                </div>
               </cite>
+              
+              {/* Enhanced Decorative Line */}
+              <div className="absolute bottom-0 left-0 h-1 w-36 bg-gradient-to-r from-[#8b6f47] to-transparent rounded-full opacity-50 group-hover:opacity-100 group-hover:w-56 transition-all duration-700"></div>
             </blockquote>
           </div>
         </div>
@@ -418,20 +781,13 @@ function InstitutionalNetworkSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-      style={{
-        animation: 'fadeIn 1s ease-out'
-      }}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <style>
         {`
           @keyframes scroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
           }
           .animate-scroll {
             animation: scroll 20s linear infinite;
@@ -443,12 +799,23 @@ function InstitutionalNetworkSection() {
           }
         `}
       </style>
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-sf-pro-display text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-12 text-center">Trusted by Leading Institutions</h2>
-          <div className="relative overflow-hidden p-8 sm:p-12">
+      <div className="max-w-[1600px] mx-auto">
+        <div className="text-center mb-20">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Institutional network
+            </span>
+            <div className="w-16 h-[2px] bg-gradient-to-l from-[#8b6f47] to-transparent"></div>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Trusted by Leading Institutions
+          </h2>
+          
+          {/* Logo Carousel */}
+          <div className="relative overflow-hidden bg-white rounded-[28px] border-2 border-[#d4c5b0]/30 py-16 px-8">
             <div 
-              className="flex items-center gap-8 xs:gap-12 sm:gap-16 md:gap-20 lg:gap-24 animate-scroll"
+              className="flex items-center gap-16 lg:gap-24 animate-scroll"
               style={{
                 animation: 'scroll 20s linear infinite',
                 width: 'max-content'
@@ -456,10 +823,10 @@ function InstitutionalNetworkSection() {
             >
               {/* First set of logos */}
               {PARTNER_LOGOS.map((partner, index) => (
-                <div key={`original-${partner.name}`} className="flex flex-col items-center gap-2 xs:gap-3 min-w-fit flex-shrink-0">
+                <div key={`original-${partner.name}`} className="flex flex-col items-center gap-4 min-w-fit flex-shrink-0 group">
                   <img 
                     alt={`${partner.name} Logo`} 
-                    className="h-12 xs:h-14 sm:h-16 md:h-18 lg:h-20 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[180px]" 
+                    className="h-20 lg:h-24 logo-tint opacity-50 group-hover:opacity-100 transition-opacity duration-500 object-contain w-auto max-w-[200px]" 
                     src={partner.url}
                     onError={(e) => {
                       console.log(`Failed to load logo for ${partner.name}:`, partner.url);
@@ -468,17 +835,17 @@ function InstitutionalNetworkSection() {
                       target.alt = `FAILED: ${partner.name}`;
                     }}
                   />
-                  <span className="text-xs xs:text-sm text-landing-on-surface-variant/70 font-sf-pro-text uppercase tracking-wider hidden xs:block sm:text-xs text-center max-w-[160px]">
+                  <span className="text-xs text-[#6b5d4f] font-sf-pro-text uppercase tracking-wider text-center max-w-[180px]">
                     {partner.name}
                   </span>
                 </div>
               ))}
               {/* Duplicate set for seamless loop */}
               {PARTNER_LOGOS.map((partner, index) => (
-                <div key={`duplicate-${partner.name}`} className="flex flex-col items-center gap-2 xs:gap-3 min-w-fit flex-shrink-0">
+                <div key={`duplicate-${partner.name}`} className="flex flex-col items-center gap-4 min-w-fit flex-shrink-0 group">
                   <img 
                     alt={`${partner.name} Logo`} 
-                    className="h-12 xs:h-14 sm:h-16 md:h-18 lg:h-20 logo-tint opacity-60 hover:opacity-100 transition-opacity object-contain w-auto max-w-[180px]" 
+                    className="h-20 lg:h-24 logo-tint opacity-50 group-hover:opacity-100 transition-opacity duration-500 object-contain w-auto max-w-[200px]" 
                     src={partner.url}
                     onError={(e) => {
                       console.log(`Failed to load duplicate logo for ${partner.name}:`, partner.url);
@@ -487,7 +854,7 @@ function InstitutionalNetworkSection() {
                       target.alt = `FAILED: ${partner.name}`;
                     }}
                   />
-                  <span className="text-xs xs:text-sm text-landing-on-surface-variant/70 font-sf-pro-text uppercase tracking-wider hidden xs:block sm:text-xs text-center max-w-[160px]">
+                  <span className="text-xs text-[#6b5d4f] font-sf-pro-text uppercase tracking-wider text-center max-w-[180px]">
                     {partner.name}
                   </span>
                 </div>
@@ -538,52 +905,90 @@ function StudentReviewsSection() {
     {
       author: "Sarah Chen",
       role: "FCIArb, International Arbitrator",
+      location: "Singapore",
       content: "The CIMA certification opened doors to opportunities I never imagined. The curriculum is rigorous but incredibly rewarding.",
-      rating: 5
+      rating: 5,
+      initials: "SC",
+      gradient: "from-[#610000] to-[#8b0000]"
     },
     {
       author: "Michael Rodriguez",
       role: "FCIMArb, Mediation Expert",
+      location: "Madrid",
       content: "The practical skills and theoretical knowledge gained through CIMA's programs have been invaluable to my practice.",
-      rating: 5
+      rating: 5,
+      initials: "MR",
+      gradient: "from-[#610000] to-[#8b0000]"
     },
     {
       author: "Amara Okonkwo",
-      role: "Associate Member, Nigeria",
+      role: "Associate Member",
+      location: "Lagos, Nigeria",
       content: "CIMA's approach to ADR training is comprehensive and globally recognized. Highly recommend!",
-      rating: 5
+      rating: 5,
+      initials: "AO",
+      gradient: "from-[#610000] to-[#8b0000]"
     }
   ];
 
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-left mb-12 sm:mb-16">
-          <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Student reviews</p>
-          <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">What our learners say</h2>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Student reviews
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            What our learners say
+          </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed max-w-3xl font-light">
+            Real experiences from professionals who transformed their careers through CIMA.
+          </p>
         </div>
 
-        <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+        {/* Reviews Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {testimonials.map((t) => (
             <div
               key={t.author}
-              className="bg-white border border-[#d1d7dc] rounded-[10px] p-6 hover:shadow-[0_4px_16px_rgba(0,0,0,0.10)] transition-shadow duration-200"
+              className="group bg-white border-2 border-[#d4c5b0]/30 rounded-[24px] overflow-hidden hover:border-[#8b6f47]/40 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700"
             >
-              <div className="flex items-center mb-4">
-                <div className="flex-1">
-                  <div className="font-semibold text-landing-primary">{t.author}</div>
-                  <div className="text-sm text-landing-on-surface-variant">{t.role}</div>
+              {/* Header with Avatar */}
+              <div className="p-10 pb-8">
+                <div className="flex items-start gap-5 mb-8">
+                  <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-700`}>
+                    <span className="text-white font-sf-pro-display font-bold text-2xl">{t.initials}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-sf-pro-display text-xl font-bold text-[#610000] mb-2">{t.author}</div>
+                    <div className="flex items-center gap-1.5">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-5 h-5 text-[#8b6f47] fill-[#8b6f47]" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="material-symbols-outlined text-sm">{"\u2605"}</span>
-                  ))}
-                </div>
+
+                {/* Review Content */}
+                <p className="font-sf-pro-text text-base text-[#4a3828] leading-relaxed mb-8">
+                  "{t.content}"
+                </p>
               </div>
-              <p className="text-landing-on-surface leading-relaxed">{t.content}</p>
+
+              {/* Author Details - Footer */}
+              <div className="px-10 py-6 border-t-2 border-[#d4c5b0]/30 bg-[#faf9f6]">
+                <div className="font-sf-pro-text text-sm font-bold text-[#8b6f47] mb-1">{t.role}</div>
+                <div className="font-sf-pro-text text-sm text-[#6b5d4f]">{t.location}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -600,24 +1005,41 @@ function RIACPartnershipSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-gradient-to-b from-white to-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 sm:mb-20">
-          <h2 className="font-sf-pro-display text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-8 sm:mb-12 leading-tight text-center">In Partnership with Bar Associations and Arbitral Bodies</h2>
-          <div className="max-w-4xl mx-auto">
-            <p className="font-sf-pro-text text-lg sm:text-xl text-landing-on-surface leading-relaxed text-left">
+      <div className="max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          {/* Left: Content */}
+          <div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+              <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+                Strategic Partnership
+              </span>
+            </div>
+            <h2 className="font-sf-pro-display text-4xl lg:text-5xl xl:text-6xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+              In Partnership with Bar Associations and Arbitral Bodies
+            </h2>
+            <p className="font-sf-pro-text text-xl text-[#4a3828] leading-relaxed mb-8">
               CIMA is pleased to support Russian International Arbitration Congress 2026, a leading global forum for arbitration practitioners.
-This underscores our commitment to advancing best practice in Eastern Europe. 
+            </p>
+            <p className="font-sf-pro-text text-xl text-[#4a3828] leading-relaxed">
+              This underscores our commitment to advancing best practice in Eastern Europe.
             </p>
           </div>
-          {/* RIAC Logo */}
-          <div className="mt-8 sm:mt-12 flex justify-center">
-            <img 
-              src="/images/institutions/riac-logo.png"
-              alt="Russian International Arbitration Centre Logo"
-              className="h-16 sm:h-20 lg:h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
-            />
+          
+          {/* Right: RIAC Logo */}
+          <div className="flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#8b6f47]/10 to-[#610000]/5 rounded-[32px] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              <div className="relative bg-white border-2 border-[#d4c5b0]/30 rounded-[28px] p-16 hover:border-[#8b6f47]/40 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] transition-all duration-700">
+                <img 
+                  src="/images/institutions/riac-logo.png"
+                  alt="Russian International Arbitration Centre Logo"
+                  className="h-32 lg:h-40 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-700"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -632,65 +1054,75 @@ function GlobalInstitutionalEngagementSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-gradient-to-b from-white to-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-left max-w-4xl mx-auto mb-16 sm:mb-20">
-          <h2 className="font-sf-pro-display text-3xl sm:text-4xl lg:text-5xl text-landing-primary mb-6 sm:mb-8 leading-tight text-left">Global Institutional Engagement</h2>
-          <p className="font-sf-pro-text text-lg sm:text-xl text-landing-on-surface-variant leading-relaxed text-left">
+      <div className="max-w-[1600px] mx-auto">
+        <div className="text-left max-w-4xl mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              International presence
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-4xl lg:text-5xl xl:text-6xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Global Institutional Engagement
+          </h2>
+          <p className="font-sf-pro-text text-xl text-[#4a3828] leading-relaxed">
             Our Mediators and Arbitrators maintain active professional engagements with leading arbitral and mediation institutions across the world. Through these affiliations, CIMA members operate at the forefront of international dispute resolution.
           </p>
         </div>
-        <div className="space-y-16 sm:space-y-20 lg:space-y-24">
+        <div className="space-y-20 lg:space-y-28">
           {/* Primary Institutions */}
           <div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
               {INSTITUTION_LOGOS.slice(0, 10).map((institution, index) => (
-                <div key={`primary-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-gray-50 hover:bg-gray-100 transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                <div key={`primary-${index}`} className="group flex flex-col items-center justify-center p-8 border-2 border-[#d4c5b0]/30 bg-white hover:bg-[#faf9f6] hover:border-[#8b6f47]/40 hover:shadow-[0_16px_40px_rgba(97,0,0,0.08)] transition-all duration-700 hover:-translate-y-1 text-center min-h-[220px] rounded-[20px]">
+                  <div className="w-24 h-24 mb-6 flex items-center justify-center">
                     <img 
                       src={institution.logo} 
                       alt={`${institution.acronym} Logo`}
-                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                      className="max-w-full max-h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity duration-700"
                     />
                   </div>
-                  <p className="font-sf-pro-text text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                  <p className="font-sf-pro-text text-sm text-[#4a3828] leading-relaxed">{institution.name}</p>
                 </div>
               ))}
             </div>
           </div>
+          
           {/* Specialised & Regional ADR Institutions */}
           <div>
-            <h3 className="font-sf-pro-display text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-left">Specialised & Regional ADR Institutions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <h3 className="font-sf-pro-display text-3xl lg:text-4xl text-[#610000] mb-12 tracking-tight font-bold">Specialised & Regional ADR Institutions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {INSTITUTION_LOGOS.slice(10, 18).map((institution, index) => (
-                <div key={`regional-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-gray-50 hover:bg-gray-100 transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                <div key={`regional-${index}`} className="group flex flex-col items-center justify-center p-8 border-2 border-[#d4c5b0]/30 bg-white hover:bg-[#faf9f6] hover:border-[#8b6f47]/40 hover:shadow-[0_16px_40px_rgba(97,0,0,0.08)] transition-all duration-700 hover:-translate-y-1 text-center min-h-[220px] rounded-[20px]">
+                  <div className="w-24 h-24 mb-6 flex items-center justify-center">
                     <img 
                       src={institution.logo} 
                       alt={`${institution.acronym} Logo`}
-                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                      className="max-w-full max-h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity duration-700"
                     />
                   </div>
-                  <p className="font-sf-pro-text text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                  <p className="font-sf-pro-text text-sm text-[#4a3828] leading-relaxed">{institution.name}</p>
                 </div>
               ))}
             </div>
           </div>
+          
           {/* Mediation & Hybrid Dispute Resolution Bodies */}
           <div>
-            <h3 className="font-sf-pro-display text-2xl sm:text-3xl text-landing-primary mb-8 sm:mb-12 text-left">Mediation & Hybrid Dispute Resolution Bodies</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+            <h3 className="font-sf-pro-display text-3xl lg:text-4xl text-[#610000] mb-12 tracking-tight font-bold">Mediation & Hybrid Dispute Resolution Bodies</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {INSTITUTION_LOGOS.slice(18, 20).map((institution, index) => (
-                <div key={`mediation-${index}`} className="flex flex-col items-center justify-center p-4 sm:p-6 border border-landing-outline-variant/20 bg-gray-50 hover:bg-gray-100 transition-colors group text-center min-h-[140px] sm:min-h-[180px] rounded-lg">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 flex items-center justify-center">
+                <div key={`mediation-${index}`} className="group flex flex-col items-center justify-center p-8 border-2 border-[#d4c5b0]/30 bg-white hover:bg-[#faf9f6] hover:border-[#8b6f47]/40 hover:shadow-[0_16px_40px_rgba(97,0,0,0.08)] transition-all duration-700 hover:-translate-y-1 text-center min-h-[220px] rounded-[20px]">
+                  <div className="w-24 h-24 mb-6 flex items-center justify-center">
                     <img 
                       src={institution.logo} 
                       alt={`${institution.acronym} Logo`}
-                      className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
+                      className="max-w-full max-h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity duration-700"
                     />
                   </div>
-                  <p className="font-sf-pro-text text-xs text-landing-on-surface-variant leading-relaxed">{institution.name}</p>
+                  <p className="font-sf-pro-text text-sm text-[#4a3828] leading-relaxed">{institution.name}</p>
                 </div>
               ))}
             </div>
@@ -707,38 +1139,51 @@ function LearningPathsSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
   const learningPaths = [
-    { name: "International Arbitration", count: "12 courses", icon: "gavel",       tint: "bg-[#e8eef7] text-[#1a3b6e]" },
-    { name: "Mediation & Conciliation",  count: "9 courses",  icon: "handshake",   tint: "bg-[#e6f4f4] text-[#0d6a6a]" },
-    { name: "Investor-State Disputes",   count: "10 courses", icon: "public",      tint: "bg-[#fef8ec] text-[#7a5010]" },
-    { name: "ADR Certification Prep",    count: "8 courses",  icon: "verified",    tint: "bg-[#e7f5ee] text-[#1a6b3c]" },
-    { name: "Contract Drafting",         count: "7 courses",  icon: "description", tint: "bg-[#e8eef7] text-[#1a3b6e]" },
-    { name: "Emergency Proceedings",     count: "5 courses",  icon: "timer",       tint: "bg-[#e6f4f4] text-[#0d6a6a]" },
+    { name: "International Arbitration", count: "12 courses", icon: "gavel" },
+    { name: "Mediation & Conciliation", count: "9 courses", icon: "handshake" },
+    { name: "Investor-State Disputes", count: "10 courses", icon: "public" },
+    { name: "ADR Certification Prep", count: "8 courses", icon: "verified" },
+    { name: "Contract Drafting", count: "7 courses", icon: "description" },
+    { name: "Emergency Proceedings", count: "5 courses", icon: "timer" },
   ];
 
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-left mb-12 sm:mb-16">
-          <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Browse by category</p>
-          <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Learning paths</h2>
-          <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Structured tracks built for every stage of your ADR career.</p>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Browse by category
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Learning paths
+          </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed max-w-3xl font-light">
+            Structured tracks built for every stage of your ADR career.
+          </p>
         </div>
 
-        <div className="grid gap-[14px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}>
+        {/* Paths Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
           {learningPaths.map((path) => (
-            <div
+            <button
               key={path.name}
-              className="group bg-white border-[1.5px] border-[#d1d7dc] rounded-[10px] p-6 hover:border-[#1a3b6e] hover:-translate-y-0.5 hover:shadow-[0_1px_4px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-pointer flex flex-col gap-2.5"
+              className="group bg-white border-2 border-[#d4c5b0]/30 rounded-[24px] p-8 transition-all duration-700 hover:border-[#8b6f47]/40 hover:shadow-[0_20px_48px_rgba(97,0,0,0.12)] hover:-translate-y-2 text-left cursor-pointer"
             >
-              <div className={`w-11 h-11 rounded-[6px] ${path.tint} flex items-center justify-center`}>
-                <span className="material-symbols-outlined text-[20px]">{path.icon}</span>
+              <div className="w-16 h-16 rounded-[18px] bg-gradient-to-br from-[#8b6f47]/10 to-[#8b6f47]/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-700 border border-[#d4c5b0]/30">
+                <span className="material-symbols-outlined text-3xl text-[#8b6f47]">{path.icon}</span>
               </div>
-              <h3 className="font-['Plus_Jakarta_Sans'] text-sm font-semibold text-[#1c1d1f] leading-tight">{path.name}</h3>
-              <p className="font-['Plus_Jakarta_Sans'] text-xs text-[#6a6f73]">{path.count}</p>
-            </div>
+              <h3 className="font-sf-pro-display text-lg font-bold text-[#610000] mb-3 leading-tight group-hover:text-[#8b0000] transition-colors duration-500">
+                {path.name}
+              </h3>
+              <p className="font-sf-pro-text text-sm text-[#6b5d4f] font-medium">{path.count}</p>
+            </button>
           ))}
         </div>
       </div>
@@ -751,93 +1196,179 @@ function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
   const featuredCourses = [
-    { title: "Mediation Skills & Practice: Facilitation to Closure",        category: "Mediation",             instructor: "Prof. Adaeze Nwosu, FCIArb",      rating: 4.9, students: 1248, modules: 6,  hours: 18, level: "All levels",          cpd: 8,  badge: "Bestseller",  thumb: "from-[#1f2d3d] to-[#2e4460]", badgeCls: "bg-[#fef8ec] text-[#7a5010]" },
-    { title: "International Commercial Arbitration: End-to-End Practice",   category: "Arbitration",           instructor: "Dr. Ivan Petrov, RIAC Panel",     rating: 4.8, students: 976,  modules: 8,  hours: 24, level: "Part II (Member)",    cpd: 12, badge: "Certificate", thumb: "from-[#1f2d3d] to-[#2e4460]", badgeCls: "bg-[#fef8ec] text-[#7a5010]" },
-    { title: "ISDS: Treaty Claims, BITs & ICSID Practice",                  category: "Investment Law",        instructor: "Prof. Kwame Asante, ICJ Consultant", rating: 4.9, students: 702, modules: 10, hours: 30, level: "Part III (Fellow)",   cpd: 18, badge: "Diploma",     thumb: "from-[#1f2d3d] to-[#2e4460]", badgeCls: "bg-[#fef8ec] text-[#7a5010]" },
-    { title: "Drafting Enforceable Arbitration Clauses",                    category: "Drafting",              instructor: "Ms. Sarah Okafor, Senior Counsel", rating: 4.7, students: 514, modules: 3,  hours: 9,  level: "Part I (Associate)",  cpd: 6,  badge: "Certificate", thumb: "from-[#1f2d3d] to-[#2e4460]", badgeCls: "bg-[#fef8ec] text-[#7a5010]" },
-    { title: "Emergency Arbitration: Urgent Relief in Cross-Border Disputes", category: "Emergency Proceedings", instructor: "Dr. Elena Morozova, LCIA Arbitrator", rating: 4.8, students: 389, modules: 4,  hours: 12, level: "Part III (Fellow)",   cpd: 8,  badge: "New",         thumb: "from-[#1f2d3d] to-[#2e4460]", badgeCls: "bg-[#fef8ec] text-[#7a5010]" },
+    { 
+      title: "Mediation Skills & Practice: Facilitation to Closure",
+      category: "Mediation",
+      instructor: "Prof. Adaeze Nwosu, FCIArb",
+      rating: 4.9,
+      students: 1248,
+      modules: 6,
+      hours: 18,
+      level: "All levels",
+      cpd: 8,
+      badge: "Bestseller",
+      badgeColor: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+      gradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      title: "International Commercial Arbitration: End-to-End Practice",
+      category: "Arbitration",
+      instructor: "Dr. Ivan Petrov, RIAC Panel",
+      rating: 4.8,
+      students: 976,
+      modules: 8,
+      hours: 24,
+      level: "Part II (Member)",
+      cpd: 12,
+      badge: "Certificate",
+      badgeColor: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+      gradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      title: "ISDS: Treaty Claims, BITs & ICSID Practice",
+      category: "Investment Law",
+      instructor: "Prof. Kwame Asante, ICJ Consultant",
+      rating: 4.9,
+      students: 702,
+      modules: 10,
+      hours: 30,
+      level: "Part III (Fellow)",
+      cpd: 18,
+      badge: "Diploma",
+      badgeColor: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+      gradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      title: "Drafting Enforceable Arbitration Clauses",
+      category: "Drafting",
+      instructor: "Ms. Sarah Okafor, Senior Counsel",
+      rating: 4.7,
+      students: 514,
+      modules: 3,
+      hours: 9,
+      level: "Part I (Associate)",
+      cpd: 6,
+      badge: "Certificate",
+      badgeColor: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+      gradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      title: "Emergency Arbitration: Urgent Relief in Cross-Border Disputes",
+      category: "Emergency Proceedings",
+      instructor: "Dr. Elena Morozova, LCIA Arbitrator",
+      rating: 4.8,
+      students: 389,
+      modules: 4,
+      hours: 12,
+      level: "Part III (Fellow)",
+      cpd: 8,
+      badge: "New",
+      badgeColor: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+      gradient: "from-[#610000] to-[#8b0000]"
+    },
   ];
 
   const renderStars = (rating: number) => {
-    const full = Math.floor(rating);
-    const stars: JSX.Element[] = [];
-    for (let i = 0; i < full; i++) {
-      stars.push(<span key={`f-${i}`} className="text-[#e8a116] text-[12px]">{"\u2605"}</span>);
-    }
-    for (let i = full; i < 5; i++) {
-      stars.push(<span key={`e-${i}`} className="text-[#d1d7dc] text-[12px]">{"\u2605"}</span>);
-    }
-    return stars;
+    return (
+      <div className="flex items-center gap-1">
+        {[...Array(5)].map((_, i) => (
+          <svg key={i} className={`w-5 h-5 ${i < Math.floor(rating) ? 'text-[#8b6f47] fill-[#8b6f47]' : 'text-[#d4c5b0] fill-[#d4c5b0]'}`} viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+    );
   };
-
-  const stripeBg = {
-    backgroundImage:
-      'repeating-linear-gradient(-45deg, transparent 0, transparent 8px, rgba(255,255,255,0.04) 8px, rgba(255,255,255,0.04) 16px)',
-  } as React.CSSProperties;
 
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-end mb-12 sm:mb-16 flex-wrap gap-4">
-          <div>
-            <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Top rated</p>
-            <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Featured courses</h2>
-            <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Curated by our academic board. Recognized by ICC, LCIA, SIAC, RIAC and CIArb.</p>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-20 gap-8">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+              <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+                Top rated
+              </span>
+            </div>
+            <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+              Featured courses
+            </h2>
+            <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed font-light">
+              Curated by our academic board. Recognized by ICC, LCIA, SIAC, RIAC and CIArb.
+            </p>
           </div>
-          <Link href="/courses" className="font-['Plus_Jakarta_Sans'] text-[13px] font-semibold uppercase tracking-[0.12em] text-[#1a3b6e] hover:text-[#0e2144] transition-colors flex items-center gap-2 group">
+          <Link href="/courses" className="group flex items-center gap-3 font-sf-pro-text text-lg font-semibold text-[#610000] hover:text-[#8b0000] transition-colors duration-500 px-6 py-3 rounded-[14px] hover:bg-[#610000]/5">
             View all courses
-            <span className="text-base transform group-hover:translate-x-1 transition-transform">→</span>
+            <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
           </Link>
         </div>
 
-        <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(268px, 1fr))' }}>
-          {featuredCourses.map((course) => (
+        {/* Courses Grid - More Compact Sizing */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {featuredCourses.map((course, index) => (
             <div
               key={course.title}
-              className="group bg-white border border-[#d1d7dc] rounded-[10px] overflow-hidden hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-[3px] transition-all duration-200 cursor-pointer"
+              className="group bg-white border-2 border-[#d4c5b0]/30 rounded-[24px] overflow-hidden hover:border-[#8b6f47]/40 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-3 transition-all duration-700 cursor-pointer"
+              style={{animationDelay: `${index * 0.1}s`}}
             >
-              {/* Thumb */}
-              <div className={`relative h-[148px] flex items-center justify-center overflow-hidden bg-gradient-to-br ${course.thumb}`}>
-                <div className="absolute inset-0" style={stripeBg} />
-                <span className="relative z-10 font-['Playfair_Display'] text-[22px] font-bold text-white tracking-tight px-4 text-center leading-tight">
-                  {course.category}
-                </span>
+              {/* Course Thumbnail - Reduced Height */}
+              <div className={`relative h-56 flex items-center justify-center overflow-hidden bg-gradient-to-br ${course.gradient}`}>
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: 'repeating-linear-gradient(-45deg, transparent 0, transparent 12px, rgba(255,255,255,0.05) 12px, rgba(255,255,255,0.05) 24px)'
+                }}></div>
+                <Gavel className="relative z-10 w-20 h-20 text-white/90 group-hover:scale-110 transition-transform duration-700" />
+                
+                {/* Badge */}
+                <div className={`absolute top-5 right-5 px-3 py-2 rounded-full text-xs font-sf-pro-text font-bold uppercase tracking-wider border-2 backdrop-blur-sm ${course.badgeColor}`}>
+                  {course.badge}
+                </div>
               </div>
 
-              {/* Body */}
-              <div className="px-[1.1rem] pt-4 pb-5">
-                <div className="font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold uppercase tracking-[0.1em] text-[#6a6f73] mb-1.5">{course.category}</div>
-                <h4 className="font-['Plus_Jakarta_Sans'] text-[14.5px] font-semibold text-[#1c1d1f] leading-[1.35] mb-1.5">
+              {/* Course Body - More Compact */}
+              <div className="p-6 space-y-4">
+                <div className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+                  {course.category}
+                </div>
+                <h4 className="font-sf-pro-display text-xl font-bold text-[#610000] leading-tight group-hover:text-[#8b0000] transition-colors duration-500 line-clamp-2">
                   {course.title}
                 </h4>
-                <p className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73] mb-2">{course.instructor}</p>
+                <p className="font-sf-pro-text text-sm text-[#6b5d4f] line-clamp-1">{course.instructor}</p>
 
-                {/* Rating */}
-                <div className="flex items-center gap-[5px] mb-2">
-                  <span className="font-['Plus_Jakarta_Sans'] text-[13px] font-bold text-[#b54708]">{course.rating}</span>
-                  <div className="flex gap-px">{renderStars(course.rating)}</div>
-                  <span className="font-['Plus_Jakarta_Sans'] text-[11.5px] text-[#6a6f73]">({course.students.toLocaleString()})</span>
+                {/* Rating - More Compact */}
+                <div className="flex items-center gap-2 pb-4 border-b border-[#d4c5b0]/30">
+                  <span className="font-sf-pro-text text-lg font-bold text-[#610000]">{course.rating}</span>
+                  {renderStars(course.rating)}
+                  <span className="font-sf-pro-text text-xs text-[#6b5d4f]">({course.students.toLocaleString()})</span>
                 </div>
 
-                {/* Meta */}
-                <div className="flex items-center gap-2 flex-wrap font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">
-                  <span>{course.modules} modules</span>
-                  <span className="w-[3px] h-[3px] rounded-full bg-[#d1d7dc]" />
-                  <span>{course.hours} hrs</span>
-                  <span className="w-[3px] h-[3px] rounded-full bg-[#d1d7dc]" />
-                  <span>{course.level}</span>
+                {/* Meta Info - More Compact */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 text-sm text-[#4a3828]">
+                    <div className="w-8 h-8 rounded-full bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-base text-[#8b6f47]">menu_book</span>
+                    </div>
+                    <span className="font-sf-pro-text font-medium text-xs">{course.modules} modules</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#4a3828]">
+                    <div className="w-8 h-8 rounded-full bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-base text-[#8b6f47]">schedule</span>
+                    </div>
+                    <span className="font-sf-pro-text font-medium text-xs">{course.hours} hours</span>
+                  </div>
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="border-t border-[#f7f9fa] px-[1.1rem] py-3 flex items-center justify-between">
-                <span className={`font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold uppercase tracking-[0.06em] px-[9px] py-[3px] rounded ${course.badgeCls}`}>
-                  {course.badge}
-                </span>
-                <span className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#6a6f73]">{course.cpd} CPD hrs</span>
+                
+                {/* Level & CPD - More Compact */}
+                <div className="flex items-center justify-between pt-4 border-t border-[#d4c5b0]/30">
+                  <span className="text-xs font-sf-pro-text font-medium text-[#6b5d4f]">{course.level}</span>
+                  <span className="text-xs font-sf-pro-text font-bold text-[#610000]">{course.cpd} CPD hrs</span>
+                </div>
               </div>
             </div>
           ))}
@@ -852,37 +1383,95 @@ function WhyChooseUsSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
   const features = [
-    { icon: "workspace_premium", title: "Globally recognised certifications", description: "CIMA certificates are accepted by ICC, LCIA, SIAC, ICSID and RIAC panels. Co-badged with your local bar association where applicable.", tint: "bg-[#e8eef7] text-[#1a3b6e]" },
-    { icon: "verified",          title: "CPD / CLE accredited",               description: "Every course carries verifiable continuing professional development hours recognised by bar associations in 38 jurisdictions worldwide.",       tint: "bg-[#fef8ec] text-[#7a5010]" },
-    { icon: "school",            title: "Expert practitioners as instructors", description: "Learn from sitting arbitrators, tribunal secretaries, RIAC panel members, and senior counsel with active international caseloads.",              tint: "bg-[#e6f4f4] text-[#0d6a6a]" },
-    { icon: "schedule",          title: "Self-paced with lifetime access",    description: "On-demand video, downloadable case studies, interactive assessments, and automatic course updates — all at your pace on any device.",             tint: "bg-[#e7f5ee] text-[#1a6b3c]" },
-    { icon: "groups",            title: "Global professional community",      description: "Join a private network of 4,800+ ADR professionals. Access mentorship, peer discussion forums, and referral pathways.",                           tint: "bg-[#e8eef7] text-[#1a3b6e]" },
-    { icon: "shield",            title: "Bar association co-badging",         description: "Certificates issued in collaboration with 14 bar associations and professional bodies, carrying dual institutional authority.",                   tint: "bg-[#fef8ec] text-[#7a5010]" },
+    { 
+      icon: "workspace_premium",
+      title: "Globally recognised certifications",
+      description: "CIMA certificates are accepted by ICC, LCIA, SIAC, ICSID and RIAC panels. Co-badged with your local bar association where applicable.",
+      gradient: "from-blue-50 to-blue-100/50",
+      iconColor: "text-blue-700",
+      iconBg: "bg-blue-100"
+    },
+    { 
+      icon: "verified",
+      title: "CPD / CLE accredited",
+      description: "Every course carries verifiable continuing professional development hours recognised by bar associations in 38 jurisdictions worldwide.",
+      gradient: "from-amber-50 to-amber-100/50",
+      iconColor: "text-amber-700",
+      iconBg: "bg-amber-100"
+    },
+    { 
+      icon: "school",
+      title: "Expert practitioners as instructors",
+      description: "Learn from sitting arbitrators, tribunal secretaries, RIAC panel members, and senior counsel with active international caseloads.",
+      gradient: "from-teal-50 to-teal-100/50",
+      iconColor: "text-teal-700",
+      iconBg: "bg-teal-100"
+    },
+    { 
+      icon: "schedule",
+      title: "Self-paced with lifetime access",
+      description: "On-demand video, downloadable case studies, interactive assessments, and automatic course updates — all at your pace on any device.",
+      gradient: "from-green-50 to-green-100/50",
+      iconColor: "text-green-700",
+      iconBg: "bg-green-100"
+    },
+    { 
+      icon: "groups",
+      title: "Global professional community",
+      description: "Join a private network of 4,800+ ADR professionals. Access mentorship, peer discussion forums, and referral pathways.",
+      gradient: "from-indigo-50 to-indigo-100/50",
+      iconColor: "text-indigo-700",
+      iconBg: "bg-indigo-100"
+    },
+    { 
+      icon: "shield",
+      title: "Bar association co-badging",
+      description: "Certificates issued in collaboration with 14 bar associations and professional bodies, carrying dual institutional authority.",
+      gradient: "from-purple-50 to-purple-100/50",
+      iconColor: "text-purple-700",
+      iconBg: "bg-purple-100"
+    },
   ];
 
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-[#faf9f6] transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-left mb-12 sm:mb-16">
-          <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Why choose us</p>
-          <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Built for the world's best legal minds</h2>
-          <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Every feature on this platform exists to serve serious ADR practitioners.</p>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Why choose us
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Built for the world's best legal minds
+          </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed max-w-3xl font-light">
+            Every feature on this platform exists to serve serious ADR practitioners.
+          </p>
         </div>
 
-        <div className="grid gap-7" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-          {features.map((feature) => (
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {features.map((feature, index) => (
             <div
               key={feature.title}
-              className="bg-white border border-[#d1d7dc] rounded-[10px] p-7 hover:shadow-[0_4px_16px_rgba(0,0,0,0.10)] transition-shadow duration-200"
+              className="group bg-white border-2 border-[#d4c5b0]/30 rounded-[24px] p-10 hover:border-[#8b6f47]/40 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700"
+              style={{animationDelay: `${index * 0.1}s`}}
             >
-              <div className={`w-12 h-12 rounded-[6px] ${feature.tint} flex items-center justify-center mb-4`}>
-                <span className="material-symbols-outlined text-[22px]">{feature.icon}</span>
+              <div className="w-20 h-20 rounded-[20px] bg-gradient-to-br from-[#8b6f47]/10 to-[#8b6f47]/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-700 border border-[#d4c5b0]/30">
+                <span className="material-symbols-outlined text-4xl text-[#8b6f47]">{feature.icon}</span>
               </div>
-              <h3 className="font-['Plus_Jakarta_Sans'] text-[15px] font-semibold text-[#1c1d1f] mb-2">{feature.title}</h3>
-              <p className="font-['Plus_Jakarta_Sans'] text-[13.5px] font-light text-[#6a6f73] leading-[1.65]">{feature.description}</p>
+              <h3 className="font-sf-pro-display text-2xl font-bold text-[#610000] mb-5 leading-tight">
+                {feature.title}
+              </h3>
+              <p className="font-sf-pro-text text-base text-[#4a3828] leading-relaxed">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
@@ -896,50 +1485,115 @@ function MeetTheFacultySection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
   const instructors = [
-    { initials: "AN", name: "Prof. Adaeze Nwosu", title: "FCIArb · Senior Mediator, Lagos & London",       rating: 4.9, students: 1248, courses: 2, avatarBg: "bg-[#1a3b6e]" },
-    { initials: "IP", name: "Dr. Ivan Petrov",    title: "RIAC Panel Member · Moscow & Geneva",            rating: 4.8, students: 976,  courses: 3, avatarBg: "bg-[#0d6a6a]" },
-    { initials: "KA", name: "Prof. Kwame Asante", title: "ICJ Consultant · Ghana Bar Association",         rating: 4.9, students: 702,  courses: 2, avatarBg: "bg-[#c8972a]" },
-    { initials: "EM", name: "Dr. Elena Morozova", title: "LCIA Arbitrator · Emergency Relief Specialist",  rating: 4.8, students: 389,  courses: 2, avatarBg: "bg-[#1a6b3c]" },
+    { 
+      initials: "AN",
+      name: "Prof. Adaeze Nwosu",
+      title: "FCIArb · Senior Mediator",
+      location: "Lagos & London",
+      rating: 4.9,
+      students: 1248,
+      courses: 2,
+      avatarGradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      initials: "IP",
+      name: "Dr. Ivan Petrov",
+      title: "RIAC Panel Member",
+      location: "Moscow & Geneva",
+      rating: 4.8,
+      students: 976,
+      courses: 3,
+      avatarGradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      initials: "KA",
+      name: "Prof. Kwame Asante",
+      title: "ICJ Consultant",
+      location: "Ghana Bar Association",
+      rating: 4.9,
+      students: 702,
+      courses: 2,
+      avatarGradient: "from-[#610000] to-[#8b0000]"
+    },
+    { 
+      initials: "EM",
+      name: "Dr. Elena Morozova",
+      title: "LCIA Arbitrator",
+      location: "Emergency Relief Specialist",
+      rating: 4.8,
+      students: 389,
+      courses: 2,
+      avatarGradient: "from-[#610000] to-[#8b0000]"
+    },
   ];
 
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-gradient-to-b from-[#faf9f6]/30 to-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-end mb-12 sm:mb-16 flex-wrap gap-4">
-          <div>
-            <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Meet the faculty</p>
-            <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Learn from the best</h2>
-            <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Our instructors are active practitioners — not just academics.</p>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Meet the faculty
+            </span>
           </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Learn from the best
+          </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed max-w-3xl font-light">
+            Our instructors are active practitioners — not just academics.
+          </p>
         </div>
 
-        <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+        {/* Instructors Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {instructors.map((ins) => (
             <div
               key={ins.name}
-              className="bg-white border border-[#d1d7dc] rounded-[10px] text-center overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.10)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col"
+              className="group bg-white border-2 border-[#d4c5b0]/30 rounded-[24px] text-center overflow-hidden hover:border-[#8b6f47]/40 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-3 transition-all duration-700 cursor-pointer"
             >
-              <div className={`w-20 h-20 rounded-full ${ins.avatarBg} flex items-center justify-center mx-auto mt-6 mb-3 font-['Playfair_Display'] text-[26px] font-bold text-white`}>
-                {ins.initials}
+              {/* Avatar */}
+              <div className="pt-12 pb-8">
+                <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${ins.avatarGradient} flex items-center justify-center mx-auto mb-8 shadow-lg border-4 border-white group-hover:scale-110 transition-transform duration-700`}>
+                  <span className="font-sf-pro-display text-4xl font-bold text-white">{ins.initials}</span>
+                </div>
+                <h3 className="font-sf-pro-display text-xl font-bold text-[#610000] mb-3 px-8">
+                  {ins.name}
+                </h3>
+                <p className="font-sf-pro-text text-base font-bold text-[#8b6f47] mb-2 px-8">
+                  {ins.title}
+                </p>
+                <p className="font-sf-pro-text text-sm text-[#6b5d4f] px-8">
+                  {ins.location}
+                </p>
               </div>
-              <h3 className="font-['Plus_Jakarta_Sans'] text-[15px] font-semibold text-[#1c1d1f] mb-[3px]">{ins.name}</h3>
-              <p className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#6a6f73] leading-[1.4] px-4 mb-3">{ins.title}</p>
 
-              <div className="flex justify-center gap-4 my-3 px-4 pb-6">
-                <div className="flex flex-col items-center gap-px">
-                  <div className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#1c1d1f]">{ins.rating}{"\u2605"}</div>
-                  <div className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">Rating</div>
-                </div>
-                <div className="flex flex-col items-center gap-px">
-                  <div className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#1c1d1f]">{ins.students.toLocaleString()}</div>
-                  <div className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">Students</div>
-                </div>
-                <div className="flex flex-col items-center gap-px">
-                  <div className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold text-[#1c1d1f]">{ins.courses}</div>
-                  <div className="font-['Plus_Jakarta_Sans'] text-[12px] text-[#6a6f73]">Courses</div>
+              {/* Stats */}
+              <div className="bg-[#faf9f6] border-t-2 border-[#d4c5b0]/30 py-8 px-8">
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="font-sf-pro-display text-2xl font-bold text-[#610000]">{ins.rating}</span>
+                      <svg className="w-5 h-5 text-[#8b6f47] fill-[#8b6f47]" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                    <div className="font-sf-pro-text text-xs text-[#6b5d4f]">Rating</div>
+                  </div>
+                  <div className="flex flex-col items-center border-x border-[#d4c5b0]/30">
+                    <div className="font-sf-pro-display text-2xl font-bold text-[#610000] mb-2">
+                      {ins.students.toLocaleString()}
+                    </div>
+                    <div className="font-sf-pro-text text-xs text-[#6b5d4f]">Students</div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="font-sf-pro-display text-2xl font-bold text-[#610000] mb-2">{ins.courses}</div>
+                    <div className="font-sf-pro-text text-xs text-[#6b5d4f]">Courses</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1023,16 +1677,27 @@ function PartnersSection() {
   return (
     <section
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-32 lg:py-40 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-left mb-12 sm:mb-16">
-          <p className="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6a6f73] mb-3">Our network</p>
-          <h2 className="font-['Playfair_Display'] text-3xl sm:text-4xl lg:text-5xl text-[#1c1d1f] mb-4 leading-tight">Partners & accrediting institutions</h2>
-          <p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#6a6f73] leading-relaxed max-w-2xl">Every certification carries the weight of institutional recognition.</p>
+      <div className="max-w-[1600px] mx-auto">
+        {/* Section Header */}
+        <div className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-16 h-[2px] bg-gradient-to-r from-[#8b6f47] to-transparent"></div>
+            <span className="font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] text-[#8b6f47]">
+              Our network
+            </span>
+          </div>
+          <h2 className="font-sf-pro-display text-5xl lg:text-6xl xl:text-7xl text-[#610000] mb-10 leading-[1.05] tracking-tight font-bold">
+            Partners & accrediting institutions
+          </h2>
+          <p className="font-sf-pro-text text-2xl text-[#4a3828] leading-relaxed max-w-3xl font-light">
+            Every certification carries the weight of institutional recognition.
+          </p>
         </div>
 
-        <div className="grid gap-[14px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+        {/* Partners Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {partners.map((partner) => {
             const featured = partner.featured;
             return (
@@ -1041,37 +1706,29 @@ function PartnersSection() {
                 href={partner.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={[
-                  "group rounded-[10px] px-6 py-[1.4rem] flex flex-col gap-1 border transition-all duration-200",
+                className={`group rounded-[20px] p-8 flex flex-col gap-3 border-2 transition-all duration-700 ${
                   featured
-                    ? "bg-[#fef8ec] border-[#c8972a] hover:shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                    : "bg-white border-[#d1d7dc] hover:border-[#1a3b6e] hover:shadow-[0_1px_4px_rgba(0,0,0,0.08)]",
-                ].join(" ")}
+                    ? "bg-gradient-to-br from-[#8b6f47]/5 to-[#8b6f47]/10 border-[#8b6f47]/30 hover:border-[#8b6f47]/50 hover:shadow-[0_20px_48px_rgba(139,111,71,0.15)]"
+                    : "bg-white border-[#d4c5b0]/30 hover:border-[#8b6f47]/40 hover:shadow-[0_20px_48px_rgba(97,0,0,0.12)]"
+                } hover:-translate-y-1`}
               >
-                <div
-                  className={[
-                    "font-['Plus_Jakarta_Sans'] text-[10px] font-semibold uppercase tracking-[0.12em] mb-0.5",
-                    featured ? "text-[#c8972a]" : "text-[#9ea5ad]",
-                  ].join(" ")}
-                >
+                <div className={`font-sf-pro-text text-xs font-bold uppercase tracking-[0.12em] mb-1 ${
+                  featured ? "text-[#8b6f47]" : "text-[#6b5d4f]"
+                }`}>
                   {partner.type}
                 </div>
-                <h3
-                  className={[
-                    "font-['Plus_Jakarta_Sans'] text-[13.5px] font-semibold leading-[1.35]",
-                    featured ? "text-[#7a5010]" : "text-[#1c1d1f]",
-                  ].join(" ")}
-                >
+                <h3 className={`font-sf-pro-display text-lg font-bold leading-tight ${
+                  featured ? "text-[#610000]" : "text-[#610000]"
+                }`}>
                   {partner.name}
                 </h3>
-                <div
-                  className={[
-                    "font-['Plus_Jakarta_Sans'] text-[12px] mt-1.5 inline-flex items-center gap-1",
-                    featured ? "text-[#c8972a]" : "text-[#1a3b6e]",
-                  ].join(" ")}
-                >
-                  {partner.url}
-                  <span className="text-[11px]">↗</span>
+                <div className={`font-sf-pro-text text-sm mt-2 inline-flex items-center gap-2 ${
+                  featured ? "text-[#8b6f47]" : "text-[#8b6f47]"
+                }`}>
+                  <span>{partner.url}</span>
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
                 </div>
               </a>
             );
