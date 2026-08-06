@@ -160,7 +160,7 @@ export default function DashboardRedesigned() {
           {/* Greeting */}
           <div>
             <h1 className="text-4xl font-bold text-[#2c2015] font-sf-pro-display mb-2">
-              {greeting}, {user?.firstName} 👋
+              {greeting}, {user?.firstName}
             </h1>
             <p className="text-lg text-[#6b5d4f] font-sf-pro-text">
               {inProgressEnrollments.length > 0
