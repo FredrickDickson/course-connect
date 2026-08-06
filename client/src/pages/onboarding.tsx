@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
-import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Sparkles, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Loader2, Award, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -1421,7 +1421,7 @@ export default function Onboarding() {
 
                       ) : (
 
-                        <Sparkles className="h-5 w-5" aria-hidden="true" />
+                        <Award className="h-5 w-5" aria-hidden="true" />
 
                       )}
 
