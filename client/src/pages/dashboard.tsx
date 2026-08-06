@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { LoadingState } from "@/components/ui/loading-state";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebration";
@@ -30,40 +31,105 @@ export default function Dashboard() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Source of truth: the unified `enrollments` table.
+      const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id)
         .order("enrolled_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      if (progressError) throw progressError;
+
+      // Deduplicate by course_id (defensive; should already be unique)
+      const uniqueEnrollments = (progressEnrollments || []).reduce((acc: any[], enrollment) => {
+        const existing = acc.find(e => e.course_id === enrollment.course_id);
+        if (!existing) {
+          acc.push(enrollment);
+        }
+        return acc;
+      }, []);
+
+      return uniqueEnrollments;
     },
     enabled: !!user,
   });
 
-  const { data: favorites = [] } = useQuery({
-    queryKey: ["favorites", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("favorites").select("id").eq("user_id", user!.id);
-      if (error) throw error;
-      return data || [];
-    },
+  const { data: userStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["user-dashboard-stats", user?.id],
     enabled: !!user,
+    queryFn: async () => {
+      // Combine multiple dashboard queries in parallel
+      const [favoritesResult, completionRecordsResult, enrollmentsResult, qualificationResult] = await Promise.all([
+        supabase.from("favorites").select("id").eq("user_id", user!.id),
+        supabase
+          .from("course_completion_records")
+          .select("*, courses!inner(title, track, level)")
+          .eq("user_id", user!.id)
+          .order("completed_at", { ascending: false }),
+        supabase
+          .from("enrollments")
+          .select("id, course_id, completed_at")
+          .eq("user_id", user!.id)
+          .not("completed_at", "is", null)
+          .order("completed_at", { ascending: false }),
+        (async () => {
+          const token = (await supabase.auth.getSession()).data.session?.access_token;
+          const response = await fetch("/api/qualifications/get-user-state", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch qualification state");
+          return response.json();
+        })()
+      ]);
+
+      if (favoritesResult.error) throw favoritesResult.error;
+      if (completionRecordsResult.error) throw completionRecordsResult.error;
+      if (enrollmentsResult.error) throw enrollmentsResult.error;
+
+      // Fetch course details for enrollments
+      const completedEnrollments = enrollmentsResult.data || [];
+      const courseIds = completedEnrollments.map((e: any) => e.course_id);
+      let enrichedEnrollments: any[] = [];
+      if (courseIds.length > 0) {
+        const { data: courses } = await supabase
+          .from("courses")
+          .select("id, title, track, level")
+          .in("id", courseIds);
+        const courseMap = new Map((courses || []).map((c: any) => [c.id, c]));
+        enrichedEnrollments = completedEnrollments.map((e: any) => ({
+          ...e,
+          course: courseMap.get(e.course_id),
+          track: courseMap.get(e.course_id)?.track,
+          level_achieved: courseMap.get(e.course_id)?.level,
+        }));
+      }
+
+      // Merge completion records and enrollments, deduplicate by course_id
+      const completionRecords = completionRecordsResult.data || [];
+      const allCertificates = [...completionRecords, ...enrichedEnrollments];
+      const uniqueCertificates = allCertificates.reduce((acc: any[], cert) => {
+        const courseId = cert.course_id || (cert as any).course?.id;
+        if (!acc.find(c => (c.course_id || (c as any).course?.id) === courseId)) {
+          acc.push(cert);
+        }
+        return acc;
+      }, []);
+
+      return {
+        favorites: favoritesResult.data || [],
+        certificates: uniqueCertificates,
+        qualificationState: qualificationResult
+      };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: certificates = [] } = useQuery({
-    queryKey: ["certificates", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("certificates")
-        .select("*, course:courses(id, title)")
-        .eq("user_id", user!.id)
-        .eq("is_revoked", false);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user,
-  });
+  // Extract individual stats from combined query
+  const favorites = userStats?.favorites || [];
+  const certificates = userStats?.certificates || [];
+  const userQualificationState = userStats?.qualificationState;
 
   const { data: adjunctCertifications = [] } = useQuery({
     queryKey: ["certifications", user?.id],
@@ -79,27 +145,12 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  const { data: userQualificationState } = useQuery({
-    queryKey: ["userQualificationState", user?.id],
-    queryFn: async () => {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const response = await fetch("/api/qualifications/get-user-state", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch qualification state");
-      return response.json();
-    },
-    enabled: !!user,
-  });
-
-  if (authLoading || !isAuthenticated) {
+  if (authLoading || enrollmentsLoading || statsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+          <LoadingState message="Loading your dashboard..." size="lg" />
         </div>
         <Footer />
       </div>
@@ -109,6 +160,12 @@ export default function Dashboard() {
   const completedCount = enrollments.filter((e: any) => Number(e.progress) >= 100).length;
   const enrolledCourseIds = enrollments.map((e: any) => e.course?.id).filter(Boolean);
   const adjunctEnrollments = enrollments.filter((e: any) => e.course?.programme_type === "ADJUNCT_COURSE");
+
+  // Derive per-track data from the live enrollments + certificates (no hard-coded values).
+  const arbEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "ARBITRATION");
+  const medEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "MEDIATION");
+  const arbCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "ARBITRATION");
+  const medCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "MEDIATION");
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,7 +187,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick stats */}
-          <div className="grid grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
             {[
               { icon: BookOpen, value: enrollments.length, label: "Enrolled" },
               { icon: Trophy, value: completedCount, label: "Completed" },
@@ -152,25 +209,25 @@ export default function Dashboard() {
       {/* Main content */}
       <section className="py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Left col */}
             <div className="lg:col-span-2 space-y-6">
               {/* Track Cards */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <TrackCard
                   track="ARBITRATION"
                   level={userQualificationState?.tracks?.arbitration?.level || "NONE"}
                   pathway={userQualificationState?.tracks?.arbitration?.pathway || null}
-                  certificates={userQualificationState?.tracks?.arbitration?.certificates || []}
-                  enrollments={userQualificationState?.tracks?.arbitration?.enrollments || []}
+                  certificates={arbCertificates}
+                  enrollments={arbEnrollments}
                   color="#1e40af"
                 />
                 <TrackCard
                   track="MEDIATION"
                   level={userQualificationState?.tracks?.mediation?.level || "NONE"}
                   pathway={userQualificationState?.tracks?.mediation?.pathway || null}
-                  certificates={userQualificationState?.tracks?.mediation?.certificates || []}
-                  enrollments={userQualificationState?.tracks?.mediation?.enrollments || []}
+                  certificates={medCertificates}
+                  enrollments={medEnrollments}
                   color="#059669"
                 />
               </div>
@@ -208,24 +265,30 @@ export default function Dashboard() {
                   ) : (
                     <div className="space-y-2">
                       {certificates.map((cert: any) => {
-                        const trackColor = cert.track === "ARBITRATION" ? "#1e40af" : "#059669";
+                        const track = cert.track || (cert.courses?.track) || (cert.course?.track);
+                        const trackColor = track === "ARBITRATION" ? "#1e40af" : "#059669";
+                        const courseTitle = cert.courses?.title || cert.course?.title || "Course";
+                        const level = cert.level_achieved || cert.courses?.level || cert.course?.level || "ASSOCIATE";
+                        const levelInitial = level?.[0] || "A";
+                        const completedAt = cert.completed_at;
                         return (
-                          <div key={cert.id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
-                            <div 
+                          <div key={cert.id || cert.course_id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
+                            <div
                               className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                               style={{ backgroundColor: trackColor }}
                             >
-                              {cert.post_nominal?.[0] || "C"}
+                              {levelInitial}
                             </div>
                             <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{courseTitle}</p>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
-                                  {cert.track}
+                                  {track}
                                 </span>
-                                <p className="text-xs font-semibold">{cert.post_nominal}</p>
+                                <p className="text-xs font-semibold">{level}</p>
                               </div>
                               <p className="text-[10px] text-muted-foreground">
-                                {cert.level} • {new Date(cert.issued_at).toLocaleDateString()}
+                                Completed {new Date(completedAt).toLocaleDateString()}
                               </p>
                             </div>
                           </div>

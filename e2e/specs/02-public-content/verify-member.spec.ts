@@ -10,14 +10,15 @@ test.describe("Member verification (/verify/:memberId, public)", () => {
   test("a valid, unexpired member shows a VALID badge with their details", async ({ page }) => {
     await page.goto(`/verify/${E2E_SEED_VALID_MEMBER_ID}`);
     await expect(page.getByText("✓ VALID")).toBeVisible();
-    await expect(page.getByText("E2E Valid Member")).toBeVisible();
+    // verify_member() redacts to "First L." (first name + last initial) for PII protection.
+    await expect(page.getByText("E2E V.")).toBeVisible();
     await expect(page.getByText(E2E_SEED_VALID_MEMBER_ID)).toBeVisible();
   });
 
   test("an expired member shows an EXPIRED badge", async ({ page }) => {
     await page.goto(`/verify/${E2E_SEED_EXPIRED_MEMBER_ID}`);
     await expect(page.getByText("✗ EXPIRED")).toBeVisible();
-    await expect(page.getByText("E2E Expired Member")).toBeVisible();
+    await expect(page.getByText("E2E E.")).toBeVisible();
   });
 
   test("does not require authentication", async ({ page }) => {

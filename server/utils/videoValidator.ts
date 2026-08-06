@@ -4,9 +4,10 @@
  */
 
 export interface VideoMetadata {
-  platform: 'youtube' | 'vimeo';
+  platform: 'youtube' | 'vimeo' | 'mux';
   videoId: string;
   thumbnailUrl?: string;
+  muxPlaybackId?: string;
 }
 
 export interface ValidationError {
@@ -38,9 +39,15 @@ export function validateAndExtractVideoUrl(url: string): VideoMetadata | Validat
     return vimeoResult;
   }
 
+  // Try Mux
+  const muxResult = extractMuxInfo(trimmedUrl);
+  if (muxResult) {
+    return muxResult;
+  }
+
   return { 
     error: 'UNSUPPORTED_PLATFORM', 
-    message: 'Only YouTube and Vimeo URLs are supported' 
+    message: 'Only YouTube, Vimeo, and Mux URLs are supported' 
   };
 }
 
@@ -49,12 +56,16 @@ export function validateAndExtractVideoUrl(url: string): VideoMetadata | Validat
  */
 function extractYouTubeInfo(url: string): VideoMetadata | null {
   const patterns = [
-    // Standard watch URL
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
-    // Short URL
+    // Standard watch URL: youtube.com/watch?v=VIDEO_ID
+    /youtube\.com\/watch\?[?&]v=([a-zA-Z0-9_-]{11})/,
+    // Short URL: youtu.be/VIDEO_ID
     /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    // Embed URL
+    // Embed URL: youtube.com/embed/VIDEO_ID
     /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    // V URL: youtube.com/v/VIDEO_ID
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    // Shortened watch URL: youtu.be/VIDEO_ID
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
 
   for (const pattern of patterns) {
@@ -100,13 +111,41 @@ function extractVimeoInfo(url: string): VideoMetadata | null {
 }
 
 /**
+ * Extract Mux playback ID and metadata
+ */
+function extractMuxInfo(url: string): VideoMetadata | null {
+  const patterns = [
+    // Mux playback URL: https://stream.mux.com/playback/{PLAYBACK_ID}
+    /stream\.mux\.com\/playback\/([a-zA-Z0-9_-]+)/,
+    // Mux short URL: https://mux.com/playback/{PLAYBACK_ID}
+    /mux\.com\/playback\/([a-zA-Z0-9_-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      const muxPlaybackId = match[1];
+      return {
+        platform: 'mux',
+        videoId: muxPlaybackId, // Use playback ID as video ID for consistency
+        muxPlaybackId,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Generate embed URL for a video
  */
-export function generateEmbedUrl(platform: 'youtube' | 'vimeo', videoId: string): string {
+export function generateEmbedUrl(platform: 'youtube' | 'vimeo' | 'mux', videoId: string): string {
   if (platform === 'youtube') {
     return `https://www.youtube.com/embed/${videoId}`;
   } else if (platform === 'vimeo') {
     return `https://player.vimeo.com/video/${videoId}`;
+  } else if (platform === 'mux') {
+    return `https://stream.mux.com/playback/${videoId}`;
   }
   throw new Error(`Unsupported platform: ${platform}`);
 }

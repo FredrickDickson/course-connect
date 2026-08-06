@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Issue</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Payment Issue</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        We encountered an issue processing your recent payment for <strong>{{itemName}}</strong>.
+      </p>
+      
+      <div style="background: #fff5f5; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #e53e3e;">
+        <h3 style="margin-top: 0; color: #c53030; font-size: 18px;">Payment Details</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #c53030;">
+          <li style="margin-bottom: 10px;"><strong>Amount:</strong> {{amount}} {{currency}}</li>
+          <li style="margin-bottom: 10px;"><strong>Reference:</strong> {{reference}}</li>
+          <li style="margin-bottom: 10px;"><strong>Date:</strong> {{attemptDate}}</li>
+          <li style="margin-bottom: 0;"><strong>Status:</strong> {{failureReason}}</li>
+        </ul>
+      </div>
+      
+      {{#if retryAvailable}}
+      <div style="background: #ebf8ff; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #3182ce;">
+        <h3 style="margin-top: 0; color: #2c5282; font-size: 18px;">What You Can Do</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2c5282;">
+          <li style="margin-bottom: 10px;">Check your payment details and try again</li>
+          <li style="margin-bottom: 10px;">Ensure sufficient funds are available</li>
+          <li style="margin-bottom: 10px;">Verify your card hasn't expired</li>
+          <li style="margin-bottom: 0;">Contact your bank if the issue persists</li>
+        </ul>
+      </div>
+      {{else}}
+      <div style="background: #fef5e7; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d69e2e;">
+        <h3 style="margin-top: 0; color: #744210; font-size: 18px;">Important Information</h3>
+        <p style="margin: 10px 0; color: #744210; font-size: 16px;">
+          {{#if maxRetriesReached}}
+          We've attempted to process this payment multiple times but were unsuccessful. 
+          For security reasons, automatic retries have been disabled.
+          {{else}}
+          This payment method may be temporarily unavailable. Please try an alternative payment method.
+          {{/if}}
+        </p>
+      </div>
+      {{/if}}
+      
+      {{#if retryUrl}}
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{retryUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          Try Payment Again
+        </a>
+      </div>
+      {{/if}}
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}"
+           style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 14px;">
+          View Your Dashboard
+        </a>
+      </div>
+      
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 16px;">Troubleshooting Tips</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #4a5568; font-size: 14px;">
+          <li style="margin-bottom: 8px;">Ensure your billing address matches your card statement</li>
+          <li style="margin-bottom: 8px;">Check if your bank has blocked international transactions</li>
+          <li style="margin-bottom: 8px;">Try clearing your browser cache and cookies</li>
+          <li style="margin-bottom: 8px;">Use a different browser or device if needed</li>
+          <li style="margin-bottom: 0;">Contact our support team for immediate assistance</li>
+        </ul>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        If you continue to experience payment issues or believe this is an error, 
+        please contact our support team immediately for assistance.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>

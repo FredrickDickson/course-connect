@@ -495,16 +495,18 @@ export default function AdminEnrollmentsTable() {
                             [Users, "Role", displayProfile.role_category],
                             [GraduationCap, "Education", displayProfile.education_level],
                             [Shield, "ADR Experience", displayProfile.adr_experience !== "none" ? displayProfile.adr_experience : null],
-                          ].filter(([, , v]) => v).map(([Icon, label, value]) => (
-                            <div key={label as string} className="flex items-start gap-3">
-                              {/* @ts-ignore */}
-                              <Icon className="w-4 h-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <p className="text-xs text-muted-foreground">{label as string}</p>
-                                <p className="font-medium capitalize">{value as string}</p>
+                          ].filter(([, , v]) => v).map(([Icon, label, value]) => {
+                            const IconComponent = Icon as React.ComponentType<{ className?: string }>;
+                            return (
+                              <div key={label as string} className="flex items-start gap-3">
+                                <IconComponent className="w-4 h-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <p className="text-xs text-muted-foreground">{label as string}</p>
+                                  <p className="font-medium capitalize">{value as string}</p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </CardContent>
                     </Card>

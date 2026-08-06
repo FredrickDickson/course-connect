@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
 export class CourseCatalogPage extends BasePage {
-  readonly heading = this.page.getByRole("heading", { name: "All Courses" });
+  readonly heading = this.page.getByRole("heading", { name: "Course Catalog" });
   readonly searchInput = this.page.getByPlaceholder("Search courses...");
   readonly clearFiltersButton = this.page.getByRole("button", { name: /clear/i });
   readonly noCoursesMessage = this.page.getByText("No courses match your filters.");

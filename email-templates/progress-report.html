@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Progress Report - CIMA Learn</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #610000 0%, #8B0000 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">Learning Progress Report 📊</h1>
+    </div>
+    
+    <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Dear {{firstName}},
+      </p>
+      
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Here's your learning progress report for the period of {{reportPeriod}}. Your dedication to professional development is truly commendable!
+      </p>
+      
+      <div style="background: #f0fff4; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #38a169;">
+        <h3 style="margin-top: 0; color: #2f855a; font-size: 18px;">Overall Progress</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #2f855a;">
+          <li style="margin-bottom: 10px;"><strong>Current Level:</strong> {{currentLevel}}</li>
+          <li style="margin-bottom: 10px;"><strong>Courses Completed:</strong> {{coursesCompleted}}</li>
+          <li style="margin-bottom: 10px;"><strong>Hours of Learning:</strong> {{totalHours}}</li>
+          <li style="margin-bottom: 10px;"><strong>Progress Score:</strong> {{progressScore}}%</li>
+          <li style="margin-bottom: 0;"><strong>Streak Active:</strong> {{streakDays}} days</li>
+        </ul>
+      </div>
+      
+      {{#if achievements.length > 0}}
+      <div style="background: #ebf8ff; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #3182ce;">
+        <h3 style="margin-top: 0; color: #2c5282; font-size: 18px;">Recent Achievements 🏆</h3>
+        <div style="margin: 15px 0;">
+          {{#each achievements}}
+          <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+            <div style="text-align: center; margin-bottom: 10px; font-size: 24px;">{{icon}}</div>
+            <h4 style="margin: 0 0 10px 0; color: #1a202c; font-size: 16px;">{{title}}</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">{{description}}</p>
+            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">
+              <strong>Earned:</strong> {{earnedDate}}
+            </p>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+      
+      {{#if recommendations.length > 0}}
+      <div style="background: #fef5e7; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d69e2e;">
+        <h3 style="margin-top: 0; color: #744210; font-size: 18px;">Personalized Recommendations 💡</h3>
+        <ul style="margin: 10px 0; padding-left: 20px; color: #744210;">
+          {{#each recommendations}}
+          <li style="margin-bottom: 15px;">
+            <strong>{{type}}:</strong> {{title}}
+            <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">{{description}}</p>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+      {{/if}}
+      
+      <div style="background: #f7fafc; padding: 20px; border-radius: 6px; margin: 25px 0; border-left: 4px solid #d4af37;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 18px;">Keep Up The Great Work!</h3>
+        <p style="margin: 10px 0; color: #4a5568; font-size: 16px;">
+          Your consistent effort in learning is setting you apart as a dedicated ADR professional. 
+          Every course completed and skill learned brings you closer to mastery in mediation and arbitration.
+        </p>
+        <p style="margin: 10px 0; color: #4a5568; font-size: 16px;">
+          Remember, your progress is not just about completion—it's about the transformation 
+          into a more effective practitioner. Keep pushing forward!
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{dashboardUrl}}"
+           style="background: #610000; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+          View Detailed Progress
+        </a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+      
+      <p style="font-size: 12px; color: #718096; margin: 0;">
+        This progress report is automatically generated based on your learning activity. 
+        If you have any questions about your progress or recommendations, please reply to this email or contact your support team.
+      </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; font-size: 12px; color: #718096;">
+      <p style="margin: 0;">© 2026 Center for International Mediators and Arbitrators. All rights reserved.</p>
+      <p style="margin: 5px 0;">England & Wales</p>
+    </div>
+  </div>
+</body>
+</html>

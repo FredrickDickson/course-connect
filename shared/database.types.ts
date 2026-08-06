@@ -4381,7 +4381,11 @@ export type Database = {
         Returns: undefined
       }
       award_reputation_points: {
-        Args: { achievement_type: string; points: number; user_id: string }
+        Args: {
+          p_achievement_type?: string
+          p_points: number
+          p_user_id: string
+        }
         Returns: undefined
       }
       calculate_enrollment_progress: {

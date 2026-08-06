@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { formatCoursePrice } from "@/lib/format-price";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
@@ -230,7 +231,7 @@ export default function AdminCoursesTable() {
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium">Course</th>
-                <th className="text-left p-3 font-medium">Cohort</th>
+                {/* Cohort column removed - courses are online only */}
                 <th className="text-left p-3 font-medium hidden md:table-cell">Instructor</th>
                 <th className="text-left p-3 font-medium">Capacity</th>
                 <th className="text-right p-3 font-medium">Enrolled</th>
@@ -246,7 +247,7 @@ export default function AdminCoursesTable() {
                 return (
                   <tr key={c.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedCourse(c)}>
                     <td className="p-3 font-medium max-w-[200px] truncate">{c.title}</td>
-                    <td className="p-3 font-mono text-[10px] text-muted-foreground">{c.cohort_id || "—"}</td>
+                    {/* Cohort ID removed - courses are online only */}
                     <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">
                       {c.instructor ? `${c.instructor.first_name} ${c.instructor.last_name}` : "—"}
                     </td>
@@ -328,7 +329,7 @@ export default function AdminCoursesTable() {
                       {selectedCourse.subtitle && <p className="text-sm text-muted-foreground">{selectedCourse.subtitle}</p>}
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <StatusBadge course={selectedCourse} />
-                        {selectedCourse.cohort_id && <Badge variant="outline" className="font-mono text-[10px]">{selectedCourse.cohort_id}</Badge>}
+                        {/* Cohort badge removed - courses are online only */}
                         <Badge variant="outline" className="text-[10px] capitalize">{selectedCourse.level}</Badge>
                       </div>
                     </div>
@@ -378,17 +379,19 @@ export default function AdminCoursesTable() {
                         [Calendar, "End Date", selectedCourse.end_date ? new Date(selectedCourse.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null],
                         [MapPin, "Venue", selectedCourse.venue],
                         [Clock, "Duration", selectedCourse.duration_hours ? `${selectedCourse.duration_hours} hours` : null],
-                        [DollarSign, "Price", `${selectedCourse.currency || "GHS"} ${Number(selectedCourse.price).toLocaleString()}`],
+                        [DollarSign, "Price", formatCoursePrice(selectedCourse.price, selectedCourse.currency || "GHS")],
                         [Layers, "Level", selectedCourse.level],
                         [Users, "Instructor", selectedCourse.instructor ? `${selectedCourse.instructor.first_name} ${selectedCourse.instructor.last_name}` : null],
-                      ].filter(([, , v]) => v != null).map(([Icon, label, value]) => (
-                        <div key={label as string} className="flex items-center gap-3 py-1.5 text-sm">
-                          {/* @ts-ignore */}
-                          <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-muted-foreground min-w-[80px]">{label as string}</span>
-                          <span className="font-medium capitalize">{value as string}</span>
-                        </div>
-                      ))}
+                      ].filter(([, , v]) => v != null).map(([Icon, label, value]) => {
+                        const IconComponent = Icon as React.ComponentType<{ className?: string }>;
+                        return (
+                          <div key={label as string} className="flex items-center gap-3 py-1.5 text-sm">
+                            <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground min-w-[80px]">{label as string}</span>
+                            <span className="font-medium capitalize">{value as string}</span>
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 </TabsContent>

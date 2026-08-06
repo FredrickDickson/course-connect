@@ -17,11 +17,13 @@ test.describe("Profile (/profile, student)", () => {
 
   test("editing personal info saves and reflects the new value", async ({ page }) => {
     await page.goto("/profile");
-    await page.getByRole("button", { name: /^edit$/i }).first().click();
+    // Visible text is just "Edit"/"Save", but an explicit aria-label
+    // ("Edit/Save basic information") overrides the accessible name.
+    await page.getByRole("button", { name: "Edit basic information" }).click();
     const bioField = page.getByPlaceholder("Tell us about yourself...");
     const bio = `E2E bio ${Date.now()}`;
     await bioField.fill(bio);
-    await page.getByRole("button", { name: /^save$/i }).click();
+    await page.getByRole("button", { name: "Save basic information" }).click();
     await expect(page.getByText("Personal info updated", { exact: true })).toBeVisible();
     await expect(page.getByText(bio)).toBeVisible();
   });

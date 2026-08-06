@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import CourseCard from "@/components/course-card";
+import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
@@ -43,7 +43,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from("enrollments")
         .select(
-          "*, course:courses(*, instructor:users!courses_instructor_id_fkey(first_name, last_name))",
+          "*, course:courses(*, instructor:users!courses_instructor_id_fkey(first_name, last_name), modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)))",
         )
         .eq("user_id", user.id)
         .order("enrolled_at", { ascending: false })
@@ -245,9 +245,44 @@ export default function Home() {
                       <Button
                         data-testid={`button-continue-${enrollment.course.id}`}
                         className="w-full bg-primary hover:bg-primary/95 group/btn transition-all duration-300"
-                        onClick={() =>
-                          (window.location.href = `/learn/${enrollment.course.id}/1`)
-                        }
+                        onClick={async () => {
+                          // Find the first incomplete lesson based on actual progress
+                          const modules = enrollment.course.modules || [];
+                          const allLessons: any[] = [];
+                          
+                          // Flatten all lessons in order
+                          modules.forEach((module: any) => {
+                            if (module.lessons) {
+                              allLessons.push(...module.lessons);
+                            }
+                          });
+                          
+                          if (allLessons.length > 0) {
+                            try {
+                              // Get user's progress for this course
+                              const { data: progress } = await supabase
+                                .from("progress")
+                                .select("lesson_id, completed")
+                                .eq("user_id", user!.id)
+                                .in("lesson_id", allLessons.map(l => l.id));
+                              
+                              const completedLessonIds = new Set((progress || []).filter((p: any) => p.completed).map((p: any) => p.lesson_id));
+                              const nextIncompleteLesson = allLessons.find((lesson: any) => !completedLessonIds.has(lesson.id));
+                              
+                              // Navigate to first incomplete or first lesson
+                              const targetLessonId = nextIncompleteLesson?.id ?? allLessons[0]?.id;
+                              if (targetLessonId) {
+                                window.location.href = `/learn/${enrollment.course.id}/${targetLessonId}`;
+                              }
+                            } catch (error) {
+                              console.error("Error fetching progress:", error);
+                              // Fallback to first lesson
+                              if (allLessons[0]?.id) {
+                                window.location.href = `/learn/${enrollment.course.id}/${allLessons[0].id}`;
+                              }
+                            }
+                          }
+                        }}
                       >
                         Continue Learning
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -305,9 +340,18 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard key={course.id} course={course as any} />
-              ))}
+              {featuredCourses.map((course) => {
+                const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
+                const status: CourseStatus = getCourseStatus(course.level || "ASSOCIATE", userLevel);
+                return (
+                  <CourseCardStatus 
+                    key={course.id} 
+                    course={course as any} 
+                    userLevel={userLevel}
+                    status={status}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -338,14 +382,15 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
-            <Link href="/community">
+            {/* Join community button commented out */}
+            {/* <Link href="/community">
               <button
                 data-testid="button-join-community"
                 className="w-full sm:w-auto border border-white/20 text-white px-8 py-4 rounded-sm font-['Work_Sans'] font-medium text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center"
               >
                 JOIN COMMUNITY
               </button>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>

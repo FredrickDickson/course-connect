@@ -15,7 +15,9 @@ test.describe("Courses (/courses, protected)", () => {
     const courses = new CoursesPage(page);
     await courses.goto();
     await courses.searchInput.fill("E2E Seed Course");
-    await expect(page.getByText(E2E_SEED_COURSE_TITLE)).toBeVisible();
+    // Scoped to the course-card title, not getByText — typing into search
+    // also opens an autocomplete suggestions dropdown with a matching entry.
+    await expect(page.getByTestId("course-title")).toHaveText(E2E_SEED_COURSE_TITLE);
     await expect(courses.resultsCount).toContainText("1 course");
   });
 

@@ -7,6 +7,9 @@ import { test, expect } from "@playwright/test";
 test.describe("Renew membership (/renew-membership, student)", () => {
   test("a student with no linked membership sees a no-active-membership state", async ({ page }) => {
     await page.goto("/renew-membership");
-    await expect(page.getByRole("heading", { name: "No Active Membership" })).toBeVisible();
+    // The pricing query 404s for a student with no membership, and React
+    // Query's default retry (3x exponential backoff) delays settling by
+    // several seconds before this state renders.
+    await expect(page.getByRole("heading", { name: "No Active Membership" })).toBeVisible({ timeout: 15_000 });
   });
 });

@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import InstructorResourceUpload from "@/components/resources/instructor-resource-upload";
 
 export default function Resources() {
   const resourceCategories = [
@@ -117,6 +118,7 @@ export default function Resources() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-16">
+          <InstructorResourceUpload />
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Resources</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -129,8 +131,8 @@ export default function Resources() {
             <h2 className="text-3xl font-bold text-foreground text-center">Featured Resources</h2>
             
             <div className="grid md:grid-cols-3 gap-6">
-              {featuredResources.map((resource, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
+              {featuredResources.map((resource) => (
+                <Card key={resource.title} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="space-y-2">
                       <Badge variant="secondary" className="w-fit text-xs">
@@ -166,8 +168,8 @@ export default function Resources() {
             <h2 className="text-3xl font-bold text-foreground text-center">Resource Categories</h2>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {resourceCategories.map((category, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow h-full">
+              {resourceCategories.map((category) => (
+                <Card key={category.title} className="hover:shadow-lg transition-shadow h-full">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -179,8 +181,8 @@ export default function Resources() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <ul className="space-y-2">
-                      {category.resources.map((resource, resourceIndex) => (
-                        <li key={resourceIndex} className="flex items-start space-x-2">
+                      {category.resources.map((resource) => (
+                        <li key={resource} className="flex items-start space-x-2">
                           <i className="fas fa-chevron-right text-primary text-xs mt-1"></i>
                           <span className="text-sm text-muted-foreground">{resource}</span>
                         </li>

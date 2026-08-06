@@ -70,8 +70,10 @@ import certificationsRouter from "./routes/certifications";
 
 import qualificationRouter from "./routes/qualification";
 
+import renewalRouter from "./routes/renewal";
+import certificatesRouter from "./routes/certificates";
+import muxRouter from "./routes/mux";
 import {
-
   insertCourseSchema,
 
   insertEnrollmentSchema,
@@ -180,6 +182,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/certifications", certificationsRouter);
 
   app.use("/api/qualification", qualificationRouter);
+
+  // Mount renewal and certificate routes
+  app.use("/api/renewal", renewalRouter);
+  app.use("/api/certificates", certificatesRouter);
+  app.use("/api/mux", muxRouter);
 
 
 
@@ -1797,6 +1804,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   // INSTRUCTOR ROUTES
+  // NOTE: /api/instructor/courses POST is handled by Vercel serverless function (api/instructor/courses.ts)
+  // These Express routes are for local development and additional endpoints not covered by serverless functions
 
   // ============================================================================
 

@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AvatarUpload from "@/components/avatar-upload";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { LoadingState } from "@/components/ui/loading-state";
 import {
   Select,
   SelectContent,
@@ -46,7 +47,10 @@ import {
   AlertCircle,
   Shield,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import CertificatePreviewModal from "@/components/dashboard/certificate-preview-modal";
+import type { CertificateData } from "@/lib/certificate-generator";
+import { PATHWAY_TYPES, type PathwayType } from "@shared/pathways";
 
 const INDUSTRIES = [
   "Legal", "Business / Corporate", "Public Sector / Government", "Academic / Education",
@@ -75,15 +79,61 @@ const ADR_OPTIONS = [
   { value: "fellow", label: "Part III (Fellow)" },
 ];
 
+const TIMEZONES = [
+  "UTC-12:00 (Baker Island)",
+  "UTC-11:00 (American Samoa)",
+  "UTC-10:00 (Hawaii)",
+  "UTC-09:30 (Marquesas Islands)",
+  "UTC-09:00 (Alaska)",
+  "UTC-08:00 (Pacific Time)",
+  "UTC-07:00 (Mountain Time)",
+  "UTC-06:00 (Central Time)",
+  "UTC-05:00 (Eastern Time)",
+  "UTC-04:00 (Atlantic Time)",
+  "UTC-03:30 (Newfoundland)",
+  "UTC-03:00 (Buenos Aires)",
+  "UTC-02:00 (Fernando de Noronha)",
+  "UTC-01:00 (Azores)",
+  "UTC+00:00 (London, Dublin)",
+  "UTC+01:00 (Central European Time)",
+  "UTC+02:00 (Eastern European Time)",
+  "UTC+03:00 (Moscow, Istanbul)",
+  "UTC+03:30 (Tehran)",
+  "UTC+04:00 (Dubai, Baku)",
+  "UTC+04:30 (Kabul)",
+  "UTC+05:00 (Karachi, Tashkent)",
+  "UTC+05:30 (India, Sri Lanka)",
+  "UTC+05:45 (Nepal)",
+  "UTC+06:00 (Dhaka, Almaty)",
+  "UTC+06:30 (Yangon)",
+  "UTC+07:00 (Bangkok, Jakarta)",
+  "UTC+08:00 (Beijing, Singapore)",
+  "UTC+08:30 (Pyongyang)",
+  "UTC+09:00 (Tokyo, Seoul)",
+  "UTC+09:30 (Adelaide)",
+  "UTC+10:00 (Sydney, Melbourne)",
+  "UTC+10:30 (Lord Howe Island)",
+  "UTC+11:00 (Solomon Islands)",
+  "UTC+12:00 (Auckland, Fiji)",
+  "UTC+12:45 (Chatham Islands)",
+  "UTC+13:00 (Samoa)",
+  "UTC+14:00 (Line Islands)",
+];
+
 export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isEditingBasic, setIsEditingBasic] = useState(false);
   const [isEditingProfessional, setIsEditingProfessional] = useState(false);
 
+  // Certificate modal state
+  const [certModalOpen, setCertModalOpen] = useState(false);
+  const [activeCertData, setActiveCertData] = useState<CertificateData | null>(null);
+
   const [basicForm, setBasicForm] = useState({
-    firstName: "", lastName: "", bio: "", country: "", timezone: "",
+    firstName: "", middleName: "", lastName: "", bio: "", country: "", timezone: "",
   });
 
   const [profForm, setProfForm] = useState({
@@ -110,12 +160,72 @@ export default function Profile() {
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // course_enrollments was migrated into enrollments/orders (see
+      // supabase/migrations/20260610000007_migrate_course_enrollments_to_unified.sql)
+      // and no longer exists as a live table — enrollments is the sole
+      // source of truth now.
+      const { data: enrollments, error } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
-        .eq("user_id", user?.id!);
+        .eq("user_id", user!.id);
       if (error) throw error;
-      return data || [];
+
+      return enrollments || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch course completion records for certificate history
+  const { data: completionRecords = [], isLoading: isLoadingCompletions } = useQuery<any[]>({
+    queryKey: ["course-completion-records", user?.id],
+    queryFn: async () => {
+      // Fetch from both course_completion_records and enrollments for backwards compatibility
+      const [completionRecordsResult, enrollmentsResult] = await Promise.all([
+        supabase
+          .from("course_completion_records")
+          .select("*, courses!inner(title, thumbnail_url, track, level)")
+          .eq("user_id", user!.id)
+          .order("completed_at", { ascending: false }),
+        supabase
+          .from("enrollments")
+          .select("id, course_id, completed_at")
+          .eq("user_id", user!.id)
+          .not("completed_at", "is", null)
+          .order("completed_at", { ascending: false })
+      ]);
+
+      if (completionRecordsResult.error) throw completionRecordsResult.error;
+      if (enrollmentsResult.error) throw enrollmentsResult.error;
+
+      // Fetch course details for enrollments
+      const completedEnrollments = enrollmentsResult.data || [];
+      const courseIds = completedEnrollments.map((e: any) => e.course_id);
+      let enrichedEnrollments: any[] = [];
+      if (courseIds.length > 0) {
+        const { data: courses } = await supabase
+          .from("courses")
+          .select("id, title, thumbnail_url, track, level")
+          .in("id", courseIds);
+        const courseMap = new Map((courses || []).map((c: any) => [c.id, c]));
+        enrichedEnrollments = completedEnrollments.map((e: any) => ({
+          ...e,
+          course: courseMap.get(e.course_id),
+          track: courseMap.get(e.course_id)?.track,
+          level_achieved: courseMap.get(e.course_id)?.level,
+        }));
+      }
+
+      // Merge and deduplicate by course_id
+      const allRecords = [...(completionRecordsResult.data || []), ...enrichedEnrollments];
+      const uniqueRecords = allRecords.reduce((acc: any[], record) => {
+        const courseId = record.course_id || (record as any).course?.id;
+        if (!acc.find(r => (r.course_id || (r as any).course?.id) === courseId)) {
+          acc.push(record);
+        }
+        return acc;
+      }, []);
+
+      return uniqueRecords;
     },
     enabled: !!user?.id,
   });
@@ -139,6 +249,7 @@ export default function Profile() {
     if (user) {
       setBasicForm({
         firstName: user.firstName || "",
+        middleName: user.middleName || "",
         lastName: user.lastName || "",
         bio: user.bio || "",
         country: user.country || "",
@@ -167,13 +278,14 @@ export default function Profile() {
   // Save basic info
   const saveBasicMutation = useMutation({
     mutationFn: async (data: any) => {
-      const fullName = `${data.firstName} ${data.lastName}`.trim();
-      
+      const fullName = `${data.firstName} ${data.middleName} ${data.lastName}`.trim().replace(/\s+/g, " ");
+
       // Update users table
       const { error: userError } = await (supabase as any)
         .from("users")
         .update({
           first_name: data.firstName,
+          middle_name: data.middleName || null,
           last_name: data.lastName,
           bio: data.bio,
           country: data.country,
@@ -253,6 +365,78 @@ export default function Profile() {
   const completedCourses = enrollments.filter((e: any) => e.completed_at);
   const inProgressCourses = enrollments.filter((e: any) => !e.completed_at);
 
+  // Helper functions for certificate data
+  function normaliseLevel(level?: string | null): "associate" | "member" | "fellow" {
+    const l = (level || "").toLowerCase();
+    if (l.includes("fellow")) return "fellow";
+    if (l.includes("member")) return "member";
+    return "associate";
+  }
+
+  function normalisePathway(track?: string | null): PathwayType {
+    return (track || "").toLowerCase().includes("med")
+      ? PATHWAY_TYPES.MEDIATION
+      : PATHWAY_TYPES.ARBITRATION;
+  }
+
+  // Handle opening certificate preview
+  const openPreview = async (record: any) => {
+    const course = record.courses || (record as any).course;
+    const completedAt = record.completed_at;
+    const track = record.track || course?.track;
+    const level = record.level_achieved || course?.level || "associate";
+
+    // Best-effort: record issuance so admins can audit. Ignore failures (e.g., unique conflict).
+    try {
+      await supabase.from("certificates").upsert(
+        {
+          user_id: user!.id,
+          track: (track || "ARBITRATION").toUpperCase(),
+          level: (level || "associate").toUpperCase(),
+          pathway: "STANDARD",
+          post_nominal: "",
+          certificate_number: `${course.id.slice(0, 8).toUpperCase()}-${user!.id.slice(0, 6).toUpperCase()}`,
+          issued_at: completedAt,
+        },
+        { onConflict: "user_id,track,level" } as any,
+      );
+    } catch {
+      // Non-fatal
+    }
+
+    const fullName = [user?.firstName, user?.middleName, user?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Member";
+
+    setActiveCertData({
+      fullName,
+      membershipLevel: normaliseLevel(level),
+      memberId: `${course.id.slice(0, 8).toUpperCase()}`,
+      issueDate: completedAt,
+      expiryDate: new Date(new Date(completedAt).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      pathway: normalisePathway(track),
+    });
+    setCertModalOpen(true);
+  };
+
+  // Handle course query parameter to auto-open certificate
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const courseId = params.get("course");
+    const tab = params.get("tab");
+
+    if (courseId && tab === "certificates" && completionRecords.length > 0) {
+      const targetRecord = completionRecords.find((r: any) => r.course_id === courseId);
+      if (targetRecord) {
+        // Auto-open certificate preview
+        openPreview(targetRecord);
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [completionRecords]);
+
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   }
@@ -281,7 +465,7 @@ export default function Profile() {
               <div className="flex-1">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
+                    <h1 className="text-2xl font-bold text-foreground">{user.firstName} {user.middleName} {user.lastName}</h1>
                     {memberRecord && (
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline">{memberRecord.post_nominal || memberRecord.part}</Badge>
@@ -336,28 +520,36 @@ export default function Profile() {
                   <CardDescription>Basic contact details</CardDescription>
                 </div>
                 {!isEditingBasic ? (
-                  <Button onClick={() => setIsEditingBasic(true)} variant="outline" size="sm">
+                  <Button onClick={() => setIsEditingBasic(true)} variant="outline" size="sm" aria-label="Edit basic information">
                     <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveBasicMutation.mutate(basicForm)} disabled={saveBasicMutation.isPending}>
+                    <Button size="sm" onClick={() => saveBasicMutation.mutate(basicForm)} disabled={saveBasicMutation.isPending} aria-label="Save basic information">
                       <Save className="h-3.5 w-3.5 mr-1" /> Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setIsEditingBasic(false); setBasicForm({ firstName: user.firstName || "", middleName: user.middleName || "", lastName: user.lastName || "", bio: user.bio || "", country: user.country || "", timezone: user.timezone || "" }); }} aria-label="Cancel editing basic information">
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
                     </Button>
                   </div>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">First Name</Label>
                     {isEditingBasic ? (
                       <Input value={basicForm.firstName} onChange={(e) => setBasicForm({ ...basicForm, firstName: e.target.value })} />
                     ) : (
                       <p className="font-medium">{basicForm.firstName || "—"}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Middle Name (Optional)</Label>
+                    {isEditingBasic ? (
+                      <Input value={basicForm.middleName} onChange={(e) => setBasicForm({ ...basicForm, middleName: e.target.value })} placeholder="Optional" />
+                    ) : (
+                      <p className="font-medium">{basicForm.middleName || "—"}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
@@ -389,7 +581,14 @@ export default function Profile() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Timezone</Label>
                     {isEditingBasic ? (
-                      <Input value={basicForm.timezone} onChange={(e) => setBasicForm({ ...basicForm, timezone: e.target.value })} placeholder="e.g. GMT" />
+                      <Select value={basicForm.timezone} onValueChange={(v) => setBasicForm({ ...basicForm, timezone: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select timezone" /></SelectTrigger>
+                        <SelectContent>
+                          {TIMEZONES.map((tz) => (
+                            <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <p className="font-medium">{basicForm.timezone || "—"}</p>
                     )}
@@ -410,15 +609,15 @@ export default function Profile() {
                   <CardDescription>Career and qualification details — reused across enrollments</CardDescription>
                 </div>
                 {!isEditingProfessional ? (
-                  <Button onClick={() => setIsEditingProfessional(true)} variant="outline" size="sm">
+                  <Button onClick={() => setIsEditingProfessional(true)} variant="outline" size="sm" aria-label="Edit professional information">
                     <Edit2 className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveProfMutation.mutate(profForm)} disabled={saveProfMutation.isPending}>
+                    <Button size="sm" onClick={() => saveProfMutation.mutate(profForm)} disabled={saveProfMutation.isPending} aria-label="Save professional information">
                       <Save className="h-3.5 w-3.5 mr-1" /> Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setIsEditingProfessional(false); if (profile) setProfForm({ phone: profile.phone || "", whatsapp: profile.whatsapp || "", address: profile.address || "", institution: profile.institution || "", jobTitle: profile.job_title || "", yearsExperience: profile.years_experience || "", industry: profile.industry || "", roleCategory: profile.role_category || "", educationLevel: profile.education_level || "", adrExperience: profile.adr_experience || "none" }); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setIsEditingProfessional(false); if (profile) setProfForm({ phone: profile.phone || "", whatsapp: profile.whatsapp || "", address: profile.address || "", institution: profile.institution || "", jobTitle: profile.job_title || "", yearsExperience: profile.years_experience || "", industry: profile.industry || "", roleCategory: profile.role_category || "", educationLevel: profile.education_level || "", adrExperience: profile.adr_experience || "none" }); }} aria-label="Cancel editing professional information">
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
                     </Button>
                   </div>
@@ -616,12 +815,7 @@ export default function Profile() {
               )}
 
               {isLoadingEnrollments && (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                    <p className="text-muted-foreground">Loading your courses...</p>
-                  </CardContent>
-                </Card>
+                <LoadingState message="Loading your courses..." />
               )}
             </div>
           </TabsContent>
@@ -631,25 +825,50 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Certificates</CardTitle>
-                <CardDescription>View and download your course completion certificates</CardDescription>
+                <CardDescription>
+                  View and download your course completion certificates.
+                  <span className="block mt-1 text-xs text-muted-foreground">
+                    Note: You receive one certificate per track per level. Additional courses at the same level are recorded as supplementary training.
+                  </span>
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {completedCourses.length > 0 ? (
+                {completionRecords.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {completedCourses.map((enrollment: any) => (
-                      <div key={enrollment.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Award className="h-6 w-6 text-primary" />
+                    {completionRecords.map((record: any) => {
+                      const courses = record.courses || (record as any).course;
+                      const track = record.track || courses?.track;
+                      const level = record.level_achieved || courses?.level || "ASSOCIATE";
+                      const completedAt = record.completed_at;
+                      const trackColor = track === "ARBITRATION" ? "#1e40af" : "#059669";
+                      return (
+                        <div key={record.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Award className="h-6 w-6 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-sm">{courses?.title || "Course"}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
+                                  {track}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">{level}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{new Date(completedAt).toLocaleDateString()}</p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{enrollment.course.title}</h4>
-                            <p className="text-xs text-muted-foreground">{new Date(enrollment.completed_at!).toLocaleDateString()}</p>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openPreview(record)}
+                          >
+                            View Certificate
+                          </Button>
                         </div>
-                        <Button variant="outline" size="sm" className="w-full">View Certificate</Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12">
@@ -663,6 +882,15 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Certificate Preview Modal */}
+      {activeCertData && (
+        <CertificatePreviewModal
+          open={certModalOpen}
+          onOpenChange={setCertModalOpen}
+          data={activeCertData}
+        />
+      )}
     </div>
   );
 }

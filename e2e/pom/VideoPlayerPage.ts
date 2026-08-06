@@ -1,20 +1,26 @@
 import type { Page } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
+/**
+ * client/src/pages/video-player.tsx was completely rewritten (Udemy-style
+ * layout: CourseTopBar/CourseSidebar/ContentTabs, Mux-aware video element)
+ * with zero data-testids anywhere in the new component tree — every locator
+ * here is derived from the actual current markup, not the old testid
+ * convention. The Notes tab/feature was disabled entirely on this rewrite
+ * (`{false && (...)}` in content-tabs.tsx), so there's no notes locator.
+ */
 export class VideoPlayerPage extends BasePage {
-  readonly notEnrolled = this.page.getByTestId("not-enrolled");
-  readonly enrollButton = this.page.getByTestId("enroll-button");
-  readonly lessonNotFound = this.page.getByTestId("lesson-not-found");
-  readonly lessonTitle = this.page.getByTestId("lesson-title");
-  readonly lessonDescription = this.page.getByTestId("lesson-description");
-  readonly moduleBadge = this.page.getByTestId("module-badge");
-  readonly nextLessonButton = this.page.getByTestId("next-lesson");
-  readonly prevLessonButton = this.page.getByTestId("prev-lesson");
-  readonly courseCompleteButton = this.page.getByTestId("course-complete");
-  readonly backToCourseButton = this.page.getByTestId("back-to-course");
-  readonly notesTab = this.page.getByRole("tab", { name: "Notes" });
-  readonly notesTextarea = this.page.getByTestId("notes-textarea");
-  readonly saveNotesButton = this.page.getByTestId("save-notes");
+  // Gate states — plain <h1>s, no testid.
+  readonly notEnrolled = this.page.getByRole("heading", { name: "Enroll to access this course" });
+  readonly lessonNotFound = this.page.getByRole("heading", { name: "Lesson not found" });
+
+  // "Section N · {module title}" paragraph above the lesson heading.
+  readonly moduleBadge = this.page.locator("p", { hasText: /^Section \d+ ·/ });
+
+  // Prev/Next row: `<div class="... pt-3 border-t">` with exactly two buttons.
+  private readonly lessonNavRow = this.page.locator("div.pt-3.border-t");
+  readonly prevLessonButton = this.lessonNavRow.locator("button").first();
+  readonly nextLessonButton = this.lessonNavRow.locator("button").last();
 
   constructor(page: Page) {
     super(page);
@@ -24,7 +30,8 @@ export class VideoPlayerPage extends BasePage {
     await this.page.goto(`/learn/${courseId}/${lessonId}`);
   }
 
-  lessonNavLink(lessonId: string) {
-    return this.page.getByTestId(`lesson-nav-${lessonId}`);
+  /** The lesson <h2> — accessible name is the lesson's exact title. */
+  lessonTitle(title: string) {
+    return this.page.getByRole("heading", { level: 2, name: title, exact: true });
   }
 }

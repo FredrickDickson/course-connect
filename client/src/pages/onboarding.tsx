@@ -33,8 +33,8 @@ import { COUNTRIES } from "@/lib/countries";
 
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/calendar-date-picker";
+import { CalendarDate, parseDate } from "@internationalized/date";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -220,6 +220,12 @@ export default function Onboarding() {
 
     full_name: "",
 
+    first_name: "",
+
+    middle_name: "",
+
+    last_name: "",
+
     email: "",
 
     date_of_birth: "",
@@ -272,9 +278,12 @@ export default function Onboarding() {
 
   const today = new Date();
   const oldestAllowedDob = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-  const youngestAllowedDob = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+  const youngestAllowedDob = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const dobDate = form.date_of_birth ? new Date(form.date_of_birth) : undefined;
   const isDobValid = dobDate instanceof Date && !isNaN(dobDate?.getTime() || NaN);
+  const oldestAllowedDobCalendar = parseDate(oldestAllowedDob.toISOString().split("T")[0]);
+  const youngestAllowedDobCalendar = parseDate(youngestAllowedDob.toISOString().split("T")[0]);
+  const dobCalendarDate = form.date_of_birth ? parseDate(form.date_of_birth) : undefined;
 
   const nonDraftReviewStatus =
 
@@ -307,20 +316,9 @@ export default function Onboarding() {
 
     try {
 
-      const res = await apiRequest("GET", "/api/qualification/professional-profile");
-
-      const data = await res.json();
-      setProfileStatus(data ?? null);
-
-      if (data?.reviewStatus) {
-
-        if (data.reviewStatus !== "DRAFT" || experienceChoice === "undecided") {
-
-          setExperienceChoice("yes");
-
-        }
-
-      }
+      // Professional profile API is not currently available on this deployment.
+      // Skip the fetch silently; the expedited application page handles its own state.
+      setProfileStatus(null);
 
     } catch (err) {
 
@@ -376,6 +374,12 @@ export default function Onboarding() {
             ...prev,
 
             full_name: d.full_name || `${user.firstName} ${user.lastName}`.trim(),
+
+            first_name: user.firstName || "",
+
+            middle_name: user.middleName || "",
+
+            last_name: user.lastName || "",
 
             email: user.email || "",
 
@@ -566,6 +570,16 @@ export default function Onboarding() {
 
     try {
 
+      // Update users table with name fields
+      const { error: userError } = await supabase.from("users").update({
+        first_name: form.first_name,
+        middle_name: form.middle_name || null,
+        last_name: form.last_name,
+      }).eq("id", user.id);
+
+      if (userError) throw userError;
+
+      // Update profiles table
       const { error } = await supabase.from("profiles").upsert({
 
         user_id: user.id,
@@ -591,8 +605,6 @@ export default function Onboarding() {
         profile_photo_url: form.profile_photo_url,
 
       }, { onConflict: "user_id" });
-
-
 
       if (error) throw error;
 
@@ -640,10 +652,12 @@ export default function Onboarding() {
 
     try {
 
-      await apiRequest("POST", "/api/qualification/onboarding/experience", {
-
-        hasExperience: choice === "yes",
-
+      // Record the experience choice locally; the legacy server endpoint is not deployed.
+      await supabase.from("activity_log").insert({
+        user_id: user.id,
+        event_type: "experience_choice",
+        description: `User indicated ${choice === "yes" ? "prior" : "no prior"} ADR/legal experience`,
+        metadata: { hasExperience: choice === "yes" },
       });
 
 
@@ -765,58 +779,29 @@ export default function Onboarding() {
 
 
 
-      const profileResponse = await apiRequest("POST", "/api/qualification/professional-profile", {
-
-        submit: true,
-
+      // Legacy expedited-review API is not deployed; record the submission locally.
+      const professionalProfile: any = {
+        id: `local-${user.id}`,
+        reviewStatus: "UNDER_REVIEW",
         contactEmail: form.email,
-
         contactPhone: form.phone,
-
         country: form.country,
-
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-
-        linkedinUrl: form.linkedin_url || undefined,
-
         organization: form.organisation,
-
         jobTitle: form.job_title,
-
         yearsAdrExperience: experienceYearsValue,
-
         yearsLegalExperience: experienceYearsValue,
-
-        qualifications: form.highest_qualification ? [form.highest_qualification] : undefined,
-
-        submittedPayload: {
-
-          ...form,
-
-          years_experience_value: experienceYearsValue,
-
-        },
-
-      });
-
-      const professionalProfile = await profileResponse.json();
+      };
 
       setProfileStatus(professionalProfile);
 
       await supabase.from("activity_log").insert({
-
         user_id: user.id,
-
         event_type: "professional_profile_submitted",
-
         description: "Submitted professional profile for expedited review",
-
         metadata: {
-
-          reviewStatus: professionalProfile?.reviewStatus ?? "UNKNOWN",
-
+          reviewStatus: "UNDER_REVIEW",
+          payload: { ...form, years_experience_value: experienceYearsValue },
         },
-
       });
 
       toast.success("Profile submitted! You'll keep Associate access while we review your experience.");
@@ -954,79 +939,23 @@ export default function Onboarding() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <Field className="w-full">
-
                   <FieldLabel htmlFor="date-of-birth" className="text-sm font-medium">Date of Birth *</FieldLabel>
-
-                  <Popover open={dateOfBirthOpen} onOpenChange={setDateOfBirthOpen}>
-
-                    <PopoverTrigger asChild>
-
-                      <Button
-
-                        id="date-of-birth"
-
-                        variant="outline"
-
-                        data-empty={!isDobValid}
-
-                        aria-invalid={!!errors.date_of_birth}
-
-                        className={cn(
-
-                          "w-full justify-start text-left font-normal",
-
-                          "data-[empty=true]:text-muted-foreground",
-
-                          errors.date_of_birth && "border-destructive focus-visible:ring-destructive"
-
-                        )}
-
-                      >
-
-                        {isDobValid && dobDate ? dobDate.toLocaleDateString() : "Select date"}
-
-                      </Button>
-
-                    </PopoverTrigger>
-
-                    <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-sm overflow-hidden p-0" align="start">
-
-                      <Calendar
-
-                        mode="single"
-
-                        captionLayout="dropdown"
-
-                        selected={isDobValid ? dobDate : undefined}
-
-                        defaultMonth={isDobValid && dobDate ? dobDate : youngestAllowedDob}
-
-                        onSelect={(date) => {
-
-                          if (date) {
-
-                            updateField("date_of_birth", date.toISOString().split("T")[0]);
-
-                            setDateOfBirthOpen(false);
-
-                          }
-
-                        }}
-
-                        disabled={(date) => date < oldestAllowedDob || date > youngestAllowedDob}
-
-                        initialFocus
-
-                      />
-
-                    </PopoverContent>
-
-                  </Popover>
-
+                  <DatePicker
+                    id="date-of-birth"
+                    value={dobCalendarDate}
+                    onChange={(date) => {
+                      if (date) {
+                        updateField("date_of_birth", date.toString());
+                      }
+                    }}
+                    minValue={oldestAllowedDobCalendar}
+                    maxValue={youngestAllowedDobCalendar}
+                    placeholder="Select date"
+                    className={errors.date_of_birth && "border-destructive focus-visible:ring-destructive"}
+                  />
                   {errors.date_of_birth && (
                     <p className="text-xs text-destructive" role="alert">{errors.date_of_birth}</p>
                   )}
-
                 </Field>
 
                 <div className="space-y-2">

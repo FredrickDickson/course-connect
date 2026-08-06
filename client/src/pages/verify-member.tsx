@@ -39,15 +39,13 @@ export default function VerifyMember() {
   useEffect(() => {
     if (!memberId) return;
     (async () => {
-      const { data, error } = await supabase
-        .from("members")
-        .select("full_name, part, status, issue_date, expiry_date, member_id, post_nominal")
-        .eq("member_id", memberId)
-        .maybeSingle();
-      if (error || !data) {
+      const { data, error } = await (supabase as any)
+        .rpc("verify_member", { _member_id: memberId });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) {
         setNotFound(true);
       } else {
-        setMember(data as unknown as MemberVerification);
+        setMember(row as unknown as MemberVerification);
       }
       setLoading(false);
     })();

@@ -41,9 +41,14 @@ interface CourseCardStatusProps {
     venue?: string;
     city?: string;
     programme_type?: "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE";
+    track?: string;
   };
   userLevel?: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
   status: CourseStatus;
+  eligibility?: {
+    status: "eligible" | "upgrade-required" | "enrolled" | "unknown";
+    label: string;
+  };
   onLockedClick?: () => void;
 }
 
@@ -63,8 +68,11 @@ export function getCourseStatus(
   const userIndex = LEVEL_ORDER.indexOf(normalizedUserLevel);
   const courseIndex = LEVEL_ORDER.indexOf(normalizedCourseLevel);
 
+  // User can access courses at or below their current level
   if (userIndex >= courseIndex) return "AVAILABLE";
+  // Next level course - user should complete prerequisite first
   if (userIndex === courseIndex - 1) return "NEXT_STEP";
+  // Higher level courses are locked until prerequisites are met
   return "LOCKED";
 }
 
@@ -72,6 +80,7 @@ export default function CourseCardStatus({
   course, 
   userLevel = "NONE",
   status,
+  eligibility,
   onLockedClick 
 }: CourseCardStatusProps) {
   const coursePathway = detectCoursePathway({
@@ -122,9 +131,9 @@ export default function CourseCardStatus({
     LOCKED: {
       badge: { text: "Locked", class: "bg-gray-100 text-gray-600 border-gray-200" },
       buttonVariant: "outline" as const,
-      buttonText: "Locked",
+      buttonText: "View Requirements",
       buttonIcon: Lock,
-      buttonClass: "border-gray-300 text-gray-400 cursor-not-allowed",
+      buttonClass: "border-gray-300 text-gray-700 hover:bg-gray-50",
       overlay: "bg-gray-900/5"
     },
     ENROLLED: {
@@ -142,9 +151,10 @@ export default function CourseCardStatus({
   return (
     <Card
       className={`group hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500 ease-in-out overflow-hidden border-primary/5 hover:border-primary/20 relative ${
-        status === "LOCKED" ? "opacity-75" : ""
+        status === "LOCKED" ? "opacity-75 cursor-pointer" : ""
       }`}
       data-testid={`course-card-${course.id}`}
+      onClick={status === "LOCKED" ? () => window.location.href = `/course/${course.id}` : undefined}
     >
       {/* Locked overlay */}
       {config.overlay && (
@@ -196,12 +206,13 @@ export default function CourseCardStatus({
 
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-1.5 group/rating">
+          {/* Review count commented out until substantial user base */}
+          {/* <div className="flex items-center space-x-1.5 group/rating">
             <Star className="w-4 h-4 text-yellow-400 fill-current group-hover/rating:scale-125 transition-transform" />
             <span className="text-sm font-medium text-foreground" data-testid="course-rating">
               {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
             </span>
-          </div>
+          </div> */}
           <div className="flex items-center space-x-2">
             {course.programme_type !== "ADJUNCT_COURSE" && (
               <Badge
@@ -216,25 +227,41 @@ export default function CourseCardStatus({
                 {course.category.name}
               </Badge>
             )}
-            {/* Course Type Badge */}
-            {course.course_type && (
-              <Badge 
-                className={`text-[10px] uppercase tracking-wider font-bold ${courseTypeConfig[course.course_type].class}`}
-                data-testid="course-type-badge"
-              >
-                {(() => {
-                  const TypeIcon = courseTypeConfig[course.course_type].icon;
-                  return <TypeIcon className="w-3 h-3 mr-1" />;
-                })()}
-                {courseTypeConfig[course.course_type].label}
-              </Badge>
-            )}
           </div>
         </div>
 
         <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1" data-testid="course-title">
           {course.title}
         </h3>
+
+        {/* Eligibility badge */}
+        {eligibility && eligibility.status !== "unknown" && (
+          <div className="mb-2">
+            <Badge
+              variant={
+                eligibility.status === "eligible"
+                  ? "default"
+                  : eligibility.status === "enrolled"
+                  ? "secondary"
+                  : "outline"
+              }
+              className={
+                eligibility.status === "eligible"
+                  ? "bg-green-500 text-white"
+                  : eligibility.status === "enrolled"
+                  ? "bg-blue-500 text-white"
+                  : ""
+              }
+            >
+              {eligibility.label}
+            </Badge>
+            {eligibility.status === "upgrade-required" && course.track && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Complete Associate in {course.track} to unlock
+              </p>
+            )}
+          </div>
+        )}
 
         <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed" data-testid="course-description">
           {course.subtitle || course.description || "Master industry-standard ADR skills with our specialized certification track."}
@@ -255,22 +282,7 @@ export default function CourseCardStatus({
           </div>
         </div>
 
-        {/* Capacity indicator */}
-        {course.total_capacity && (
-          <div className="mb-3">
-            {(course.total_capacity - (course.enrollment_count || 0)) <= 0 ? (
-              <Badge variant="destructive" className="text-xs">Sold Out — Join Waitlist</Badge>
-            ) : (course.total_capacity - (course.enrollment_count || 0)) <= 10 ? (
-              <Badge className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100">
-                Only {course.total_capacity - (course.enrollment_count || 0)} spots left!
-              </Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {course.total_capacity - (course.enrollment_count || 0)} spots remaining
-              </span>
-            )}
-          </div>
-        )}
+        {/* Capacity indicator removed - courses are online only */}
 
         {/* Physical course details */}
         {course.course_type === 'PHYSICAL' && (
@@ -319,7 +331,14 @@ export default function CourseCardStatus({
             <Button
               variant={config.buttonVariant}
               className={config.buttonClass}
-              onClick={onLockedClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onLockedClick) {
+                  onLockedClick();
+                } else {
+                  window.location.href = `/course/${course.id}`;
+                }
+              }}
               data-testid="locked-course-button"
             >
               <config.buttonIcon className="w-4 h-4 mr-2" />

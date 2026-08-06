@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Link, useLocation } from "wouter";
+import Confetti from "@/components/ui/confetti";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import {
   Star,
   Clock,
@@ -19,19 +22,49 @@ import {
   BookOpen,
   PlayCircle,
   CheckCircle,
+  Lock,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
+import { useEligibility } from "@/hooks/useEligibility";
+import { formatCoursePrice } from "@/lib/format-price";
 
 export default function CourseDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Check for payment success on page load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentSuccess = params.get('payment') === 'success';
+    const showConfettiFlag = sessionStorage.getItem('showConfetti') === 'true';
+    const confettiCourseId = sessionStorage.getItem('confettiCourseId');
+
+    console.log('Course detail - payment param:', paymentSuccess, 'showConfettiFlag:', showConfettiFlag, 'confettiCourseId:', confettiCourseId, 'currentCourseId:', id, 'URL:', window.location.search);
+
+    // Check if confetti should show (either from URL param or session storage)
+    const shouldShowConfetti = paymentSuccess || (showConfettiFlag && confettiCourseId === id);
+
+    if (shouldShowConfetti) {
+      console.log('Triggering confetti on course detail page');
+      setShowConfetti(true);
+      // Auto-hide confetti after 3 seconds
+      setTimeout(() => setShowConfetti(false), 3000);
+      // Clean up URL and session storage
+      window.history.replaceState({}, '', window.location.pathname);
+      sessionStorage.removeItem('showConfetti');
+      sessionStorage.removeItem('confettiCourseId');
+    }
+  }, [id]);
 
   const { data: course, isLoading } = useQuery<any>({
     queryKey: ["course", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("courses")
         .select(
           "*, modules:modules!modules_course_id_fkey(*, lessons:lessons!lessons_module_id_fkey(*)), category:categories(*), instructor:users!courses_instructor_id_fkey(*)",
@@ -44,25 +77,61 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  // Fetch instructor profile (avatar) from profiles table
+  const { data: instructorProfile } = useQuery<any>({
+    queryKey: ["instructor-profile", course?.instructor?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", course.instructor.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!course?.instructor?.id,
+  });
+
+  const instructorAvatar =
+    instructorProfile?.avatar_url || course?.instructor?.profile_image_url || null;
+  const instructorInitials = course?.instructor
+    ? `${course.instructor.first_name?.[0] || ""}${course.instructor.last_name?.[0] || ""}`.toUpperCase()
+    : "";
+
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Source of truth: the unified `enrollments` table.
+      const { data: progressEnrollment, error: progressError } = await (supabase as any)
         .from("enrollments")
         .select("*")
         .eq("course_id", id!)
         .eq("user_id", user?.id!)
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (progressError) throw progressError;
+
+      return progressEnrollment;
     },
     enabled: !!id && !!user,
+  });
+
+  // Fetch lesson progress for enrolled users
+  const { data: progress = [] } = useQuery<any[]>({
+    queryKey: ["lesson-progress", id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("progress")
+        .select("lesson_id, completed")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id && !!user && !!enrollment,
   });
 
   const { data: reviews = [] } = useQuery<any[]>({
     queryKey: ["reviews", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("reviews")
         .select("*, user:users!reviews_user_id_fkey(*)")
         .eq("course_id", id!);
@@ -77,14 +146,92 @@ export default function CourseDetail() {
     queryKey: ["course-enrollment-count", id],
     queryFn: async () => {
       const { count, error } = await (supabase as any)
-        .from("course_enrollments")
+        .from("enrollments")
         .select("id", { count: "exact", head: true })
-        .eq("course_id", id!)
-        .neq("payment_status", "cancelled");
+        .eq("course_id", id!);
       if (error) return 0;
       return count || 0;
     },
     enabled: !!id,
+  });
+
+  // Calculate next lesson to continue from
+  const nextLessonId = useMemo(() => {
+    if (!course?.modules) return course?.modules?.[0]?.lessons?.[0]?.id ?? "1";
+    
+    // Flatten all lessons in order
+    const allLessons: any[] = [];
+    course.modules.forEach((module: any) => {
+      if (module.lessons) {
+        allLessons.push(...module.lessons);
+      }
+    });
+    
+    // Sort lessons by order
+    allLessons.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    // Find first incomplete lesson
+    const completedLessonIds = new Set(progress.filter(p => p.completed).map(p => p.lesson_id));
+    const nextIncompleteLesson = allLessons.find(lesson => !completedLessonIds.has(lesson.id));
+    
+    // If all completed or no progress, return first lesson
+    return nextIncompleteLesson?.id ?? allLessons[0]?.id ?? "1";
+  }, [course, progress]);
+
+  // Fetch user's track progress
+  const { data: trackProgress = {} } = useQuery({
+    queryKey: ["track-progress", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data, error } = await (supabase as any)
+        .from("track_progress")
+        .select("track, level")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      const progress: Record<string, string> = {};
+      (data || []).forEach((row: any) => {
+        progress[row.track] = row.level || "NONE";
+      });
+      return progress;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Check eligibility using unified hook
+  const { eligibility, isLoading: eligibilityLoading } = useEligibility({
+    courseId: id,
+    courseTrack: course?.track,
+    courseLevel: course?.level,
+    isEnrolled: !!enrollment,
+    trackProgress,
+    enabled: !!id && !!course,
+  });
+
+  // Fetch prerequisite course if locked
+  const { data: prerequisiteCourse } = useQuery({
+    queryKey: ["prerequisite-course", course?.track, course?.level],
+    queryFn: async () => {
+      if (!course?.track || !course?.level) return null;
+      
+      const LEVEL_ORDER = ["NONE", "ASSOCIATE", "MEMBER", "FELLOW"];
+      const courseIndex = LEVEL_ORDER.indexOf(course.level.toUpperCase());
+      if (courseIndex <= 1) return null; // Associate is entry level
+      
+      const requiredLevel = LEVEL_ORDER[courseIndex - 1];
+      
+      const { data, error } = await (supabase as any)
+        .from("courses")
+        .select("id, title, level, track")
+        .eq("track", course.track)
+        .eq("level", requiredLevel)
+        .eq("is_published", true)
+        .limit(1)
+        .single();
+      
+      if (error) return null;
+      return data;
+    },
+    enabled: !!course?.track && !!course?.level && eligibility?.status !== "ELIGIBLE",
   });
 
   // Parse ticket types from course
@@ -105,43 +252,65 @@ export default function CourseDetail() {
       return;
     }
 
-    // Check eligibility before proceeding
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch("/api/enrollments/check-eligibility", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ courseId: id }),
-      });
-
-      if (response.status === 401) {
-        setLocation(`/login?redirect=/course/${id}`);
-        return;
+    // Instructors can self-enroll in their own courses for free so they
+    // can access course resources/announcements without going through checkout.
+    if (course && user.id === course.instructor_id) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "INSTRUCTOR",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled as the instructor");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
       }
-
-      if (!response.ok) {
-        throw new Error("Unable to verify eligibility");
-      }
-
-      const eligibility: EligibilityResponse = await response.json();
-
-      if (eligibility.status === "ELIGIBLE") {
-        setLocation(`/checkout/${id}`);
-        return;
-      }
-
-      toast.info(eligibility.ui.title, {
-        description: eligibility.ui.message,
-      });
-      setLocation(`/enroll/${id}/status`);
-    } catch (error) {
-      toast.error('Failed to check eligibility. Please try again.');
+      return;
     }
+
+    // If not eligible, show inline locked state (already displayed)
+    if (eligibility && eligibility.status !== "ELIGIBLE") {
+      return;
+    }
+
+    // Free courses skip Paystack entirely — directly create an ACTIVE enrollment.
+    const priceNum = Number(course?.price ?? 0);
+    if (course && (course.price == null || priceNum === 0)) {
+      try {
+        const { error } = await (supabase as any)
+          .from("enrollments")
+          .upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              status: "ACTIVE",
+              enrollment_type: "COURSE",
+              enrolled_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+        if (error) throw error;
+        toast.success("You're enrolled — enjoy the course!");
+        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
+        setLocation(`/learn/${course.id}`);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to enroll");
+      }
+      return;
+    }
+
+    // Proceed to checkout
+    setLocation(`/checkout/${id}`);
   };
 
   if (isLoading) {
@@ -186,6 +355,8 @@ export default function CourseDetail() {
   }
 
   const isEnrolled = !!enrollment;
+  const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
+  const isFreeCourse = !!course && (course.price == null || Number(course.price) === 0);
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
@@ -193,12 +364,45 @@ export default function CourseDetail() {
   const ratingCount = course.rating_count || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <>
+      <Confetti isActive={showConfetti} duration={3000} zIndex={100} />
+      <div className="min-h-screen bg-background">
+        <Header />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{course.title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Locked State Banner - show immediately while loading for logged-in users */}
+          {user && (eligibilityLoading || (eligibility && eligibility.status !== "ELIGIBLE")) && (
+            <Alert className="mb-6 bg-white/10 border-white/20 text-white backdrop-blur-sm">
+              <Lock className="h-4 w-4" />
+              <AlertTitle className="text-white font-semibold">
+                {eligibility?.reasonCode === "ALREADY_ENROLLED" ? "You're already enrolled" : eligibility?.status === "ELIGIBLE" ? "You're cleared to enroll" : "This course is currently locked"}
+              </AlertTitle>
+              <AlertDescription className="text-white/90">
+                {eligibility?.reasonCode === "ALREADY_ENROLLED" ? "You can access this course from your dashboard or continue learning below." : eligibility?.ui.message || "Checking your eligibility..."}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
@@ -215,22 +419,35 @@ export default function CourseDetail() {
               <div className="flex flex-wrap items-center gap-6 text-sm">
                 {course.instructor && (
                   <div className="flex items-center space-x-2">
-                    <img
-                      src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                      alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
+                    {instructorAvatar ? (
+                      <img
+                        src={instructorAvatar}
+                        alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold">
+                        {instructorInitials}
+                      </div>
+                    )}
                     <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
                   </div>
                 )}
-                <div className="flex items-center space-x-1">
+                {course.duration_hours && (
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4" />
+                    <span>{course.duration_hours} hours</span>
+                  </div>
+                )}
+                {/* Reviews and student count commented out until substantial user base */}
+                {/* <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 fill-current" />
                   <span>{avgRating.toFixed(1)} ({ratingCount} reviews)</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Users className="w-4 h-4" />
                   <span>{course.enrollment_count} students</span>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -241,11 +458,65 @@ export default function CourseDetail() {
                   <CardContent className="p-6 text-center">
                     <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
                     <h3 className="text-lg font-bold text-foreground mb-2">You're Enrolled</h3>
-                    <Link href={`/learn/${course.id}/1`}>
+                    {totalLessons > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-semibold">
+                            {progress.filter(p => p.completed).length} / {totalLessons} lessons
+                          </span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{
+                              width: `${Math.round((progress.filter(p => p.completed).length / totalLessons) * 100)}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <Link href={`/learn/${course.id}/${nextLessonId}`}>
                       <Button className="w-full" size="lg">
                         <PlayCircle className="w-4 h-4 mr-2" /> Continue Learning
                       </Button>
                     </Link>
+                  </CardContent>
+                </Card>
+              ) : user && (eligibilityLoading || (eligibility && eligibility.status !== "ELIGIBLE")) ? (
+                <Card className="bg-white shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-1">Course Price</p>
+                      <p className="text-3xl font-bold text-primary">{formatCoursePrice(course.price, course.currency || 'USD')}</p>
+                    </div>
+                    {prerequisiteCourse && (
+                      <div className="mb-4">
+                        <p className="text-sm text-muted-foreground mb-2">Required Prerequisite:</p>
+                        <Link href={`/course/${prerequisiteCourse.id}`} className="block">
+                          <Button variant="outline" className="w-full mb-2">
+                            <Lock className="w-4 h-4 mr-2" />
+                            Start {prerequisiteCourse.title}
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    <div className="bg-muted p-3 rounded-lg mb-4">
+                      <p className="text-sm font-medium mb-2">Your Progress ({course.track || 'Track'}):</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        {Object.keys(trackProgress).length > 0 ? (
+                          <Badge variant="secondary">
+                            {course.track}: {trackProgress[course.track] || "NONE"}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">No progress yet</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button className="w-full" size="lg" disabled variant="outline">
+                      <Lock className="w-4 h-4 mr-2" />
+                      {eligibilityLoading ? "Checking eligibility..." : "Locked"}
+                    </Button>
                   </CardContent>
                 </Card>
               ) : (
@@ -253,13 +524,13 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Course Price</p>
-                      <p className="text-3xl font-bold text-primary">{course.currency || 'USD'} {parseFloat(course.price || '0').toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                     </div>
                     <Button className="w-full" size="lg" onClick={handleEnroll}>
-                      Enroll Now
+                      {isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now')}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-3 text-center">
-                      Secure checkout · Instant access
+                      {isInstructorOfCourse ? 'No payment required · Manage your course' : (isFreeCourse ? 'No payment required · Instant access' : 'Secure checkout · Instant access')}
                     </p>
                   </CardContent>
                 </Card>
@@ -275,10 +546,9 @@ export default function CourseDetail() {
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-6">
@@ -332,7 +602,7 @@ export default function CourseDetail() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="reviews" className="mt-6">
+                {/* <TabsContent value="reviews" className="mt-6">
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold">Student Reviews</h3>
@@ -382,7 +652,7 @@ export default function CourseDetail() {
                       <p className="text-muted-foreground">No reviews yet. Be the first to review this course!</p>
                     )}
                   </div>
-                </TabsContent>
+                </TabsContent> */}
               </Tabs>
             </div>
 
@@ -393,14 +663,24 @@ export default function CourseDetail() {
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-4">Instructor</h3>
                     <div className="text-center space-y-4">
-                      <img
-                        src={course.instructor.profile_image_url || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200`}
-                        alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                        className="w-20 h-20 rounded-full object-cover mx-auto"
-                      />
+                      {instructorAvatar ? (
+                        <img
+                          src={instructorAvatar}
+                          alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
+                          className="w-20 h-20 rounded-full object-cover mx-auto"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                          {instructorInitials}
+                        </div>
+                      )}
                       <div>
                         <h4 className="font-semibold text-lg">{course.instructor.first_name} {course.instructor.last_name}</h4>
-                        {course.instructor.bio && <p className="text-sm text-muted-foreground mt-2">{course.instructor.bio}</p>}
+                        {course.instructor.bio ? (
+                          <p className="text-sm text-muted-foreground mt-2">{course.instructor.bio}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-2 italic">No bio provided yet.</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -412,6 +692,7 @@ export default function CourseDetail() {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }

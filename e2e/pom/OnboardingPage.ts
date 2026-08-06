@@ -26,13 +26,25 @@ export class OnboardingPage extends BasePage {
     await this.page.goto("/onboarding");
   }
 
-  /** Opens the DOB calendar popover and picks a date via the native month/year <select>s. */
+  /**
+   * Opens the DOB calendar popover (react-aria-components based) and picks a
+   * date via its month/year <select>s (1-indexed month values, no
+   * aria-label — scoped by position within the popover's <header>) and its
+   * day grid cells, whose accessible name is the full spelled-out date
+   * (e.g. "Wednesday, January 15, 2000"), not a data-day attribute.
+   */
   async setDateOfBirth(year: number, monthIndexZeroBased: number, day: number) {
     await this.dobTrigger.click();
-    await this.page.locator('select[aria-label="Choose the Month"]').selectOption(String(monthIndexZeroBased));
-    await this.page.locator('select[aria-label="Choose the Year"]').selectOption(String(year));
-    const isoDate = `${year}-${String(monthIndexZeroBased + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    await this.page.locator(`td[data-day="${isoDate}"] button`).click();
+    const popover = this.page.getByRole("dialog");
+    await popover.locator("header select").nth(0).selectOption(String(monthIndexZeroBased + 1));
+    await popover.locator("header select").nth(1).selectOption(String(year));
+    const dayLabel = new Date(year, monthIndexZeroBased, day).toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    await popover.getByRole("button", { name: dayLabel, exact: true }).click();
   }
 
   async selectGender(gender: "Male" | "Female" | "Prefer not to say") {

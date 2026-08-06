@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { HomePage } from "../../pom/HomePage";
 
-// Authenticated "/" renders Home (App.tsx conditional), not Landing. Runs
-// under the chromium-student project (student storageState) — see
-// playwright.config.ts testIgnore/testMatch overrides for this file.
+// "/" now hard-redirects authenticated users straight to /dashboard
+// (App.tsx) — the authenticated Home experience lives at /home instead, and
+// HomePage.goto() navigates there directly. Runs under the chromium-student
+// project (student storageState) — see playwright.config.ts
+// testIgnore/testMatch overrides for this file.
 test.describe("Home (authenticated /)", () => {
   test("shows a personalized welcome and progress stats", async ({ page }) => {
     const home = new HomePage(page);
@@ -20,14 +22,6 @@ test.describe("Home (authenticated /)", () => {
     await home.explorePropramsButton.scrollIntoViewIfNeeded();
     await home.explorePropramsButton.click();
     await expect(page).toHaveURL(/\/course-catalog/);
-  });
-
-  test("Join Community navigates to /community", async ({ page }) => {
-    const home = new HomePage(page);
-    await home.goto();
-    await home.joinCommunityButton.scrollIntoViewIfNeeded();
-    await home.joinCommunityButton.click();
-    await expect(page).toHaveURL(/\/community/);
   });
 
   test("Browse All Courses navigates to /courses", async ({ page }) => {

@@ -60,6 +60,12 @@ interface Lesson {
   description: string;
   contentType: "video" | "text" | "quiz" | "assignment";
   videoUrl?: string;
+  videoPlatform?: "youtube" | "vimeo";
+  videoId?: string;
+  muxAssetId?: string;
+  muxPlaybackId?: string;
+  muxStatus?: string;
+  content?: string;
   duration?: number;
   order: number;
   resources: Resource[];
@@ -157,17 +163,22 @@ export default function CourseCurriculum() {
         .order("order");
       if (modErr) throw modErr;
 
-      const { data: lessonsData, error: lesErr } = await supabase
-        .from("lessons")
-        .select(
-          'id, title, description, content_type, video_url, duration_seconds, "order", module_id',
-        )
-        .in(
-          "module_id",
-          (modulesData || []).map((m) => m.id),
-        )
-        .order("order");
-      if (lesErr) throw lesErr;
+      // Only fetch lessons if there are modules
+      let lessonsData: any[] = [];
+      if (modulesData && modulesData.length > 0) {
+        const { data: lessons, error: lesErr } = await supabase
+          .from("lessons")
+          .select(
+            'id, title, description, content_type, content, video_url, video_platform, video_id, mux_asset_id, mux_playback_id, mux_status, duration_seconds, "order", module_id',
+          )
+          .in(
+            "module_id",
+            modulesData.map((m) => m.id),
+          )
+          .order("order");
+        if (lesErr) throw lesErr;
+        lessonsData = lessons || [];
+      }
 
       return (modulesData || []).map((m) => ({
         id: m.id,
@@ -182,6 +193,12 @@ export default function CourseCurriculum() {
             description: l.description || "",
             contentType: (l.content_type || "video") as any,
             videoUrl: l.video_url || undefined,
+            videoPlatform: (l.video_platform || undefined) as any,
+            videoId: l.video_id || undefined,
+            muxAssetId: l.mux_asset_id || undefined,
+            muxPlaybackId: l.mux_playback_id || undefined,
+            muxStatus: l.mux_status || undefined,
+            content: l.content || undefined,
             duration: l.duration_seconds || undefined,
             order: l.order,
             resources: [],
@@ -234,7 +251,13 @@ export default function CourseCurriculum() {
   // Add module
   const addModuleMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
-      const nextOrder = modules.length + 1;
+      const { data: maxOrder } = await supabase
+        .from("modules")
+        .select("order")
+        .eq("course_id", courseId!)
+        .order("order", { ascending: false })
+        .limit(1);
+      const nextOrder = (maxOrder?.[0]?.order ?? 0) + 1;
       const { error } = await supabase.from("modules").insert({
         course_id: courseId!,
         title: data.title,
@@ -255,12 +278,7 @@ export default function CourseCurriculum() {
   // Delete module
   const deleteModuleMutation = useMutation({
     mutationFn: async (moduleId: string) => {
-      // Delete lessons first, then module
-      const { error: lesErr } = await supabase
-        .from("lessons")
-        .delete()
-        .eq("module_id", moduleId);
-      if (lesErr) throw lesErr;
+      // Delete module first - database CASCADE will handle lessons
       const { error } = await supabase
         .from("modules")
         .delete()
@@ -299,6 +317,9 @@ export default function CourseCurriculum() {
       );
       await Promise.all(updates);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, courseId] });
+    },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, courseId] });
       toast({ title: "Failed to reorder sections", variant: "destructive" });
@@ -322,6 +343,9 @@ export default function CourseCurriculum() {
       );
       await Promise.all(updates);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, courseId] });
+    },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, courseId] });
       toast({ title: "Failed to reorder lectures", variant: "destructive" });
@@ -334,8 +358,13 @@ export default function CourseCurriculum() {
       const oldIndex = modules.findIndex((m) => m.id === active.id);
       const newIndex = modules.findIndex((m) => m.id === over.id);
       const newModules = arrayMove(modules, oldIndex, newIndex);
+      const previousModules = [...modules];
       queryClient.setQueryData([QUERY_KEY, courseId], newModules);
-      reorderModulesMutation.mutate(newModules.map((m) => m.id));
+      reorderModulesMutation.mutate(newModules.map((m) => m.id), {
+        onError: () => {
+          queryClient.setQueryData([QUERY_KEY, courseId], previousModules);
+        },
+      });
     }
   };
 
@@ -350,10 +379,15 @@ export default function CourseCurriculum() {
       const newModules = modules.map((m) =>
         m.id === moduleId ? { ...m, lessons: newLessons } : m,
       );
+      const previousModules = [...modules];
       queryClient.setQueryData([QUERY_KEY, courseId], newModules);
       reorderLessonsMutation.mutate({
         moduleId,
         lessonOrder: newLessons.map((l) => l.id),
+      }, {
+        onError: () => {
+          queryClient.setQueryData([QUERY_KEY, courseId], previousModules);
+        },
       });
     }
   };

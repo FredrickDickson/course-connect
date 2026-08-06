@@ -8,14 +8,15 @@ export class HomePage extends BasePage {
   readonly viewAllCoursesButton = this.page.getByTestId("button-view-all-courses");
   readonly browseCoursesButton = this.page.getByTestId("button-browse-courses");
   readonly explorePropramsButton = this.page.getByTestId("button-explore-programs");
-  readonly joinCommunityButton = this.page.getByTestId("button-join-community");
 
   constructor(page: Page) {
     super(page);
   }
 
   async goto() {
-    await this.page.goto("/");
+    // "/" now hard-redirects authenticated users straight to /dashboard
+    // (App.tsx) — the authenticated Home experience lives at /home instead.
+    await this.page.goto("/home");
   }
 
   enrollmentCard(courseId: string) {

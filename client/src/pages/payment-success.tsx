@@ -27,6 +27,18 @@ export default function PaymentSuccess() {
     },
     onSuccess: async (response: any) => {
       if (response?.success) {
+        // Store confetti flag in session storage
+        const tx = response?.data;
+        const enrolledCourseId =
+          tx?.metadata?.courseId ||
+          tx?.data?.metadata?.courseId;
+
+        if (enrolledCourseId) {
+          sessionStorage.setItem('showConfetti', 'true');
+          sessionStorage.setItem('confettiCourseId', enrolledCourseId);
+          console.log('Stored confetti flag for course:', enrolledCourseId);
+        }
+
         // Invalidate every enrollment-related cache so gated pages unlock immediately
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] }),
@@ -34,15 +46,9 @@ export default function PaymentSuccess() {
           queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
         ]);
 
-        // Server returns { success, data: paystackTransaction }
-        // where paystackTransaction.metadata.courseId is set during checkout init.
-        const tx = response?.data;
-        const enrolledCourseId =
-          tx?.metadata?.courseId ||
-          tx?.data?.metadata?.courseId; // defensive: in case raw paystack envelope leaks through
-
         if (enrolledCourseId) {
-          setLocation(`/course/${enrolledCourseId}`);
+          console.log('Redirecting to course:', enrolledCourseId);
+          setLocation(`/course/${enrolledCourseId}?payment=success`);
           return;
         }
 
@@ -159,89 +165,89 @@ export default function PaymentSuccess() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Card className="border-primary">
-          <CardHeader>
-            <div className="flex items-center justify-center mb-4">
-              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <CheckCircle className="h-12 w-12 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-center text-3xl">Payment Successful!</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg text-muted-foreground mb-4">
-                Thank you for your purchase. You are now enrolled in the course!
-              </p>
-              
-              {paymentData && (
-                <div className="bg-muted p-6 rounded-lg space-y-3 text-left max-w-md mx-auto">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Transaction Reference:</span>
-                    <span className="font-medium">{paymentData.reference}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount Paid:</span>
-                    <span className="font-medium">
-                      {paymentData.currency} {(paymentData.amount / 100).toFixed(2)}
-                    </span>
-                  </div>
-                  {paymentData.metadata?.courseName && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Course:</span>
-                      <span className="font-medium">{paymentData.metadata.courseName}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium text-primary">Completed</span>
-                  </div>
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <Card className="border-primary">
+            <CardHeader>
+              <div className="flex items-center justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle className="h-12 w-12 text-primary" />
                 </div>
-              )}
-            </div>
+              </div>
+              <CardTitle className="text-center text-3xl">Payment Successful!</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Thank you for your purchase. You are now enrolled in the course!
+                </p>
+                
+                {paymentData && (
+                  <div className="bg-muted p-6 rounded-lg space-y-3 text-left max-w-md mx-auto">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Transaction Reference:</span>
+                      <span className="font-medium">{paymentData.reference}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount Paid:</span>
+                      <span className="font-medium">
+                        {paymentData.currency} {(paymentData.amount / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    {paymentData.metadata?.courseName && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Course:</span>
+                        <span className="font-medium">{paymentData.metadata.courseName}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span className="font-medium text-primary">Completed</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <div className="flex gap-4 justify-center pt-6">
-              {finalCourseId ? (
-                <>
-                  <Link href={`/course/${finalCourseId}`}>
-                    <Button size="lg" className="bg-primary hover:bg-primary/90">
-                      <PlayCircle className="h-5 w-5 mr-2" />
-                      Start Learning
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard">
-                    <Button variant="outline" size="lg">
-                      Go to Dashboard
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/dashboard">
-                    <Button size="lg">
-                      View My Courses
-                    </Button>
-                  </Link>
-                  <Link href="/course-catalog">
-                    <Button variant="outline" size="lg">
-                      Browse More Courses
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
+              <div className="flex gap-4 justify-center pt-6">
+                {finalCourseId ? (
+                  <>
+                    <Link href={`/course/${finalCourseId}`}>
+                      <Button size="lg" className="bg-primary hover:bg-primary/90">
+                        <PlayCircle className="h-5 w-5 mr-2" />
+                        Start Learning
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard">
+                      <Button variant="outline" size="lg">
+                        Go to Dashboard
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/dashboard">
+                      <Button size="lg">
+                        View My Courses
+                      </Button>
+                    </Link>
+                    <Link href="/course-catalog">
+                      <Button variant="outline" size="lg">
+                        Browse More Courses
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
 
-            <div className="text-center pt-6 border-t">
-              <p className="text-sm text-muted-foreground">
-                A confirmation email has been sent to your registered email address.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-center pt-6 border-t">
+                <p className="text-sm text-muted-foreground">
+                  A confirmation email has been sent to your registered email address.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
   );
 }

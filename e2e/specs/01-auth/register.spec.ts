@@ -47,7 +47,7 @@ test.describe("Register", () => {
       confirmPassword: "weak",
     });
     await register.submit();
-    await expect(register.errorAlert).toContainText(/password does not meet security requirements/i);
+    await expect(register.errorAlert).toContainText(/password must be at least 6 characters/i);
     await expect(page).toHaveURL(/\/register/);
   });
 
