@@ -9,8 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Bell, Mail, Smartphone, Clock, User } from "lucide-react";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 
 export default function NotificationSettings() {
   const { preferences, updatePreferences, loading } = useNotifications();
@@ -41,29 +40,36 @@ export default function NotificationSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#610000]"></div>
+        </div>
+      </StudentLayout>
     );
   }
 
   return (
-    <>
-      <Header />
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Notification Settings</h1>
-          <p className="text-gray-600 mb-8">
-            Manage how you receive notifications and emails from CIMA Learn.
-          </p>
+    <StudentLayout>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold font-sf-pro-display mb-2">Notification Settings</h1>
+            <p className="text-white/80 mb-8 font-sf-pro-text">
+              Manage how you receive notifications and emails from CIMA Learn.
+            </p>
+          </div>
         </div>
+      </section>
+
+      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
         <div className="grid gap-6">
           {/* Email Preferences */}
-          <Card>
+          <Card className="border-[#d4c5b0]/30">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 font-sf-pro-display">
+                <Mail className="h-5 w-5 text-[#610000]" />
                 Email Notifications
               </CardTitle>
             </CardHeader>
@@ -210,10 +216,10 @@ export default function NotificationSettings() {
         </Card>
 
         {/* Quiet Hours */}
-        <Card>
+        <Card className="border-[#d4c5b0]/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-sf-pro-display">
+              <Clock className="h-5 w-5 text-[#610000]" />
               Quiet Hours
             </CardTitle>
           </CardHeader>
@@ -262,10 +268,10 @@ export default function NotificationSettings() {
         </Card>
 
         {/* Frequency Settings */}
-        <Card>
+        <Card className="border-[#d4c5b0]/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-sf-pro-display">
+              <Settings className="h-5 w-5 text-[#610000]" />
               Email Frequency
             </CardTitle>
           </CardHeader>
@@ -294,10 +300,10 @@ export default function NotificationSettings() {
         </Card>
 
         {/* Push Notifications */}
-        <Card>
+        <Card className="border-[#d4c5b0]/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-sf-pro-display">
+              <Smartphone className="h-5 w-5 text-[#610000]" />
               Push Notifications
             </CardTitle>
           </CardHeader>
@@ -326,13 +332,12 @@ export default function NotificationSettings() {
 
         {/* Save Button */}
         <div className="flex justify-end mt-8">
-          <Button onClick={handleSave} className="px-8">
+          <Button onClick={handleSave} className="px-8 bg-[#610000] hover:bg-[#7d0000]">
             <Settings className="h-4 w-4 mr-2" />
             Save Settings
           </Button>
         </div>
       </main>
-      <Footer />
-    </>
+    </StudentLayout>
   );
 }

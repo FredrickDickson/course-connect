@@ -2,35 +2,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import { Link } from "wouter";
 
 export default function Programs() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary via-primary to-blue-900 text-primary-foreground py-20">
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6" data-testid="programs-title">
+          <h1 className="text-4xl lg:text-5xl font-bold font-sf-pro-display mb-6" data-testid="programs-title">
             Professional ADR Programs
           </h1>
-          <p className="text-xl text-blue-100 max-w-4xl mx-auto mb-8">
+          <p className="text-xl text-white/80 max-w-4xl mx-auto mb-8 font-sf-pro-text">
             Advance your career with internationally recognized qualifications designed for aspiring and experienced ADR professionals. Join our global community of mediators and arbitrators.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               data-testid="button-compare-programs"
-              className="bg-accent text-accent-foreground px-8 py-4 rounded-lg font-semibold hover:bg-yellow-500 transition-colors"
+              className="bg-[#8b6f47] text-white px-8 py-4 rounded-lg font-semibold hover:bg-[#6b5d4f] transition-colors"
             >
               Compare Programs
             </Button>
             <Button 
               data-testid="button-speak-advisor"
               variant="outline"
-              className="border border-blue-300 text-blue-100 px-8 py-4 rounded-lg font-semibold hover:bg-blue-800 transition-colors"
+              className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-colors"
             >
               Speak to an Advisor
             </Button>
@@ -445,17 +442,17 @@ export default function Programs() {
       </section>
 
       {/* Call to Action */}
-      <section className="py-20 bg-gradient-to-r from-accent to-yellow-600 text-accent-foreground">
+      <section className="py-20 bg-gradient-to-r from-[#8b6f47] to-[#6b5d4f] text-white -mx-4 sm:-mx-6 lg:-mx-8 mb-0">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Your ADR Journey?</h2>
-          <p className="text-xl mb-8 opacity-90">
+          <h2 className="text-3xl font-bold font-sf-pro-display mb-4">Ready to Start Your ADR Journey?</h2>
+          <p className="text-xl mb-8 opacity-90 font-sf-pro-text">
             Join thousands of professionals who have elevated their careers with CIMA's internationally recognized programs.
           </p>
           <div className="space-x-4">
             <Button 
               data-testid="button-get-started"
               size="lg" 
-              className="bg-primary text-primary-foreground hover:bg-blue-800"
+              className="bg-[#610000] text-white hover:bg-[#7d0000]"
             >
               Get Started Today
             </Button>
@@ -463,15 +460,13 @@ export default function Programs() {
               data-testid="button-schedule-consultation"
               size="lg" 
               variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-accent"
+              className="border-2 border-white text-white hover:bg-white hover:text-[#8b6f47]"
             >
               Schedule Consultation
             </Button>
           </div>
         </div>
       </section>
-
-      <Footer />
-    </div>
+    </StudentLayout>
   );
 }

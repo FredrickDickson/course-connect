@@ -14,10 +14,10 @@ test.describe("Dashboard (/dashboard, student)", () => {
     await expect(page.getByText(E2E_SEED_COURSE_TITLE)).toBeVisible({ timeout: 15_000 });
   });
 
-  test("browse courses link navigates to /course-catalog", async ({ page }) => {
+  test("View All link navigates to /courses", async ({ page }) => {
     const dashboard = new DashboardPage(page);
     await dashboard.goto();
     await dashboard.browseCoursesLink.click();
-    await expect(page).toHaveURL(/\/course-catalog/);
+    await expect(page).toHaveURL(/\/courses/);
   });
 });

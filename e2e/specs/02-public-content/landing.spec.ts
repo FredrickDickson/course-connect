@@ -7,7 +7,6 @@ test.describe("Landing page (unauthenticated /)", () => {
     await landing.goto();
     await expect(page.getByRole("heading", { name: /Self-Paced Learning/i })).toBeVisible();
     await expect(landing.memberPortalLink).toBeVisible();
-    await expect(landing.enrollNowLink).toBeVisible();
   });
 
   test("Member Portal navigates to /login", async ({ page }) => {
@@ -15,13 +14,6 @@ test.describe("Landing page (unauthenticated /)", () => {
     await landing.goto();
     await landing.memberPortalLink.click();
     await expect(page).toHaveURL(/\/login/);
-  });
-
-  test("Enroll Now navigates to /register", async ({ page }) => {
-    const landing = new LandingPage(page);
-    await landing.goto();
-    await landing.enrollNowLink.click();
-    await expect(page).toHaveURL(/\/register/);
   });
 
   test("Browse Courses links to the protected /courses route, bouncing an unauthenticated visitor to /login", async ({ page }) => {

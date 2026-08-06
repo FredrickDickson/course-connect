@@ -29,7 +29,9 @@ test.describe("Onboarding", () => {
     await login.goto();
     await login.loginAndWaitForRedirect(email, TEST_USER_PASSWORD());
     await expect(page).toHaveURL(/\/onboarding/);
-    await expect(page.getByText("Personal Information")).toBeVisible();
+    // "Personal Information" also appears in the step-indicator strip (a
+    // <span>), so scope to the card's title element specifically.
+    await expect(page.locator("div.font-sf-pro-display", { hasText: "Personal Information" })).toBeVisible();
   });
 
   test("choosing 'No' ADR experience grants instant Associate access and lands on the catalog", async ({ page }) => {

@@ -16,7 +16,7 @@ export class OnboardingPage extends BasePage {
   // Step 2 — ADR experience gate
   readonly noExperienceButton = this.page.getByRole("button", { name: /No, I'm getting started/i });
   readonly yesExperienceButton = this.page.getByRole("button", { name: /Yes, I have ADR\s+experience/i });
-  readonly experienceGateHeading = this.page.getByText("Do you already have ADR experience?");
+  readonly experienceGateHeading = this.page.getByText("ADR Experience", { exact: true });
 
   constructor(page: Page) {
     super(page);
