@@ -154,14 +154,40 @@ function PageLoader() {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   return (
     <Switch>
-      {/* Home route - conditional based on auth */}
+      {/* Home route - redirect authenticated users to dashboard */}
       <Route path="/">
+        {() => {
+          if (isLoading) {
+            return <PageLoader />;
+          }
+          if (isAuthenticated && user) {
+            // Redirect based on role
+            if (user.role === "admin") {
+              window.location.href = "/admin";
+              return <PageLoader />;
+            } else if (user.role === "instructor") {
+              window.location.href = "/instructor";
+              return <PageLoader />;
+            } else {
+              window.location.href = "/dashboard";
+              return <PageLoader />;
+            }
+          }
+          return <Landing />;
+        }}
+      </Route>
+      
+      {/* Authenticated home route */}
+      <Route path="/home">
         {isLoading || !isAuthenticated ? <Landing /> : <Home />}
       </Route>
+      
+      {/* Direct landing page route - always shows landing regardless of auth */}
+      <Route path="/landing" component={Landing} />
 
       {/* Public routes available to everyone */}
       <Route path="/login" component={Login} />

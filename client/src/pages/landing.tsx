@@ -1,11 +1,27 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import cimaLogo from "@/assets/cima-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
+import cimaLogo from "/images/logo.jpeg";
 import FinalCTASection from "./FinalCTASection";
 import { Gavel, Users, Globe, Star } from "lucide-react";
 
 export default function Landing() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect authenticated users away from landing page
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      if (user.role === "admin") {
+        setLocation("/admin");
+      } else if (user.role === "instructor") {
+        setLocation("/instructor");
+      } else {
+        setLocation("/dashboard");
+      }
+    }
+  }, [isAuthenticated, isLoading, user, setLocation]);
   // SF Pro fonts are loaded via CSS @font-face
   // useEffect(() => {
   //   // Inject fonts dynamically - REMOVED
@@ -26,81 +42,102 @@ export default function Landing() {
 
   return (
     <div className="bg-white text-landing-on-surface font-sf-pro-text selection:bg-[#ffdad4] selection:text-[#410000] min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
-              <img 
-                src={cimaLogo} 
-                alt="CIMA Logo" 
-                className="h-12 w-auto"
-              />
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-primary font-sf-pro-text">CIMA Learn</h1>
-                <p className="text-xs text-muted-foreground -mt-1">Professional ADR Education</p>
+      {/* Header - Floating Rounded Navbar with Animated LCD Border */}
+      <header className="fixed top-0 left-0 right-0 z-50 pt-4 px-4 lg:px-8">
+        <div className="max-w-[1400px] mx-auto">
+          <nav className="navbar-lcd-border bg-white/90 backdrop-blur-2xl rounded-2xl shadow-lg shadow-neutral-900/5">
+            <div className="flex h-20 items-center justify-between px-6 lg:px-10">
+              {/* Logo */}
+              <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-300 group">
+                <img 
+                  src={cimaLogo} 
+                  alt="CIMA Logo" 
+                  className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+                />
+                <div>
+                  {/* Mobile: Stacked CIMA/Learn */}
+                  <div className="sm:hidden">
+                    <h1 className="text-base font-semibold text-landing-primary font-sf-pro-display tracking-tight leading-tight">CIMA</h1>
+                    <h1 className="text-base font-semibold text-landing-primary font-sf-pro-display tracking-tight leading-tight">Learn</h1>
+                  </div>
+                  {/* Desktop: Inline with subtitle */}
+                  <div className="hidden sm:block">
+                    <h1 className="text-xl font-semibold text-landing-primary font-sf-pro-display tracking-tight">CIMA Learn</h1>
+                    <p className="text-[11px] text-neutral-500 -mt-0.5 font-sf-pro-text tracking-wide">Professional ADR Education</p>
+                  </div>
+                </div>
+              </Link>
+              
+              {/* Navigation Links - Desktop */}
+              <div className="hidden md:flex items-center space-x-1">
+                <Link href="/courses">
+                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
+                    Courses
+                  </button>
+                </Link>
+                <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
+                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
+                    Pathways
+                  </button>
+                </a>
+                <Link href="/contact">
+                  <button className="text-sm font-medium text-neutral-600 hover:text-landing-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-300">
+                    Contact
+                  </button>
+                </Link>
               </div>
-            </Link>
-            
-            {/* Navigation - Mobile Only */}
-            <div className="flex items-center space-x-4">
-              {/* Removed Resources and Contact for mobile responsiveness */}
+              
+              {/* CTA Buttons */}
+              <div className="flex items-center space-x-3">
+                <Link href="/login">
+                  <button className="hidden sm:block text-sm font-medium text-neutral-700 hover:text-landing-primary transition-colors duration-300 px-5 py-2.5 rounded-lg hover:bg-neutral-50">
+                    Member Portal
+                  </button>
+                </Link>
+                <Link href="/register">
+                  <button className="bg-landing-primary text-white px-6 py-2.5 text-sm font-semibold rounded-xl hover:bg-landing-primary-container transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95">
+                    Enroll Now
+                  </button>
+                </Link>
+              </div>
             </div>
-            
-            {/* CTA Buttons */}
-            <div className="flex items-center space-x-4">
-              <Link href="/login">
-                <button className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                  Member Portal
-                </button>
-              </Link>
-              <Link href="/register">
-                <button className="bg-landing-primary text-landing-on-primary px-4 py-2 text-sm font-medium hover:bg-landing-primary/90 transition-colors">
-                  Enroll Now
-                </button>
-              </Link>
-            </div>
-          </div>
+          </nav>
         </div>
       </header>
 
-      <main className="pt-16">
+      <main className="pt-28">
         {/* Hero Section: The Definitive Standard */}
-        <section className="relative min-h-[600px] sm:min-h-[700px] lg:min-h-[921px] flex items-center px-4 sm:px-6 lg:px-12 overflow-hidden">
-          <div className="max-w-7xl mx-auto w-full grid grid-cols-12 items-center gap-6 lg:gap-12">
-            <div className="col-span-12 md:col-span-6 z-10 text-left">
-              <h1 className="font-sf-pro-display text-3xl sm:text-4xl md:text-5xl lg:text-7xl leading-[1.1] text-landing-primary mb-6 sm:mb-8 tracking-tight text-left">
-                The Definitive Standard in <span className="italic">Self-Paced Learning</span>
+        <section className="relative min-h-[85vh] flex items-center px-6 lg:px-12 overflow-hidden bg-gradient-to-b from-neutral-50 to-white">
+          <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16 py-20">
+            <div className="z-10 text-left space-y-8">
+              <h1 className="font-sf-pro-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] text-landing-primary tracking-tight">
+                The Definitive Standard in <span className="italic font-light">Self-Paced Learning</span>
               </h1>
-              <p className="font-sf-pro-text text-base sm:text-lg md:text-xl text-landing-on-surface-variant leading-relaxed max-w-lg mb-8 sm:mb-12 text-left">
+              <p className="font-sf-pro-text text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-xl">
                 Join a global cadre of legal elite. Elevate your practice through rigorous ADR training and certifications recognized by the world's leading arbitral institutions.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/courses">
-                  <button className="bg-landing-primary text-landing-on-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-sf-pro-text uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-primary-container transition-all">
+                  <button className="bg-landing-primary text-white px-8 py-4 rounded-lg font-sf-pro-text font-medium text-sm tracking-wide hover:bg-landing-primary-container hover:shadow-lg transition-all duration-300">
                     Browse Courses
                   </button>
                 </Link>
-                {/* <Link href="/qualification-pathway">
-                  <button className="border border-landing-outline/20 text-landing-primary px-10 py-5 rounded-DEFAULT font-sf-pro-text uppercase tracking-[0.2em] text-sm hover:bg-landing-surface-container transition-all">
-                    Explore Pathways
-                  </button>
-                </Link> */}
                 <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-                  <button className="border border-landing-outline/20 text-landing-primary px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-DEFAULT font-sf-pro-text uppercase tracking-[0.2em] text-xs sm:text-sm hover:bg-landing-surface-container transition-all">
+                  <button className="border-2 border-neutral-200 text-landing-primary px-8 py-4 rounded-lg font-sf-pro-text font-medium text-sm tracking-wide hover:border-landing-primary hover:bg-neutral-50 transition-all duration-300">
                     Explore Pathways
                   </button>
                 </a>
               </div>
             </div>
-            <div className="col-span-12 md:col-span-6 relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] mt-8 md:mt-0">
-              {/* <div className="absolute inset-0 bg-landing-surface-container-high rounded-lg overflow-hidden transform rotate-2 translate-x-4"></div> */}
-              <img className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-2xl z-0 transform -rotate-2 transition-transform hover:rotate-0 duration-700" alt="ultra-modern international arbitration courtroom with mahogany paneling, circular bench, and glass accents in soft dramatic architectural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAniyrUTHdC71fW7ywKJUtxTZZko09EKrJDSMaW0C8HkY09fzWNAv_toRk2neLKvqnxp6y-GBQaGROj_4Nz-cFWYlrtfQj6YRBB40druRUyUt80KAAbclHld0z822peFM9ZCJbD6BkMtyuMlZDGBmhnINe0ZUXMYKos3_NPjrhmKyKcgbGXO9w9WYc79I7wstGWC3tihp7vK9JeSRGVFfr9ZwqYm8R3eqwMPzraVR4VJfL0tBIP9sG2I-zqCXrvHaz3N-NjJRIIc28" />
+            <div className="relative h-[450px] sm:h-[550px] lg:h-[650px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-landing-primary/5 to-transparent rounded-2xl"></div>
+              <img 
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-2xl hover:scale-[1.02] transition-transform duration-700" 
+                alt="ultra-modern international arbitration courtroom with mahogany paneling, circular bench, and glass accents in soft dramatic architectural lighting" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAniyrUTHdC71fW7ywKJUtxTZZko09EKrJDSMaW0C8HkY09fzWNAv_toRk2neLKvqnxp6y-GBQaGROj_4Nz-cFWYlrtfQj6YRBB40druRUyUt80KAAbclHld0z822peFM9ZCJbD6BkMtyuMlZDGBmhnINe0ZUXMYKos3_NPjrhmKyKcgbGXO9w9WYc79I7wstGWC3tihp7vK9JeSRGVFfr9ZwqYm8R3eqwMPzraVR4VJfL0tBIP9sG2I-zqCXrvHaz3N-NjJRIIc28" 
+              />
             </div>
           </div>
-          {/* Decorative Elements */}
-          {/* <div className="absolute top-1/4 -right-20 w-96 h-96 bg-landing-primary/5 rounded-full blur-[100px]"></div> */}
         </section>
 
         {/* NEW SECTION: RIAC Partnership */}
@@ -145,40 +182,37 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-stone-950 w-full py-12 sm:py-16 px-4 sm:px-6 lg:px-12 border-t border-[#e3beb8]/15">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
-          <div className="space-y-6 sm:space-y-8">
+      <footer className="bg-white border-t border-neutral-200 w-full py-16 px-6 lg:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-7xl mx-auto">
+          <div className="space-y-6">
             <div className="flex items-center space-x-3">
               <img 
                 src={cimaLogo} 
                 alt="CIMA Logo" 
-                className="h-12 w-auto"
+                className="h-11 w-auto"
               />
               <div>
-                <h1 className="text-xl font-bold text-[#610000]">CIMA Learn</h1>
-                <p className="text-xs text-[#5a403c]/70 -mt-1">Professional ADR Education</p>
+                <h1 className="text-lg font-semibold text-landing-primary font-sf-pro-display">CIMA Learn</h1>
+                <p className="text-xs text-neutral-500 font-sf-pro-text">Professional ADR Education</p>
               </div>
             </div>
-            <p className="font-['Inter'] text-sm tracking-wide text-[#5a403c]/70 max-w-sm">
+            <p className="font-sf-pro-text text-sm text-neutral-600 max-w-md leading-relaxed">
               Center for International Mediators and Arbitrators - Leading global alternative dispute resolution education and certification.
             </p>
-            <p className="font-sf-pro-text text-sm tracking-wide text-[#5a403c]/70 -mt-1"> {new Date().getFullYear()} CIMA LEARN. All rights reserved.</p>
+            <p className="font-sf-pro-text text-xs text-neutral-500">
+              © {new Date().getFullYear()} CIMA LEARN. All rights reserved.
+            </p>
           </div>
           <div className="flex flex-col md:items-end justify-between">
-            <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase">
-              <Link href="/privacy-policy" className="font-sf-pro-text text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Privacy Policy</Link>
-              <Link href="/terms-of-service" className="font-sf-pro-text text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Terms of Service</Link>
-              <Link href="/contact" className="text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity underline decoration-[#8b0000]">Contact Us</Link>
+            <div className="flex flex-wrap gap-6 font-sf-pro-text text-sm">
+              <Link href="/privacy-policy" className="text-neutral-600 hover:text-landing-primary transition-colors">Privacy Policy</Link>
+              <Link href="/terms-of-service" className="text-neutral-600 hover:text-landing-primary transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="text-neutral-600 hover:text-landing-primary transition-colors">Contact Us</Link>
             </div>
-            <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 font-['Inter'] text-sm tracking-wide uppercase mt-4">
-              <Link href="/help-center" className="font-sf-pro-text text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Help Center</Link>
-              <Link href="/become-instructor" className="font-sf-pro-text text-[#5a403c]/70 hover:text-[#1b1c15] transition-opacity">Become an Instructor</Link>
+            <div className="flex flex-wrap gap-6 font-sf-pro-text text-sm mt-4">
+              <Link href="/help-center" className="text-neutral-600 hover:text-landing-primary transition-colors">Help Center</Link>
+              <Link href="/become-instructor" className="text-neutral-600 hover:text-landing-primary transition-colors">Become an Instructor</Link>
             </div>
-            {/* <div className="mt-8 sm:mt-12 flex gap-4 sm:gap-6 text-landing-on-surface-variant/40">
-              <Gavel className="w-5 h-5 text-landing-primary cursor-pointer hover:text-landing-primary/80 transition-colors" />
-              <Users className="w-5 h-5 text-landing-primary cursor-pointer hover:text-landing-primary/80 transition-colors" />
-              <Globe className="w-5 h-5 text-landing-primary cursor-pointer hover:text-landing-primary/80 transition-colors" />
-            </div> */}
           </div>
         </div>
       </footer>
@@ -194,34 +228,48 @@ function QualificationPathwaySection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-24 lg:py-32 px-6 lg:px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-12 gap-6 lg:gap-8 mb-16 lg:mb-24">
-          <div className="col-span-12 md:col-span-5 lg:col-span-4 text-left">
-            <h2 className="font-sf-pro-display text-2xl sm:text-3xl lg:text-4xl text-landing-primary mb-6 text-left">A journey of mastery from foundational principles to elite international certification.</h2>
-          </div>
+        <div className="max-w-2xl mb-20">
+          <h2 className="font-sf-pro-display text-4xl lg:text-5xl text-landing-primary mb-6 leading-tight tracking-tight">
+            A journey of mastery from foundational principles to elite international certification.
+          </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-landing-outline-variant/10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-100">
           {/* Card 1 */}
-          <div className="bg-white p-6 sm:p-8 lg:p-12 hover:bg-gray-50 transition-all duration-300 group">
-            <div className="mb-8 sm:mb-12 font-sf-pro-text text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part I</div>
-            <h3 className="font-sf-pro-display text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Gateway to Distinction (Associate)</h3>
-            <p className="font-sf-pro-text text-landing-on-surface-variant leading-relaxed text-left">Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.</p>
+          <div className="bg-white p-10 lg:p-12 hover:bg-neutral-50 transition-all duration-500 group border-b md:border-b-0 md:border-r border-neutral-100">
+            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part I</div>
+            <h3 className="font-sf-pro-display text-2xl text-landing-on-surface mb-5 group-hover:translate-x-1 transition-transform duration-300">
+              The Gateway to Distinction (Associate)
+            </h3>
+            <p className="font-sf-pro-text text-neutral-600 leading-relaxed text-[15px]">
+              Establish your foundation within the international ADR landscape. Designed for professionals seeking to bridge the gap between local practice and global standards.
+            </p>
           </div>
           {/* Card 2 */}
-          <div className="bg-white p-6 sm:p-8 lg:p-12 hover:bg-gray-50 transition-all duration-300 group">
-            <div className="mb-8 sm:mb-12 font-sf-pro-text text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part II</div>
-            <h3 className="font-sf-pro-display text-xl sm:text-2xl text-landing-on-surface mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">Strategic Mastery (Member)</h3>
-            <p className="font-sf-pro-text text-landing-on-surface-variant leading-relaxed text-left">Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.</p>
+          <div className="bg-white p-10 lg:p-12 hover:bg-neutral-50 transition-all duration-500 group border-b md:border-b-0 md:border-r border-neutral-100">
+            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part II</div>
+            <h3 className="font-sf-pro-display text-2xl text-landing-on-surface mb-5 group-hover:translate-x-1 transition-transform duration-300">
+              Strategic Mastery (Member)
+            </h3>
+            <p className="font-sf-pro-text text-neutral-600 leading-relaxed text-[15px]">
+              Refine your expertise in the complexities of cross-border dispute resolution. For practitioners ready to navigate high-stakes international mediation and arbitration law.
+            </p>
           </div>
           {/* Card 3 */}
-          <div className="bg-white p-6 sm:p-8 lg:p-12 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 bg-landing-primary text-landing-on-primary px-4 sm:px-6 py-2 text-[10px] font-sf-pro-text uppercase tracking-widest font-bold">Most Prestigious</div>
-            <div className="mb-8 sm:mb-12 font-sf-pro-text text-landing-secondary font-semibold tracking-widest text-xs uppercase">Part III</div>
-            <h3 className="font-sf-pro-display text-xl sm:text-2xl text-landing-primary mb-4 sm:mb-6 group-hover:translate-x-2 transition-transform text-left">The Pinnacle of Practice (Fellow)</h3>
-            <p className="font-sf-pro-text text-landing-on-surface leading-relaxed mb-8 text-left">Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.</p>
-            <Star className="w-5 h-5 text-landing-primary/30" />
+          <div className="bg-white p-10 lg:p-12 relative overflow-hidden group hover:bg-gradient-to-br hover:from-neutral-50 hover:to-white transition-all duration-500">
+            <div className="absolute top-0 right-0 bg-landing-primary text-white px-4 py-1.5 text-[10px] font-sf-pro-text uppercase tracking-[0.15em] font-semibold rounded-bl-lg">
+              Most Prestigious
+            </div>
+            <div className="mb-10 font-sf-pro-text text-landing-secondary font-semibold tracking-[0.2em] text-xs uppercase">Part III</div>
+            <h3 className="font-sf-pro-display text-2xl text-landing-primary mb-5 group-hover:translate-x-1 transition-transform duration-300 font-semibold">
+              The Pinnacle of Practice (Fellow)
+            </h3>
+            <p className="font-sf-pro-text text-landing-on-surface leading-relaxed mb-6 text-[15px]">
+              Our most prestigious designation. Reserved for those who have achieved absolute mastery in award writing and legal scholarship. The ultimate mark of a global expert.
+            </p>
+            <Star className="w-5 h-5 text-landing-primary/20 group-hover:text-landing-primary/40 transition-colors duration-500" />
           </div>
         </div>
       </div>
@@ -235,11 +283,16 @@ function CIMAAdvantageSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 px-12 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-24 px-6 lg:px-12 bg-neutral-50 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="relative w-full h-[600px] overflow-hidden rounded-lg">
-          <img className="w-full h-full object-cover object-bottom" data-alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag"/>
+        <div className="relative w-full h-[500px] lg:h-[650px] overflow-hidden rounded-3xl shadow-2xl">
+          <img 
+            className="w-full h-full object-cover object-bottom hover:scale-105 transition-transform duration-1000" 
+            data-alt="a majestic private law library with floor-to-ceiling dark wood bookshelves, a green banker's lamp, and leather-bound journals" 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMNUEcqXIG_64n8Tn7z_HvuBVn4dYFDUCtWuwomlbyTZXwOe9f2SbTPxXgS0mQuCzEQxoanUBgfFQN1ubW4fCw8is97I_jVjLoUUb4wX8HX01SOhhJMWC_W1AXAFK3Drev8Ct6dfMtX2wUq2uzk6v8X8My5a5Su69A5geI0FN0QafBNrOG6EdUfY1HY1Ow032Rt_lp7X7Wm4YonxjosIStgP8ZQO9EwnS_gIefzX9el_hA3orSv_xu459_8bpE-DrVvOuTP_WwMag"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         </div>
       </div>
     </section>
@@ -252,31 +305,35 @@ function TestimonialsSection() {
   return (
     <section 
       ref={ref}
-      className={`py-16 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-12 bg-white border-y border-[#e3beb8]/10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      className={`py-24 lg:py-32 px-6 lg:px-12 bg-white border-y border-neutral-100 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
     >
-      <div className="max-w-7xl mx-auto text-left">
-        <div className="flex items-center space-x-4 mb-12 sm:mb-16">
-          <span className="w-6 sm:w-8 h-[1px] bg-landing-outline"></span>
-          <span className="font-sf-pro-text text-xs uppercase tracking-[0.5em] text-landing-outline">Excellence Recognized</span>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center space-x-4 mb-16">
+          <span className="w-12 h-[1px] bg-neutral-300"></span>
+          <span className="font-sf-pro-text text-xs uppercase tracking-[0.3em] text-neutral-500">Excellence Recognized</span>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20">
           <div className="relative">
-            <span className="text-6xl sm:text-8xl font-sf-pro-display text-landing-secondary/20 absolute -top-8 sm:-top-10 -left-4 sm:-left-6">"</span>
+            <span className="text-8xl font-sf-pro-display text-landing-secondary/10 absolute -top-12 -left-6">"</span>
             <blockquote className="relative">
-              <p className="font-sf-pro-display italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug text-left">The CIMA curriculum offers a depth of intellectual rigor that is simply unparalleled. It was the catalyst for my elevation to the international arbitral tribunal.</p>
+              <p className="font-sf-pro-display italic text-2xl lg:text-3xl text-landing-on-surface mb-8 leading-snug">
+                The CIMA curriculum offers a depth of intellectual rigor that is simply unparalleled. It was the catalyst for my elevation to the international arbitral tribunal.
+              </p>
               <cite className="not-italic">
-                <span className="block font-bold text-landing-primary uppercase tracking-widest text-xs mb-1">Mohammed Talib</span>
-                <span className="block font-sf-pro-text text-landing-on-surface-variant text-xs">Partner, Pinsent Masons, Hong Kong | FCIArb, FCIMArb</span>
+                <span className="block font-semibold text-landing-primary uppercase tracking-[0.15em] text-xs mb-2">Mohammed Talib</span>
+                <span className="block font-sf-pro-text text-neutral-500 text-sm">Partner, Pinsent Masons, Hong Kong | FCIArb, FCIMArb</span>
               </cite>
             </blockquote>
           </div>
           <div className="relative">
-            <span className="text-6xl sm:text-8xl font-sf-pro-display text-landing-secondary/20 absolute -top-8 sm:-top-10 -left-4 sm:-left-6">"</span>
+            <span className="text-8xl font-sf-pro-display text-landing-secondary/10 absolute -top-12 -left-6">"</span>
             <blockquote className="relative">
-              <p className="font-sf-pro-display italic text-xl sm:text-2xl text-landing-on-surface mb-6 sm:mb-8 leading-snug text-left">A sophisticated program that masterfully bridges the gap between theoretical jurisprudence and high-stakes practical application. Truly world-class.</p>
+              <p className="font-sf-pro-display italic text-2xl lg:text-3xl text-landing-on-surface mb-8 leading-snug">
+                A sophisticated program that masterfully bridges the gap between theoretical jurisprudence and high-stakes practical application. Truly world-class.
+              </p>
               <cite className="not-italic">
-                <span className="block font-bold text-landing-primary uppercase tracking-widest text-xs mb-1">Iain Sharp</span>
-                <span className="block font-sf-pro-text text-landing-on-surface-variant text-xs">Partner, Hill Dickinson | FCIArb, FCIMArb</span>
+                <span className="block font-semibold text-landing-primary uppercase tracking-[0.15em] text-xs mb-2">Iain Sharp</span>
+                <span className="block font-sf-pro-text text-neutral-500 text-sm">Partner, Hill Dickinson | FCIArb, FCIMArb</span>
               </cite>
             </blockquote>
           </div>
