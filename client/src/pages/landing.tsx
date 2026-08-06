@@ -182,37 +182,56 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-neutral-200 w-full py-16 px-6 lg:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-7xl mx-auto">
-          <div className="space-y-6">
-            <div className="flex items-center space-x-3">
-              <img 
-                src={cimaLogo} 
-                alt="CIMA Logo" 
-                className="h-11 w-auto"
-              />
-              <div>
-                <h1 className="text-lg font-semibold text-landing-primary font-sf-pro-display">CIMA Learn</h1>
-                <p className="text-xs text-neutral-500 font-sf-pro-text">Professional ADR Education</p>
+      <footer className="bg-white border-t border-neutral-200 w-full py-12 px-6 lg:px-12">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 mb-8">
+            {/* Left Column - Branding */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <img 
+                  src={cimaLogo} 
+                  alt="CIMA Logo" 
+                  className="h-11 w-auto"
+                />
+                <div>
+                  <h1 className="text-lg font-semibold text-landing-primary font-sf-pro-display">CIMA Learn</h1>
+                  <p className="text-xs text-neutral-500 font-sf-pro-text">Professional ADR Education</p>
+                </div>
+              </div>
+              <p className="font-sf-pro-text text-sm text-neutral-600 leading-relaxed max-w-sm">
+                Center for International Mediators and Arbitrators - Leading global alternative dispute resolution education and certification.
+              </p>
+            </div>
+
+            {/* Middle Column - Quick Links */}
+            <div className="space-y-4">
+              <h3 className="font-sf-pro-display text-sm font-semibold text-landing-primary uppercase tracking-wider">Quick Links</h3>
+              <div className="flex flex-col space-y-2.5 font-sf-pro-text text-sm">
+                <Link href="/privacy-policy" className="text-neutral-600 hover:text-landing-primary transition-colors">Privacy Policy</Link>
+                <Link href="/terms-of-service" className="text-neutral-600 hover:text-landing-primary transition-colors">Terms of Service</Link>
+                <Link href="/contact" className="text-neutral-600 hover:text-landing-primary transition-colors">Contact Us</Link>
+                <Link href="/help-center" className="text-neutral-600 hover:text-landing-primary transition-colors">Help Center</Link>
               </div>
             </div>
-            <p className="font-sf-pro-text text-sm text-neutral-600 max-w-md leading-relaxed">
-              Center for International Mediators and Arbitrators - Leading global alternative dispute resolution education and certification.
-            </p>
-            <p className="font-sf-pro-text text-xs text-neutral-500">
+
+            {/* Right Column - Additional Links */}
+            <div className="space-y-4">
+              <h3 className="font-sf-pro-display text-sm font-semibold text-landing-primary uppercase tracking-wider">For Professionals</h3>
+              <div className="flex flex-col space-y-2.5 font-sf-pro-text text-sm">
+                <Link href="/become-instructor" className="text-neutral-600 hover:text-landing-primary transition-colors">Become an Instructor</Link>
+                <Link href="/courses" className="text-neutral-600 hover:text-landing-primary transition-colors">Browse Courses</Link>
+                <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-neutral-600 hover:text-landing-primary transition-colors">
+                  Qualification Pathways
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar - Copyright */}
+          <div className="border-t border-neutral-100 pt-6">
+            <p className="font-sf-pro-text text-xs text-neutral-500 text-center">
               © {new Date().getFullYear()} CIMA LEARN. All rights reserved.
             </p>
-          </div>
-          <div className="flex flex-col md:items-end justify-between">
-            <div className="flex flex-wrap gap-6 font-sf-pro-text text-sm">
-              <Link href="/privacy-policy" className="text-neutral-600 hover:text-landing-primary transition-colors">Privacy Policy</Link>
-              <Link href="/terms-of-service" className="text-neutral-600 hover:text-landing-primary transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="text-neutral-600 hover:text-landing-primary transition-colors">Contact Us</Link>
-            </div>
-            <div className="flex flex-wrap gap-6 font-sf-pro-text text-sm mt-4">
-              <Link href="/help-center" className="text-neutral-600 hover:text-landing-primary transition-colors">Help Center</Link>
-              <Link href="/become-instructor" className="text-neutral-600 hover:text-landing-primary transition-colors">Become an Instructor</Link>
-            </div>
           </div>
         </div>
       </footer>
