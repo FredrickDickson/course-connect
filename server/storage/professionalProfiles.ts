@@ -238,7 +238,7 @@ async function refreshWaiverCache(userId: string, track: TrackType) {
   };
 
   const { data: existingTrack } = await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .select("level")
     .eq("user_id", userId)
     .eq("track", track)
@@ -254,7 +254,7 @@ async function refreshWaiverCache(userId: string, track: TrackType) {
   };
 
   await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .upsert(payload, { onConflict: "user_id,track" });
 }
 
@@ -301,7 +301,7 @@ async function updateUserAssignedLevel(
   if (error) throw error;
 
   const { data: existing } = await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .select("waived_levels, waiver_metadata, waiver_last_granted_at")
     .eq("user_id", userId)
     .eq("track", track)
@@ -318,7 +318,7 @@ async function updateUserAssignedLevel(
   };
 
   await supabaseAdmin
-    .from("user_track_progress")
+    .from("track_progress")
     .upsert(payload, { onConflict: "user_id,track" });
 }
 
@@ -385,7 +385,7 @@ export async function getProfessionalProfileByUserId(
 ): Promise<ProfessionalProfileRecord | null> {
   const { data, error } = await supabaseAdmin
     .from("professional_profiles")
-    .select("*, user:users(id, first_name, last_name, email, country)")
+    .select("*, user:users!professional_profiles_user_id_fkey(id, first_name, last_name, email, country)")
     .eq("user_id", userId)
     .eq("is_current", true)
     .maybeSingle();
@@ -407,7 +407,7 @@ export async function getProfessionalProfileById(
 ): Promise<ProfessionalProfileRecord | null> {
   const { data, error } = await supabaseAdmin
     .from("professional_profiles")
-    .select("*, user:users(id, first_name, last_name, email, country)")
+    .select("*, user:users!professional_profiles_user_id_fkey(id, first_name, last_name, email, country)")
     .eq("id", profileId)
     .maybeSingle();
 
@@ -430,7 +430,7 @@ export async function listProfessionalProfiles(
 
   let query = supabaseAdmin
     .from("professional_profiles")
-    .select("*, user:users(id, first_name, last_name, email, country)")
+    .select("*, user:users!professional_profiles_user_id_fkey(id, first_name, last_name, email, country)")
     .eq("is_current", true)
     .order(orderColumn, { ascending });
 

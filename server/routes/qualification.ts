@@ -271,9 +271,36 @@ router.post(
 
     const normalizedTrack = normalizeTrack(track);
 
-    // Record the experience choice but don't assign any level
-    // Users earn their level through course completion (Associate → Member → Fellow)
-    // or through admin review (expedited path)
+    if (!hasExperience) {
+      // No prior ADR experience declared - grant immediate self-declared
+      // Associate standing via the same professional_profiles/review-status
+      // machinery the admin-approval flow uses, so useAuthGuard's
+      // professional_profiles check passes right away and the user's
+      // assigned_level/track_progress are set correctly.
+      const profile = await saveProfessionalProfileDraft(
+        req.user.id,
+        { track: normalizedTrack },
+        { submit: true },
+      );
+      await updateProfessionalProfileReview({
+        profileId: profile.id,
+        reviewerId: req.user.id,
+        reviewStatus: "APPROVED",
+        assignedLevel: "ASSOCIATE",
+        levelSource: "DEFAULT",
+        reviewNotes: "Self-declared: no prior ADR experience at onboarding",
+      });
+
+      return res.json({
+        status: "experience_recorded",
+        hasExperience,
+        track: normalizedTrack,
+        assignedLevel: "ASSOCIATE",
+      });
+    }
+
+    // Has experience - record the choice but don't assign any level yet;
+    // the user continues to the detailed expedited application for review.
     return res.json({
       status: "experience_recorded",
       hasExperience,

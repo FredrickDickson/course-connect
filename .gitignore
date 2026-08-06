@@ -21,6 +21,13 @@ lerna-debug.log*
 dist-ssr
 *.local
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+e2e/setup/.auth/
+
 # Credential files
 *.txt
 !requirements.txt

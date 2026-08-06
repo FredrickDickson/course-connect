@@ -447,3 +447,44 @@
     "instanceId": "902c0decf0de3f07e01fc0380f4379ca9c308c10236987883bff92118ad8bd69"
   }
 }
+
+
+
+{
+  "parameters": {
+    "method": "POST",
+    "url": "https://api.linkedin.com/rest/posts",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "Authorization",
+          "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Restli-Protocol-Version",
+          "value": "2.0.0"
+        },
+        {
+          "name": "LinkedIn-Version",
+          "value": "202402"
+        }
+      ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={\n  \"author\": \"urn:li:person:oPjwjkb9V-\",\n  \"commentary\": \"{{ $json.choices[0].message.content }}\",\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  },\n  \"lifecycleState\": \"PUBLISHED\",\n  \"isReshareDisabledByAuthor\": false\n}"
+  },
+  "id": "linkedin-http-post",
+  "name": "LinkedIn - Publish Post (Fixed)",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [
+    1120,
+    240
+  ]
+}

@@ -123,6 +123,9 @@ Deno.serve(async (req: Request) => {
         }
 
         // Create enrollment
+        // Adjunct Courses have no qualification level - standalone,
+        // independent of the CIMA professional pathway.
+        const isAdjunctCourse = metadata.programmeType === "ADJUNCT_COURSE";
         const { data: enrollment, error: enrollError } = await supabase
           .from("enrollments")
           .insert({
@@ -131,7 +134,7 @@ Deno.serve(async (req: Request) => {
             progress: "0",
             status: "ACTIVE",
             enrollment_type: "COURSE",
-            enrollment_level: metadata.enrollmentLevel || "ASSOCIATE",
+            enrollment_level: isAdjunctCourse ? null : (metadata.enrollmentLevel || "ASSOCIATE"),
           })
           .select()
           .single();
@@ -197,17 +200,19 @@ async function triggerProvisioning(supabase: any, metadata: any) {
     return;
   }
 
+  const isAdjunctCourse = metadata.programmeType === "ADJUNCT_COURSE";
   const context = {
     userId: metadata.userId,
     courseId: metadata.courseId,
-    enrollmentLevel: metadata.enrollmentLevel || "ASSOCIATE",
+    programmeType: metadata.programmeType || "PROFESSIONAL_PROGRAMME",
+    enrollmentLevel: isAdjunctCourse ? null : (metadata.enrollmentLevel || "ASSOCIATE"),
     paymentType: metadata.paymentType || "individual",
     companyName: metadata.companyName,
     companyEmail: metadata.companyEmail,
     vatId: metadata.vatId,
   };
 
-  console.log(`Provisioning triggered for user ${context.userId}, course ${context.courseId}, level ${context.enrollmentLevel}`);
+  console.log(`Provisioning triggered for user ${context.userId}, course ${context.courseId}, level ${context.enrollmentLevel ?? "N/A (adjunct)"}`);
 
   try {
     // 1. Send tiered welcome email (Associate/Member/Fellow)
@@ -249,14 +254,19 @@ async function triggerProvisioning(supabase: any, metadata: any) {
 }
 
 async function sendWelcomeEmail(supabase: any, user: any, course: any, context: any) {
-  // Get email template based on enrollment level
+  const isAdjunctCourse = context.programmeType === "ADJUNCT_COURSE";
+
+  // Get email template based on enrollment level - Adjunct Courses get a
+  // single simple welcome, not the tiered Associate/Member/Fellow templates
   const templates = {
     ASSOCIATE: "welcome_associate",
-    MEMBER: "welcome_member", 
+    MEMBER: "welcome_member",
     FELLOW: "welcome_fellow"
   };
 
-  const template = templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
+  const template = isAdjunctCourse
+    ? "welcome_adjunct_course"
+    : templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
 
   // Send actual email via Resend
   try {
@@ -269,12 +279,16 @@ async function sendWelcomeEmail(supabase: any, user: any, course: any, context: 
       body: JSON.stringify({
         from: "CIMA Learn <noreply@cima-learn.vercel.app>",
         to: user.email,
-        subject: `Welcome to ${course.title} - ${context.enrollmentLevel} Enrollment`,
-        html: generateWelcomeEmailHTML(user, course, context.enrollmentLevel),
+        subject: isAdjunctCourse
+          ? `Welcome to ${course.title}`
+          : `Welcome to ${course.title} - ${context.enrollmentLevel} Enrollment`,
+        html: isAdjunctCourse
+          ? generateAdjunctWelcomeEmailHTML(user, course)
+          : generateWelcomeEmailHTML(user, course, context.enrollmentLevel),
         tags: [
           { name: "type", value: "welcome" },
           { name: "course", value: String(course.id) },
-          { name: "level", value: context.enrollmentLevel }
+          ...(isAdjunctCourse ? [] : [{ name: "level", value: context.enrollmentLevel }]),
         ]
       }),
     });
@@ -339,12 +353,53 @@ function generateWelcomeEmailHTML(user: any, course: any, level: string) {
 </html>`;
 }
 
+function generateAdjunctWelcomeEmailHTML(user: any, course: any) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to ${course.title}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #1a365d;">Welcome to CIMA Learn, ${user.first_name || 'Student'}!</h2>
+
+    <p>You've successfully enrolled in <strong>${course.title}</strong>.</p>
+
+    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #2d3748;">What's Next?</h3>
+      <ul>
+        <li>Access your course materials in your dashboard</li>
+        <li>Work through the lessons at your own pace</li>
+        <li>Earn a Certificate of Completion when you finish</li>
+      </ul>
+    </div>
+
+    <p><a href="https://cima-learn.vercel.app/dashboard"
+          style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+      Go to Dashboard
+    </a></p>
+
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+    <p style="font-size: 12px; color: #718096;">
+      If you have questions, reply to this email or contact support.
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 async function addCommunityAccess(supabase: any, user: any, course: any, context: any) {
-  // Add user to course-specific community channels
+  const isAdjunctCourse = context.programmeType === "ADJUNCT_COURSE";
+
+  // Add user to course-specific community channels. Adjunct Courses skip
+  // the level-tagged channel entirely - that concept doesn't apply outside
+  // the CIMA professional pathway.
   const communityChannels = [
     `course-${course.id}-general`,
     `course-${course.id}-announcements`,
-    `${context.enrollmentLevel.toLowerCase()}-members`
+    ...(isAdjunctCourse ? [] : [`${context.enrollmentLevel.toLowerCase()}-members`]),
   ];
 
   console.log(`Adding user ${user.email} to channels: ${communityChannels.join(", ")}`);

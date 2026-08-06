@@ -134,6 +134,18 @@ export default function QuizPage() {
   // Submit quiz mutation
   const submitQuizMutation = useMutation({
     mutationFn: async (quizAnswers: Record<string, string>) => {
+      // Server expects { responses: [{ questionId, answerId | responseText }] },
+      // not the { questionId: value } map this component tracks answers in —
+      // convert here rather than change the server's (more specific,
+      // question-type-aware) shape.
+      const responses = (quiz?.questions || [])
+        .filter((q: QuizQuestion) => quizAnswers[q.id] !== undefined)
+        .map((q: QuizQuestion) =>
+          q.question_type === "essay"
+            ? { questionId: q.id, responseText: quizAnswers[q.id] }
+            : { questionId: q.id, answerId: quizAnswers[q.id] },
+        );
+
       // We still use the server route for grading to hide correct answers from the client
       const response = await fetch(`/api/quizzes/${quizId}/submit`, {
         method: "POST",
@@ -142,7 +154,7 @@ export default function QuizPage() {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({
-          answers: quizAnswers,
+          responses,
           timeSpent: quiz ? quiz.time_limit_minutes * 60 - timeRemaining : 0,
         }),
       });

@@ -32,6 +32,7 @@ interface CourseCardProps {
     };
     is_featured?: boolean;
     tags?: string[];
+    programme_type?: "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE";
   };
 }
 
@@ -81,12 +82,21 @@ export default function CourseCard({ course }: CourseCardProps) {
             Featured
           </Badge>
         )}
-        <Badge
-          className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
-          data-testid="level-badge"
-        >
-          {course.level}
-        </Badge>
+        {course.programme_type === "ADJUNCT_COURSE" ? (
+          <Badge
+            className="absolute top-4 right-4 shadow-lg backdrop-blur-sm bg-slate-100 text-slate-700"
+            data-testid="adjunct-course-badge"
+          >
+            Adjunct Course
+          </Badge>
+        ) : (
+          <Badge
+            className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
+            data-testid="level-badge"
+          >
+            {course.level}
+          </Badge>
+        )}
       </div>
 
       <CardContent className="p-6">
@@ -98,12 +108,14 @@ export default function CourseCard({ course }: CourseCardProps) {
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge 
-              className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
-              data-testid="pathway-badge"
-            >
-              {pathwayConfig.name}
-            </Badge>
+            {course.programme_type !== "ADJUNCT_COURSE" && (
+              <Badge
+                className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
+                data-testid="pathway-badge"
+              >
+                {pathwayConfig.name}
+              </Badge>
+            )}
             {course.category && (
               <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-bold bg-secondary/20" data-testid="category-badge">
                 {course.category.name}

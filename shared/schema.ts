@@ -55,6 +55,7 @@ export const userSchema = z.object({
   eligibility_flags: z.record(z.boolean()).default({}),
   years_adr_experience: z.number().default(0),
   years_legal_experience: z.number().default(0),
+  onboarding_path: z.enum(["PROFESSIONAL_PROGRAMME", "ADJUNCT_COURSE"]).nullable().optional(),
   created_at: z.date().optional(),
   updated_at: z.date().optional(),
 });
@@ -76,8 +77,9 @@ export const courseSchema = z.object({
   description: z.string().nullable().optional(),
   instructorId: z.string().nullable().optional(),
   categoryId: z.string().uuid().nullable().optional(),
-  level: z.enum(["associate", "member", "fellow"]).default("associate"),
-  track: z.enum(["ARBITRATION", "MEDIATION"]).default("ARBITRATION"),
+  programmeType: z.enum(["PROFESSIONAL_PROGRAMME", "ADJUNCT_COURSE"]).default("PROFESSIONAL_PROGRAMME"),
+  level: z.enum(["associate", "member", "fellow"]).nullable().default("associate"),
+  track: z.enum(["ARBITRATION", "MEDIATION"]).nullable().default("ARBITRATION"),
   price: z.string(), // Decimal as string for precision
   currency: z.string().default("USD"),
   associatePrice: z.string().nullable().optional(),

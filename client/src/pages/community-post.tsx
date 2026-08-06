@@ -152,9 +152,8 @@ export default function CommunityPost() {
         .from('forum_posts')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url, community_role, reputation_points, badges),
-          board:forum_boards(id, name, slug, category_id),
-          board:forum_boards(category:forum_categories(id, name, slug))
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url, community_role, reputation_points, badges),
+          board:forum_boards(id, name, slug, category_id, category:forum_categories(id, name, slug))
         `)
         .eq('slug', slug)
         .eq('status', 'active')
@@ -180,7 +179,7 @@ export default function CommunityPost() {
         .from('forum_replies')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url, community_role, reputation_points, badges),
+          author:profiles!forum_replies_author_id_fkey(id, full_name, avatar_url, community_role, reputation_points, badges),
           parent_reply:forum_replies(id, author_id)
         `)
         .eq('post_id', post!.id)

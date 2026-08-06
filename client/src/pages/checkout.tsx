@@ -184,7 +184,8 @@ export default function Checkout() {
         body: JSON.stringify({
           courseId: course.id,
           userId: user.id,
-          enrollmentLevel: course.level?.toUpperCase() || 'ASSOCIATE',
+          enrollmentLevel: course.programme_type === 'ADJUNCT_COURSE' ? null : (course.level?.toUpperCase() || 'ASSOCIATE'),
+          programmeType: course.programme_type || 'PROFESSIONAL_PROGRAMME',
           paymentType: isCompanyInvoice ? "company_invoice" : "individual",
           ...(isCompanyInvoice && {
             companyName,

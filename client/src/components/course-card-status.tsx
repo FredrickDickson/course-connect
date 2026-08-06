@@ -40,6 +40,7 @@ interface CourseCardStatusProps {
     end_date?: string;
     venue?: string;
     city?: string;
+    programme_type?: "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE";
   };
   userLevel?: "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
   status: CourseStatus;
@@ -49,15 +50,19 @@ interface CourseCardStatusProps {
 const LEVEL_ORDER = ["NONE", "STUDENT", "ASSOCIATE", "MEMBER", "FELLOW"];
 
 export function getCourseStatus(
-  courseLevel: string,
+  courseLevel: string | null | undefined,
   userLevel: string = "NONE"
 ): CourseStatus {
+  // Adjunct Courses have no qualification level - they're never locked
+  // against the Associate/Member/Fellow ladder.
+  if (courseLevel == null) return "AVAILABLE";
+
   const normalizedCourseLevel = courseLevel?.toUpperCase() || "ASSOCIATE";
   const normalizedUserLevel = userLevel?.toUpperCase() || "NONE";
-  
+
   const userIndex = LEVEL_ORDER.indexOf(normalizedUserLevel);
   const courseIndex = LEVEL_ORDER.indexOf(normalizedCourseLevel);
-  
+
   if (userIndex >= courseIndex) return "AVAILABLE";
   if (userIndex === courseIndex - 1) return "NEXT_STEP";
   return "LOCKED";
@@ -162,13 +167,22 @@ export default function CourseCardStatus({
             Featured
           </Badge>
         )}
-        <Badge
-          className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
-          data-testid="level-badge"
-        >
-          {course.level}
-        </Badge>
-        
+        {course.programme_type === "ADJUNCT_COURSE" ? (
+          <Badge
+            className="absolute top-4 right-4 shadow-lg backdrop-blur-sm bg-slate-100 text-slate-700"
+            data-testid="adjunct-course-badge"
+          >
+            Adjunct Course
+          </Badge>
+        ) : (
+          <Badge
+            className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
+            data-testid="level-badge"
+          >
+            {course.level}
+          </Badge>
+        )}
+
         {/* Status badge */}
         {config.badge && (
           <Badge
@@ -189,12 +203,14 @@ export default function CourseCardStatus({
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge 
-              className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
-              data-testid="pathway-badge"
-            >
-              {pathwayConfig.name}
-            </Badge>
+            {course.programme_type !== "ADJUNCT_COURSE" && (
+              <Badge
+                className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
+                data-testid="pathway-badge"
+              >
+                {pathwayConfig.name}
+              </Badge>
+            )}
             {course.category && (
               <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-bold bg-secondary/20" data-testid="category-badge">
                 {course.category.name}

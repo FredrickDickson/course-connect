@@ -159,9 +159,8 @@ export default function Community() {
         .from('forum_posts')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url),
-          board:forum_boards(id, name, slug),
-          board:forum_boards(category:forum_categories(id, name, slug))
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url),
+          board:forum_boards(id, name, slug, category:forum_categories(id, name, slug))
         `)
         .eq('status', 'active')
         .or(`title.ilike.%${debouncedSearchTerm}%,body.ilike.%${debouncedSearchTerm}%`)
@@ -239,7 +238,7 @@ export default function Community() {
         .from('forum_posts')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url),
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url),
           board:forum_boards(id, name, slug)
         `)
         .eq('status', 'active')

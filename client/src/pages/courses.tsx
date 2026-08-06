@@ -33,6 +33,7 @@ import {
 
 export default function Courses() {
   const { t } = useLanguage();
+  const [programmeType, setProgrammeType] = useState<"PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE">("PROFESSIONAL_PROGRAMME");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [level, setLevel] = useState("");
@@ -53,6 +54,7 @@ export default function Courses() {
     queryKey: [
       "courses_filtered",
       {
+        programmeType,
         search,
         category: category === "all" ? "" : category,
         level: level === "all" ? "" : level,
@@ -66,7 +68,8 @@ export default function Courses() {
         .select(
           "*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)",
         )
-        .eq("is_published", true);
+        .eq("is_published", true)
+        .eq("programme_type", programmeType);
 
       if (search) {
         query = query.ilike("title", `%${search}%`);
@@ -83,7 +86,9 @@ export default function Courses() {
         if (catData) query = query.eq("category_id", (catData as any).id);
       }
 
-      if (level && level !== "all") {
+      // Level only applies to Professional Programme courses - Adjunct
+      // Courses have no level (NULL), so .eq("level", ...) would never match.
+      if (programmeType === "PROFESSIONAL_PROGRAMME" && level && level !== "all") {
         query = query.eq("level", level);
       }
 
@@ -161,6 +166,24 @@ export default function Courses() {
       {/* Advanced Search & Filters */}
       <section className="py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Programme Type Tabs - Professional Programme and Adjunct Courses
+              are completely separate kinds of learning */}
+          <div className="flex justify-center mb-8">
+            <Tabs
+              value={programmeType}
+              onValueChange={(v) => setProgrammeType(v as "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE")}
+            >
+              <TabsList>
+                <TabsTrigger value="PROFESSIONAL_PROGRAMME" data-testid="tab-professional-programme">
+                  Professional Programme
+                </TabsTrigger>
+                <TabsTrigger value="ADJUNCT_COURSE" data-testid="tab-adjunct-courses">
+                  Adjunct Courses
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           {/* Search Bar */}
           <div className="relative max-w-2xl mx-auto mb-8">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
@@ -192,17 +215,19 @@ export default function Courses() {
                 </SelectContent>
               </Select>
 
-              <Select onValueChange={setLevel} data-testid="select-level">
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="associate">Part I (Associate)</SelectItem>
-                  <SelectItem value="member">Part II (Member)</SelectItem>
-                  <SelectItem value="fellow">Part III (Fellow)</SelectItem>
-                </SelectContent>
-              </Select>
+              {programmeType === "PROFESSIONAL_PROGRAMME" && (
+                <Select onValueChange={setLevel} data-testid="select-level">
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="associate">Part I (Associate)</SelectItem>
+                    <SelectItem value="member">Part II (Member)</SelectItem>
+                    <SelectItem value="fellow">Part III (Fellow)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
 
               <Select onValueChange={setPriceRange} data-testid="select-price">
                 <SelectTrigger className="w-40">
@@ -356,14 +381,16 @@ export default function Courses() {
                         Featured
                       </Badge>
                     </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge
-                        variant="secondary"
-                        className="bg-black/20 text-white border-0"
-                      >
-                        {course.level}
-                      </Badge>
-                    </div>
+                    {course.level && (
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant="secondary"
+                          className="bg-black/20 text-white border-0"
+                        >
+                          {course.level}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-6">
                     <div className="space-y-4">

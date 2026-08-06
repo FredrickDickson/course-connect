@@ -17,6 +17,7 @@ export interface CertificateData {
   issueDate: string;
   expiryDate: string;
   pathway?: PathwayType; // Optional pathway for post-nominals
+  courseName?: string; // Course/pathway name completed (e.g. "Maritime Mediation")
 }
 
 // Get level labels based on pathway
@@ -109,21 +110,35 @@ export async function generateCertificatePDF(data: CertificateData): Promise<jsP
   doc.setFontSize(28);
   doc.text(`${data.fullName} ${level.postNominal}`, cx, 165, { align: "center" });
 
-  doc.setFontSize(14);
-  doc.text(level.description, cx, 178, { align: "center" });
+  if (data.courseName) {
+    doc.setFontSize(14);
+    doc.text("has successfully completed the", cx, 178, { align: "center" });
 
-  doc.setFontSize(14);
-  doc.text(
-    `This certificate is valid until ${formatDate(data.expiryDate)}`,
-    cx,
-    195,
-    { align: "center" }
-  );
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`Certificate in ${data.courseName}`, cx, 189, { align: "center" });
+    doc.setFont("helvetica", "normal");
 
-  // Layout spacing maintained, spelling corrected
-  doc.setFontSize(12);
-  doc.text("Given under the seal of the Center for", cx, 210, { align: "center" });
-  doc.text("International Mediators and Arbitrators", cx, 217, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("Given under the seal of the Center for", cx, 206, { align: "center" });
+    doc.text("International Mediators and Arbitrators", cx, 213, { align: "center" });
+  } else {
+    doc.setFontSize(14);
+    doc.text(level.description, cx, 178, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text(
+      `This certificate is valid until ${formatDate(data.expiryDate)}`,
+      cx,
+      195,
+      { align: "center" }
+    );
+
+    // Layout spacing maintained, spelling corrected
+    doc.setFontSize(12);
+    doc.text("Given under the seal of the Center for", cx, 210, { align: "center" });
+    doc.text("International Mediators and Arbitrators", cx, 217, { align: "center" });
+  }
 
   // ── BOTTOM ROW (Alignment & Margins) ───────────────────
   const sealSize = 52;

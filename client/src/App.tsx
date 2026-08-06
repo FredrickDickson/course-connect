@@ -60,6 +60,7 @@ import Resources from "@/pages/resources";
 import QualificationPathway from "@/pages/qualification-pathway";
 import ExpeditedApplication from "@/pages/expedited-application";
 import VerifyMember from "@/pages/verify-member";
+import CertificateOfCompletion from "@/pages/certificate-of-completion";
 import RenewMembership from "@/pages/renew-membership";
 import CommunityForum from "@/pages/community-forum";
 import ProfessionalStandards from "@/pages/professional-standards";
@@ -159,6 +160,7 @@ function Router() {
       <Route path="/professional-standards" component={ProfessionalStandards} />
       <Route path="/qualification-pathway" component={QualificationPathway} />
       <Route path="/verify/:memberId" component={VerifyMember} />
+      <Route path="/certificates/completion/:certificationId" component={CertificateOfCompletion} />
       <Route path="/auth/callback" component={AuthCallback} />
 
       {/* Protected membership routes */}

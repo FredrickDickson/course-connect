@@ -104,7 +104,12 @@ export default function Register() {
           title: "Account created successfully!",
           description: "Welcome to CIMA Learn. Let's get started.",
         });
-        setLocation("/onboarding");
+        // Full-page redirect, not setLocation: /onboarding is a ProtectedRoute,
+        // and a same-SPA navigation can outrace AuthContext picking up the
+        // just-created session, bouncing the new user to /login. login.tsx
+        // uses the same window.location.href pattern for its own redirects
+        // for the same reason.
+        window.location.href = "/onboarding";
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during registration");

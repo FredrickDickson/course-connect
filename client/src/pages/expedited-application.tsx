@@ -171,7 +171,7 @@ export default function ExpeditedApplication() {
           return;
         }
         const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || "Failed to load professional profile");
+        throw new Error(errJson.error || errJson.message || "Failed to load professional profile");
       }
 
       const profile = await response.json().catch(() => null);
@@ -226,7 +226,7 @@ export default function ExpeditedApplication() {
       });
       if (!resp.ok) {
         const errJson = await resp.json().catch(() => ({}));
-        throw new Error(errJson.error || "Failed to delete document");
+        throw new Error(errJson.error || errJson.message || "Failed to delete document");
       }
       setExistingDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
     } catch (error: any) {
@@ -328,7 +328,7 @@ export default function ExpeditedApplication() {
       });
       const profileJson = await profileResp.json().catch(() => ({}));
       if (!profileResp.ok) {
-        throw new Error(profileJson.reason || profileJson.error || "Failed to save profile");
+        throw new Error(profileJson.reason || profileJson.error || profileJson.message || "Failed to save profile");
       }
 
       // Upload new documents (existing ones stay on file)
@@ -367,7 +367,7 @@ export default function ExpeditedApplication() {
         });
         const docJson = await docResp.json().catch(() => ({}));
         if (!docResp.ok) {
-          throw new Error(docJson.error || `Failed to register ${doc.file.name}`);
+          throw new Error(docJson.error || docJson.message || `Failed to register ${doc.file.name}`);
         }
       }
 

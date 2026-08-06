@@ -11,6 +11,7 @@ import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebr
 import EnrolledCoursesGrid from "@/components/dashboard/enrolled-courses-grid";
 import RecommendedCourses from "@/components/dashboard/recommended-courses";
 import { TrackCard } from "@/components/dashboard/track-card";
+import AdjunctCoursesPanel from "@/components/dashboard/adjunct-courses-panel";
 import { Link, useLocation } from "wouter";
 import { BookOpen, Trophy, Heart, Award, GraduationCap } from "lucide-react";
 
@@ -64,6 +65,20 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: adjunctCertifications = [] } = useQuery({
+    queryKey: ["certifications", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("certifications")
+        .select("*, course:courses(id, title, programme_type)")
+        .eq("user_id", user!.id)
+        .order("issued_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((c: any) => c.course?.programme_type === "ADJUNCT_COURSE");
+    },
+    enabled: !!user,
+  });
+
   const { data: userQualificationState } = useQuery({
     queryKey: ["userQualificationState", user?.id],
     queryFn: async () => {
@@ -93,6 +108,7 @@ export default function Dashboard() {
 
   const completedCount = enrollments.filter((e: any) => Number(e.progress) >= 100).length;
   const enrolledCourseIds = enrollments.map((e: any) => e.course?.id).filter(Boolean);
+  const adjunctEnrollments = enrollments.filter((e: any) => e.course?.programme_type === "ADJUNCT_COURSE");
 
   return (
     <div className="min-h-screen bg-background">
@@ -173,6 +189,7 @@ export default function Dashboard() {
             {/* Right sidebar */}
             <div className="space-y-6">
               <LevelUpgradeCelebration />
+              <AdjunctCoursesPanel enrollments={adjunctEnrollments} certifications={adjunctCertifications} />
               <RecommendedCourses enrolledCourseIds={enrolledCourseIds} />
 
               {/* Certificates */}

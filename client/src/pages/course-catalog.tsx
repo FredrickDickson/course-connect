@@ -16,7 +16,16 @@ import {
   type PathwayType 
 } from "../../../shared/pathways";
 
+type ProgrammeTypeFilter = "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE" | "all";
+
+function getInitialProgrammeType(): ProgrammeTypeFilter {
+  if (typeof window === "undefined") return "PROFESSIONAL_PROGRAMME";
+  const type = new URLSearchParams(window.location.search).get("type");
+  return type === "adjunct" ? "ADJUNCT_COURSE" : "PROFESSIONAL_PROGRAMME";
+}
+
 export default function CourseCatalog() {
+  const [selectedProgrammeType, setSelectedProgrammeType] = useState<ProgrammeTypeFilter>(getInitialProgrammeType);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPathway, setSelectedPathway] = useState<PathwayType | "all">("all");
   const [selectedLockedCourse, setSelectedLockedCourse] = useState<any>(null);
@@ -87,19 +96,30 @@ export default function CourseCatalog() {
     return courses.find(c => c.level?.toUpperCase() === nextLevel);
   };
 
-  // Filter courses by category and pathway
+  // Filter courses by programme type, category, and pathway
   const filteredCourses = courses.filter((course) => {
+    // Programme type filter - Professional Programme vs standalone Adjunct Courses.
+    // These are completely separate kinds of learning and should never blend
+    // into one undifferentiated grid.
+    const courseProgrammeType = course.programme_type || "PROFESSIONAL_PROGRAMME";
+    const programmeTypeMatch =
+      selectedProgrammeType === "all" || courseProgrammeType === selectedProgrammeType;
+
     // Category filter
     const categoryMatch = selectedCategory === "all" || course.category_id === selectedCategory;
-    
+
     // Pathway filter - detect course pathway from title and tags
+    // (only meaningful for Professional Programme courses)
     const coursePathway = detectCoursePathway({
       title: course.title,
       tags: course.tags || []
     });
-    const pathwayMatch = selectedPathway === "all" || coursePathway === selectedPathway;
-    
-    return categoryMatch && pathwayMatch;
+    const pathwayMatch =
+      courseProgrammeType === "ADJUNCT_COURSE" ||
+      selectedPathway === "all" ||
+      coursePathway === selectedPathway;
+
+    return programmeTypeMatch && categoryMatch && pathwayMatch;
   });
 
   return (
@@ -134,6 +154,28 @@ export default function CourseCatalog() {
             </p>
           </div>
 
+          {/* Programme Type Tabs */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              variant={selectedProgrammeType === "PROFESSIONAL_PROGRAMME" ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedProgrammeType("PROFESSIONAL_PROGRAMME")}
+              data-testid="filter-professional-programme"
+            >
+              Professional Programme
+            </Button>
+            <Button
+              variant={selectedProgrammeType === "ADJUNCT_COURSE" ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedProgrammeType("ADJUNCT_COURSE")}
+              data-testid="filter-adjunct-courses"
+            >
+              Adjunct Courses
+            </Button>
+          </div>
+
           {/* Filter Categories */}
           <div className="flex flex-wrap justify-center gap-3">
             {categories.map((category) => (
@@ -150,7 +192,8 @@ export default function CourseCatalog() {
             ))}
           </div>
 
-          {/* Filter Pathways */}
+          {/* Filter Pathways - Professional Programme only, Adjunct Courses have no pathway */}
+          {selectedProgrammeType !== "ADJUNCT_COURSE" && (
           <div className="flex flex-wrap justify-center gap-3">
             <Button
               variant={selectedPathway === "all" ? "default" : "outline"}
@@ -177,6 +220,7 @@ export default function CourseCatalog() {
               Mediation (ACIMed)
             </Button>
           </div>
+          )}
 
           {/* Loading State */}
           {isLoading && (

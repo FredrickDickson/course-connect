@@ -21,11 +21,26 @@ export default function CommunityMyPosts() {
   const [filter, setFilter] = useState<"all" | "posts" | "replies">("all");
   const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
 
+  // forum_posts.author_id / forum_replies.author_id -> profiles.id (a
+  // separate PK, not the auth user id) — must resolve the profile first.
+  const { data: profile } = useQuery({
+    queryKey: ['my-profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch user's posts and replies
   const { data: userActivity = [], isLoading, error } = useQuery({
-    queryKey: ['user-activity-all', user?.id, filter, sortBy],
+    queryKey: ['user-activity-all', profile?.id, filter, sortBy],
     queryFn: async () => {
-      if (!user) return [];
+      if (!profile) return [];
 
       let posts: any[] = [];
       let replies: any[] = [];
@@ -33,8 +48,8 @@ export default function CommunityMyPosts() {
       if (filter === "all" || filter === "posts") {
         const { data: userPosts } = await supabase
           .from('forum_posts')
-          .select('*, board:forum_boards(id, name, slug), category:forum_categories(id, name, slug)')
-          .eq('author_id', user.id)
+          .select('*, board:forum_boards(id, name, slug, category:forum_categories(id, name, slug))')
+          .eq('author_id', profile.id)
           .eq('status', 'active')
           .order(sortBy === 'recent' ? 'created_at' : 'view_count', { ascending: sortBy === 'recent' });
 
@@ -46,9 +61,9 @@ export default function CommunityMyPosts() {
           .from('forum_replies')
           .select(`
             *,
-            post:forum_posts(id, title, slug, board:forum_boards(id, name, slug), category:forum_categories(id, name, slug))
+            post:forum_posts(id, title, slug, board:forum_boards(id, name, slug, category:forum_categories(id, name, slug)))
           `)
-          .eq('author_id', user.id)
+          .eq('author_id', profile.id)
           .eq('status', 'active')
           .order(sortBy === 'recent' ? 'created_at' : 'created_at', { ascending: sortBy === 'recent' });
 
@@ -69,7 +84,7 @@ export default function CommunityMyPosts() {
 
       return combined;
     },
-    enabled: !!user,
+    enabled: !!profile,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
