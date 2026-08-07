@@ -166,7 +166,7 @@ export default function StudentSidebar({
   return (
     <aside
       className={cn(
-        "h-screen flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out",
+        "sticky top-0 self-start h-screen flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out",
         collapsed ? "w-20" : "w-[280px]"
       )}
     >

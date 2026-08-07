@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import StudentSidebar from "@/components/student-sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -222,7 +223,13 @@ export default function QualificationPathway() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero */}
+      <div className="lg:flex lg:items-start lg:gap-8">
+        <div className="hidden lg:block">
+          <StudentSidebar />
+        </div>
+        <div className="flex-1">
+
+          {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-20">
         <ScrollReveal direction="up" distance={40} duration={0.7}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
@@ -569,6 +576,8 @@ export default function QualificationPathway() {
           </div>
         </ScrollReveal>
       </section>
+        </div>
+      </div>
 
       <Footer />
     </div>

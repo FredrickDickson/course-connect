@@ -26,7 +26,7 @@ export default function StudentLayout({
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f5f3ed]">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block sticky top-0 self-start h-screen">
         <StudentSidebar collapsed={sidebarCollapsed} onCollapseChange={setSidebarCollapsed} />
       </div>
 
@@ -67,8 +67,8 @@ export default function StudentLayout({
             {/* Profile Avatar */}
             <Link href="/profile">
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full p-0 overflow-hidden">
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.firstName || "User"} className="w-full h-full object-cover" />
+                {user?.profileImageUrl ? (
+                  <img src={user.profileImageUrl} alt={user.firstName || "User"} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-[#610000] text-white flex items-center justify-center text-sm font-semibold">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}

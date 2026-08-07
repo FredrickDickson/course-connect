@@ -27,6 +27,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { EligibilityResponse } from "@shared/enrollmentEligibility";
+import StudentSidebar from "@/components/student-sidebar";
 import { useEligibility } from "@/hooks/useEligibility";
 import { formatCoursePrice } from "@/lib/format-price";
 
@@ -369,23 +370,31 @@ export default function CourseDetail() {
       <div className="min-h-screen bg-background">
         <Header />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Home</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{course.title}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
+        <div className="lg:flex lg:items-start lg:gap-8">
+          {user && (
+            <div className="hidden lg:block">
+              <StudentSidebar />
+            </div>
+          )}
+
+          <div className="flex-1">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{course.title}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
 
       {/* Course Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-12">
@@ -692,6 +701,8 @@ export default function CourseDetail() {
       </section>
 
       <Footer />
+          </div>
+        </div>
       </div>
     </>
   );
