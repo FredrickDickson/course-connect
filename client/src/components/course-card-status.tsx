@@ -96,19 +96,14 @@ export default function CourseCardStatus({
       : "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300";
 
   const levelColors = {
-    associate: "bg-secondary/10 text-secondary",
+    associate: "bg-blue-100 text-blue-700",
     member: "bg-green-100 text-green-700",
-    fellow: "bg-accent/10 text-accent"
+    fellow: "bg-purple-100 text-purple-700"
   };
 
   const pathwayColors = {
     arbitration: "bg-blue-100 text-blue-700",
     mediation: "bg-green-100 text-green-700"
-  };
-
-  const courseTypeConfig = {
-    ONLINE: { icon: Monitor, class: "bg-indigo-100 text-indigo-700", label: "Online" },
-    PHYSICAL: { icon: MapPin, class: "bg-amber-100 text-amber-700", label: "In-Person" }
   };
 
   const statusConfig = {
@@ -117,21 +112,21 @@ export default function CourseCardStatus({
       buttonVariant: "default" as const,
       buttonText: "Enroll Now",
       buttonIcon: ShoppingCart,
-      buttonClass: "bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-105",
+      buttonClass: "bg-primary text-primary-foreground hover:bg-primary/90",
       overlay: null
     },
     NEXT_STEP: {
       badge: { text: "Next Step", class: "bg-blue-100 text-blue-700 border-blue-200" },
       buttonVariant: "default" as const,
-      buttonText: "Start This Level",
+      buttonText: "Start Level",
       buttonIcon: ArrowRight,
-      buttonClass: "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105",
+      buttonClass: "bg-blue-600 text-white hover:bg-blue-700",
       overlay: null
     },
     LOCKED: {
       badge: { text: "Locked", class: "bg-gray-100 text-gray-600 border-gray-200" },
       buttonVariant: "outline" as const,
-      buttonText: "View Requirements",
+      buttonText: "View",
       buttonIcon: Lock,
       buttonClass: "border-gray-300 text-gray-700 hover:bg-gray-50",
       overlay: "bg-gray-900/5"
@@ -150,8 +145,8 @@ export default function CourseCardStatus({
 
   return (
     <Card
-      className={`group hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500 ease-in-out overflow-hidden border-primary/5 hover:border-primary/20 relative ${
-        status === "LOCKED" ? "opacity-75 cursor-pointer" : ""
+      className={`group h-full flex flex-col hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden border border-border/40 hover:border-primary/30 relative bg-card ${
+        status === "LOCKED" ? "opacity-80 cursor-pointer" : ""
       }`}
       data-testid={`course-card-${course.id}`}
       onClick={status === "LOCKED" ? () => window.location.href = `/course/${course.id}` : undefined}
@@ -161,42 +156,53 @@ export default function CourseCardStatus({
         <div className={`absolute inset-0 z-10 pointer-events-none ${config.overlay}`} />
       )}
 
-      <div className="relative">
+      {/* Thumbnail Section - Fixed Height */}
+      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-muted">
         <img
           src={course.thumbnail_url || defaultThumbnail}
           alt={course.title}
-          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           data-testid="course-thumbnail"
         />
-        {course.is_featured && (
-          <Badge
-            className="absolute top-4 left-4 bg-primary text-primary-foreground shadow-lg backdrop-blur-sm"
-            data-testid="featured-badge"
-          >
-            <Crown className="w-3.5 h-3.5 mr-1.5" />
-            Featured
-          </Badge>
-        )}
-        {course.programme_type === "ADJUNCT_COURSE" ? (
-          <Badge
-            className="absolute top-4 right-4 shadow-lg backdrop-blur-sm bg-slate-100 text-slate-700"
-            data-testid="adjunct-course-badge"
-          >
-            Adjunct Course
-          </Badge>
-        ) : (
-          <Badge
-            className={`absolute top-4 right-4 shadow-lg backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
-            data-testid="level-badge"
-          >
-            {course.level}
-          </Badge>
-        )}
+        
+        {/* Gradient overlay for better badge visibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        
+        {/* Top badges */}
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+          {course.is_featured && (
+            <Badge
+              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg"
+              data-testid="featured-badge"
+            >
+              <Crown className="w-3.5 h-3.5 mr-1.5" />
+              Featured
+            </Badge>
+          )}
+          
+          <div className="ml-auto flex flex-col gap-2">
+            {course.programme_type === "ADJUNCT_COURSE" ? (
+              <Badge
+                className="bg-white/95 text-slate-700 border-0 shadow-md backdrop-blur-sm"
+                data-testid="adjunct-course-badge"
+              >
+                Adjunct Course
+              </Badge>
+            ) : (
+              <Badge
+                className={`border-0 shadow-md backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
+                data-testid="level-badge"
+              >
+                {course.level}
+              </Badge>
+            )}
+          </div>
+        </div>
 
-        {/* Status badge */}
+        {/* Status badge - Bottom Left */}
         {config.badge && (
           <Badge
-            className={`absolute bottom-4 left-4 shadow-lg backdrop-blur-sm border ${config.badge.class}`}
+            className={`absolute bottom-3 left-3 border shadow-md backdrop-blur-sm ${config.badge.class}`}
             data-testid="status-badge"
           >
             {config.badge.text}
@@ -204,39 +210,33 @@ export default function CourseCardStatus({
         )}
       </div>
 
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          {/* Review count commented out until substantial user base */}
-          {/* <div className="flex items-center space-x-1.5 group/rating">
-            <Star className="w-4 h-4 text-yellow-400 fill-current group-hover/rating:scale-125 transition-transform" />
-            <span className="text-sm font-medium text-foreground" data-testid="course-rating">
-              {Number(course.avg_rating || 0).toFixed(1)} <span className="text-muted-foreground font-normal">({course.rating_count || 0})</span>
-            </span>
-          </div> */}
-          <div className="flex items-center space-x-2">
-            {course.programme_type !== "ADJUNCT_COURSE" && (
-              <Badge
-                className={`text-[10px] uppercase tracking-wider font-bold ${pathwayColors[coursePathway]}`}
-                data-testid="pathway-badge"
-              >
-                {pathwayConfig.name}
-              </Badge>
-            )}
-            {course.category && (
-              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-bold bg-secondary/20" data-testid="category-badge">
-                {course.category.name}
-              </Badge>
-            )}
-          </div>
+      {/* Content Section - Flexible Height */}
+      <CardContent className="p-5 flex flex-col flex-grow">
+        {/* Badges Row */}
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {course.programme_type !== "ADJUNCT_COURSE" && (
+            <Badge
+              className={`text-[10px] uppercase tracking-wider font-semibold ${pathwayColors[coursePathway]}`}
+              data-testid="pathway-badge"
+            >
+              {pathwayConfig.name}
+            </Badge>
+          )}
+          {course.category && (
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-semibold" data-testid="category-badge">
+              {course.category.name}
+            </Badge>
+          )}
         </div>
 
-        <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1" data-testid="course-title">
+        {/* Title - Fixed 2 lines */}
+        <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-tight min-h-[3.5rem]" data-testid="course-title">
           {course.title}
         </h3>
 
-        {/* Eligibility badge */}
+        {/* Eligibility Badge */}
         {eligibility && eligibility.status !== "unknown" && (
-          <div className="mb-2">
+          <div className="mb-3">
             <Badge
               variant={
                 eligibility.status === "eligible"
@@ -256,45 +256,43 @@ export default function CourseCardStatus({
               {eligibility.label}
             </Badge>
             {eligibility.status === "upgrade-required" && course.track && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 Complete Associate in {course.track} to unlock
               </p>
             )}
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed" data-testid="course-description">
+        {/* Description - Fixed 2 lines */}
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed min-h-[2.5rem]" data-testid="course-description">
           {course.subtitle || course.description || "Master industry-standard ADR skills with our specialized certification track."}
         </p>
 
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center space-x-5 text-sm text-muted-foreground">
-            {course.duration_hours && (
-              <span className="flex items-center space-x-1.5" data-testid="course-duration">
-                <Clock className="w-3.5 h-3.5 text-primary/60" />
-                <span>{course.duration_hours}h</span>
-              </span>
-            )}
-            <span className="flex items-center space-x-1.5" data-testid="course-students">
-              <Users className="w-3.5 h-3.5 text-primary/60" />
-              <span>{course.enrollment_count || 0} learners</span>
+        {/* Meta Info Row */}
+        <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+          {course.duration_hours && (
+            <span className="flex items-center gap-1.5" data-testid="course-duration">
+              <Clock className="w-4 h-4 text-primary/70" />
+              <span className="font-medium">{course.duration_hours}h</span>
             </span>
-          </div>
+          )}
+          <span className="flex items-center gap-1.5" data-testid="course-students">
+            <Users className="w-4 h-4 text-primary/70" />
+            <span className="font-medium">{course.enrollment_count || 0}</span>
+          </span>
         </div>
 
-        {/* Capacity indicator removed - courses are online only */}
-
-        {/* Physical course details */}
+        {/* Physical Course Details */}
         {course.course_type === 'PHYSICAL' && (
-          <div className="mb-4 p-3 rounded-lg bg-amber-50/50 border border-amber-100">
-            <div className="flex items-center gap-2 text-sm text-amber-800">
-              <MapPin className="w-4 h-4" />
-              <span className="font-medium">
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-2 text-sm text-amber-900 font-medium">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">
                 {course.city || course.venue || 'In-Person Event'}
               </span>
             </div>
             {(course.start_date || course.end_date) && (
-              <p className="text-xs text-amber-700 mt-1 ml-6">
+              <p className="text-xs text-amber-800 mt-1.5 ml-6">
                 {course.start_date && new Date(course.start_date).toLocaleDateString('en-US', { 
                   month: 'short', day: 'numeric', year: 'numeric' 
                 })}
@@ -308,29 +306,37 @@ export default function CourseCardStatus({
           </div>
         )}
 
+        {/* Instructor */}
         {course.instructor && (
-          <div className="text-xs font-medium text-muted-foreground mb-6 flex items-center" data-testid="instructor-info">
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 text-primary">
+          <div className="text-xs text-muted-foreground mb-4 flex items-center" data-testid="instructor-info">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5 text-primary font-semibold text-xs">
               {course.instructor.first_name?.[0]}
             </div>
-            By {course.instructor.first_name} {course.instructor.last_name}
+            <span className="font-medium">
+              {course.instructor.first_name} {course.instructor.last_name}
+            </span>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-          <div>
-            <div className="text-2xl font-black text-primary" data-testid="course-price">
-              {parseFloat(course.price) > 0 ? `$${course.price}` : 'Free'}
-            </div>
+        {/* Spacer to push footer to bottom */}
+        <div className="flex-grow" />
+
+        {/* Footer - Price & CTA */}
+        <div className="flex items-center justify-between pt-4 mt-auto border-t border-border/50">
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold text-foreground" data-testid="course-price">
+              {parseFloat(course.price) > 0 ? `$${parseFloat(course.price).toFixed(2)}` : 'Free'}
+            </span>
             {parseFloat(course.price) > 0 && (
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{course.currency}</div>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{course.currency}</span>
             )}
           </div>
           
           {status === "LOCKED" ? (
             <Button
+              size="sm"
               variant={config.buttonVariant}
-              className={config.buttonClass}
+              className={`${config.buttonClass} transition-all duration-200`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (onLockedClick) {
@@ -341,29 +347,31 @@ export default function CourseCardStatus({
               }}
               data-testid="locked-course-button"
             >
-              <config.buttonIcon className="w-4 h-4 mr-2" />
-              {config.buttonText}
+              <config.buttonIcon className="w-4 h-4 mr-1.5" />
+              View
             </Button>
           ) : status === "ENROLLED" ? (
             <Link href={`/learn/${course.id}`}>
               <Button
+                size="sm"
                 variant={config.buttonVariant}
-                className={config.buttonClass}
+                className={`${config.buttonClass} transition-all duration-200`}
                 data-testid="continue-course-button"
               >
-                <config.buttonIcon className="w-4 h-4 mr-2" />
-                {config.buttonText}
+                <config.buttonIcon className="w-4 h-4 mr-1.5" />
+                Continue
               </Button>
             </Link>
           ) : (
             <Link href={`/course/${course.id}`}>
               <Button
+                size="sm"
                 variant={config.buttonVariant}
-                className={config.buttonClass}
+                className={`${config.buttonClass} transition-all duration-200`}
                 data-testid="view-course-button"
               >
-                <config.buttonIcon className="w-4 h-4 mr-2" />
-                {config.buttonText}
+                <config.buttonIcon className="w-4 h-4 mr-1.5" />
+                Enroll Now
               </Button>
             </Link>
           )}
