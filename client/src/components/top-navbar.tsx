@@ -42,7 +42,7 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-[#d4c5b0]/30 shadow-sm">
+    <nav className="hidden lg:block sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#d4c5b0]/30 shadow-sm">
       <div className="flex items-center justify-between gap-4 px-6 py-3 max-w-[1920px] mx-auto">
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex-1 max-w-xl">
