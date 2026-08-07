@@ -312,10 +312,10 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex-1">
         {/* Back button */}
         <Link href={`/course/${courseId}`}>
           <Button variant="ghost" size="sm" className="mb-4 -ml-2">
