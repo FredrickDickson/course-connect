@@ -2,7 +2,7 @@ import { useState } from "react";
 import StudentSidebar from "@/components/student-sidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, GraduationCap } from "lucide-react";
+import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MobileBottomNav from "@/components/mobile-bottom-nav";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,7 +43,11 @@ export default function StudentLayout({
         <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-white sticky top-0 z-40">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-8 h-8 text-[#610000]" />
+            <img 
+              src="/images/logo.jpeg" 
+              alt="CIMA Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <div className="flex flex-col">
               <span className="text-base font-bold text-[#610000] leading-none">CIMA Learn</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Professional ADR Education</span>

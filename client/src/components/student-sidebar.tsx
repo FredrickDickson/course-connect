@@ -174,7 +174,11 @@ export default function StudentSidebar({
       <div className="flex items-center justify-between p-6 border-b border-[#d4c5b0]/30 flex-shrink-0">
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
-            <GraduationCap className="w-8 h-8 text-[#610000]" />
+            <img 
+              src="/images/logo.jpeg" 
+              alt="CIMA Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <div>
               <h1 className="text-lg font-bold text-[#610000] font-sf-pro-display">CIMA Learn</h1>
               <p className="text-[10px] text-[#8b6f47] font-sf-pro-text uppercase tracking-[0.08em] font-semibold">
@@ -184,7 +188,11 @@ export default function StudentSidebar({
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center justify-center w-full">
-            <GraduationCap className="w-8 h-8 text-[#610000]" />
+            <img 
+              src="/images/logo.jpeg" 
+              alt="CIMA Logo" 
+              className="w-10 h-10 object-contain"
+            />
           </Link>
         )}
       </div>
