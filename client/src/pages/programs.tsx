@@ -27,7 +27,7 @@ export default function Programs() {
             <Button 
               data-testid="button-speak-advisor"
               variant="outline"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+              className="border-2 border-white bg-white/10 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-[#610000] transition-colors backdrop-blur-sm"
             >
               Speak to an Advisor
             </Button>
@@ -460,7 +460,7 @@ export default function Programs() {
               data-testid="button-schedule-consultation"
               size="lg" 
               variant="outline" 
-              className="border-2 border-white text-white hover:bg-white hover:text-[#8b6f47]"
+              className="border-2 border-white bg-white/10 text-white hover:bg-white hover:text-[#8b6f47] backdrop-blur-sm transition-colors"
             >
               Schedule Consultation
             </Button>
