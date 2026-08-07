@@ -54,7 +54,7 @@ export default function StudentLayout({
         </div>
 
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-white sticky top-0 z-40">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-white sticky top-0 z-50">
           {/* Logo */}
           <div className="flex items-center gap-2">
             <img 
@@ -108,7 +108,7 @@ export default function StudentLayout({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/courses" className="cursor-pointer">
+                  <Link href="/dashboard" className="cursor-pointer">
                     <BookOpen className="w-4 h-4 mr-2 text-[#610000]" />
                     <span>My Learning</span>
                   </Link>

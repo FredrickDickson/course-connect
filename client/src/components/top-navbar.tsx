@@ -67,12 +67,12 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           {/* My Learning Link */}
-          <Link href="/courses">
+          <Link href="/dashboard">
             <Button
               variant="ghost"
               className={cn(
                 "text-sm font-medium text-[#4a3828] hover:text-[#610000] hover:bg-transparent",
-                location === "/courses" && "text-[#610000] font-semibold"
+                location === "/dashboard" && "text-[#610000] font-semibold"
               )}
             >
               My learning
@@ -146,7 +146,7 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/courses" className="cursor-pointer">
+                <Link href="/dashboard" className="cursor-pointer">
                   <User className="w-4 h-4 mr-2 text-[#610000]" />
                   <span>My Learning</span>
                 </Link>
