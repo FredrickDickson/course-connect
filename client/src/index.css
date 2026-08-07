@@ -240,6 +240,11 @@
   body {
     /* eslint-disable-next-line tailwindcss/no-custom-classname */
     @apply bg-background text-foreground font-sf-pro-text antialiased;
+    overflow: hidden;
+  }
+  #root {
+    height: 100vh;
+    overflow: hidden;
   }
   h1, h2, h3, h4 {
     font-family: 'SF Pro Display', serif;

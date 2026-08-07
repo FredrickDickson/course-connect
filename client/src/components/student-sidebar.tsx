@@ -91,7 +91,7 @@ export default function StudentSidebar({
     {
       title: "Community",
       items: [
-        { name: "Community Hub", href: "/community", icon: Users },
+        // { name: "Community Hub", href: "/community", icon: Users },
         { name: "My Posts", href: "/community/my-posts", icon: FileText },
         { name: "My Boards", href: "/community/my-boards", icon: Bookmark },
       ],
@@ -106,22 +106,58 @@ export default function StudentSidebar({
     },
     {
       items: [
-        { name: "Notifications", href: "/community/notifications", icon: Bell },
+        // { name: "Notifications", href: "/community/notifications", icon: Bell },
         { name: "Profile", href: "/profile", icon: User },
-        { name: "Settings", href: "/notification-settings", icon: Settings },
+        // { name: "Settings", href: "/notification-settings", icon: Settings },
       ],
     },
   ];
 
   const isActivePath = (path: string) => {
     // Handle special fragment identifiers
-    if (path.includes("#")) {
-      const [basePath] = path.split("#");
-      return location === basePath;
+    if (path.includes("?")) {
+      const [basePath] = path.split("?");
+      if (location === basePath || location.startsWith(basePath)) {
+        return true;
+      }
     }
     
-    if (path === "/dashboard" && location === "/dashboard") return true;
-    if (path !== "/dashboard" && location.startsWith(path)) return true;
+    // Exact match for dashboard
+    if (path === "/dashboard") {
+      return location === "/dashboard";
+    }
+    
+    // For Community Hub - ONLY active when on /community exactly, NOT on sub-pages
+    if (path === "/community") {
+      return location === "/community";
+    }
+    
+    // For My Posts - exact match only
+    if (path === "/community/my-posts") {
+      return location === "/community/my-posts";
+    }
+    
+    // For My Boards - exact match only
+    if (path === "/community/my-boards") {
+      return location === "/community/my-boards";
+    }
+    
+    // For community notifications - exact match only
+    if (path === "/community/notifications") {
+      return location === "/community/notifications";
+    }
+    
+    // For all other paths, exact match
+    if (location === path) {
+      return true;
+    }
+    
+    // Check if the current location starts with the path (for sub-routes)
+    // But exclude community paths since we handle them explicitly above
+    if (!path.startsWith("/community") && location.startsWith(path + "/")) {
+      return true;
+    }
+    
     return false;
   };
 
@@ -135,7 +171,7 @@ export default function StudentSidebar({
       )}
     >
       {/* Logo & Brand */}
-      <div className="flex items-center justify-between p-6 border-b border-[#d4c5b0]/30">
+      <div className="flex items-center justify-between p-6 border-b border-[#d4c5b0]/30 flex-shrink-0">
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
             <GraduationCap className="w-8 h-8 text-[#610000]" />
@@ -167,7 +203,7 @@ export default function StudentSidebar({
       </button>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6 px-3">
+      <nav className="flex-1 overflow-y-auto py-6 px-3 scrollbar-thin scrollbar-thumb-sidebar-border scrollbar-track-transparent">
         {navigationSections.map((section, sectionIdx) => (
           <div key={sectionIdx} className={cn("mb-6", sectionIdx > 0 && "pt-6 border-t border-[#d4c5b0]/30")}>
             {section.title && !collapsed && (
@@ -231,7 +267,7 @@ export default function StudentSidebar({
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-[#d4c5b0]/30 p-4">
+      <div className="border-t border-[#d4c5b0]/30 p-4 flex-shrink-0">
         {!collapsed ? (
           <div className="space-y-3">
             <Link href="/profile">
