@@ -5,14 +5,14 @@ test.describe("Landing page (unauthenticated /)", () => {
   test("renders the hero and CTA links", async ({ page }) => {
     const landing = new LandingPage(page);
     await landing.goto();
-    await expect(page.getByRole("heading", { name: /Self-Paced Learning/i })).toBeVisible();
-    await expect(landing.memberPortalLink).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Master dispute\s*resolution/i })).toBeVisible();
+    await expect(landing.loginLink).toBeVisible();
   });
 
-  test("Member Portal navigates to /login", async ({ page }) => {
+  test("Login navigates to /login", async ({ page }) => {
     const landing = new LandingPage(page);
     await landing.goto();
-    await landing.memberPortalLink.click();
+    await landing.loginLink.click();
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -23,16 +23,16 @@ test.describe("Landing page (unauthenticated /)", () => {
     // here lands on /login, not a course listing.
     const landing = new LandingPage(page);
     await landing.goto();
+    await landing.browseCoursesLink.scrollIntoViewIfNeeded();
     await landing.browseCoursesLink.click();
     await page.waitForURL(/\/login/, { timeout: 10_000 });
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("Begin Your Ascension navigates to /register", async ({ page }) => {
+  test("Create Account navigates to /register", async ({ page }) => {
     const landing = new LandingPage(page);
     await landing.goto();
-    await landing.beginAscensionLink.scrollIntoViewIfNeeded();
-    await landing.beginAscensionLink.click();
+    await landing.createAccountLink.click();
     await expect(page).toHaveURL(/\/register/);
   });
 });

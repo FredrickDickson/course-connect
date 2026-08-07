@@ -47,8 +47,12 @@ for (const { path, heading } of PAGES) {
       if (NO_FOOTER_PATHS.has(path)) return;
       // Footer is shared chrome rendered on every marketing page — its
       // presence is a cheap proxy for "the page tree finished mounting
-      // without throwing", not just the hero section.
-      await expect(page.getByRole("contentinfo")).toBeVisible();
+      // without throwing", not just the hero section. Locating by tag, not
+      // role: a <footer> only carries the implicit "contentinfo" landmark
+      // role when it's a direct child of <body> - pages using StudentLayout
+      // nest it inside <main>, which downgrades it to role "generic" per
+      // the HTML-ARIA spec, even though the element renders identically.
+      await expect(page.locator("footer")).toBeVisible();
       await expect(page.getByRole("link", { name: "Privacy Policy" })).toBeVisible();
     });
   });
