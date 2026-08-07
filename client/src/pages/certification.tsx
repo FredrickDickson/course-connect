@@ -1,8 +1,7 @@
-import Header from "@/components/header";
+import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import Footer from "@/components/footer";
-import StudentSidebar from "@/components/student-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MyCertificates from "@/components/certificates/my-certificates";
@@ -74,33 +73,23 @@ export default function Certification() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <div className="lg:flex lg:items-start lg:gap-8">
-        <div className="hidden lg:block">
-          <StudentSidebar />
+    <StudentLayout>
+      <div className="bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/">
+              <Button variant="ghost" data-testid="button-back">
+                <i className="fas fa-arrow-left mr-2"></i>
+                Back to Home
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex-1">
-          {/* Header */}
-          <header className="border-b border-border">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex items-center justify-between">
-                <Link href="/">
-                  <Button variant="ghost" data-testid="button-back">
-                    <i className="fas fa-arrow-left mr-2"></i>
-                    Back to Home
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </header>
 
-          {/* Content */}
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="space-y-16">
-              <MyCertificates />
-              <div className="text-center space-y-4">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="space-y-16">
+            <MyCertificates />
+            <div className="text-center space-y-4">
                 <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Certification</h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                   Earn internationally recognized credentials in alternative dispute resolution through our comprehensive certification programs.
@@ -298,10 +287,8 @@ export default function Certification() {
           </section>
         </div>
       </main>
-      </div>
-    </div>
-
       <Footer />
-    </div>
+      </div>
+    </StudentLayout>
   );
 }

@@ -1,6 +1,5 @@
-import Header from "@/components/header";
+import StudentLayout from "@/components/student-layout";
 import Footer from "@/components/footer";
-import StudentSidebar from "@/components/student-sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -220,14 +219,8 @@ export default function QualificationPathway() {
   const showSignInPrompt = !hasSession && !pathwaysLoading;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <div className="lg:flex lg:items-start lg:gap-8">
-        <div className="hidden lg:block">
-          <StudentSidebar />
-        </div>
-        <div className="flex-1">
+    <StudentLayout>
+      <div className="bg-background">
 
           {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 via-primary to-slate-900 text-white py-20">
@@ -577,9 +570,7 @@ export default function QualificationPathway() {
         </ScrollReveal>
       </section>
         </div>
-      </div>
-
       <Footer />
-    </div>
+    </StudentLayout>
   );
 }
