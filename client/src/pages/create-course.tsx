@@ -37,19 +37,41 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
 
-const courseSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100),
-  subtitle: z.string().min(1, "Subtitle is required").max(200),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  categoryId: z.string().min(1, "Category is required"),
-  level: z.enum(["associate", "member", "fellow"]),
-  track: z.enum(["ARBITRATION", "MEDIATION"]),
-  price: z.number().min(0, "Price must be non-negative"),
-  currency: z.string().default("USD"),
-  thumbnailUrl: z.string().url().optional().or(z.literal("")),
-  isPublished: z.boolean().default(false),
-  isFeatured: z.boolean().default(false),
-});
+const courseSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(100),
+    subtitle: z.string().min(1, "Subtitle is required").max(200),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    categoryId: z.string().min(1, "Category is required"),
+    programmeType: z.enum(["PROFESSIONAL_PROGRAMME", "ADJUNCT_COURSE"]),
+    level: z.enum(["associate", "member", "fellow"]).optional(),
+    track: z.enum(["ARBITRATION", "MEDIATION"]).optional(),
+    price: z.number().min(0, "Price must be non-negative"),
+    currency: z.string().default("USD"),
+    thumbnailUrl: z.string().url().optional().or(z.literal("")),
+    isPublished: z.boolean().default(false),
+    isFeatured: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    // Level/track only apply to the Professional Programme (Associate/Member/
+    // Fellow ladder). Adjunct Courses are standalone - no level, no track.
+    if (data.programmeType === "PROFESSIONAL_PROGRAMME") {
+      if (!data.level) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Difficulty level is required for Professional Programme courses",
+          path: ["level"],
+        });
+      }
+      if (!data.track) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Qualification track is required for Professional Programme courses",
+          path: ["track"],
+        });
+      }
+    }
+  });
 
 type CourseFormData = z.infer<typeof courseSchema>;
 
@@ -114,6 +136,7 @@ export default function CreateCourse() {
       subtitle: "",
       description: "",
       categoryId: "",
+      programmeType: "PROFESSIONAL_PROGRAMME",
       level: "associate",
       track: "ARBITRATION",
       price: 0,
@@ -170,9 +193,13 @@ export default function CreateCourse() {
         subtitle: data.subtitle,
         description: data.description,
         categoryId: categoryId,
-        level: data.level,
-        track: data.track,
-        price: data.price,
+        programmeType: data.programmeType,
+        level: data.programmeType === "ADJUNCT_COURSE" ? null : data.level,
+        track: data.programmeType === "ADJUNCT_COURSE" ? null : data.track,
+        // Server's courseSchema requires price as a string ("Decimal as
+        // string for precision" — shared/schema.ts) — the form tracks it as
+        // a number for numeric input handling/validation.
+        price: data.price.toString(),
         currency: data.currency,
         thumbnailUrl: data.thumbnailUrl || null,
         isPublished: data.isPublished,
@@ -359,23 +386,26 @@ export default function CreateCourse() {
 
                     <FormField
                       control={form.control}
-                      name="level"
+                      name="programmeType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Difficulty Level *</FormLabel>
+                          <FormLabel>Course Type *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select difficulty level" />
+                                <SelectValue placeholder="Select course type" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="associate">Part I (Associate)</SelectItem>
-                              <SelectItem value="member">Part II (Member)</SelectItem>
-                              <SelectItem value="fellow">Part III (Fellow)</SelectItem>
+                              <SelectItem value="PROFESSIONAL_PROGRAMME">
+                                Professional Programme (Associate → Member → Fellow ladder)
+                              </SelectItem>
+                              <SelectItem value="ADJUNCT_COURSE">
+                                Adjunct Course (standalone, no prerequisites)
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -383,30 +413,60 @@ export default function CreateCourse() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="track"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Qualification Track *</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select qualification track" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="ARBITRATION">Arbitration (ACIMArb/MCIMArb/FCIMArb)</SelectItem>
-                              <SelectItem value="MEDIATION">Mediation (ACIMed/MCIMed/FCIMed)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {form.watch("programmeType") === "PROFESSIONAL_PROGRAMME" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="level"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Difficulty Level *</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select difficulty level" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="associate">Part I (Associate)</SelectItem>
+                                  <SelectItem value="member">Part II (Member)</SelectItem>
+                                  <SelectItem value="fellow">Part III (Fellow)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="track"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Qualification Track *</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select qualification track" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="ARBITRATION">Arbitration (ACIMArb/MCIMArb/FCIMArb)</SelectItem>
+                                  <SelectItem value="MEDIATION">Mediation (ACIMed/MCIMed/FCIMed)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
 
                   <div className="space-y-6">

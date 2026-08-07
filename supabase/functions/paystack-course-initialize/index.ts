@@ -23,7 +23,8 @@ function convertUSDtoGHS(usdAmount: number): number {
 interface CoursePaymentRequest {
   courseId: string;
   userId: string;
-  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW";
+  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW" | null;
+  programmeType?: "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE";
   paymentType: "individual" | "company_invoice";
   companyName?: string;
   companyEmail?: string;
@@ -80,7 +81,7 @@ Deno.serve(async (req: Request) => {
     // Get course details
     const { data: course, error: courseError } = await supabase
       .from("courses")
-      .select("id, title, price, currency, level, track")
+      .select("id, title, price, currency, level, track, programme_type")
       .eq("id", body.courseId)
       .single();
 
@@ -134,6 +135,7 @@ Deno.serve(async (req: Request) => {
           courseName: course.title,
           courseLevel: course.level,
           courseTrack: course.track,
+          programmeType: course.programme_type || "PROFESSIONAL_PROGRAMME",
           userId: body.userId,
           enrollmentLevel: body.enrollmentLevel,
           paymentType: body.paymentType,
@@ -157,7 +159,7 @@ Deno.serve(async (req: Request) => {
             {
               display_name: "Enrollment Level",
               variable_name: "enrollment_level",
-              value: body.enrollmentLevel,
+              value: body.enrollmentLevel || "N/A",
             },
             {
               display_name: "Original Amount (USD)",

@@ -6,17 +6,29 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../shared/database.types";
 
 const supabase = createClient<Database>(
-  process.env.SUPABASE_URL!,
+  (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const router = Router();
 
-// Initialize Mux client
-const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID,
-  tokenSecret: process.env.MUX_TOKEN_SECRET,
-});
+// Mux client is instantiated lazily, not at import time: this router is
+// mounted unconditionally in server/routes.ts, so a hard-crash constructor
+// here would take down the whole app for anyone without Mux configured,
+// not just Mux-dependent routes.
+let muxClient: Mux | null = null;
+function getMux(): Mux {
+  if (!process.env.MUX_TOKEN_ID || !process.env.MUX_TOKEN_SECRET) {
+    throw new Error("Mux is not configured (MUX_TOKEN_ID / MUX_TOKEN_SECRET missing)");
+  }
+  if (!muxClient) {
+    muxClient = new Mux({
+      tokenId: process.env.MUX_TOKEN_ID,
+      tokenSecret: process.env.MUX_TOKEN_SECRET,
+    });
+  }
+  return muxClient;
+}
 
 // Get video analytics for a specific lesson
 router.get(
@@ -47,7 +59,7 @@ router.get(
       }
 
       // Fetch Mux Data insights
-      const insights = await (mux.data as any).insights.list({
+      const insights = await (getMux().data as any).insights.list({
         filter: [`asset_id:${lesson.mux_asset_id}`],
         timeframe: ['30:days'],
       });
@@ -207,7 +219,7 @@ router.get(
 
     try {
       // Fetch current viewers from Mux Data
-      const views = await (mux.data as any).views.list({
+      const views = await (getMux().data as any).views.list({
         filter: [`playback_id:${playbackId}`],
         timeframe: ['1:minutes'],
       });

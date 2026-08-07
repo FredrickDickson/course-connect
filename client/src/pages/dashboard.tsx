@@ -1,28 +1,39 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
-import LevelUpgradeCelebration from "@/components/dashboard/level-upgrade-celebration";
-import EnrolledCoursesGrid from "@/components/dashboard/enrolled-courses-grid";
-import RecommendedCourses from "@/components/dashboard/recommended-courses";
-import { TrackCard } from "@/components/dashboard/track-card";
+import StudentLayout from "@/components/student-layout";
 import { Link, useLocation } from "wouter";
-import { BookOpen, Trophy, Heart, Award, GraduationCap } from "lucide-react";
+import {
+  BookOpen,
+  Trophy,
+  Award,
+  Clock,
+  ArrowRight,
+  TrendingUp,
+  Calendar,
+  PlayCircle,
+  Target,
+  Activity,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function Dashboard() {
+export default function DashboardRedesigned() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      toast({ title: "Unauthorized", description: "Sign in to access your dashboard.", variant: "destructive" });
+      toast({
+        title: "Unauthorized",
+        description: "Sign in to access your dashboard.",
+        variant: "destructive",
+      });
       setTimeout(() => setLocation("/login"), 500);
     }
   }, [isAuthenticated, authLoading, toast, setLocation]);
@@ -30,7 +41,6 @@ export default function Dashboard() {
   const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      // Source of truth: the unified `enrollments` table.
       const { data: progressEnrollments, error: progressError } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
@@ -38,14 +48,16 @@ export default function Dashboard() {
         .order("enrolled_at", { ascending: false });
       if (progressError) throw progressError;
 
-      // Deduplicate by course_id (defensive; should already be unique)
-      const uniqueEnrollments = (progressEnrollments || []).reduce((acc: any[], enrollment) => {
-        const existing = acc.find(e => e.course_id === enrollment.course_id);
-        if (!existing) {
-          acc.push(enrollment);
-        }
-        return acc;
-      }, []);
+      const uniqueEnrollments = (progressEnrollments || []).reduce(
+        (acc: any[], enrollment) => {
+          const existing = acc.find((e) => e.course_id === enrollment.course_id);
+          if (!existing) {
+            acc.push(enrollment);
+          }
+          return acc;
+        },
+        []
+      );
 
       return uniqueEnrollments;
     },
@@ -56,37 +68,26 @@ export default function Dashboard() {
     queryKey: ["user-dashboard-stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      // Combine multiple dashboard queries in parallel
-      const [favoritesResult, completionRecordsResult, enrollmentsResult, qualificationResult] = await Promise.all([
-        supabase.from("favorites").select("id").eq("user_id", user!.id),
-        supabase
-          .from("course_completion_records")
-          .select("*, courses!inner(title, track, level)")
-          .eq("user_id", user!.id)
-          .order("completed_at", { ascending: false }),
-        supabase
-          .from("enrollments")
-          .select("id, course_id, completed_at")
-          .eq("user_id", user!.id)
-          .not("completed_at", "is", null)
-          .order("completed_at", { ascending: false }),
-        (async () => {
-          const token = (await supabase.auth.getSession()).data.session?.access_token;
-          const response = await fetch("/api/qualifications/get-user-state", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (!response.ok) throw new Error("Failed to fetch qualification state");
-          return response.json();
-        })()
-      ]);
+      const [favoritesResult, completionRecordsResult, enrollmentsResult] =
+        await Promise.all([
+          supabase.from("favorites").select("id").eq("user_id", user!.id),
+          supabase
+            .from("course_completion_records")
+            .select("*, courses!inner(title, track, level)")
+            .eq("user_id", user!.id)
+            .order("completed_at", { ascending: false }),
+          supabase
+            .from("enrollments")
+            .select("id, course_id, completed_at")
+            .eq("user_id", user!.id)
+            .not("completed_at", "is", null)
+            .order("completed_at", { ascending: false }),
+        ]);
 
       if (favoritesResult.error) throw favoritesResult.error;
       if (completionRecordsResult.error) throw completionRecordsResult.error;
       if (enrollmentsResult.error) throw enrollmentsResult.error;
 
-      // Fetch course details for enrollments
       const completedEnrollments = enrollmentsResult.data || [];
       const courseIds = completedEnrollments.map((e: any) => e.course_id);
       let enrichedEnrollments: any[] = [];
@@ -104,12 +105,13 @@ export default function Dashboard() {
         }));
       }
 
-      // Merge completion records and enrollments, deduplicate by course_id
       const completionRecords = completionRecordsResult.data || [];
       const allCertificates = [...completionRecords, ...enrichedEnrollments];
       const uniqueCertificates = allCertificates.reduce((acc: any[], cert) => {
         const courseId = cert.course_id || (cert as any).course?.id;
-        if (!acc.find(c => (c.course_id || (c as any).course?.id) === courseId)) {
+        if (
+          !acc.find((c) => (c.course_id || (c as any).course?.id) === courseId)
+        ) {
           acc.push(cert);
         }
         return acc;
@@ -118,175 +120,349 @@ export default function Dashboard() {
       return {
         favorites: favoritesResult.data || [],
         certificates: uniqueCertificates,
-        qualificationState: qualificationResult
       };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
-  // Extract individual stats from combined query
   const favorites = userStats?.favorites || [];
   const certificates = userStats?.certificates || [];
-  const userQualificationState = userStats?.qualificationState;
 
   if (authLoading || enrollmentsLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <StudentLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <LoadingState message="Loading your dashboard..." size="lg" />
         </div>
-        <Footer />
-      </div>
+      </StudentLayout>
     );
   }
 
-  const completedCount = enrollments.filter((e: any) => Number(e.progress) >= 100).length;
-  const enrolledCourseIds = enrollments.map((e: any) => e.course?.id).filter(Boolean);
+  const completedCount = enrollments.filter(
+    (e: any) => Number(e.progress) >= 100
+  ).length;
+  const inProgressEnrollments = enrollments.filter(
+    (e: any) => Number(e.progress) > 0 && Number(e.progress) < 100
+  );
+  const nextCourse = inProgressEnrollments[0];
 
-  // Derive per-track data from the live enrollments + certificates (no hard-coded values).
-  const arbEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "ARBITRATION");
-  const medEnrollments = enrollments.filter((e: any) => (e.course?.track || "").toUpperCase() === "MEDIATION");
-  const arbCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "ARBITRATION");
-  const medCertificates = certificates.filter((c: any) => (c.track || "").toUpperCase() === "MEDIATION");
+  // Get time of day greeting
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Welcome back, {user?.firstName}!</h1>
-              <p className="text-primary-foreground/80 mt-1">Continue your ADR journey</p>
-            </div>
-            <Link href="/course-catalog">
-              <Button size="sm" className="bg-white text-primary hover:bg-white/90">
-                <BookOpen className="w-4 h-4 mr-2" /> Browse Courses
-              </Button>
-            </Link>
+    <StudentLayout>
+      {/* Hero Section - Simplified */}
+      <section className="mb-12">
+        <div className="space-y-6">
+          {/* Greeting */}
+          <div>
+            <h1 className="text-4xl font-bold text-[#2c2015] font-sf-pro-display mb-2">
+              {greeting}, {user?.firstName}
+            </h1>
+            <p className="text-lg text-[#6b5d4f] font-sf-pro-text">
+              {inProgressEnrollments.length > 0
+                ? "You're making great progress on your learning journey"
+                : "Ready to start your professional development journey?"}
+            </p>
           </div>
 
-          {/* Quick stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          {/* Continue Learning Card */}
+          {nextCourse && (
+            <Card className="bg-gradient-to-br from-[#610000] to-[#8b0000] border-0 rounded-[24px] overflow-hidden shadow-[0_24px_64px_rgba(97,0,0,0.16)] hover:shadow-[0_32px_80px_rgba(97,0,0,0.24)] transition-all duration-700 hover:-translate-y-1">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                  <div className="flex-1 space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur rounded-full">
+                      <PlayCircle className="w-4 h-4 text-[#8b6f47]" />
+                      <span className="text-sm font-semibold text-white">
+                        Continue where you left off
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-2 font-sf-pro-display">
+                        {nextCourse.course?.title}
+                      </h3>
+                      <p className="text-white/80 text-sm">
+                        {nextCourse.course?.subtitle || "Keep up the momentum"}
+                      </p>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-white/80">Your progress</span>
+                        <span className="text-white font-bold">
+                          {Math.round(Number(nextCourse.progress) || 0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-[#8b6f47] to-[#c5a572] h-full rounded-full transition-all duration-1000 ease-out shadow-lg"
+                          style={{
+                            width: `${Number(nextCourse.progress) || 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <Link href={`/learn/${nextCourse.course?.id}`}>
+                      <Button
+                        size="lg"
+                        className="bg-white text-[#610000] hover:bg-white/90 shadow-xl px-8 py-6 text-base font-semibold rounded-[16px] transition-all duration-300 hover:scale-105"
+                      >
+                        Continue Learning
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: BookOpen, value: enrollments.length, label: "Enrolled" },
-              { icon: Trophy, value: completedCount, label: "Completed" },
-              { icon: Heart, value: favorites.length, label: "Saved" },
-              { icon: Award, value: certificates.length, label: "Certs" },
-            ].map(({ icon: Icon, value, label }) => (
-              <Card key={label} className="bg-white/10 backdrop-blur border-white/20">
-                <CardContent className="p-3 text-center">
-                  <Icon className="w-5 h-5 text-white mx-auto mb-1" />
-                  <div className="text-xl font-bold text-yellow-300">{value}</div>
-                  <div className="text-[10px] text-primary-foreground/70">{label}</div>
-                </CardContent>
-              </Card>
-            ))}
+              {
+                icon: BookOpen,
+                value: enrollments.length,
+                label: "Courses Enrolled",
+                color: "from-[#610000] to-[#8b0000]",
+              },
+              {
+                icon: Trophy,
+                value: completedCount,
+                label: "Courses Completed",
+                color: "from-[#8b6f47] to-[#c5a572]",
+              },
+              {
+                icon: Award,
+                value: certificates.length,
+                label: "Certificates Earned",
+                color: "from-[#610000] to-[#8b0000]",
+              },
+              {
+                icon: Clock,
+                value: enrollments.reduce(
+                  (sum, e) => sum + (e.course?.duration_hours || 0),
+                  0
+                ),
+                label: "Total Study Hours",
+                color: "from-[#8b6f47] to-[#c5a572]",
+              },
+            ].map((stat, idx) => {
+              const Icon = stat.icon;
+              return (
+                <Card
+                  key={idx}
+                  className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] hover:border-[#8b6f47]/30 hover:shadow-[0_16px_48px_rgba(97,0,0,0.08)] transition-all duration-500 hover:-translate-y-1"
+                >
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-[12px] flex items-center justify-center bg-gradient-to-br",
+                          stat.color
+                        )}
+                      >
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">
+                          {stat.value}
+                        </div>
+                        <p className="text-sm text-[#6b5d4f] font-sf-pro-text mt-1">
+                          {stat.label}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Main content */}
-      <section className="py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Left col */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Track Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <TrackCard
-                  track="ARBITRATION"
-                  level={userQualificationState?.tracks?.arbitration?.level || "NONE"}
-                  pathway={userQualificationState?.tracks?.arbitration?.pathway || null}
-                  certificates={arbCertificates}
-                  enrollments={arbEnrollments}
-                  color="#1e40af"
-                />
-                <TrackCard
-                  track="MEDIATION"
-                  level={userQualificationState?.tracks?.mediation?.level || "NONE"}
-                  pathway={userQualificationState?.tracks?.mediation?.pathway || null}
-                  certificates={medCertificates}
-                  enrollments={medEnrollments}
-                  color="#059669"
-                />
-              </div>
-
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Left Column - 2/3 */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* My Courses */}
+          <section>
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">My Courses</h2>
-                  <Link href="/course-catalog">
-                    <Button variant="ghost" size="sm">See all</Button>
-                  </Link>
-                </div>
-                <EnrolledCoursesGrid enrollments={enrollments} isLoading={enrollmentsLoading} />
+                <h2 className="text-2xl font-bold text-[#2c2015] font-sf-pro-display">
+                  My Courses
+                </h2>
+                <p className="text-sm text-[#6b5d4f] mt-1">
+                  {enrollments.length} active courses
+                </p>
               </div>
+              <Link href="/courses">
+                <Button
+                  variant="outline"
+                  className="border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed] hover:border-[#8b6f47]"
+                >
+                  View All
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
 
-            {/* Right sidebar */}
-            <div className="space-y-6">
-              <LevelUpgradeCelebration />
-              <RecommendedCourses enrolledCourseIds={enrolledCourseIds} />
-
-              {/* Certificates */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Award className="w-4 h-4" /> Certificates
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {certificates.length === 0 ? (
-                    <div className="text-center py-4">
-                      <GraduationCap className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground">Complete courses to earn certificates</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {certificates.map((cert: any) => {
-                        const track = cert.track || (cert.courses?.track) || (cert.course?.track);
-                        const trackColor = track === "ARBITRATION" ? "#1e40af" : "#059669";
-                        const courseTitle = cert.courses?.title || cert.course?.title || "Course";
-                        const level = cert.level_achieved || cert.courses?.level || cert.course?.level || "ASSOCIATE";
-                        const levelInitial = level?.[0] || "A";
-                        const completedAt = cert.completed_at;
-                        return (
-                          <div key={cert.id || cert.course_id} className="flex items-center gap-3 p-2 rounded-lg bg-accent/10 border border-accent/20">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                              style={{ backgroundColor: trackColor }}
-                            >
-                              {levelInitial}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium truncate">{courseTitle}</p>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: trackColor }}>
-                                  {track}
-                                </span>
-                                <p className="text-xs font-semibold">{level}</p>
-                              </div>
-                              <p className="text-[10px] text-muted-foreground">
-                                Completed {new Date(completedAt).toLocaleDateString()}
-                              </p>
-                            </div>
+            {enrollments.length === 0 ? (
+              <Card className="bg-white border-2 border-dashed border-[#d4c5b0]/50 rounded-[24px]">
+                <CardContent className="py-16 text-center">
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f3ed] flex items-center justify-center">
+                    <BookOpen className="w-10 h-10 text-[#8b6f47]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#2c2015] mb-2">
+                    No courses yet
+                  </h3>
+                  <p className="text-[#6b5d4f] mb-6 max-w-md mx-auto">
+                    Start your professional development journey by enrolling in
+                    your first course
+                  </p>
+                  <Link href="/course-catalog">
+                    <Button className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-500 hover:scale-105 px-8 py-6 rounded-[16px] text-base font-semibold">
+                      Explore Courses
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {enrollments.slice(0, 4).map((enrollment: any) => (
+                  <Link
+                    key={enrollment.id}
+                    href={`/learn/${enrollment.course?.id}`}
+                  >
+                    <Card className="group bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] overflow-hidden hover:border-[#8b6f47]/30 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 cursor-pointer">
+                      <div className="relative h-40 bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center">
+                        {enrollment.course?.thumbnail_url ? (
+                          <img
+                            src={enrollment.course.thumbnail_url}
+                            alt={enrollment.course.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                        ) : (
+                          <BookOpen className="w-16 h-16 text-white/80" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      </div>
+                      <CardContent className="p-6 space-y-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-[#2c2015] mb-1 line-clamp-2 font-sf-pro-display">
+                            {enrollment.course?.title}
+                          </h3>
+                          <p className="text-sm text-[#8b6f47]">
+                            {enrollment.course?.level || "Associate"} Level
+                          </p>
+                        </div>
+                        {/* Progress */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-[#6b5d4f]">Progress</span>
+                            <span className="text-[#610000] font-bold">
+                              {Math.round(Number(enrollment.progress) || 0)}%
+                            </span>
                           </div>
-                        );
-                      })}
+                          <div className="w-full bg-[#e3beb8] rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-[#610000] to-[#8b6f47] h-2 rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${Number(enrollment.progress) || 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Right Column - 1/3 */}
+        <div className="space-y-8">
+          {/* Upcoming Activities */}
+          <section>
+            <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#8b6f47]" />
+              Upcoming Activities
+            </h2>
+            <Card className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px]">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-3 bg-[#faf9f6] rounded-[12px]">
+                    <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
+                      <Target className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#2c2015]">
+                        Quiz Due Tomorrow
+                      </p>
+                      <p className="text-xs text-[#6b5d4f] mt-1">
+                        Module 3: International Arbitration
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-center py-8">
+                    <p className="text-sm text-[#6b5d4f]">
+                      No upcoming activities
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Recent Activity */}
+          <section>
+            <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#8b6f47]" />
+              Recent Activity
+            </h2>
+            <Card className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px]">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {certificates.slice(0, 3).map((cert: any) => (
+                    <div
+                      key={cert.id}
+                      className="flex items-center gap-3 pb-4 border-b border-[#d4c5b0]/30 last:border-0 last:pb-0"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
+                        <Award className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#2c2015] truncate">
+                          Certificate Earned
+                        </p>
+                        <p className="text-xs text-[#6b5d4f] truncate">
+                          {cert.courses?.title || cert.course?.title}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {certificates.length === 0 && (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-[#6b5d4f]">
+                        No recent activity
+                      </p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
         </div>
-      </section>
-
-      <Footer />
-    </div>
+      </div>
+    </StudentLayout>
   );
 }

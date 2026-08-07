@@ -197,6 +197,7 @@ export interface IStorage {
       course: { id: string; title: string; thumbnail_url: string | null };
     })[]
   >;
+  getCertificationById(id: string): Promise<any>;
 
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
@@ -518,9 +519,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCourse(course: InsertCourse): Promise<Course> {
+    // InsertCourse (shared/schema.ts courseSchema) uses camelCase field
+    // names, but the courses table's real columns are snake_case — passing
+    // the object straight through 500s on the first mismatched key
+    // (PGRST204 "column not found"). Map explicitly rather than relying on
+    // an automatic case converter, since a couple of fields also rename
+    // outright (duration -> duration_hours).
+    const c = course as any;
+    const insertPayload = {
+      title: c.title,
+      subtitle: c.subtitle,
+      description: c.description,
+      instructor_id: c.instructorId,
+      category_id: c.categoryId,
+      programme_type: c.programmeType,
+      level: c.level,
+      track: c.track,
+      price: c.price,
+      currency: c.currency,
+      associate_price: c.associatePrice,
+      member_price: c.memberPrice,
+      fellow_price: c.fellowPrice,
+      requires_approval: c.requiresApproval,
+      thumbnail_url: c.thumbnailUrl,
+      promo_video_url: c.promoVideoUrl,
+      duration_hours: c.duration,
+      is_published: c.isPublished,
+      is_featured: c.isFeatured,
+      avg_rating: c.avgRating,
+      rating_count: c.ratingCount,
+      enrollment_count: c.enrollmentCount,
+      tags: c.tags,
+      ticket_types: c.ticketTypes,
+    };
+
     const { data, error } = await supabaseAdmin
       .from("courses")
-      .insert(course)
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -886,6 +921,18 @@ export class DatabaseStorage implements IStorage {
     return data || [];
   }
 
+  async getCertificationById(id: string): Promise<any> {
+    const { data, error } = await supabaseAdmin
+      .from("certifications")
+      .select(
+        "*, course:courses(id, title), user:users(id, first_name, last_name)",
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
   // ============================================================================
   // ORDER OPERATIONS
   // ============================================================================
@@ -1152,7 +1199,8 @@ export class DatabaseStorage implements IStorage {
     const insertData = {
       quiz_id: attempt.quizId,
       user_id: attempt.userId,
-      time_spent: attempt.timeSpent || 0,
+      // Column is time_spent_minutes; the client sends elapsed seconds.
+      time_spent_minutes: Math.round((attempt.timeSpent || 0) / 60),
       score: "100",
       passed: true,
       completed_at: new Date().toISOString(),
@@ -1402,9 +1450,21 @@ export class DatabaseStorage implements IStorage {
     id: string,
     updates: Partial<InstructorApplication>,
   ): Promise<InstructorApplication> {
+    // Caller (PUT /api/admin/instructor-applications/:id) passes camelCase
+    // keys (reviewComments, reviewedBy, reviewedAt), but instructor_applications'
+    // real columns are snake_case — passing them straight through 500s on
+    // the first mismatched key (PGRST204 "column not found"), same class of
+    // bug as createCourse above. Map explicitly.
+    const u = updates as any;
+    const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (u.status !== undefined) updatePayload.status = u.status;
+    if (u.reviewComments !== undefined) updatePayload.review_comments = u.reviewComments;
+    if (u.reviewedBy !== undefined) updatePayload.reviewed_by = u.reviewedBy;
+    if (u.reviewedAt !== undefined) updatePayload.reviewed_at = u.reviewedAt;
+
     const { data, error } = await supabaseAdmin
       .from("instructor_applications")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", id)
       .select()
       .single();
@@ -1736,7 +1796,8 @@ export class DatabaseStorage implements IStorage {
         score,
         passed,
         completed_at: new Date().toISOString(),
-        time_spent: timeSpent,
+        // Column is time_spent_minutes; timeSpent (from the client) is seconds.
+        time_spent_minutes: Math.round((timeSpent || 0) / 60),
       })
       .eq("id", attemptId)
       .select()

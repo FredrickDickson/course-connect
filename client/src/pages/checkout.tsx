@@ -184,7 +184,8 @@ export default function Checkout() {
         body: JSON.stringify({
           courseId: course.id,
           userId: user.id,
-          enrollmentLevel: course.level?.toUpperCase() || 'ASSOCIATE',
+          enrollmentLevel: course.programme_type === 'ADJUNCT_COURSE' ? null : (course.level?.toUpperCase() || 'ASSOCIATE'),
+          programmeType: course.programme_type || 'PROFESSIONAL_PROGRAMME',
           paymentType: isCompanyInvoice ? "company_invoice" : "individual",
           ...(isCompanyInvoice && {
             companyName,
@@ -311,10 +312,10 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex-1">
         {/* Back button */}
         <Link href={`/course/${courseId}`}>
           <Button variant="ghost" size="sm" className="mb-4 -ml-2">

@@ -16,7 +16,7 @@ export default function RecommendedSection() {
         .from('forum_posts')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url),
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url),
           board:forum_boards(id, name, category:forum_categories(id, name))
         `)
         .eq('status', 'active')

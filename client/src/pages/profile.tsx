@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import StudentLayout from "@/components/student-layout";
 import {
   User,
   Mail,
@@ -37,7 +38,6 @@ import {
   Edit2,
   Save,
   X,
-  ArrowLeft,
   Building2,
   Briefcase,
   GraduationCap,
@@ -160,32 +160,17 @@ export default function Profile() {
   const { data: enrollments = [], isLoading: isLoadingEnrollments } = useQuery<any[]>({
     queryKey: ["enrollments", user?.id],
     queryFn: async () => {
-      // Get payment enrollments from course_enrollments
-      const { data: paymentEnrollments, error: paymentError } = await (supabase as any)
-        .from("course_enrollments")
-        .select("*, course:courses(*)")
-        .eq("user_id", user!.id)
-        .neq("payment_status", "cancelled");
-      if (paymentError) throw paymentError;
-
-      // Get progress enrollments from enrollments table
-      const { data: progressEnrollments, error: progressError } = await supabase
+      // course_enrollments was migrated into enrollments/orders (see
+      // supabase/migrations/20260610000007_migrate_course_enrollments_to_unified.sql)
+      // and no longer exists as a live table — enrollments is the sole
+      // source of truth now.
+      const { data: enrollments, error } = await supabase
         .from("enrollments")
         .select("*, course:courses(*)")
         .eq("user_id", user!.id);
-      if (progressError) throw progressError;
+      if (error) throw error;
 
-      // Combine and deduplicate by course_id
-      const allEnrollments = [...(paymentEnrollments || []), ...(progressEnrollments || [])];
-      const uniqueEnrollments = allEnrollments.reduce((acc: any[], enrollment) => {
-        const existing = acc.find(e => e.course_id === enrollment.course_id);
-        if (!existing) {
-          acc.push(enrollment);
-        }
-        return acc;
-      }, []);
-
-      return uniqueEnrollments;
+      return enrollments || [];
     },
     enabled: !!user?.id,
   });
@@ -453,20 +438,19 @@ export default function Profile() {
   }, [completionRecords]);
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <LoadingState message="Loading profile..." size="lg" />
+        </div>
+      </StudentLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Button>
-        </Link>
-
-        {/* Profile Header Card */}
-        <Card className="mb-6">
+    <StudentLayout>
+      {/* Profile Header Card */}
+      <Card className="mb-6 border-2 border-[#d4c5b0]/20 rounded-[24px]">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start gap-6">
               <AvatarUpload
@@ -896,7 +880,6 @@ export default function Profile() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Certificate Preview Modal */}
       {activeCertData && (
@@ -906,6 +889,6 @@ export default function Profile() {
           data={activeCertData}
         />
       )}
-    </div>
+    </StudentLayout>
   );
 }

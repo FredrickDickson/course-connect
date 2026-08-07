@@ -36,7 +36,7 @@ const ACTIVE_ENROLLMENT_STATUSES = new Set([
   "APPROVED",
 ]);
 
-const DEFAULT_TRACK: Course["track"] = "ARBITRATION";
+const DEFAULT_TRACK: "ARBITRATION" | "MEDIATION" = "ARBITRATION";
 
 function normalizeTrackLevel(level?: string | null): TrackLevel {
   if (!level) return "NONE";
@@ -87,7 +87,7 @@ function normalizeEnrollmentLevel(level?: string | null): EnrollmentLevel {
   return "ASSOCIATE";
 }
 
-function resolveTrack(track?: Course["track"] | null): Course["track"] {
+function resolveTrack(track?: Course["track"] | null): "ARBITRATION" | "MEDIATION" {
   return track === "ARBITRATION" || track === "MEDIATION" ? track : DEFAULT_TRACK;
 }
 
@@ -103,8 +103,61 @@ function levelLabel(level?: TrackLevel | EnrollmentLevel): string {
 export async function checkEligibility(
   user: User,
   course: Course,
-  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW",
+  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW" | null,
 ): Promise<EligibilityResponse> {
+  // Adjunct Courses are standalone and independent of the professional
+  // pathway - no prerequisite ladder applies, ever.
+  // Storage layer returns raw (snake_case) Supabase rows, so check both
+  // casings defensively.
+  const programmeType =
+    (course as any).programme_type ?? course.programmeType;
+  if (programmeType === "ADJUNCT_COURSE") {
+    const inertProgression: EligibilityResponse["progression"] = {
+      track: "ARBITRATION",
+      currentLevel: "NONE",
+      targetLevel: "ASSOCIATE",
+    };
+
+    const existingEnrollment = await getEnrollment(user.id, course.id);
+    if (
+      existingEnrollment &&
+      ACTIVE_ENROLLMENT_STATUSES.has(
+        (existingEnrollment.status ?? "ACTIVE").toUpperCase(),
+      )
+    ) {
+      return {
+        status: "BLOCKED",
+        reasonCode: "ALREADY_ENROLLED",
+        existingEnrollmentId: existingEnrollment.id,
+        ui: {
+          title: "You're already enrolled",
+          message: "Head to your dashboard to continue learning.",
+          action: {
+            label: "Go to dashboard",
+            actionType: "VIEW_ENROLLMENT",
+            actionTarget: "/dashboard",
+          },
+        },
+        progression: inertProgression,
+      };
+    }
+
+    return {
+      status: "ELIGIBLE",
+      reasonCode: "OK",
+      ui: {
+        title: "You're cleared to enroll",
+        message: `Continue to checkout to confirm your seat for ${course.title ?? "this course"}.`,
+        action: {
+          label: "Continue to checkout",
+          actionType: "ENROLL",
+          actionTarget: `/checkout/${course.id}`,
+        },
+      },
+      progression: inertProgression,
+    };
+  }
+
   const track = resolveTrack(course.track as Course["track"] | null);
   const currentLevel = normalizeTrackLevel(
     (user.assigned_level ?? user.current_level) as string | null,
@@ -213,7 +266,7 @@ export async function checkEligibility(
 export async function createEnrollment(
   userId: string,
   courseId: string,
-  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW",
+  enrollmentLevel: "ASSOCIATE" | "MEMBER" | "FELLOW" | null,
   enrollmentType: "COURSE" | "APPLICATION" | "ASSESSMENT" = "COURSE"
 ): Promise<Enrollment> {
   const { data, error } = await supabaseAdmin

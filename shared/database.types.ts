@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activity_log: {
@@ -412,6 +437,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -937,6 +969,7 @@ export type Database = {
           pathway_tags: string[] | null
           postal_code: string | null
           price: number
+          programme_type: string
           promo_video_url: string | null
           qualification_level: string | null
           rating_count: number | null
@@ -983,6 +1016,7 @@ export type Database = {
           pathway_tags?: string[] | null
           postal_code?: string | null
           price: number
+          programme_type?: string
           promo_video_url?: string | null
           qualification_level?: string | null
           rating_count?: number | null
@@ -1029,6 +1063,7 @@ export type Database = {
           pathway_tags?: string[] | null
           postal_code?: string | null
           price?: number
+          programme_type?: string
           promo_video_url?: string | null
           qualification_level?: string | null
           rating_count?: number | null
@@ -2253,6 +2288,76 @@ export type Database = {
         }
         Relationships: []
       }
+      level_waivers: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          granted_via: string
+          id: string
+          level: string
+          profile_id: string | null
+          status: string
+          track: string
+          updated_at: string
+          user_id: string
+          waiver_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          granted_via?: string
+          id?: string
+          level: string
+          profile_id?: string | null
+          status?: string
+          track: string
+          updated_at?: string
+          user_id: string
+          waiver_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          granted_via?: string
+          id?: string
+          level?: string
+          profile_id?: string | null
+          status?: string
+          track?: string
+          updated_at?: string
+          user_id?: string
+          waiver_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_waivers_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_waivers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_waivers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           certificate_url: string | null
@@ -2473,10 +2578,12 @@ export type Database = {
           asset_status: string | null
           created_at: string | null
           duration_seconds: number | null
+          error_message: string | null
           id: string
           lesson_id: string | null
-          mux_asset_id: string
-          mux_playback_id: string
+          mux_asset_id: string | null
+          mux_playback_id: string | null
+          mux_upload_id: string | null
           updated_at: string | null
           upload_status: string | null
           upload_url: string | null
@@ -2485,10 +2592,12 @@ export type Database = {
           asset_status?: string | null
           created_at?: string | null
           duration_seconds?: number | null
+          error_message?: string | null
           id?: string
           lesson_id?: string | null
-          mux_asset_id: string
-          mux_playback_id: string
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
           upload_url?: string | null
@@ -2497,10 +2606,12 @@ export type Database = {
           asset_status?: string | null
           created_at?: string | null
           duration_seconds?: number | null
+          error_message?: string | null
           id?: string
           lesson_id?: string | null
-          mux_asset_id?: string
-          mux_playback_id?: string
+          mux_asset_id?: string | null
+          mux_playback_id?: string | null
+          mux_upload_id?: string | null
           updated_at?: string | null
           upload_status?: string | null
           upload_url?: string | null
@@ -2937,6 +3048,214 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      professional_documents: {
+        Row: {
+          created_at: string
+          document_type: Database["public"]["Enums"]["professional_document_type"]
+          file_size: number | null
+          file_url: string
+          id: string
+          is_primary: boolean
+          mime_type: string | null
+          original_name: string | null
+          profile_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: Database["public"]["Enums"]["professional_document_type"]
+          file_size?: number | null
+          file_url: string
+          id?: string
+          is_primary?: boolean
+          mime_type?: string | null
+          original_name?: string | null
+          profile_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: Database["public"]["Enums"]["professional_document_type"]
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          is_primary?: boolean
+          mime_type?: string | null
+          original_name?: string | null
+          profile_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_documents_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_profiles: {
+        Row: {
+          adr_roles: string[]
+          assigned_level: string
+          assigned_level_notes: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          credentials: Json
+          decision_at: string | null
+          id: string
+          is_archived: boolean
+          is_current: boolean
+          job_title: string | null
+          level_source: Database["public"]["Enums"]["level_source_type"]
+          linkedin_url: string | null
+          narrative_summary: string | null
+          organization: string | null
+          practice_areas: string[]
+          profile_version: number
+          qualifications: Json
+          review_notes: string | null
+          review_status: Database["public"]["Enums"]["professional_review_status"]
+          reviewer_id: string | null
+          self_assessed_level: string | null
+          submitted_at: string | null
+          submitted_payload: Json | null
+          timezone: string | null
+          track: string
+          updated_at: string
+          user_id: string
+          website_url: string | null
+          years_adr_experience: number
+          years_legal_experience: number
+        }
+        Insert: {
+          adr_roles?: string[]
+          assigned_level?: string
+          assigned_level_notes?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          credentials?: Json
+          decision_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_current?: boolean
+          job_title?: string | null
+          level_source?: Database["public"]["Enums"]["level_source_type"]
+          linkedin_url?: string | null
+          narrative_summary?: string | null
+          organization?: string | null
+          practice_areas?: string[]
+          profile_version?: number
+          qualifications?: Json
+          review_notes?: string | null
+          review_status?: Database["public"]["Enums"]["professional_review_status"]
+          reviewer_id?: string | null
+          self_assessed_level?: string | null
+          submitted_at?: string | null
+          submitted_payload?: Json | null
+          timezone?: string | null
+          track?: string
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+          years_adr_experience?: number
+          years_legal_experience?: number
+        }
+        Update: {
+          adr_roles?: string[]
+          assigned_level?: string
+          assigned_level_notes?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          credentials?: Json
+          decision_at?: string | null
+          id?: string
+          is_archived?: boolean
+          is_current?: boolean
+          job_title?: string | null
+          level_source?: Database["public"]["Enums"]["level_source_type"]
+          linkedin_url?: string | null
+          narrative_summary?: string | null
+          organization?: string | null
+          practice_areas?: string[]
+          profile_version?: number
+          qualifications?: Json
+          review_notes?: string | null
+          review_status?: Database["public"]["Enums"]["professional_review_status"]
+          reviewer_id?: string | null
+          self_assessed_level?: string | null
+          submitted_at?: string | null
+          submitted_payload?: Json | null
+          timezone?: string | null
+          track?: string
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+          years_adr_experience?: number
+          years_legal_experience?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_profiles_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -3748,6 +4067,9 @@ export type Database = {
           track: string
           updated_at: string | null
           user_id: string
+          waived_levels: string[]
+          waiver_last_granted_at: string | null
+          waiver_metadata: Json
         }
         Insert: {
           created_at?: string | null
@@ -3757,6 +4079,9 @@ export type Database = {
           track: string
           updated_at?: string | null
           user_id: string
+          waived_levels?: string[]
+          waiver_last_granted_at?: string | null
+          waiver_metadata?: Json
         }
         Update: {
           created_at?: string | null
@@ -3766,6 +4091,9 @@ export type Database = {
           track?: string
           updated_at?: string | null
           user_id?: string
+          waived_levels?: string[]
+          waiver_last_granted_at?: string | null
+          waiver_metadata?: Json
         }
         Relationships: [
           {
@@ -3863,6 +4191,8 @@ export type Database = {
           id: string
           job_title: string | null
           last_name: string | null
+          level_source: Database["public"]["Enums"]["level_source_type"] | null
+          level_updated_at: string | null
           llm_graduation_year: number | null
           llm_institution: string | null
           llm_specialization: string | null
@@ -3896,6 +4226,8 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          level_source?: Database["public"]["Enums"]["level_source_type"] | null
+          level_updated_at?: string | null
           llm_graduation_year?: number | null
           llm_institution?: string | null
           llm_specialization?: string | null
@@ -3929,6 +4261,8 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          level_source?: Database["public"]["Enums"]["level_source_type"] | null
+          level_updated_at?: string | null
           llm_graduation_year?: number | null
           llm_institution?: string | null
           llm_specialization?: string | null
@@ -4022,49 +4356,6 @@ export type Database = {
           },
         ]
       }
-      course_enrollments_legacy: {
-        Row: {
-          address: string | null
-          admin_notes: string | null
-          booking_ref: string | null
-          confirmed_at: string | null
-          country: string | null
-          course_id: string | null
-          created_at: string | null
-          currency: string | null
-          email: string | null
-          full_name: string | null
-          id: string | null
-          institution: string | null
-          invoice_expiry_date: string | null
-          payment_method: string | null
-          payment_status: string | null
-          paystack_reference: string | null
-          personal_statement: string | null
-          phone: string | null
-          programme_selected: string | null
-          ticket_price: number | null
-          ticket_type: string | null
-          user_id: string | null
-          whatsapp: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "course_catalog_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       pathway_analytics: {
         Row: {
           avg_progress: number | null
@@ -4090,7 +4381,11 @@ export type Database = {
         Returns: undefined
       }
       award_reputation_points: {
-        Args: { achievement_type: string; points: number; user_id: string }
+        Args: {
+          p_achievement_type?: string
+          p_points: number
+          p_user_id: string
+        }
         Returns: undefined
       }
       calculate_enrollment_progress: {
@@ -4189,8 +4484,23 @@ export type Database = {
       }
     }
     Enums: {
+      level_source_type: "DEFAULT" | "EXPEDITED" | "ADMIN" | "MIGRATION"
       membership_level: "associate" | "member" | "fellow"
       membership_status: "pending" | "active" | "expiring" | "expired"
+      professional_document_type:
+        | "CV"
+        | "CERTIFICATE"
+        | "LICENSE"
+        | "PORTFOLIO"
+        | "REFERENCE"
+        | "AWARD"
+        | "OTHER"
+      professional_review_status:
+        | "DRAFT"
+        | "UNDER_REVIEW"
+        | "APPROVED"
+        | "REJECTED"
+        | "MORE_INFO_REQUIRED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4316,10 +4626,30 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
+      level_source_type: ["DEFAULT", "EXPEDITED", "ADMIN", "MIGRATION"],
       membership_level: ["associate", "member", "fellow"],
       membership_status: ["pending", "active", "expiring", "expired"],
+      professional_document_type: [
+        "CV",
+        "CERTIFICATE",
+        "LICENSE",
+        "PORTFOLIO",
+        "REFERENCE",
+        "AWARD",
+        "OTHER",
+      ],
+      professional_review_status: [
+        "DRAFT",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED",
+        "MORE_INFO_REQUIRED",
+      ],
     },
   },
 } as const

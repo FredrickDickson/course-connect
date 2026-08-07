@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCoursePrice } from "@/lib/format-price";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import StudentLayout from "@/components/student-layout";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users, X } from "lucide-react";
 import { Link } from "wouter";
@@ -25,6 +25,7 @@ interface Suggestion {
 
 export default function Courses() {
   const { t } = useLanguage();
+  const [programmeType, setProgrammeType] = useState<"PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE">("PROFESSIONAL_PROGRAMME");
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -176,6 +177,7 @@ export default function Courses() {
     queryKey: [
       "courses_filtered",
       {
+        programmeType,
         search,
         category: category === "all" ? "" : category,
         level: level === "all" ? "" : level,
@@ -188,8 +190,11 @@ export default function Courses() {
     queryFn: async () => {
       let query = supabase
         .from("courses")
-        .select("*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)")
-        .eq("is_published", true);
+        .select(
+          "*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)",
+        )
+        .eq("is_published", true)
+        .eq("programme_type", programmeType);
 
       if (search) {
         query = query.ilike("title", `%${search}%`);
@@ -202,7 +207,9 @@ export default function Courses() {
         if (catData) query = query.eq("category_id", (catData as any).id);
       }
 
-      if (level && level !== "all") {
+      // Level only applies to Professional Programme courses - Adjunct
+      // Courses have no level (NULL), so .eq("level", ...) would never match.
+      if (programmeType === "PROFESSIONAL_PROGRAMME" && level && level !== "all") {
         query = query.eq("level", level);
       }
 
@@ -256,11 +263,9 @@ export default function Courses() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <StudentLayout noPadding>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground py-20">
+      <section className="bg-gradient-to-br from-[#610000] via-[#8b0000] to-[#610000] text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <div className="space-y-4">
@@ -268,8 +273,8 @@ export default function Courses() {
                 <BookOpen className="w-4 h-4 mr-2" />
                 {stats?.totalCourses || "50+"} Professional Courses
               </Badge>
-              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">{t("courses.title")}</h1>
-              <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight font-sf-pro-display">{t("courses.title")}</h1>
+              <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
                 {t("courses.subtitle")}
               </p>
             </div>
@@ -277,19 +282,19 @@ export default function Courses() {
             {/* Quick Stats */}
             <div className="flex flex-wrap justify-center gap-8 mt-8 text-sm">
               <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-yellow-300" />
+                <Users className="w-4 h-4 text-[#c5a572]" />
                 <span>5,000+ Global Members</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Star className="w-4 h-4 text-yellow-300" />
+                <Star className="w-4 h-4 text-[#c5a572]" />
                 <span>4.8 Average Rating</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-yellow-300" />
+                <Clock className="w-4 h-4 text-[#c5a572]" />
                 <span>International Recognition</span>
               </div>
               <div className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4 text-yellow-300" />
+                <BookOpen className="w-4 h-4 text-[#c5a572]" />
                 <span>Expert-Led Courses</span>
               </div>
             </div>
@@ -300,6 +305,24 @@ export default function Courses() {
       {/* Advanced Search & Filters */}
       <section className="py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Programme Type Tabs - Professional Programme and Adjunct Courses
+              are completely separate kinds of learning */}
+          <div className="flex justify-center mb-8">
+            <Tabs
+              value={programmeType}
+              onValueChange={(v) => setProgrammeType(v as "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE")}
+            >
+              <TabsList>
+                <TabsTrigger value="PROFESSIONAL_PROGRAMME" data-testid="tab-professional-programme">
+                  Professional Programme
+                </TabsTrigger>
+                <TabsTrigger value="ADJUNCT_COURSE" data-testid="tab-adjunct-courses">
+                  Adjunct Courses
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           {/* Search Bar with Autocomplete */}
           <div className="relative max-w-2xl mx-auto mb-8" ref={searchContainerRef}>
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 z-10" />
@@ -367,17 +390,19 @@ export default function Courses() {
                 </SelectContent>
               </Select>
 
-              <Select onValueChange={setLevel} data-testid="select-level">
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="associate">Part I (Associate)</SelectItem>
-                  <SelectItem value="member">Part II (Member)</SelectItem>
-                  <SelectItem value="fellow">Part III (Fellow)</SelectItem>
-                </SelectContent>
-              </Select>
+              {programmeType === "PROFESSIONAL_PROGRAMME" && (
+                <Select onValueChange={setLevel} data-testid="select-level">
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="associate">Part I (Associate)</SelectItem>
+                    <SelectItem value="member">Part II (Member)</SelectItem>
+                    <SelectItem value="fellow">Part III (Fellow)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
 
               <Select onValueChange={(value: any) => setTrackFilter(value)} value={trackFilter}>
                 <SelectTrigger className="w-40">
@@ -548,11 +573,16 @@ export default function Courses() {
                     <div className="absolute top-4 left-4">
                       <Badge className="bg-primary text-primary-foreground">Featured</Badge>
                     </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="secondary" className="bg-black/20 text-white border-0">
-                        {course.level}
-                      </Badge>
-                    </div>
+                    {course.level && (
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant="secondary"
+                          className="bg-black/20 text-white border-0"
+                        >
+                          {course.level}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -563,7 +593,7 @@ export default function Courses() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="text-2xl font-bold text-foreground">${course.price.toLocaleString()}</div>
+                          <div className="text-2xl font-bold text-foreground">{formatCoursePrice(course.price, "$")}</div>
                           <div className="text-sm text-muted-foreground">
                             {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>
@@ -768,8 +798,6 @@ export default function Courses() {
           )}
         </div>
       </section>
-
-      <Footer />
-    </div>
+    </StudentLayout>
   );
 }

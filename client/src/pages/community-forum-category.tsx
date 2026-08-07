@@ -86,7 +86,7 @@ export default function ForumCategory() {
         .from('forum_posts')
         .select(`
           *,
-          author:profiles(id, full_name, avatar_url),
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url),
           board:forum_boards(id, name, slug)
         `)
         .in('board_id', boardIds)

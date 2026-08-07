@@ -338,7 +338,7 @@ async function buildQualificationContext(userId: string): Promise<QualificationC
       .eq("id", userId)
       .maybeSingle(),
     supabaseAdmin
-      .from("user_track_progress")
+      .from("track_progress")
       .select("id, user_id, track, level, pathway, waived_levels, waiver_metadata, waiver_last_granted_at, created_at, updated_at")
       .eq("user_id", userId),
     supabaseAdmin

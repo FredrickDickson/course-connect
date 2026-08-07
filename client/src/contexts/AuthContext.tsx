@@ -247,6 +247,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsProfileLoading(false);
     setIsAuthReady(true);
     profileFetchedRef.current = null;
+    // Redirect to landing page after logout
+    window.location.href = '/';
   }, []);
 
   const isLoading = !isAuthReady || isProfileLoading || (!!authUser && !user);

@@ -8,18 +8,30 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../shared/database.types";
 
 const supabase = createClient<Database>(
-  process.env.SUPABASE_URL!,
+  (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 import { validateAndExtractVideoUrl } from "../utils/videoValidator";
 
 const router = Router();
 
-// Initialize Mux client
-const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID,
-  tokenSecret: process.env.MUX_TOKEN_SECRET,
-});
+// Mux client is instantiated lazily, not at import time: this router is
+// mounted unconditionally in server/routes.ts, so a hard-crash constructor
+// here would take down the whole app for anyone without Mux configured,
+// not just Mux-dependent routes.
+let muxClient: Mux | null = null;
+function getMux(): Mux {
+  if (!process.env.MUX_TOKEN_ID || !process.env.MUX_TOKEN_SECRET) {
+    throw new Error("Mux is not configured (MUX_TOKEN_ID / MUX_TOKEN_SECRET missing)");
+  }
+  if (!muxClient) {
+    muxClient = new Mux({
+      tokenId: process.env.MUX_TOKEN_ID,
+      tokenSecret: process.env.MUX_TOKEN_SECRET,
+    });
+  }
+  return muxClient;
+}
 
 // Generate direct upload URL for Mux
 router.post(
@@ -74,7 +86,7 @@ router.post(
       }
 
       // Create Mux upload with passthrough for tracking
-      const upload = await mux.video.uploads.create({
+      const upload = await getMux().video.uploads.create({
         new_asset_settings: {
           playback_policy: ['signed'],
           mp4_support: 'standard',
@@ -135,7 +147,7 @@ router.post(
       console.warn('Mux webhook signing secret not configured, skipping signature verification');
     } else if (signature) {
       try {
-        mux.webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
+        getMux().webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
         // If no error thrown, signature is valid
       } catch (error) {
         return res.status(401).json({ error: 'SIGNATURE_VERIFICATION_FAILED' });
@@ -174,7 +186,7 @@ router.get(
     const { assetId } = req.params;
 
     try {
-      const asset = await mux.video.assets.retrieve(assetId);
+      const asset = await getMux().video.assets.retrieve(assetId);
       
       // Find corresponding mux_asset record
       const { data: muxAsset, error: muxAssetError } = await supabase
@@ -258,7 +270,7 @@ router.delete(
       // Delete asset from Mux if it exists
       if (muxAsset.mux_asset_id) {
         try {
-          await mux.video.assets.delete(muxAsset.mux_asset_id);
+          await getMux().video.assets.delete(muxAsset.mux_asset_id);
         } catch (muxError) {
           console.error('Mux asset deletion error:', muxError);
           // Continue with database cleanup even if Mux deletion fails
@@ -329,7 +341,7 @@ router.post(
       }
 
       // Update asset to public playback policy
-      await mux.video.assets.update(muxAsset.mux_asset_id, {
+      await getMux().video.assets.update(muxAsset.mux_asset_id, {
         playback_policy: 'public',
       } as any);
 

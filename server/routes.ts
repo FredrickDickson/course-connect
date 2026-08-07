@@ -65,6 +65,11 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 
 import enrollmentsRouter from "./routes/enrollments";
+
+import certificationsRouter from "./routes/certifications";
+
+import qualificationRouter from "./routes/qualification";
+
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
 import muxRouter from "./routes/mux";
@@ -173,6 +178,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount enrollment routes with eligibility check
 
   app.use("/api/enrollments", enrollmentsRouter);
+
+  app.use("/api/certifications", certificationsRouter);
+
+  app.use("/api/qualification", qualificationRouter);
 
   // Mount renewal and certificate routes
   app.use("/api/renewal", renewalRouter);

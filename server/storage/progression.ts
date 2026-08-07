@@ -24,7 +24,7 @@ const supabaseAdmin = createClient(
 async function getCourseMetadata(courseId: string) {
   const { data, error } = await supabaseAdmin
     .from("courses")
-    .select("id, track, level, title")
+    .select("id, track, level, title, programme_type")
     .eq("id", courseId)
     .single();
 
@@ -37,6 +37,7 @@ async function getCourseMetadata(courseId: string) {
     track: data.track as "ARBITRATION" | "MEDIATION",
     level: data.level as "ASSOCIATE" | "MEMBER" | "FELLOW",
     title: data.title,
+    programmeType: (data.programme_type as "PROFESSIONAL_PROGRAMME" | "ADJUNCT_COURSE" | null) ?? "PROFESSIONAL_PROGRAMME",
   };
 }
 
@@ -133,6 +134,16 @@ export async function handleCourseCompletion(
   const courseMetadata = await getCourseMetadata(courseId);
   if (!courseMetadata) {
     return { success: false, message: "Course not found" };
+  }
+
+  // Adjunct Courses are standalone and completely independent of the CIMA
+  // professional pathway - never touch track_progress/certificates or any
+  // level-upgrade logic for them, even if a required quiz was passed.
+  if (courseMetadata.programmeType === "ADJUNCT_COURSE") {
+    return {
+      success: true,
+      message: "Adjunct course - no track/level progression applies.",
+    };
   }
 
   const { track, level: courseLevel } = courseMetadata;

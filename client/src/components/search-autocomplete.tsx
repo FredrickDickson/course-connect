@@ -30,7 +30,7 @@ export default function SearchAutocomplete({ value, onChange, placeholder = "Sea
           id,
           title,
           slug,
-          author:profiles(id, full_name, avatar_url),
+          author:profiles!forum_posts_author_id_fkey(id, full_name, avatar_url),
           board:forum_boards(id, name)
         `)
         .eq('status', 'active')

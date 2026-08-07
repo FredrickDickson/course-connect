@@ -1,0 +1,490 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9
+            }
+          ]
+        }
+      },
+      "id": "a12bab6f-ad75-41d0-be21-bf7794edd5fa",
+      "name": "Cron - Morning (9:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 12,
+              "minute": 30
+            }
+          ]
+        }
+      },
+      "id": "430d0b43-cb22-4fbc-acdb-c1a5ec021562",
+      "name": "Cron - Midday (12:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 17,
+              "minute": 30
+            }
+          ]
+        }
+      },
+      "id": "28da83ce-c950-4ca7-9bb6-15dc151fea6c",
+      "name": "Cron - Evening (5:30 PM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        0,
+        480
+      ],
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "morning",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['Online Dispute Resolution ODR digital courts 2025', 'Legal Tech acquisition merger arbitration 2025', 'international arbitration ruling enforcement 2025', 'AI legal technology court ruling 2025', 'cross-border dispute resolution digital platform 2025'][Math.floor(Math.random() * 5)] }}",
+              "type": "string"
+            },
+            {
+              "name": "postAngle",
+              "value": "THE NEWS. Your job is to identify a specific recent development — a ruling, acquisition, policy shift, or institutional announcement — and analyse its immediate implications for ADR practitioners, General Counsel, and dispute resolution institutions. Be concrete and current. Do not generalise.",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f34d0bf1-496a-4448-bcff-048659f9ebf7",
+      "name": "Set Morning Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "midday",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['smart contracts computational law dispute resolution 2025', 'LegalOps AI document review e-discovery automation 2025', 'ADR professional certification digital competence 2025', 'blockchain arbitration award enforcement 2025', 'legal workflow automation case management 2025'][Math.floor(Math.random() * 5)] }}",
+              "type": "string"
+            },
+            {
+              "name": "postAngle",
+              "value": "THE LOGIC. Go deeper than the headline. Examine how this area is being implemented in practice by law firms, corporate legal departments, and arbitral institutions. Explore the procedural, operational, or commercial reasoning behind the shift. Connect the insight — without naming it as promotion — to why institutional standards and certified competence matter when deploying these tools in live disputes.",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7889a2d3-e86d-4da7-a219-fba6ec428c3d",
+      "name": "Set Midday Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "timeSlot",
+              "value": "evening",
+              "type": "string"
+            },
+            {
+              "name": "topic",
+              "value": "={{ ['AI bias ethics legal system EU AI Act arbitration 2025', 'future of arbitration virtual hearing 2030', 'algorithmic fairness automated mediation judicial integrity 2025', 'Legal Tech 2030 digital transformation courts', 'cybersecurity data protection international arbitration 2025'][Math.floor(Math.random() * 5)] }}",
+              "type": "string"
+            },
+            {
+              "name": "postAngle",
+              "value": "THE FUTURE. Take a considered, visionary position on where this area is heading over the next three to five years. Ground the speculation in real institutional and regulatory trends — not fantasy. The post should feel like a senior practitioner thinking out loud about the profession's trajectory, not a technology forecast. Challenge the reader's assumptions about what 'normal' will look like in dispute resolution by 2030.",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "value": "Post",
+              "type": "string"
+            },
+            {
+              "name": "targetDate",
+              "value": "={{ $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "45a4208c-7d4d-4854-ae00-46e44c640d63",
+      "name": "Set Evening Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.topic }}\",\n  \"search_depth\": \"advanced\",\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"max_results\": 7,\n  \"include_domains\": [\n    \"globalarbitrationreview.com\",\n    \"kluwerlawonline.com\",\n    \"lawgazette.co.uk\",\n    \"legalweek.com\",\n    \"artificiallawyer.com\",\n    \"legaltech.news\",\n    \"reuters.com\",\n    \"ft.com\",\n    \"lexology.com\",\n    \"lawcom.gov.uk\",\n    \"iccwbo.org\",\n    \"lcia.org\",\n    \"uncitral.un.org\"\n  ]\n}",
+        "options": {}
+      },
+      "id": "1005e283-0ec6-4e1b-8441-e597d6d31c18",
+      "name": "Researcher - Tavily (Primary)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.topic }} latest news\",\n  \"search_depth\": \"advanced\",\n  \"include_answer\": true,\n  \"include_raw_content\": false,\n  \"max_results\": 5,\n  \"topic\": \"news\"\n}",
+        "options": {}
+      },
+      "id": "07d9daed-3cb3-4a73-b290-d64458f5b4b6",
+      "name": "Researcher - Tavily (News Feed)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "id": "438a769e-dd4a-457f-b33f-a20c039b8eeb",
+      "name": "Merge Research Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        672,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_GROQ_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are the ghostwriter for a Senior Partner at the Centre for International Mediators & Arbitrators (CIMA) — a globally recognised institution setting the professional standard for Alternative Dispute Resolution (ADR), international arbitration, and Legal Technology governance.\\n\\nYour writing is read by General Counsel, senior arbitrators, law faculty, and C-suite executives who manage cross-border disputes. They are sophisticated. They will immediately detect — and dismiss — generic content.\\n\\n**CRITICAL RULE — NO HALLUCINATION**\\nYou must only write about developments explicitly present in the research feed provided. If the research feed is thin or vague, write a tighter, shorter post grounded in what IS there. Do not invent rulings, cases, institutions, statistics, or names. If you cannot find a concrete anchor in the research, open with a structural observation about the field rather than a fabricated news event.\\n\\n**Content Pillars** (the only subjects you write about):\\n1. ODR & The Digital Judiciary — virtual hearing rooms, digital evidence, blockchain-based awards, online mediation platforms.\\n2. Computational Law & Smart Contracts — self-executing contracts, programmable compliance, the 'Code is Law' debate, digital-native disputes.\\n3. LegalOps & Efficiency — AI-driven document review, e-Discovery, workflow automation, case management technology.\\n4. AI Ethics & Algorithmic Integrity — the black-box problem in legal AI, the EU AI Act, bias in automated mediation, human-in-the-loop oversight.\\n5. Current Affairs in Law & Tech — landmark rulings, regulatory shifts, major M&A in Legal Tech, cross-jurisdictional enforcement developments.\\n\\n**Voice & Tone**\\n- Authoritative, precise, and understated — never breathless or promotional.\\n- Academic rigour balanced with strategic insight. Think Foreign Affairs meets the Harvard Negotiation Law Review.\\n- Confident in asserting positions. Does not hedge unnecessarily.\\n\\n**Language Rules**\\n- British English throughout: recognised, organisation, centre, practise (v.), licence (n.), programme, judgement.\\n- Banned phrases: 'In the rapidly evolving landscape', 'delve into', 'it is worth noting', 'game-changer', 'paradigm shift', 'navigate', 'leverage' (as a verb), 'unpack', 'exciting', 'groundbreaking'.\\n- Prefer precise nouns over vague abstractions. Prefer active voice.\\n- High-value terminology used naturally: institutional framework, jurisdictional nexus, seat of arbitration, procedural legitimacy, epistemic authority, standards harmonisation, digital-native dispute, evidentiary integrity.\\n\\n**Formatting**\\n- LinkedIn format. No decorative emojis in the opening line.\\n- Clean paragraph breaks. No bullet lists.\\n- Hashtags only at the very end on their own line.\\n- Absolute maximum: 3,000 characters including hashtags.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write a LinkedIn post for a CIMA Senior Partner using the inputs below.\\n\\n---\\n\\n**SESSION INPUTS**\\n\\nTime Slot: {{ $json[0].timeSlot }}\\nResearch Topic: {{ $json[0].topic }}\\nPost Angle: {{ $json[0].postAngle }}\\nToday's Date: {{ $json[0].targetDate }}\\n\\n**Research Feed — Primary (domain-specific sources):**\\nSummary answer: {{ $json[0].answer ? $json[0].answer : 'Not available.' }}\\nArticles:\\n{{ $json[0].results ? $json[0].results.map(r => '- [' + r.published_date + '] ' + r.title + ' (' + r.url + '): ' + r.content).join('\\\\n') : 'No primary results.' }}\\n\\n**Research Feed — News (general current coverage):**\\nSummary answer: {{ $json[1].answer ? $json[1].answer : 'Not available.' }}\\nArticles:\\n{{ $json[1].results ? $json[1].results.map(r => '- [' + r.published_date + '] ' + r.title + ' (' + r.url + '): ' + r.content).join('\\\\n') : 'No news results.' }}\\n\\n---\\n\\n**POST ARCHITECTURE** — execute in this exact sequence:\\n\\n**1. The Observation** (1–2 sentences)\\nA single declarative, specific statement grounded in the research feed. Cite the development — name the institution, ruling, platform, or policy. Not a question. Not a platitude. Something a reader would pause on.\\n\\n**2. The Analysis — Rule of Three** (3 paragraphs, 2–4 sentences each)\\nUnpack the significance through three distinct lenses drawn from: institutional, practitioner, jurisdictional, procedural, commercial, reputational, or regulatory. No lens may overlap with another. No filler sentences.\\n\\n**3. The CIMA Dimension** (1 paragraph)\\nWithout promoting CIMA directly, connect the insight to why internationally recognised standards and certified competence matter in this precise context. CIMA is a reference point, not a brand message. Imply its authority; do not advertise it.\\n\\n**4. The Closing Provocation** (1–2 sentences)\\nA sophisticated, open-ended challenge directed at senior practitioners. It must feel like a question a respected QC or Partner would genuinely want to discuss over dinner — not engagement bait.\\n\\n---\\n\\n**CONSTRAINTS**\\n- No emojis in the first line.\\n- Do not reference CIMA more than twice in the body.\\n- Do not name the author.\\n- No rhetorical questions as the opening line.\\n- No fabricated facts, cases, or statistics.\\n- Target length: 2,000–2,600 characters.\\n- End with exactly 3 hashtags on their own line: #ADR #LegalTech #CIMA\\n\\nWrite the post now.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "81e28c63-9f04-4913-aa37-ff95deb9c1b2",
+      "name": "Writer - Groq Llama 3.3 70B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "person": "oPjwjkb9V-",
+        "text": "={{ $json.choices[0].message.content }}",
+        "additionalFields": {}
+      },
+      "id": "a1be2df8-e265-4c83-bc8e-257574330680",
+      "name": "LinkedIn - Publish Post",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        240
+      ],
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Cron - Morning (9:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Set Morning Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Midday (12:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Midday Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - Evening (5:30 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Evening Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Morning Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Tavily (Primary)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Researcher - Tavily (News Feed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Midday Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Tavily (Primary)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Researcher - Tavily (News Feed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Evening Data": {
+      "main": [
+        [
+          {
+            "node": "Researcher - Tavily (Primary)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Researcher - Tavily (News Feed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Researcher - Tavily (Primary)": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Researcher - Tavily (News Feed)": {
+      "main": [
+        [
+          {
+            "node": "Merge Research Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Research Results": {
+      "main": [
+        [
+          {
+            "node": "Writer - Groq Llama 3.3 70B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer - Groq Llama 3.3 70B": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "902c0decf0de3f07e01fc0380f4379ca9c308c10236987883bff92118ad8bd69"
+  }
+}
+
+
+
+{
+  "parameters": {
+    "method": "POST",
+    "url": "https://api.linkedin.com/rest/posts",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "Authorization",
+          "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Restli-Protocol-Version",
+          "value": "2.0.0"
+        },
+        {
+          "name": "LinkedIn-Version",
+          "value": "202402"
+        }
+      ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={\n  \"author\": \"urn:li:person:oPjwjkb9V-\",\n  \"commentary\": \"{{ $json.choices[0].message.content }}\",\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  },\n  \"lifecycleState\": \"PUBLISHED\",\n  \"isReshareDisabledByAuthor\": false\n}"
+  },
+  "id": "linkedin-http-post",
+  "name": "LinkedIn - Publish Post (Fixed)",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [
+    1120,
+    240
+  ]
+}

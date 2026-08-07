@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { formatCoursePrice } from "@/lib/format-price";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
@@ -378,7 +379,7 @@ export default function AdminCoursesTable() {
                         [Calendar, "End Date", selectedCourse.end_date ? new Date(selectedCourse.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null],
                         [MapPin, "Venue", selectedCourse.venue],
                         [Clock, "Duration", selectedCourse.duration_hours ? `${selectedCourse.duration_hours} hours` : null],
-                        [DollarSign, "Price", `${selectedCourse.currency || "GHS"} ${Number(selectedCourse.price).toLocaleString()}`],
+                        [DollarSign, "Price", formatCoursePrice(selectedCourse.price, selectedCourse.currency || "GHS")],
                         [Layers, "Level", selectedCourse.level],
                         [Users, "Instructor", selectedCourse.instructor ? `${selectedCourse.instructor.first_name} ${selectedCourse.instructor.last_name}` : null],
                       ].filter(([, , v]) => v != null).map(([Icon, label, value]) => {

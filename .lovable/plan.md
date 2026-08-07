@@ -1,15 +1,21 @@
-## Problem
+## Apply `formatCoursePrice` to remaining price displays
 
-On mobile, the course content sheet shows two close (X) buttons:
-1. The built-in close button from `SheetContent` (Radix Dialog Close), already styled white/large in `video-player.tsx`.
-2. A second X rendered by `CourseSidebar` because `onClose` is passed in.
+The earlier pass updated `courses.tsx`, `course-detail.tsx`, the lesson editor video-preservation fix, and instructor self-enroll. Three price locations still render raw numbers and need the same "Free" treatment.
 
-## Fix
+### Files to update
 
-In `client/src/pages/video-player.tsx` (line 384–389), remove the `onClose={() => setMobileSheetOpen(false)}` prop from `<CourseSidebar>` inside the mobile `<SheetContent>`. The Sheet's built-in close button (already styled for visibility) handles closing, and `onLessonClick` still closes the sheet when a lesson is tapped.
+1. **`client/src/pages/course-search.tsx`** — replace raw `${course.price}` / `course.price.toLocaleString()` displays with `formatCoursePrice(course.price)`.
+2. **`client/src/pages/course-browser.tsx`** — same replacement on the course card price.
+3. **`client/src/components/admin-courses-table.tsx`** — same replacement in the price column cell.
 
-No changes to `CourseSidebar` itself — the desktop usage that still passes `onClose` keeps its single X.
+### Approach
 
-## Files
+- Import `formatCoursePrice` from `@/lib/format-price` in each file.
+- Swap the inline price expression for `formatCoursePrice(course.price)`.
+- Remove any now-unused currency prefix (`$`) around the call since the helper returns either `"Free"` or `"USD 1,234.00"`.
+- No logic, props, or styling changes beyond the text node.
 
-- `client/src/pages/video-player.tsx` — drop the `onClose` prop on the mobile `CourseSidebar` instance only.
+### Verification
+
+- Build passes.
+- Spot-check each surface in preview: a $0 course renders "Free"; a priced course renders the formatted amount.

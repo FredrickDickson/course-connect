@@ -33,13 +33,7 @@ export async function setupVite(app: Express, server: Server) {
   const vite = await createViteServer({
     ...resolvedConfig,
     configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      },
-    },
+    customLogger: viteLogger,
     server: serverOptions,
     appType: "custom",
   });

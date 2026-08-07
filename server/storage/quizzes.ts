@@ -99,7 +99,8 @@ export async function submitQuizAttempt(attempt: {
   const insertData = {
     quiz_id: attempt.quizId,
     user_id: attempt.userId,
-    time_spent: attempt.timeSpent || 0,
+    // Column is time_spent_minutes; the client sends elapsed seconds.
+    time_spent_minutes: Math.round((attempt.timeSpent || 0) / 60),
     score: "100",
     passed: true,
     completed_at: new Date().toISOString(),
@@ -292,7 +293,8 @@ export async function gradeQuizAttempt(
       score,
       passed,
       completed_at: new Date().toISOString(),
-      time_spent: timeSpent,
+      // Column is time_spent_minutes; timeSpent (from the client) is seconds.
+      time_spent_minutes: Math.round((timeSpent || 0) / 60),
     })
     .eq("id", attemptId)
     .select()

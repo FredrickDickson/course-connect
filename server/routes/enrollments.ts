@@ -45,7 +45,7 @@ const router = Router();
 
 // Create Supabase client for review prompts
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY!
 );
 
@@ -74,7 +74,7 @@ router.post(
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level, course.programme_type);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
     res.json(eligibility);
   }),
@@ -105,7 +105,7 @@ router.post(
     }
 
     // Check eligibility
-    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level);
+    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level, course.programme_type);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
 
     if (eligibility.status === "BLOCKED") {
@@ -128,7 +128,14 @@ async function resolveEnrollmentLevel(
   userId: string,
   requestedLevel: string | undefined,
   courseLevel: string | undefined,
-): Promise<EnrollmentLevel> {
+  programmeType?: string | null,
+): Promise<EnrollmentLevel | null> {
+  // Adjunct Courses have no qualification level - they're standalone and
+  // independent of the professional Associate/Member/Fellow pathway.
+  if (programmeType === "ADJUNCT_COURSE") {
+    return null;
+  }
+
   // Fetch user's actual assigned level from the users table
   const user = await storage.getUser(userId);
   const userLevel = user?.assigned_level?.toUpperCase() as EnrollmentLevel | undefined;
@@ -261,10 +268,14 @@ router.post(
                   });
                 }
 
+                // certificateUrl intentionally left null - the client builds
+                // the Certificate of Completion link from the row's own id
+                // (/certificates/completion/:certificationId) instead of a
+                // stored URL string.
                 await storage.createCertification({
                   userId,
                   courseId,
-                  certificateUrl: `/api/certificates/${courseId}/${userId}`,
+                  certificateUrl: null,
                 });
                 await storage.updateEnrollmentProgress(userId, courseId, 100);
               }

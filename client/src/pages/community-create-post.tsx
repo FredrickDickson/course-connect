@@ -61,14 +61,16 @@ export default function CreatePost() {
     enabled: !!category?.id,
   });
 
-  // Fetch user's profile to check role
+  // Fetch user's profile to check role. profiles has its own id (distinct
+  // from the auth user id) — must look up by user_id, not id, or this
+  // never matches any row.
   const { data: profile } = useQuery({
     queryKey: ['my-profile', user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user!.id)
+        .eq('user_id', user!.id)
         .single();
       return data;
     },
@@ -81,7 +83,7 @@ export default function CreatePost() {
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
-      if (!user || !selectedBoardId || !title || !body) {
+      if (!user || !profile || !selectedBoardId || !title || !body) {
         throw new Error("Please fill in all required fields");
       }
 
@@ -117,7 +119,10 @@ export default function CreatePost() {
         .from('forum_posts')
         .insert({
           board_id: selectedBoardId,
-          author_id: user.id,
+          // forum_posts.author_id -> profiles.id (a separate PK, not the
+          // auth user id) — using user.id here violates the FK on every
+          // real post creation.
+          author_id: profile.id,
           title,
           body,
           slug: finalSlug,

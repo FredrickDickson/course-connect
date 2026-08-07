@@ -59,6 +59,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [deletingVideo, setDeletingVideo] = useState(false);
   const { toast } = useToast();
   const ensureLessonPromiseRef = useRef<Promise<string> | null>(null);
+  const [videoDirty, setVideoDirty] = useState(false);
 
   // Reset full editor state when the dialog (re)opens
   useEffect(() => {
@@ -79,6 +80,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setExistingQuiz(null);
     setExistingAssignment(null);
     ensureLessonPromiseRef.current = null;
+    setVideoDirty(false);
   }, [open, lesson?.id]);
 
   const refreshAttachments = async (lessonId: string) => {
@@ -166,7 +168,11 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
       };
 
       // Handle video data based on source
-      if (contentType === 'video') {
+      // When editing an existing lesson, only touch video columns if the user
+      // actually interacted with the video controls. This prevents a pure
+      // title-edit from wiping the existing video.
+      const shouldWriteVideoFields = !savedLessonId || videoDirty || contentType !== 'video';
+      if (contentType === 'video' && shouldWriteVideoFields) {
         if (videoSource === 'upload') {
           lessonData.video_url = videoUrl || null;
           lessonData.video_platform = null;
@@ -190,7 +196,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
           lessonData.mux_playback_id = muxPlaybackId || lesson?.muxPlaybackId || null;
           lessonData.mux_status = muxStatus || lesson?.muxStatus || 'pending';
         }
-      } else {
+      } else if (contentType !== 'video' && shouldWriteVideoFields) {
         lessonData.video_url = null;
         lessonData.video_platform = null;
         lessonData.video_id = null;
@@ -240,6 +246,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoUpload = async (url: string, duration?: number) => {
+    setVideoDirty(true);
     setVideoUrl(url);
     if (duration) setVideoDuration(duration);
 
@@ -259,6 +266,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoUrlChange = (url: string, metadata?: { platform: 'youtube' | 'vimeo'; videoId: string }) => {
+    setVideoDirty(true);
     setVideoUrl(url);
     if (metadata) {
       setVideoPlatform(metadata.platform);
@@ -281,6 +289,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleVideoSourceChange = (source: VideoSource) => {
+    setVideoDirty(true);
     setVideoSource(source);
     // Clear video data when switching sources
     if (source === 'upload') {
@@ -302,6 +311,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   };
 
   const handleMuxUploadComplete = async (assetId: string, playbackId: string) => {
+    setVideoDirty(true);
     setMuxAssetId(assetId);
     setMuxPlaybackId(playbackId);
     setMuxStatus('ready');
@@ -342,6 +352,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
       setMuxAssetId('');
       setMuxPlaybackId('');
       setMuxStatus('pending');
+      setVideoDirty(true);
 
       toast({ title: 'Success', description: 'Video deleted successfully' });
     } catch (error) {
