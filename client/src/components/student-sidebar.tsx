@@ -74,9 +74,9 @@ export default function StudentSidebar({
   const navigationSections: NavSection[] = [
     {
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
-        { name: "My Learning", href: "/courses", icon: BookOpen },
-        { name: "Discover Courses", href: "/course-catalog", icon: Search },
+        { name: "My Learning", href: "/dashboard", icon: Home },
+        { name: "Courses", href: "/courses", icon: BookOpen },
+        { name: "Course Catalog", href: "/course-catalog", icon: Search },
       ],
     },
     {
@@ -91,7 +91,8 @@ export default function StudentSidebar({
     {
       title: "Community",
       items: [
-        // { name: "Community Hub", href: "/community", icon: Users },
+        { name: "Discover Courses", href: "/courses", icon: Search },
+        { name: "Programs", href: "/course-catalog", icon: GraduationCap },
         { name: "My Posts", href: "/community/my-posts", icon: FileText },
         { name: "My Boards", href: "/community/my-boards", icon: Bookmark },
       ],
