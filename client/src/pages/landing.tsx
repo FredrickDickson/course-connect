@@ -124,11 +124,11 @@ function HeroSection() {
       {/* Ultra-Sharp Background Image - Higher resolution */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2880&h=1800&auto=format&fit=crop&q=95&sharp=10"
+          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2880&h=1800&auto=format&fit=crop&q=100"
           alt="Professional legal workspace"
           className="w-full h-full object-cover"
           loading="eager"
-          style={{ imageRendering: 'crisp-edges' }}
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
         {/* Subtle gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent" />
@@ -185,8 +185,20 @@ function HeroSection() {
 // Stats Bar Section
 function StatsBarSection() {
   return (
-    <section className="bg-white py-20 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-20 border-b border-gray-100 overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=2880&h=800&auto=format&fit=crop&q=100"
+          alt="Professional team collaboration"
+          className="w-full h-full object-cover opacity-30"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/60 to-white/80" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
@@ -239,8 +251,20 @@ function TrustBadgesSection() {
   ];
 
   return (
-    <section ref={ref} className={`py-24 bg-gradient-to-b from-white to-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=2880&h=900&auto=format&fit=crop&q=100"
+          alt="Legal documents and professional workspace"
+          className="w-full h-full object-cover opacity-25"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-gray-50/70 to-gray-50" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-light text-gray-900 font-display">Recognized Worldwide</h2>
         </div>
@@ -249,7 +273,7 @@ function TrustBadgesSection() {
           {badges.map((badge, index) => (
             <div 
               key={index} 
-              className="group relative bg-white rounded-lg p-8 border border-gray-200 hover:border-[#8b0000]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              className="group relative bg-white/95 backdrop-blur-sm rounded-lg p-8 border border-gray-200 hover:border-[#8b0000]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               <div className="relative text-center">
                 <p className="text-3xl font-semibold text-gray-900 mb-1 font-display">{badge.name}</p>
@@ -282,8 +306,20 @@ function FeaturedCoursesSection() {
   });
 
   return (
-    <section ref={ref} id="categories" className={`py-24 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={ref} id="categories" className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Modern library with books"
+          className="w-full h-full object-cover opacity-20"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/70 to-white" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-16">
           <div>
             <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Featured Courses</h2>
@@ -401,8 +437,20 @@ function LearningPathwaysSection() {
   ];
 
   return (
-    <section ref={ref} className={`py-24 bg-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Professional business planning"
+          className="w-full h-full object-cover opacity-25"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Learning Pathways</h2>
         </div>
@@ -411,7 +459,7 @@ function LearningPathwaysSection() {
           {pathways.map((pathway, index) => {
             const Icon = pathway.icon;
             return (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
+              <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
                 <div className={`w-16 h-16 ${pathway.color} rounded-lg flex items-center justify-center mb-5`}>
                   <Icon className="w-9 h-9" />
                 </div>
@@ -478,8 +526,20 @@ function WhyLearnWithCIMASection() {
   ];
 
   return (
-    <section ref={ref} className={`py-24 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Students collaborating and learning"
+          className="w-full h-full object-cover opacity-20"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/80 to-white" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
           <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Why Learn With CIMA?</h2>
         </div>
@@ -533,15 +593,27 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section ref={ref} className={`py-24 bg-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Professional team meeting"
+          className="w-full h-full object-cover opacity-25"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16">
           <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">What Our Learners Say</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-lg p-8 hover:shadow-2xl transition-all duration-300">
+            <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-8 hover:shadow-2xl transition-all duration-300">
               {/* Stars */}
               <div className="flex gap-1 mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
@@ -678,11 +750,11 @@ function FinalCTASection() {
       {/* Sharp Background Image */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=2880&h=1200&auto=format&fit=crop&q=95&sharp=10"
+          src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=2880&h=1200&auto=format&fit=crop&q=100"
           alt="Professional workspace"
           className="w-full h-full object-cover"
           loading="lazy"
-          style={{ imageRendering: 'crisp-edges' }}
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#8b0000]/95 to-[#8b0000]/85" />
       </div>
