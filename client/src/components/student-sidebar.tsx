@@ -76,7 +76,7 @@ export default function StudentSidebar({
       items: [
         { name: "Home", href: "/home", icon: Home },
         { name: "My Learning", href: "/dashboard", icon: BookOpen },
-        { name: "Course Catalog", href: "/course-catalog", icon: Search },
+        { name: "Discover Courses", href: "/course-catalog", icon: Search },
       ],
     },
     {
@@ -91,8 +91,7 @@ export default function StudentSidebar({
     {
       title: "Community",
       items: [
-        { name: "Discover Courses", href: "/courses", icon: Search },
-        { name: "Programs", href: "/course-catalog", icon: GraduationCap },
+        { name: "Community Hub", href: "/community", icon: Users },
         { name: "My Posts", href: "/community/my-posts", icon: FileText },
         { name: "My Boards", href: "/community/my-boards", icon: Bookmark },
       ],
