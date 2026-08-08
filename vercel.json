@@ -25,7 +25,7 @@
       "destination": "/api/enrollments/check-eligibility.ts"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/:path((?!api).*)",
       "destination": "/index.html"
     }
   ],
