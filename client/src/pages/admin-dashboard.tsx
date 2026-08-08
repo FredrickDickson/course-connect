@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,12 @@ import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/header";
+import AdminLayout from "@/components/admin-layout";
 import AdminMembershipTable from "@/components/admin-membership-table";
 import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
-import AdminNotifications from "@/components/admin-notifications";
 import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
 import {
@@ -105,7 +104,17 @@ export default function AdminDashboard() {
   });
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Get active tab from URL params
+  const getActiveTab = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("tab") || "overview";
+    }
+    return "overview";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getActiveTab());
   const [reviewComments, setReviewComments] = useState("");
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({
@@ -115,6 +124,28 @@ export default function AdminDashboard() {
     password: "",
   });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  
+  // Sync active tab with URL
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setActiveTab(getActiveTab());
+    };
+    
+    // Listen for URL changes
+    window.addEventListener("popstate", handleUrlChange);
+    
+    return () => {
+      window.removeEventListener("popstate", handleUrlChange);
+    };
+  }, []);
+  
+  // Update URL when tab changes
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", newTab);
+    window.history.pushState({}, "", url);
+  };
 
   // Fetch stats for pending badge
   const { data: pendingCount } = useQuery({
@@ -250,9 +281,11 @@ export default function AdminDashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -262,39 +295,28 @@ export default function AdminDashboard() {
   const reviewedApps = applications.filter((a) => a.status !== "pending");
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
+            <p className="text-[#6b5d4f] mt-1 font-sf-pro-text">
               Manage instructors, courses, and platform operations
             </p>
           </div>
-          <div className="flex items-center gap-2 mt-3 sm:mt-0">
-            <Button asChild size="sm" variant="secondary">
-              <Link href="/admin/expedited">Expedited Reviews</Link>
-            </Button>
-            <AdminNotifications />
-            <Badge variant="outline" className="text-xs">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              Admin
-            </Badge>
-          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1">
-              <TabsTrigger value="overview" className="text-sm px-4 py-2">Overview</TabsTrigger>
-              <TabsTrigger value="enrollments" className="text-sm px-4 py-2">Enrollments</TabsTrigger>
-              <TabsTrigger value="courses" className="text-sm px-4 py-2">Courses</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2">Templates</TabsTrigger>
-              <TabsTrigger value="members" className="text-sm px-4 py-2">Members</TabsTrigger>
-              <TabsTrigger value="renewals" className="text-sm px-4 py-2">Renewals</TabsTrigger>
-              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
+              <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Overview</TabsTrigger>
+              <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
+              <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Templates</TabsTrigger>
+              <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
+              <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
+              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#610000]">
                 Applications
                 {(pendingCount || 0) > 0 && (
                   <Badge
@@ -305,7 +327,7 @@ export default function AdminDashboard() {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="users" className="text-sm px-4 py-2">Users</TabsTrigger>
+              <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Users</TabsTrigger>
             </TabsList>
           </div>
 
@@ -414,7 +436,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
