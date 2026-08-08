@@ -74,6 +74,7 @@ export default function StudentSidebar({
   const navigationSections: NavSection[] = [
     {
       items: [
+        { name: "Home", href: "/home", icon: Home },
         { name: "My Learning", href: "/dashboard", icon: BookOpen },
         { name: "Course Catalog", href: "/course-catalog", icon: Search },
       ],
@@ -173,7 +174,7 @@ export default function StudentSidebar({
       {/* Logo & Brand */}
       <div className="flex items-center justify-between p-6 border-b border-[#d4c5b0]/30 flex-shrink-0">
         {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
+          <Link href="/home" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
             <img 
               src="/images/logo.jpeg" 
               alt="CIMA Logo" 
@@ -187,7 +188,7 @@ export default function StudentSidebar({
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard" className="flex items-center justify-center w-full">
+          <Link href="/home" className="flex items-center justify-center w-full">
             <img 
               src="/images/logo.jpeg" 
               alt="CIMA Logo" 

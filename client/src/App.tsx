@@ -33,7 +33,8 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
-import Dashboard from "@/pages/dashboard-new";
+import DashboardHome from "@/pages/dashboard-new";
+import Dashboard from "@/pages/dashboard";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
@@ -166,7 +167,7 @@ function Router() {
             return <PageLoader />;
           }
           if (isAuthenticated && user) {
-            // Redirect based on role
+            // Redirect based on role to the home page (not dashboard)
             if (user.role === "admin") {
               window.location.href = "/admin";
               return <PageLoader />;
@@ -174,7 +175,7 @@ function Router() {
               window.location.href = "/instructor";
               return <PageLoader />;
             } else {
-              window.location.href = "/dashboard";
+              window.location.href = "/home";
               return <PageLoader />;
             }
           }
@@ -184,7 +185,7 @@ function Router() {
       
       {/* Authenticated home route */}
       <Route path="/home">
-        {isLoading || !isAuthenticated ? <Landing /> : <Home />}
+        {isLoading || !isAuthenticated ? <Landing /> : <DashboardHome />}
       </Route>
       
       {/* Direct landing page route - always shows landing regardless of auth */}
