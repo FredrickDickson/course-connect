@@ -15,15 +15,24 @@ Deno.serve(async (req: Request) => {
     // Verify Paystack signature
     const signature = req.headers.get("x-paystack-signature");
     const body = await req.text();
-    
-    // Verify the webhook signature for security
+
+    // Paystack signs the raw request body with HMAC-SHA512 using the
+    // secret key (not a plain digest of body+secret concatenated — that
+    // construction is not HMAC and doesn't match what Paystack computes).
     const encoder = new TextEncoder();
-    const data = encoder.encode(body + PAYSTACK_SECRET_KEY);
-    const hashBuffer = await crypto.subtle.digest("SHA-512", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    if (signature !== hashHex) {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(PAYSTACK_SECRET_KEY),
+      { name: "HMAC", hash: "SHA-512" },
+      false,
+      ["sign"],
+    );
+    const sigBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+    const hashHex = Array.from(new Uint8Array(sigBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (!signature || signature !== hashHex) {
       return new Response("Invalid signature", { status: 401 });
     }
 

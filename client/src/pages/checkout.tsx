@@ -174,11 +174,14 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
-      // Initialize transaction via Edge Function
+      // Initialize transaction via Edge Function. Send the user's own
+      // session token (not the anon key) so the function can verify the
+      // caller actually is the userId being enrolled/charged.
+      const { data: { session } } = await supabase.auth.getSession();
       const initResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-course-initialize`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
