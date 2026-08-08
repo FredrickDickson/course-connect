@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { Mux } from "@mux/mux-node";
 import { body, validationResult } from "express-validator";
-import { asyncHandler } from "../middleware/security";
+import { asyncHandler, uploadLimiter } from "../middleware/security";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../shared/database.types";
@@ -37,6 +37,7 @@ function getMux(): Mux {
 router.post(
   '/upload-url',
   requireSupabaseAuth,
+  uploadLimiter,
   [
     body('lessonId').isUUID().withMessage('Valid lesson ID required'),
     body('fileName').notEmpty().withMessage('File name required'),
@@ -142,16 +143,20 @@ router.post(
     const signature = req.headers['mux-signature'];
     const body = JSON.stringify(req.body);
 
-    // Verify webhook signature
+    // Verify webhook signature — fail closed: an unconfigured secret must
+    // reject the request, not silently accept unverified webhook payloads.
     if (!process.env.MUX_WEBHOOK_SIGNING_SECRET) {
-      console.warn('Mux webhook signing secret not configured, skipping signature verification');
-    } else if (signature) {
-      try {
-        getMux().webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
-        // If no error thrown, signature is valid
-      } catch (error) {
-        return res.status(401).json({ error: 'SIGNATURE_VERIFICATION_FAILED' });
-      }
+      console.error('Mux webhook signing secret not configured; rejecting webhook');
+      return res.status(503).json({ error: 'WEBHOOK_NOT_CONFIGURED' });
+    }
+    if (!signature) {
+      return res.status(401).json({ error: 'MISSING_SIGNATURE' });
+    }
+    try {
+      getMux().webhooks.verifySignature(body, signature, process.env.MUX_WEBHOOK_SIGNING_SECRET);
+      // If no error thrown, signature is valid
+    } catch (error) {
+      return res.status(401).json({ error: 'SIGNATURE_VERIFICATION_FAILED' });
     }
 
     const { type, data } = req.body;
@@ -182,12 +187,11 @@ router.post(
 // Get asset status
 router.get(
   '/asset/:assetId',
+  requireSupabaseAuth,
   asyncHandler(async (req: any, res: any) => {
     const { assetId } = req.params;
 
     try {
-      const asset = await getMux().video.assets.retrieve(assetId);
-      
       // Find corresponding mux_asset record
       const { data: muxAsset, error: muxAssetError } = await supabase
         .from('mux_assets')
@@ -195,12 +199,43 @@ router.get(
         .eq('mux_asset_id', assetId)
         .single();
 
-      if (muxAssetError) {
-        return res.status(404).json({ 
+      if (muxAssetError || !muxAsset) {
+        return res.status(404).json({
           error: 'ASSET_NOT_FOUND',
-          message: 'Asset record not found' 
+          message: 'Asset record not found'
         });
       }
+
+      // Verify user is the instructor who owns the lesson this asset belongs to
+      const { data: lesson, error: lessonError } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          modules!inner(
+            course_id,
+            courses!inner(
+              instructor_id
+            )
+          )
+        `)
+        .eq('id', muxAsset.lesson_id!)
+        .single();
+
+      if (lessonError || !lesson) {
+        return res.status(404).json({
+          error: 'LESSON_NOT_FOUND',
+          message: 'Lesson not found'
+        });
+      }
+
+      if (lesson.modules?.courses?.instructor_id !== req.user?.id) {
+        return res.status(403).json({
+          error: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only the owning instructor can view this asset'
+        });
+      }
+
+      const asset = await getMux().video.assets.retrieve(assetId);
 
       res.json({
         asset,
@@ -327,9 +362,38 @@ router.post(
         .single();
 
       if (muxAssetError || !muxAsset) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           error: 'ASSET_NOT_FOUND',
-          message: 'Asset record not found' 
+          message: 'Asset record not found'
+        });
+      }
+
+      // Verify user is instructor of the lesson (same check as DELETE /asset/:muxAssetId)
+      const { data: lesson, error: lessonError } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          modules!inner(
+            course_id,
+            courses!inner(
+              instructor_id
+            )
+          )
+        `)
+        .eq('id', muxAsset.lesson_id!)
+        .single();
+
+      if (lessonError || !lesson) {
+        return res.status(404).json({
+          error: 'LESSON_NOT_FOUND',
+          message: 'Lesson not found'
+        });
+      }
+
+      if (lesson.modules?.courses?.instructor_id !== req.user?.id) {
+        return res.status(403).json({
+          error: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only the owning instructor can change this asset\'s playback policy'
         });
       }
 

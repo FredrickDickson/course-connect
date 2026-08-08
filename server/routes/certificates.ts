@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import { createClient } from "@supabase/supabase-js";
 import jsPDF from "jspdf";
+import crypto from "crypto";
 import { sendCertificateIssuedEmail } from "../utils/email";
 
 const supabaseAdmin = createClient(
@@ -30,7 +31,15 @@ const authenticateAPIKey = (req: Request, res: Response, next: Function) => {
   const apiKey = req.headers.authorization?.replace("Bearer ", "");
   const validKey = process.env.CERTIFICATE_API_KEY;
 
-  if (!apiKey || apiKey !== validKey) {
+  const apiKeyBuffer = apiKey ? Buffer.from(apiKey) : null;
+  const validKeyBuffer = validKey ? Buffer.from(validKey) : null;
+  const isValid =
+    !!apiKeyBuffer &&
+    !!validKeyBuffer &&
+    apiKeyBuffer.length === validKeyBuffer.length &&
+    crypto.timingSafeEqual(apiKeyBuffer, validKeyBuffer);
+
+  if (!isValid) {
     return res.status(401).json({ error: "Unauthorized: Invalid API key" });
   }
 

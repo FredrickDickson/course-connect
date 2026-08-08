@@ -134,7 +134,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Registration error:', error);
       res.status(500).json({
         message: 'Registration failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -197,7 +196,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Login error:', error);
       res.status(500).json({
         message: 'Login failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -205,7 +203,7 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // REFRESH TOKEN ROUTE
   // ============================================================================
-  app.post('/api/auth/refresh', asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/auth/refresh', authLimiter, asyncHandler(async (req: Request, res: Response) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
@@ -238,7 +236,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Refresh error:', error);
       res.status(500).json({
         message: 'Token refresh failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -262,7 +259,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Logout error:', error);
       res.status(500).json({
         message: 'Logout failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -294,7 +290,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Get user error:', error);
       res.status(500).json({
         message: 'Failed to get user',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -332,7 +327,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Password reset error:', error);
       res.status(500).json({
         message: 'Password reset request failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -340,58 +334,68 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // RESET PASSWORD
   // ============================================================================
-  app.post('/api/auth/reset-password', asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/auth/reset-password', authLimiter, asyncHandler(async (req: Request, res: Response) => {
     const { password, confirmPassword } = req.body;
-    
+
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
-      return res.status(400).json({ 
-        message: 'Reset token is required' 
+      return res.status(400).json({
+        message: 'Reset token is required'
       });
     }
 
     if (!password || !confirmPassword) {
-      return res.status(400).json({ 
-        message: 'Password fields are required' 
+      return res.status(400).json({
+        message: 'Password fields are required'
       });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ 
-        message: 'Passwords do not match' 
+      return res.status(400).json({
+        message: 'Passwords do not match'
       });
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ 
-        message: 'Password must be at least 8 characters' 
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters'
       });
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Resolve the user from the recovery token first — supabase.auth.updateUser()
+      // operates on the shared admin client's own (nonexistent) session, so calling
+      // it directly here would silently act on no one. admin.updateUserById() applies
+      // the change to the specific user the token identifies.
+      const { data: tokenUser, error: tokenError } = await supabase.auth.getUser(token);
+
+      if (tokenError || !tokenUser?.user) {
+        return res.status(401).json({
+          message: 'Reset token is invalid or expired'
+        });
+      }
+
+      const { error } = await supabase.auth.admin.updateUserById(tokenUser.user.id, {
         password: password,
       });
 
       if (error) {
-        return res.status(400).json({ 
-          message: 'Password reset failed',
-          error: error.message 
+        return res.status(400).json({
+          message: 'Password reset failed'
         });
       }
 
-      res.json({ 
-        message: 'Password reset successful' 
+      res.json({
+        message: 'Password reset successful'
       });
 
     } catch (error) {
       console.error('Password reset error:', error);
       res.status(500).json({
-        message: 'Password reset failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Password reset failed'
       });
     }
   }));
@@ -399,7 +403,7 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // CHANGE PASSWORD (for authenticated users)
   // ============================================================================
-  app.post('/api/auth/change-password', asyncHandler(async (req: AuthRequest, res: Response) => {
+  app.post('/api/auth/change-password', requireSupabaseAuth, authLimiter, asyncHandler(async (req: AuthRequest, res: Response) => {
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -462,7 +466,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Change password error:', error);
       res.status(500).json({
         message: 'Password change failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -470,7 +473,7 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // VERIFY EMAIL (after registration)
   // ============================================================================
-  app.post('/api/auth/verify-email', asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/auth/verify-email', authLimiter, asyncHandler(async (req: Request, res: Response) => {
     const { token, type } = req.body;
 
     if (!token || !type) {
@@ -500,7 +503,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('Email verification error:', error);
       res.status(500).json({
         message: 'Email verification failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));
@@ -508,7 +510,7 @@ export function registerAuthRoutes(app: Express) {
   // ============================================================================
   // GOOGLE OAUTH (optional)
   // ============================================================================
-  app.post('/api/auth/oauth/google', asyncHandler(async (req: Request, res: Response) => {
+  app.post('/api/auth/oauth/google', authLimiter, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -532,7 +534,6 @@ export function registerAuthRoutes(app: Express) {
       console.error('OAuth error:', error);
       res.status(500).json({
         message: 'OAuth failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }));

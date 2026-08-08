@@ -75,6 +75,40 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Verify the caller's identity matches the userId they're asking us to
+    // charge/enroll — without this, any caller holding a valid Supabase JWT
+    // (including the public anon key) could enroll an arbitrary victim once
+    // the resulting transaction is paid.
+    const authHeader = req.headers.get("Authorization");
+    const callerToken = authHeader?.replace(/^Bearer\s+/i, "");
+    if (!callerToken) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization" }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    const authClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: callerData, error: callerError } = await authClient.auth.getUser(callerToken);
+    if (callerError || !callerData?.user || callerData.user.id !== body.userId) {
+      return new Response(
+        JSON.stringify({ error: "Caller does not match userId" }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

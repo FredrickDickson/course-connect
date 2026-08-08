@@ -60,6 +60,7 @@ import {
   type InsertInstructorApplication,
 } from "@shared/schema";
 import { createClient } from "@supabase/supabase-js";
+import { sanitizePostgrestSearchTerm } from "./utils/postgrest";
 
 // Initialize Supabase Admin client with service role key
 export const supabaseAdmin = createClient(
@@ -481,7 +482,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.search) {
-      query = query.ilike("title", `%${filters.search}%`);
+      query = query.ilike("title", `%${sanitizePostgrestSearchTerm(filters.search)}%`);
     }
 
     if (filters?.featured !== undefined) {
@@ -1533,8 +1534,9 @@ export class DatabaseStorage implements IStorage {
       query = query.eq("role", filters.role);
     }
     if (filters?.search) {
+      const search = sanitizePostgrestSearchTerm(filters.search);
       query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`,
       );
     }
     query = query.order("created_at", { ascending: false });
@@ -1615,6 +1617,16 @@ export class DatabaseStorage implements IStorage {
       .eq("course_id", courseId);
     if (error) throw error;
     return data || [];
+  }
+
+  async getCourseResourceById(id: string): Promise<CourseResource | undefined> {
+    const { data, error } = await supabaseAdmin
+      .from("course_resources")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error || !data) return undefined;
+    return data;
   }
 
   async deleteCourseResource(id: string): Promise<void> {
@@ -2338,6 +2350,23 @@ export class DatabaseStorage implements IStorage {
       title: lesson.title,
       moduleId: lesson.module_id,
       courseId: moduleData?.course_id,
+    };
+  }
+
+  async getModuleById(moduleId: string): Promise<any> {
+    const { data: moduleRow, error } = await supabaseAdmin
+      .from("modules")
+      .select("id, title, course_id")
+      .eq("id", moduleId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!moduleRow) return null;
+
+    return {
+      id: moduleRow.id,
+      title: moduleRow.title,
+      courseId: moduleRow.course_id,
     };
   }
 

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import Header from "@/components/header";
@@ -136,8 +137,7 @@ export default function RenewMembership() {
   const { data: pricingData, isLoading: pricingLoading } = useQuery<PricingData>({
     queryKey: ["renewal-pricing", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/renewal/pricing?user_id=${user!.id}`);
-      if (!response.ok) throw new Error("Failed to fetch pricing");
+      const response = await apiRequest("GET", "/api/renewal/pricing");
       const result = await response.json();
       return result.data;
     },
