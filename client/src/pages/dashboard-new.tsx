@@ -128,15 +128,15 @@ export default function Dashboard() {
             {/* Left Content */}
             <div className="flex flex-col justify-center space-y-6">
               <div className="space-y-3">
-                <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider">
+                <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
                 </p>
-                <h1 className="text-4xl lg:text-5xl font-bold text-[#2c2015] leading-tight">
+                <h1 className="text-4xl lg:text-5xl font-bold text-[#2c2015] leading-tight font-display">
                   Master dispute resolution.
                   <br />
                   <span className="text-[#610000]">Anywhere, anytime.</span>
                 </h1>
-                <p className="text-lg text-[#6b5d4f] leading-relaxed">
+                <p className="text-lg text-[#6b5d4f] leading-relaxed font-body">
                   World-class, self-paced learning in Arbitration, Mediation,
                   Litigation, Negotiation, Adjudication and more.
                 </p>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
               <div className="flex gap-4">
                 <Link href="/courses">
-                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000] px-6 py-6 text-base rounded-xl shadow-md">
+                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000] px-6 py-6 text-base rounded-xl shadow-md font-semibold font-body">
                     <PlayCircle className="w-5 h-5 mr-2" />
                     Continue learning
                   </Button>
@@ -152,7 +152,7 @@ export default function Dashboard() {
                 <Link href="/course-catalog">
                   <Button
                     variant="outline"
-                    className="border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-6 py-6 text-base rounded-xl"
+                    className="border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-6 py-6 text-base rounded-xl font-semibold font-body"
                   >
                     Explore courses
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -257,13 +257,15 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Decorative Background Image */}
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block">
+          {/* Decorative Background Image - Clear and Sharp */}
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-60 pointer-events-none hidden lg:block overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800"
+              src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=90"
               alt=""
               className="w-full h-full object-cover"
+              style={{ imageRendering: 'crisp-edges' }}
             />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/40 to-[#faf9f6]" />
           </div>
         </section>
 
@@ -272,7 +274,7 @@ export default function Dashboard() {
           {/* Continue Learning */}
           <section className="lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#2c2015]">Continue learning</h2>
+              <h2 className="text-2xl font-bold text-[#2c2015] font-display">Continue learning</h2>
               <Link href="/courses">
                 <Button variant="link" className="text-[#610000]">
                   View all <ChevronRight className="w-4 h-4 ml-1" />
@@ -415,7 +417,7 @@ export default function Dashboard() {
           <section className="space-y-6">
             {/* Your Progress */}
             <div>
-              <h3 className="text-lg font-bold text-[#2c2015] mb-4">Your progress</h3>
+              <h3 className="text-lg font-bold text-[#2c2015] mb-4 font-display">Your progress</h3>
               <Card className="bg-white border-[#d4c5b0]/30">
                 <CardContent className="p-6">
                   <div className="text-center mb-4">
@@ -469,7 +471,7 @@ export default function Dashboard() {
             {/* Upcoming Activities */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2c2015]">Upcoming activities</h3>
+                <h3 className="text-lg font-bold text-[#2c2015] font-display">Upcoming activities</h3>
                 <Link href="/programs">
                   <Button variant="link" className="text-[#610000] text-sm p-0 h-auto">
                     View all <ChevronRight className="w-4 h-4 ml-1" />
@@ -522,7 +524,7 @@ export default function Dashboard() {
         {/* Recommended Section */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#2c2015]">Recommended for you</h2>
+            <h2 className="text-2xl font-bold text-[#2c2015] font-display">Recommended for you</h2>
             <Link href="/course-catalog">
               <Button variant="link" className="text-[#610000]">
                 View all <ChevronRight className="w-4 h-4 ml-1" />
