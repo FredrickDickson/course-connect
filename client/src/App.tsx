@@ -33,7 +33,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
-import Dashboard from "@/pages/dashboard";
+import Dashboard from "@/pages/dashboard-new";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";

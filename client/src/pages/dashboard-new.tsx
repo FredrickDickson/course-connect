@@ -1,0 +1,551 @@
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { LoadingState } from "@/components/ui/loading-state";
+import StudentLayout from "@/components/student-layout";
+import { Link, useLocation } from "wouter";
+import {
+  PlayCircle,
+  ArrowRight,
+  Calendar,
+  Users,
+  Heart,
+  ChevronRight,
+} from "lucide-react";
+
+export default function Dashboard() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "Sign in to access your dashboard.",
+        variant: "destructive",
+      });
+      setTimeout(() => setLocation("/login"), 500);
+    }
+  }, [isAuthenticated, authLoading, toast, setLocation]);
+
+  const { data: enrollments = [], isLoading: enrollmentsLoading } = useQuery<any[]>({
+    queryKey: ["enrollments", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("*, course:courses(*)")
+        .eq("user_id", user!.id)
+        .order("enrolled_at", { ascending: false });
+      if (error) throw error;
+
+      const uniqueEnrollments = (data || []).reduce(
+        (acc: any[], enrollment) => {
+          const existing = acc.find((e) => e.course_id === enrollment.course_id);
+          if (!existing) {
+            acc.push(enrollment);
+          }
+          return acc;
+        },
+        []
+      );
+
+      return uniqueEnrollments;
+    },
+    enabled: !!user,
+  });
+
+  if (authLoading || enrollmentsLoading) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <LoadingState message="Loading your dashboard..." size="lg" />
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  const inProgressEnrollments = enrollments.filter(
+    (e: any) => Number(e.progress) > 0 && Number(e.progress) < 100
+  );
+  const completedCourses = enrollments.filter(
+    (e: any) => Number(e.progress) >= 100
+  );
+
+  return (
+    <StudentLayout>
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <section className="relative bg-gradient-to-br from-[#f8f7f5] via-[#faf9f6] to-[#f5f3ed] rounded-[32px] overflow-hidden border border-[#d4c5b0]/20">
+          <div className="grid lg:grid-cols-2 gap-8 p-8 lg:p-12">
+            {/* Left Content */}
+            <div className="flex flex-col justify-center space-y-6">
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider">
+                  WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
+                </p>
+                <h1 className="text-4xl lg:text-5xl font-bold text-[#2c2015] leading-tight">
+                  Master dispute resolution.
+                  <br />
+                  <span className="text-[#610000]">Anywhere, anytime.</span>
+                </h1>
+                <p className="text-lg text-[#6b5d4f] leading-relaxed">
+                  World-class, self-paced learning in Arbitration, Mediation,
+                  Litigation, Negotiation, Adjudication and more.
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <Link href="/courses">
+                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000] px-6 py-6 text-base rounded-xl shadow-md">
+                    <PlayCircle className="w-5 h-5 mr-2" />
+                    Continue learning
+                  </Button>
+                </Link>
+                <Link href="/course-catalog">
+                  <Button
+                    variant="outline"
+                    className="border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-6 py-6 text-base rounded-xl"
+                  >
+                    Explore courses
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Content - Learning Path Cards */}
+            <div className="flex flex-col justify-center space-y-4">
+              {/* Card 1 */}
+              <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">🎯</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                      Your Learning Path
+                    </p>
+                    <h3 className="text-base font-bold text-[#2c2015]">
+                      International Arbitration Expert
+                    </h3>
+                    <div className="mt-2">
+                      <Progress value={68} className="h-2" />
+                      <p className="text-xs text-[#6b5d4f] mt-1">68% Complete</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 2 */}
+              <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">📚</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-white/70 font-medium uppercase tracking-wide mb-1">
+                      Upcoming Live Session
+                    </p>
+                    <h3 className="text-base font-bold">
+                      Drafting Arbitration Clauses
+                    </h3>
+                    <p className="text-xs text-white/80 mt-1">27 May · 16:00 AM GMT</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 3 */}
+              <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">🎓</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                      Certificate Progress
+                    </p>
+                    <h3 className="text-base font-bold text-[#2c2015]">
+                      Advanced Mediator (ICMA)
+                    </h3>
+                    <div className="mt-2">
+                      <Progress value={75} className="h-2" />
+                      <p className="text-xs text-[#6b5d4f] mt-1">75% Complete</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Decorative Background Image */}
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
+            <img
+              src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800"
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </section>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Continue Learning */}
+          <section className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-[#2c2015]">Continue learning</h2>
+              <Link href="/courses">
+                <Button variant="link" className="text-[#610000]">
+                  View all <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+
+            {inProgressEnrollments.length === 0 ? (
+              <Card className="border-2 border-dashed border-[#d4c5b0]/50">
+                <CardContent className="py-16 text-center">
+                  <p className="text-[#6b5d4f] mb-4">No courses in progress</p>
+                  <Link href="/course-catalog">
+                    <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                      Explore Courses
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {inProgressEnrollments.slice(0, 1).map((enrollment: any) => (
+                  <Card
+                    key={enrollment.id}
+                    className="bg-white border-[#d4c5b0]/30 hover:shadow-xl transition-all overflow-hidden"
+                  >
+                    <div className="flex flex-col md:flex-row">
+                      {/* Course Image */}
+                      <div className="relative w-full md:w-72 h-48 bg-gradient-to-br from-[#610000] to-[#8b0000]">
+                        {enrollment.course?.thumbnail_url ? (
+                          <img
+                            src={enrollment.course.thumbnail_url}
+                            alt={enrollment.course.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <PlayCircle className="w-16 h-16 text-white/50" />
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-[#610000] text-white">IN PROGRESS</Badge>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                            <PlayCircle className="w-10 h-10 text-white" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Course Info */}
+                      <CardContent className="flex-1 p-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-xl font-bold text-[#2c2015] mb-2">
+                              {enrollment.course?.title}
+                            </h3>
+                            <p className="text-sm text-[#6b5d4f]">
+                              Course 6 of 8 · Arbitration Procedure
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-[#6b5d4f]">40% complete</span>
+                            </div>
+                            <Progress value={Number(enrollment.progress) || 40} className="h-2" />
+                          </div>
+
+                          <Link href={`/learn/${enrollment.course?.id}`}>
+                            <Button
+                              variant="link"
+                              className="text-[#610000] p-0 h-auto font-semibold"
+                            >
+                              Go to course <ArrowRight className="w-4 h-4 ml-1" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Progress Stats */}
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <Card className="bg-white border-[#d4c5b0]/30">
+                <CardContent className="p-6 text-center">
+                  <div className="relative inline-flex items-center justify-center mb-3">
+                    <svg className="w-24 h-24 transform -rotate-90">
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="40"
+                        stroke="#e3d5ca"
+                        strokeWidth="8"
+                        fill="none"
+                      />
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="40"
+                        stroke="#610000"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 40 * 0.68} ${
+                          2 * Math.PI * 40
+                        }`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-[#610000]">68%</span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-[#2c2015]">Overall progress</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-[#d4c5b0]/30">
+                <CardContent className="p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#6b5d4f]">In progress</span>
+                    <span className="text-2xl font-bold text-[#2c2015]">
+                      {inProgressEnrollments.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#6b5d4f]">Completed</span>
+                    <span className="text-2xl font-bold text-[#2c2015]">
+                      {completedCourses.length}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* Sidebar - Your Progress & Upcoming */}
+          <section className="space-y-6">
+            {/* Your Progress */}
+            <div>
+              <h3 className="text-lg font-bold text-[#2c2015] mb-4">Your progress</h3>
+              <Card className="bg-white border-[#d4c5b0]/30">
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="relative inline-flex items-center justify-center">
+                      <svg className="w-32 h-32 transform -rotate-90">
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="56"
+                          stroke="#e3d5ca"
+                          strokeWidth="12"
+                          fill="none"
+                        />
+                        <circle
+                          cx="64"
+                          cy="64"
+                          r="56"
+                          stroke="#610000"
+                          strokeWidth="12"
+                          fill="none"
+                          strokeDasharray={`${2 * Math.PI * 56 * 0.68} ${
+                            2 * Math.PI * 56
+                          }`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center flex-col">
+                        <span className="text-4xl font-bold text-[#610000]">68%</span>
+                        <span className="text-xs text-[#6b5d4f]">Overall progress</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3 text-center border-t border-[#d4c5b0]/30 pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6b5d4f]">In progress</span>
+                      <span className="text-lg font-bold text-[#2c2015]">
+                        {inProgressEnrollments.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[#6b5d4f]">Completed</span>
+                      <span className="text-lg font-bold text-[#2c2015]">
+                        {completedCourses.length}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Upcoming Activities */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-[#2c2015]">Upcoming activities</h3>
+                <Link href="/programs">
+                  <Button variant="link" className="text-[#610000] text-sm p-0 h-auto">
+                    View all <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+              <Card className="bg-white border-[#d4c5b0]/30">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 text-center">
+                      <div className="bg-[#610000] text-white rounded-xl p-3 min-w-[60px]">
+                        <div className="text-xs font-medium">MAY</div>
+                        <div className="text-2xl font-bold">27</div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-[#2c2015] mb-1">
+                        Live Q&A: Drafting Arbitration Clauses
+                      </h4>
+                      <p className="text-sm text-[#6b5d4f] mb-2">
+                        with Prof. Emile Oswere
+                      </p>
+                      <p className="text-xs text-[#8b6f47]">16:00 AM GMT</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-[#8b6f47] border-2 border-white" />
+                          <div className="w-6 h-6 rounded-full bg-[#610000] border-2 border-white" />
+                          <div className="w-6 h-6 rounded-full bg-[#d4c5b0] border-2 border-white" />
+                        </div>
+                        <span className="text-xs text-[#6b5d4f]">+102 attending</span>
+                      </div>
+                      <Button className="w-full mt-3 bg-[#610000] text-white hover:bg-[#7d0000] rounded-lg">
+                        Join session
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 text-[#6b5d4f] hover:text-[#610000]"
+                      >
+                        <Calendar className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        </div>
+
+        {/* Recommended Section */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#2c2015]">Recommended for you</h2>
+            <Link href="/course-catalog">
+              <Button variant="link" className="text-[#610000]">
+                View all <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                badge: "BESTSELLER",
+                title: "International Commercial Arbitration Fundamentals",
+                instructor: "Dr. Cian-Bennu Ernshill",
+                rating: 4.8,
+                reviews: 334,
+                hours: "6 total hours",
+                level: "Beginner",
+                badgeColor: "bg-[#610000]",
+              },
+              {
+                badge: "POPULAR",
+                title: "Mediation: Principles, Process & Practice",
+                instructor: "Prof. Emike Oswere",
+                rating: 4.7,
+                reviews: 182,
+                hours: "5.5 total hours",
+                level: "Intermediate",
+                badgeColor: "bg-[#8b6f47]",
+              },
+              {
+                badge: "NEW",
+                title: "Negotiation Mastery for Professionals",
+                instructor: "Dr. Michelle Jamer",
+                rating: 4.9,
+                reviews: 89,
+                hours: "4 total hours",
+                level: "All levels",
+                badgeColor: "bg-[#610000]",
+              },
+              {
+                badge: "TRENDING",
+                title: "Enforcement of Arbitral Awards: Global Practice",
+                instructor: "Dr. Samson Peter Talepu",
+                rating: 4.7,
+                reviews: 261,
+                hours: "3.5 total hours",
+                level: "Intermediate",
+                badgeColor: "bg-[#8b6f47]",
+              },
+            ].map((course, idx) => (
+              <Card
+                key={idx}
+                className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden"
+              >
+                <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
+                  <img
+                    src={`https://images.unsplash.com/photo-${
+                      1589829545856 + idx * 100
+                    }-d10d557cf95f?auto=format&fit=crop&w=400`}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <Badge className={`absolute top-3 left-3 ${course.badgeColor} text-white text-xs`}>
+                    {course.badge}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
+                  >
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
+                    {course.title}
+                  </h3>
+                  <p className="text-xs text-[#6b5d4f] mb-3">{course.instructor}</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center">
+                      <span className="text-sm font-bold text-[#2c2015]">{course.rating}</span>
+                      <span className="text-yellow-500 ml-1">★★★★★</span>
+                    </div>
+                    <span className="text-xs text-[#6b5d4f]">({course.reviews})</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
+                    <span>{course.hours}</span>
+                    <span>•</span>
+                    <span>{course.level}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </div>
+    </StudentLayout>
+  );
+}
