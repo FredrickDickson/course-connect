@@ -21,15 +21,15 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["'Segoe UI'", "'SF Pro Text'", "-apple-system", "BlinkMacSystemFont", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "serif"],
-        mono: ["var(--font-mono)", "monospace"],
-        display: ["'SF Pro Display'", "-apple-system", "BlinkMacSystemFont", "serif"],
-        headline: ["'SF Pro Display'", "-apple-system", "BlinkMacSystemFont", "serif"],
-        body: ["'SF Pro Text'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        label: ["'SF Pro Text'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        'sf-pro-display': ["'SF Pro Display'", "serif"],
-        'sf-pro-text': ["'SF Pro Text'", "sans-serif"],
+        mono: ["'Cascadia Code'", "'Consolas'", "'SF Mono'", "monospace"],
+        display: ["'Segoe UI'", "'SF Pro Display'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        headline: ["'Segoe UI'", "'SF Pro Display'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        body: ["'Segoe UI'", "'SF Pro Text'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        label: ["'Segoe UI'", "'SF Pro Text'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        'sf-pro-display': ["'Segoe UI'", "'SF Pro Display'", "sans-serif"],
+        'sf-pro-text': ["'Segoe UI'", "'SF Pro Text'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
