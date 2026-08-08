@@ -61,6 +61,35 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: certificates = [] } = useQuery({
+    queryKey: ["user-certificates", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("course_completion_records")
+        .select("*, courses!inner(title, track, level)")
+        .eq("user_id", user!.id)
+        .order("completed_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: upcomingEvents = [] } = useQuery({
+    queryKey: ["upcoming-events"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("live_sessions")
+        .select("*")
+        .gte("scheduled_at", new Date().toISOString())
+        .order("scheduled_at", { ascending: true })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   if (authLoading || enrollmentsLoading) {
     return (
       <StudentLayout>
@@ -77,6 +106,18 @@ export default function Dashboard() {
   const completedCourses = enrollments.filter(
     (e: any) => Number(e.progress) >= 100
   );
+
+  // Calculate overall progress
+  const overallProgress = enrollments.length > 0
+    ? Math.round(enrollments.reduce((sum, e) => sum + Number(e.progress || 0), 0) / enrollments.length)
+    : 0;
+
+  // Get primary learning path (most progressed course)
+  const primaryLearningPath = inProgressEnrollments.length > 0
+    ? inProgressEnrollments.reduce((max, e) => 
+        Number(e.progress) > Number(max.progress) ? e : max
+      , inProgressEnrollments[0])
+    : null;
 
   return (
     <StudentLayout>
@@ -122,70 +163,102 @@ export default function Dashboard() {
 
             {/* Right Content - Learning Path Cards */}
             <div className="flex flex-col justify-center space-y-4">
-              {/* Card 1 */}
-              <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🎯</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
-                      Your Learning Path
-                    </p>
-                    <h3 className="text-base font-bold text-[#2c2015]">
-                      International Arbitration Expert
-                    </h3>
-                    <div className="mt-2">
-                      <Progress value={68} className="h-2" />
-                      <p className="text-xs text-[#6b5d4f] mt-1">68% Complete</p>
+              {/* Card 1 - Learning Path */}
+              {primaryLearningPath && (
+                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🎯</span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Card 2 */}
-              <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📚</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-white/70 font-medium uppercase tracking-wide mb-1">
-                      Upcoming Live Session
-                    </p>
-                    <h3 className="text-base font-bold">
-                      Drafting Arbitration Clauses
-                    </h3>
-                    <p className="text-xs text-white/80 mt-1">27 May · 16:00 AM GMT</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Card 3 */}
-              <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🎓</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
-                      Certificate Progress
-                    </p>
-                    <h3 className="text-base font-bold text-[#2c2015]">
-                      Advanced Mediator (ICMA)
-                    </h3>
-                    <div className="mt-2">
-                      <Progress value={75} className="h-2" />
-                      <p className="text-xs text-[#6b5d4f] mt-1">75% Complete</p>
+                    <div className="flex-1">
+                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                        Your Learning Path
+                      </p>
+                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
+                        {primaryLearningPath.course?.title || "No active course"}
+                      </h3>
+                      <div className="mt-2">
+                        <Progress value={Number(primaryLearningPath.progress) || 0} className="h-2" />
+                        <p className="text-xs text-[#6b5d4f] mt-1">
+                          {Math.round(Number(primaryLearningPath.progress) || 0)}% Complete
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Card 2 - Upcoming Event */}
+              {upcomingEvents.length > 0 && (
+                <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">📚</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-white/70 font-medium uppercase tracking-wide mb-1">
+                        Upcoming Live Session
+                      </p>
+                      <h3 className="text-base font-bold line-clamp-1">
+                        {upcomingEvents[0].title}
+                      </h3>
+                      <p className="text-xs text-white/80 mt-1">
+                        {new Date(upcomingEvents[0].scheduled_at).toLocaleDateString('en-US', { 
+                          day: 'numeric', 
+                          month: 'short' 
+                        })} · {new Date(upcomingEvents[0].scheduled_at).toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Card 3 - Certificate Progress */}
+              {inProgressEnrollments.length > 0 && (
+                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🎓</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                        Certificate Progress
+                      </p>
+                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
+                        {inProgressEnrollments[0].course?.title || "Course"}
+                      </h3>
+                      <div className="mt-2">
+                        <Progress value={Number(inProgressEnrollments[0].progress) || 0} className="h-2" />
+                        <p className="text-xs text-[#6b5d4f] mt-1">
+                          {Math.round(Number(inProgressEnrollments[0].progress) || 0)}% Complete
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Fallback Card if no data */}
+              {!primaryLearningPath && !upcomingEvents.length && !inProgressEnrollments.length && (
+                <Card className="bg-white border-[#d4c5b0]/30">
+                  <CardContent className="p-8 text-center">
+                    <p className="text-[#6b5d4f] mb-4">Start your learning journey today!</p>
+                    <Link href="/course-catalog">
+                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                        Explore Courses
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
           {/* Decorative Background Image */}
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block">
             <img
               src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800"
               alt=""
@@ -305,14 +378,14 @@ export default function Dashboard() {
                         stroke="#610000"
                         strokeWidth="8"
                         fill="none"
-                        strokeDasharray={`${2 * Math.PI * 40 * 0.68} ${
+                        strokeDasharray={`${2 * Math.PI * 40 * (overallProgress / 100)} ${
                           2 * Math.PI * 40
                         }`}
                         strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-[#610000]">68%</span>
+                      <span className="text-3xl font-bold text-[#610000]">{overallProgress}%</span>
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-[#2c2015]">Overall progress</p>
@@ -363,14 +436,14 @@ export default function Dashboard() {
                           stroke="#610000"
                           strokeWidth="12"
                           fill="none"
-                          strokeDasharray={`${2 * Math.PI * 56 * 0.68} ${
+                          strokeDasharray={`${2 * Math.PI * 56 * (overallProgress / 100)} ${
                             2 * Math.PI * 56
                           }`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-4xl font-bold text-[#610000]">68%</span>
+                        <span className="text-4xl font-bold text-[#610000]">{overallProgress}%</span>
                         <span className="text-xs text-[#6b5d4f]">Overall progress</span>
                       </div>
                     </div>
