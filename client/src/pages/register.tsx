@@ -120,8 +120,9 @@ export default function Register() {
         // for the same reason.
         window.location.href = "/onboarding";
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred during registration");
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || "An error occurred during registration");
     } finally {
       setIsLoading(false);
     }
@@ -141,13 +142,18 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-neutral-50 to-neutral-100">
-      {/* Left Side - Brand Panel */}
-      <div className="hidden lg:flex lg:flex-1 relative overflow-hidden bg-gradient-to-br from-[#610000] via-[#8b0000] to-[#610000]">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#a52a2a] rounded-full blur-3xl"></div>
-        </div>
+    <div className="min-h-screen flex bg-white">
+      {/* Left Side - Large Background Image */}
+      <div className="hidden lg:flex lg:flex-1 relative overflow-hidden">
+        {/* Large Background Image */}
+        <img 
+          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2400&auto=format&fit=crop&q=80"
+          alt="Professional legal workspace"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000]/90 via-[#610000]/85 to-black/80"></div>
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
@@ -159,13 +165,13 @@ export default function Register() {
             <img 
               src={cimaLogo} 
               alt="CIMA Logo" 
-              className="h-20 w-auto mb-8"
+              className="h-20 w-auto mb-8 rounded-xl"
             />
             <div className="space-y-4">
-              <h1 className="font-sf-pro-display text-5xl leading-tight">
-                Join CIMA Learn
+              <h1 className="text-6xl font-bold leading-tight">
+                Join<br />CIMA Learn
               </h1>
-              <p className="font-sf-pro-text text-xl text-white/90 leading-relaxed max-w-md">
+              <p className="text-xl text-white/90 leading-relaxed max-w-md font-light">
                 Begin your journey to international ADR excellence with globally recognized certifications.
               </p>
             </div>
@@ -186,17 +192,17 @@ export default function Register() {
       </div>
 
       {/* Right Side - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto bg-gray-50">
         <div className="w-full max-w-md my-auto">
           {/* Auth Card */}
-          <div className="bg-white rounded-3xl shadow-2xl border border-neutral-200/60 p-5 sm:p-7">
-            <div className="space-y-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+            <div className="space-y-5">
               {/* Logo - Mobile Only */}
               <div className="flex justify-center lg:hidden">
                 <img 
                   src={cimaLogo} 
                   alt="CIMA Logo" 
-                  className="h-10 w-10 object-contain"
+                  className="h-16 w-16 object-contain rounded-lg"
                 />
               </div>
 

@@ -53,7 +53,7 @@ class PushNotificationService {
           const p256dhKey = pushSubscription.getKey('p256dh');
           const authKey = pushSubscription.getKey('auth');
           const toB64 = (buf: ArrayBuffer | null) =>
-            buf ? btoa(String.fromCharCode(...new Uint8Array(buf))) : '';
+            buf ? btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(buf)))) : '';
           this.subscription = {
             endpoint: pushSubscription.endpoint,
             keys: {

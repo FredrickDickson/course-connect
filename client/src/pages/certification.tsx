@@ -1,3 +1,4 @@
+import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import Footer from "@/components/footer";
@@ -72,9 +73,8 @@ export default function Certification() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
+    <StudentLayout>
+      <div className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/">
@@ -85,18 +85,16 @@ export default function Certification() {
             </Link>
           </div>
         </div>
-      </header>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="space-y-16">
-          <MyCertificates />
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Certification</h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Earn internationally recognized credentials in alternative dispute resolution through our comprehensive certification programs.
-            </p>
-          </div>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="space-y-16">
+            <MyCertificates />
+            <div className="text-center space-y-4">
+                <h1 className="text-4xl font-bold text-foreground" data-testid="title">Professional Certification</h1>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                  Earn internationally recognized credentials in alternative dispute resolution through our comprehensive certification programs.
+                </p>
+              </div>
 
           {/* Certification Levels */}
           <section className="space-y-8">
@@ -289,8 +287,8 @@ export default function Certification() {
           </section>
         </div>
       </main>
-
       <Footer />
-    </div>
+      </div>
+    </StudentLayout>
   );
 }

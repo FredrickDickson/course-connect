@@ -74,9 +74,9 @@ export default function StudentSidebar({
   const navigationSections: NavSection[] = [
     {
       items: [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Home", href: "/dashboard", icon: Home },
         { name: "My Learning", href: "/courses", icon: BookOpen },
-        { name: "Discover Courses", href: "/course-catalog", icon: Search },
+        { name: "Course Catalog", href: "/course-catalog", icon: Search },
       ],
     },
     {
@@ -91,7 +91,8 @@ export default function StudentSidebar({
     {
       title: "Community",
       items: [
-        // { name: "Community Hub", href: "/community", icon: Users },
+        { name: "Discover Courses", href: "/courses", icon: Search },
+        { name: "Programs", href: "/course-catalog", icon: GraduationCap },
         { name: "My Posts", href: "/community/my-posts", icon: FileText },
         { name: "My Boards", href: "/community/my-boards", icon: Bookmark },
       ],
@@ -166,7 +167,7 @@ export default function StudentSidebar({
   return (
     <aside
       className={cn(
-        "h-screen flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out",
+        "sticky top-0 self-start h-screen flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out",
         collapsed ? "w-20" : "w-[280px]"
       )}
     >
@@ -174,7 +175,11 @@ export default function StudentSidebar({
       <div className="flex items-center justify-between p-6 border-b border-[#d4c5b0]/30 flex-shrink-0">
         {!collapsed ? (
           <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
-            <GraduationCap className="w-8 h-8 text-[#610000]" />
+            <img 
+              src="/images/logo.jpeg" 
+              alt="CIMA Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <div>
               <h1 className="text-lg font-bold text-[#610000] font-sf-pro-display">CIMA Learn</h1>
               <p className="text-[10px] text-[#8b6f47] font-sf-pro-text uppercase tracking-[0.08em] font-semibold">
@@ -184,7 +189,11 @@ export default function StudentSidebar({
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center justify-center w-full">
-            <GraduationCap className="w-8 h-8 text-[#610000]" />
+            <img 
+              src="/images/logo.jpeg" 
+              alt="CIMA Logo" 
+              className="w-10 h-10 object-contain"
+            />
           </Link>
         )}
       </div>
