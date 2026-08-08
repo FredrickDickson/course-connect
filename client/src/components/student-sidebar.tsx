@@ -74,8 +74,7 @@ export default function StudentSidebar({
   const navigationSections: NavSection[] = [
     {
       items: [
-        { name: "Home", href: "/dashboard", icon: Home },
-        { name: "My Learning", href: "/courses", icon: BookOpen },
+        { name: "My Learning", href: "/dashboard", icon: BookOpen },
         { name: "Course Catalog", href: "/course-catalog", icon: Search },
       ],
     },
