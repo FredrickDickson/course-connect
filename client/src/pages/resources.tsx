@@ -121,31 +121,6 @@ export default function Resources() {
           <DownloadableResources />
           
           <InstructorResourceUpload />
-
-          {/* Member Access Notice */}
-          <section className="text-center space-y-6">
-            <Card className="max-w-2xl mx-auto border-[#d4c5b0]/30">
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <i className="fas fa-info-circle text-[#610000] text-3xl"></i>
-                  <h3 className="text-xl font-bold text-[#2c2015] font-sf-pro-display">Member Access Required</h3>
-                  <p className="text-[#6b5d4f] font-sf-pro-text">
-                    Some resources are exclusively available to CIMA certified members and enrolled students. 
-                    Please log in to access your personalized resource library.
-                  </p>
-                  <div className="flex justify-center space-x-4">
-                    <Button className="bg-[#610000] hover:bg-[#7d0000]" data-testid="button-login-access">
-                      <i className="fas fa-sign-in-alt mr-2"></i>
-                      Member Login
-                    </Button>
-                    <Button variant="outline" className="border-[#d4c5b0] text-[#610000] hover:bg-[#faf9f6]" data-testid="button-become-member">
-                      Become a Member
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
         </div>
       </main>
     </StudentLayout>

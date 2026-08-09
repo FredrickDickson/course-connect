@@ -47,6 +47,7 @@ import {
   AlertCircle,
   UserPlus,
   Shield,
+  Plus,
 } from "lucide-react";
 import {
   Select,
@@ -311,13 +312,19 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
             <p className="text-[#6b5d4f] mt-1 font-sf-pro-text">
               Manage instructors, courses, and platform operations
             </p>
           </div>
+          <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
+            <Link href="/admin/courses/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Course
+            </Link>
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -327,7 +334,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Create Course</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Templates</TabsTrigger>
               <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
               <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
               <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#610000]">
