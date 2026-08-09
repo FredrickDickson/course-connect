@@ -32,7 +32,7 @@ export default function MobileBottomNav() {
   const { user } = useAuth();
 
   const quickNavItems = [
-    { href: "/dashboard", icon: Home, label: "Home" },
+    { href: "/home", icon: Home, label: "Home" },
     { href: "/courses", icon: BookOpen, label: "Learning" },
     { href: "/community", icon: Users, label: "Community" },
     { href: "/help-center", icon: HelpCircle, label: "Support" },
@@ -108,7 +108,7 @@ export default function MobileBottomNav() {
           {quickNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href || 
-              (item.href !== "/dashboard" && location.startsWith(item.href));
+              (item.href !== "/home" && location.startsWith(item.href));
             
             return (
               <Link
