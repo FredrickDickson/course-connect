@@ -75,6 +75,33 @@ export default function Dashboard() {
     },
   });
 
+  // Fetch recommended courses from database
+  const { data: recommendedCourses = [] } = useQuery({
+    queryKey: ["recommended-courses"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select(`
+          id,
+          title,
+          subtitle,
+          price,
+          thumbnail_url,
+          level,
+          avg_rating,
+          is_published,
+          is_featured,
+          instructor:users!instructor_id(first_name, last_name)
+        `)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: upcomingEvents = [] } = useQuery<any[]>({
     queryKey: ["upcoming-events"],
     enabled: !!user,
@@ -534,93 +561,80 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                badge: "BESTSELLER",
-                title: "International Commercial Arbitration Fundamentals",
-                instructor: "Dr. Cian-Bennu Ernshill",
-                rating: 4.8,
-                reviews: 334,
-                hours: "6 total hours",
-                level: "Beginner",
-                badgeColor: "bg-[#610000]",
-              },
-              {
-                badge: "POPULAR",
-                title: "Mediation: Principles, Process & Practice",
-                instructor: "Prof. Emike Oswere",
-                rating: 4.7,
-                reviews: 182,
-                hours: "5.5 total hours",
-                level: "Intermediate",
-                badgeColor: "bg-[#8b6f47]",
-              },
-              {
-                badge: "NEW",
-                title: "Negotiation Mastery for Professionals",
-                instructor: "Dr. Michelle Jamer",
-                rating: 4.9,
-                reviews: 89,
-                hours: "4 total hours",
-                level: "All levels",
-                badgeColor: "bg-[#610000]",
-              },
-              {
-                badge: "TRENDING",
-                title: "Enforcement of Arbitral Awards: Global Practice",
-                instructor: "Dr. Samson Peter Talepu",
-                rating: 4.7,
-                reviews: 261,
-                hours: "3.5 total hours",
-                level: "Intermediate",
-                badgeColor: "bg-[#8b6f47]",
-              },
-            ].map((course, idx) => (
-              <Card
-                key={idx}
-                className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden"
-              >
-                <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
-                  <img
-                    src={`https://images.unsplash.com/photo-${
-                      1589829545856 + idx * 100
-                    }-d10d557cf95f?auto=format&fit=crop&w=400`}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className={`absolute top-3 left-3 ${course.badgeColor} text-white text-xs`}>
-                    {course.badge}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
-                  >
-                    <Heart className="w-4 h-4" />
+          {recommendedCourses.length === 0 ? (
+            <Card className="border-[#d4c5b0]/30">
+              <CardContent className="py-12 text-center">
+                <p className="text-[#6b5d4f] mb-4">No courses available at the moment</p>
+                <Link href="/course-catalog">
+                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                    Browse Courses
                   </Button>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
-                    {course.title}
-                  </h3>
-                  <p className="text-xs text-[#6b5d4f] mb-3">{course.instructor}</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center">
-                      <span className="text-sm font-bold text-[#2c2015]">{course.rating}</span>
-                      <span className="text-yellow-500 ml-1">★★★★★</span>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recommendedCourses.map((course: any, idx: number) => (
+                <Link key={course.id} href={`/course/${course.id}`}>
+                  <Card className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden cursor-pointer">
+                    <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
+                      {course.thumbnail_url ? (
+                        <img
+                          src={course.thumbnail_url}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <PlayCircle className="w-16 h-16 text-[#610000]/20" />
+                        </div>
+                      )}
+                      {course.is_featured && (
+                        <Badge className="absolute top-3 left-3 bg-[#610000] text-white text-xs">
+                          FEATURED
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <Heart className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <span className="text-xs text-[#6b5d4f]">({course.reviews})</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
-                    <span>{course.hours}</span>
-                    <span>•</span>
-                    <span>{course.level}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
+                        {course.title}
+                      </h3>
+                      <p className="text-xs text-[#6b5d4f] mb-3">
+                        {course.instructor 
+                          ? `${course.instructor.first_name} ${course.instructor.last_name}` 
+                          : "CIMA Instructor"}
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center">
+                          <span className="text-sm font-bold text-[#2c2015]">
+                            {course.avg_rating ? Number(course.avg_rating).toFixed(1) : "New"}
+                          </span>
+                          {course.avg_rating && (
+                            <span className="text-yellow-500 ml-1">★★★★★</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
+                        <span>{course.level || "All levels"}</span>
+                        <span>•</span>
+                        <span className="font-semibold text-[#610000]">
+                          ${Number(course.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </StudentLayout>
