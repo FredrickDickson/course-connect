@@ -82,7 +82,7 @@ export default function StudentSidebar({
     {
       title: "Learning",
       items: [
-        { name: "Programs", href: "/programs", icon: GraduationCap },
+        // { name: "Programs", href: "/programs", icon: GraduationCap },
         { name: "Qualification Pathway", href: "/qualification-pathway", icon: Target },
         { name: "Certificates", href: "/profile?tab=certificates", icon: Award },
         { name: "Resources", href: "/resources", icon: BookOpen },
