@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -106,6 +106,7 @@ export default function AdminDashboard() {
   });
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [location] = useLocation();
   
   // Get active tab from URL params
   const getActiveTab = () => {
@@ -127,19 +128,13 @@ export default function AdminDashboard() {
   });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   
-  // Sync active tab with URL
+  // Sync active tab with URL whenever location changes
   useEffect(() => {
-    const handleUrlChange = () => {
-      setActiveTab(getActiveTab());
-    };
-    
-    // Listen for URL changes
-    window.addEventListener("popstate", handleUrlChange);
-    
-    return () => {
-      window.removeEventListener("popstate", handleUrlChange);
-    };
-  }, []);
+    const newTab = getActiveTab();
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location]); // Re-run when location changes
   
   // Update URL when tab changes
   const handleTabChange = (newTab: string) => {
