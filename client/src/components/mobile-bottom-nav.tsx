@@ -33,7 +33,7 @@ export default function MobileBottomNav() {
 
   const quickNavItems = [
     { href: "/home", icon: Home, label: "Home" },
-    { href: "/courses", icon: BookOpen, label: "Learning" },
+    { href: "/dashboard", icon: BookOpen, label: "Learning" },
     { href: "/community", icon: Users, label: "Community" },
     { href: "/help-center", icon: HelpCircle, label: "Support" },
   ];
