@@ -78,17 +78,17 @@ export default function Home() {
       {/* Hero Section — Executive Portal */}
       <section className="relative flex flex-col md:flex-row items-stretch">
         {/* Left: Burgundy welcome panel */}
-        <div className="w-full md:w-3/5 bg-[#8b0000] text-white p-6 sm:p-8 md:p-16 lg:p-20 flex flex-col justify-center relative overflow-hidden min-h-[450px] sm:min-h-[480px] md:min-h-[480px]">
+        <div className="w-full md:w-3/5 bg-[#8b0000] text-white p-6 sm:p-8 md:p-16 lg:p-20 flex flex-col justify-center relative overflow-hidden min-h-[500px] sm:min-h-[520px] md:min-h-[480px]">
           {/* Decorative gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
           <div className="relative z-10 max-w-2xl">
             <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[10px] sm:text-xs mb-3 sm:mb-4 block">
-              Executive Portal
+              {user ? `Welcome back, ${user.firstName || "Learner"}`.toUpperCase() : "Executive Portal"}
             </span>
             <h1 className="font-['Noto_Serif'] text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6 md:mb-8 leading-tight">
               Master dispute resolution.
               <br />
-              <span className="italic font-light text-[#8b0000] bg-white/95 px-2 py-1 inline-block mt-2">
+              <span className="text-[#8b0000] font-normal">
                 Anywhere, anytime.
               </span>
             </h1>
@@ -106,7 +106,7 @@ export default function Home() {
                 </button>
               </Link>
               <Link href="/courses">
-                <button className="w-full sm:w-auto border border-white/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-xs sm:text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-2">
+                <button className="w-full sm:w-auto border-2 border-white/30 bg-transparent text-white px-6 sm:px-8 py-3 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-xs sm:text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-2">
                   EXPLORE COURSES
                   <ArrowRight className="w-4 h-4" />
                 </button>

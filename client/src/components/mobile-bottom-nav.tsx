@@ -155,11 +155,6 @@ export default function MobileBottomNav() {
                     </p>
                   </div>
                 </div>
-                <SheetClose asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </SheetClose>
               </div>
             </SheetHeader>
 
