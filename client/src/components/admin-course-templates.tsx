@@ -175,7 +175,7 @@ export default function AdminCourseTemplates() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["course-templates"] });
-      toast({ title: editingId ? "Template updated" : "Template created" });
+      toast({ title: editingId ? "Course updated" : "Course created" });
       setShowForm(false);
       setEditingId(null);
       setForm(emptyForm);
@@ -193,7 +193,7 @@ export default function AdminCourseTemplates() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["course-templates"] });
-      toast({ title: "Template deleted" });
+      toast({ title: "Course deleted" });
     },
   });
 
@@ -232,9 +232,9 @@ export default function AdminCourseTemplates() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Course Templates</h2>
+          <h2 className="text-2xl font-bold">Create Course</h2>
           <p className="text-sm text-muted-foreground">
-            Reusable templates for recurring annual courses. Spawn new editions each year.
+            Create reusable course templates for recurring annual courses. Spawn new editions each year.
           </p>
         </div>
         <Button
@@ -244,7 +244,7 @@ export default function AdminCourseTemplates() {
             setShowForm(true);
           }}
         >
-          <Plus className="h-4 w-4 mr-2" /> New Template
+          <Plus className="h-4 w-4 mr-2" /> New Course
         </Button>
       </div>
 
@@ -256,10 +256,10 @@ export default function AdminCourseTemplates() {
         <Card>
           <CardContent className="p-8 text-center">
             <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No templates yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first course template to get started.</p>
+            <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
+            <p className="text-muted-foreground mb-4">Create your first course to get started.</p>
             <Button onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Create Template
+              <Plus className="h-4 w-4 mr-2" /> Create Course
             </Button>
           </CardContent>
         </Card>
@@ -286,7 +286,7 @@ export default function AdminCourseTemplates() {
                       <DropdownMenuContent align="end">
                         {/* New Edition removed - courses are online only */}
                         <DropdownMenuItem onClick={() => openEdit(t)}>
-                          <Edit className="h-4 w-4 mr-2" /> Edit Template
+                          <Edit className="h-4 w-4 mr-2" /> Edit Course
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -295,7 +295,7 @@ export default function AdminCourseTemplates() {
                             if (editions.length > 0) {
                               toast({
                                 title: "Cannot delete",
-                                description: "Template has existing editions. Remove them first.",
+                                description: "Course has existing editions. Remove them first.",
                                 variant: "destructive",
                               });
                               return;
@@ -374,19 +374,19 @@ export default function AdminCourseTemplates() {
         </div>
       )}
 
-      {/* Template Create/Edit Dialog */}
+      {/* Course Create/Edit Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit Template" : "New Course Template"}</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Course" : "New Course"}</DialogTitle>
             <DialogDescription>
-              {editingId ? "Update the details of this course template." : "Create a new template for future course editions."}
+              {editingId ? "Update the details of this course." : "Create a new course for future editions."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Template Name *</Label>
+                <Label>Course Name *</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
