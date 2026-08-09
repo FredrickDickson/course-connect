@@ -149,6 +149,10 @@ export const securityMiddleware = [
           "https://emvibxbcrvritkwkguya.supabase.co",
         ],
         workerSrc: ["'self'", "blob:"],
+        // Certificate preview (CertificatePreviewModal) renders a generated
+        // PDF in an <iframe src="blob:..."> — without an explicit frame-src,
+        // this falls back to default-src 'self' and blob: URLs get blocked.
+        frameSrc: ["'self'", "blob:"],
       },
     },
   }),
