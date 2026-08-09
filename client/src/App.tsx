@@ -33,7 +33,8 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
-import Dashboard from "@/pages/dashboard-new";
+import DashboardHome from "@/pages/dashboard-new";
+import Dashboard from "@/pages/dashboard";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
@@ -80,6 +81,7 @@ const AdminSetup = lazy(() => import("@/pages/admin-setup"));
 const BecomeInstructor = lazy(() => import("@/pages/become-instructor"));
 const CreateCourse = lazy(() => import("@/pages/create-course"));
 const CourseCurriculum = lazy(() => import("@/pages/course-curriculum"));
+const AdminInstructorProfile = lazy(() => import("@/pages/admin-instructor-profile"));
 
 // Lazy loaded heavy pages for performance
 const CourseDetail = lazy(() => import("@/pages/course-detail"));
@@ -112,6 +114,11 @@ const LazyCreateCourse = () => (
 const LazyCourseCurriculum = () => (
   <Suspense fallback={<PageLoader />}>
     <CourseCurriculum />
+  </Suspense>
+);
+const LazyAdminInstructorProfile = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminInstructorProfile />
   </Suspense>
 );
 const LazyBecomeInstructor = () => (
@@ -166,7 +173,7 @@ function Router() {
             return <PageLoader />;
           }
           if (isAuthenticated && user) {
-            // Redirect based on role
+            // Redirect based on role to the home page (not dashboard)
             if (user.role === "admin") {
               window.location.href = "/admin";
               return <PageLoader />;
@@ -174,7 +181,7 @@ function Router() {
               window.location.href = "/instructor";
               return <PageLoader />;
             } else {
-              window.location.href = "/dashboard";
+              window.location.href = "/home";
               return <PageLoader />;
             }
           }
@@ -184,7 +191,7 @@ function Router() {
       
       {/* Authenticated home route */}
       <Route path="/home">
-        {isLoading || !isAuthenticated ? <Landing /> : <Home />}
+        {isLoading || !isAuthenticated ? <Landing /> : <DashboardHome />}
       </Route>
       
       {/* Direct landing page route - always shows landing regardless of auth */}
@@ -261,10 +268,14 @@ function Router() {
       <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/edit" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
+      <ProtectedRoute path="/admin/courses/new" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/edit" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/curriculum" requiredRole="admin" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
       <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
+      <ProtectedRoute path="/admin/instructors/:instructorId/profile" requiredRole="admin" component={LazyAdminInstructorProfile} />
+      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>

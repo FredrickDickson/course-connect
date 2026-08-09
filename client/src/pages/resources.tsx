@@ -4,6 +4,7 @@ import StudentLayout from "@/components/student-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import InstructorResourceUpload from "@/components/resources/instructor-resource-upload";
+import DownloadableResources from "@/components/resources/downloadable-resources";
 
 export default function Resources() {
   const resourceCategories = [
@@ -116,6 +117,9 @@ export default function Resources() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-16">
+          {/* Downloadable Course Resources */}
+          <DownloadableResources />
+          
           <InstructorResourceUpload />
 
           {/* Featured Resources */}

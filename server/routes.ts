@@ -22,7 +22,7 @@ import express from "express";
 
 import crypto from "crypto";
 
-import { storage } from "./storage";
+import { storage, supabaseAdmin } from "./storage";
 
 import { requireSupabaseAuth } from "./supabaseAuth";
 
@@ -81,6 +81,7 @@ import qualificationRouter from "./routes/qualification";
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
 import muxRouter from "./routes/mux";
+import adminInstructorsRouter from "./routes/admin/instructors";
 import {
   insertCourseSchema,
 
@@ -343,6 +344,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
   app.use("/api/mux", muxRouter);
+  
+  // Mount admin instructor management routes
+  app.use("/api/admin/instructors", adminInstructorsRouter);
 
 
 
@@ -2152,11 +2156,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     requireSupabaseAuth,
 
-    requireInstructor(),
-
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
-      const instructorId = req.user.claims.sub;
+      const currentUserId = req.user.claims.sub;
+      const currentUserRole = req.user.role;
+      
+      // Admin can create courses on behalf of instructors
+      const onBehalfOf = req.query.onBehalfOf as string | undefined;
+      
+      let instructorId: string;
+      let createdByAdminId: string | undefined;
+      
+      if (currentUserRole === 'admin' && onBehalfOf) {
+        // Admin creating for an instructor
+        instructorId = onBehalfOf;
+        createdByAdminId = currentUserId;
+      } else if (currentUserRole === 'instructor' || currentUserRole === 'admin') {
+        // Instructor creating their own course OR admin creating as instructor
+        instructorId = currentUserId;
+      } else {
+        return res.status(403).json({ message: "Must be instructor or admin" });
+      }
 
       const courseData = insertCourseSchema.parse({
 
@@ -2167,6 +2187,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const course = await storage.createCourse(courseData);
+      
+      // Update admin tracking if applicable
+      if (createdByAdminId) {
+        const { error } = await supabaseAdmin
+          .from("courses")
+          .update({ created_by_admin_id: createdByAdminId })
+          .eq("id", course.id);
+        if (error) throw error;
+      }
 
       res.json(course);
 
@@ -2182,19 +2211,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     requireSupabaseAuth,
 
-    requireInstructor(),
-
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
-      const instructorId = req.user.claims.sub;
+      const currentUserId = req.user.claims.sub;
+      const currentUserRole = req.user.role;
 
       const { id } = req.params;
+      const onBehalfOf = req.query.onBehalfOf as string | undefined;
 
 
 
       const course = await storage.getCourseById(id);
-
-      if (!course || (course.instructor_id !== instructorId && req.user.role !== "admin")) {
+      
+      // Admin can edit any course, instructor can edit their own
+      const hasAccess = currentUserRole === "admin" || 
+                       (course && course.instructor_id === currentUserId);
+      
+      if (!hasAccess) {
 
         return res.status(403).json({ message: "Access denied" });
 
@@ -2205,6 +2238,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = insertCourseSchema.partial().parse(req.body);
 
       const updatedCourse = await storage.updateCourse(id, updates);
+      
+      // Track admin edits
+      if (currentUserRole === 'admin') {
+        const { error } = await supabaseAdmin
+          .from("courses")
+          .update({
+            last_edited_by_admin_id: currentUserId,
+            last_edited_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+        if (error) throw error;
+      }
 
       res.json(updatedCourse);
 

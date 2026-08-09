@@ -30,7 +30,7 @@ export default function Register() {
         } else if (role === "instructor") {
           window.location.href = "/instructor";
         } else {
-          window.location.href = "/dashboard";
+          window.location.href = "/home";
         }
       }
     };
