@@ -295,14 +295,14 @@ export default function Dashboard() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {inProgressEnrollments.slice(0, 1).map((enrollment: any) => (
+                {inProgressEnrollments.map((enrollment: any) => (
                   <Card
                     key={enrollment.id}
                     className="bg-white border-[#d4c5b0]/30 hover:shadow-xl transition-all overflow-hidden"
                   >
-                    <div className="flex flex-col md:flex-row">
+                    <div className="flex flex-col sm:flex-row gap-0">
                       {/* Course Image */}
-                      <div className="relative w-full md:w-72 h-48 bg-gradient-to-br from-[#610000] to-[#8b0000]">
+                      <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0">
                         {enrollment.course?.thumbnail_url ? (
                           <img
                             src={enrollment.course.thumbnail_url}
@@ -310,45 +310,50 @@ export default function Dashboard() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
                             <PlayCircle className="w-16 h-16 text-white/50" />
                           </div>
                         )}
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-[#610000] text-white">IN PROGRESS</Badge>
-                        </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                            <PlayCircle className="w-10 h-10 text-white" />
+                          <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer">
+                            <PlayCircle className="w-12 h-12 text-[#610000] fill-[#610000]" />
                           </div>
                         </div>
                       </div>
 
                       {/* Course Info */}
-                      <CardContent className="flex-1 p-6">
+                      <CardContent className="flex-1 p-6 flex flex-col justify-between">
                         <div className="space-y-4">
                           <div>
-                            <h3 className="text-xl font-bold text-[#2c2015] mb-2">
+                            <Badge className="bg-[#610000]/10 text-[#610000] hover:bg-[#610000]/20 mb-3 font-semibold uppercase text-xs">
+                              IN PROGRESS
+                            </Badge>
+                            <h3 className="text-2xl font-bold text-[#2c2015] mb-2 leading-tight">
                               {enrollment.course?.title}
                             </h3>
                             <p className="text-sm text-[#6b5d4f]">
-                              Course 6 of 8 · Arbitration Procedure
+                              {enrollment.course?.lessons?.length 
+                                ? `Lesson ${enrollment.last_lesson_id || 1} of ${enrollment.course.lessons.length}`
+                                : "Course"} · {enrollment.course?.track || "Arbitration Procedure"}
                             </p>
                           </div>
 
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#6b5d4f]">40% complete</span>
+                            <Progress value={Number(enrollment.progress) || 0} className="h-2.5" />
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-[#6b5d4f] font-medium">
+                                {Math.round(Number(enrollment.progress) || 0)}% complete
+                              </span>
                             </div>
-                            <Progress value={Number(enrollment.progress) || 40} className="h-2" />
                           </div>
 
                           <Link href={`/learn/${enrollment.course?.id}`}>
                             <Button
+                              className="text-[#610000] hover:text-[#7d0000] p-0 h-auto font-bold text-base group"
                               variant="link"
-                              className="text-[#610000] p-0 h-auto font-semibold"
                             >
-                              Go to course <ArrowRight className="w-4 h-4 ml-1" />
+                              Go to course 
+                              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                             </Button>
                           </Link>
                         </div>
