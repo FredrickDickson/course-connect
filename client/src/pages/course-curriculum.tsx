@@ -131,8 +131,9 @@ function SortableLesson({ lesson, lessonIndex, children }: any) {
 const QUERY_KEY = "curriculum-modules";
 
 export default function CourseCurriculum() {
-  const [, params] = useRoute("/instructor/courses/:courseId/curriculum");
-  const courseId = params?.courseId;
+  const [, instructorParams] = useRoute("/instructor/courses/:courseId/curriculum");
+  const [, adminParams] = useRoute("/admin/courses/:courseId/curriculum");
+  const courseId = instructorParams?.courseId || adminParams?.courseId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

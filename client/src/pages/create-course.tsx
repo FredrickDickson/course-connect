@@ -34,6 +34,8 @@ import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useAuth } from "@/contexts/AuthContext";
+import InstructorSelector from "@/components/admin/instructor-selector";
+import AdminContextBadge from "@/components/admin/admin-context-badge";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
 
@@ -92,10 +94,17 @@ export default function CreateCourse() {
   const { user } = useAuth();
   const [customCategory, setCustomCategory] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  
+  // Admin context: creating on behalf of instructor
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>("");
+  const [selectedInstructor, setSelectedInstructor] = useState<any>(null);
+  const isAdmin = user?.role === "admin";
+  const [isRouteAdmin, setIsRouteAdmin] = useState(false);
 
-  // Edit mode detection
-  const [, editParams] = useRoute("/instructor/courses/:courseId/edit");
-  const courseId = editParams?.courseId;
+  // Edit mode detection for instructor and admin routes
+  const [, instructorEditParams] = useRoute("/instructor/courses/:courseId/edit");
+  const [, adminEditParams] = useRoute("/admin/courses/:courseId/edit");
+  const courseId = instructorEditParams?.courseId || adminEditParams?.courseId;
   const isEditMode = !!courseId;
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<
@@ -147,7 +156,33 @@ export default function CreateCourse() {
     },
   });
 
-  // Pre-fill form when course data loads
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const instructorId = params.get("instructorId");
+    if (instructorId) {
+      setSelectedInstructorId(instructorId);
+    }
+
+    const path = window.location.pathname;
+    setIsRouteAdmin(path.startsWith("/admin"));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedInstructorId || !isAdmin) return;
+
+    const fetchInstructor = async () => {
+      try {
+        const res = await apiRequest("GET", `/api/admin/instructors/${selectedInstructorId}`);
+        const instructor = await res.json();
+        setSelectedInstructor(instructor);
+      } catch (error) {
+        console.error("Failed to load selected instructor:", error);
+      }
+    };
+
+    fetchInstructor();
+  }, [selectedInstructorId, isAdmin]);
+
   useEffect(() => {
     if (courseData) {
       form.reset({
@@ -163,8 +198,12 @@ export default function CreateCourse() {
         isPublished: courseData.is_published || false,
         isFeatured: courseData.is_featured || false,
       });
+
+      if (isAdmin && courseData.instructor_id && !selectedInstructorId) {
+        setSelectedInstructorId(courseData.instructor_id);
+      }
     }
-  }, [courseData, form]);
+  }, [courseData, form, isAdmin, selectedInstructorId]);
 
   const saveCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
@@ -206,15 +245,20 @@ export default function CreateCourse() {
         isFeatured: data.isFeatured,
       };
 
-      if (isEditMode) {
-        // Update existing course
-        const courseRes = await apiRequest("PUT", `/api/instructor/courses/${courseId}`, payload);
-        return await courseRes.json();
-      } else {
-        // Create new course
-        const courseRes = await apiRequest("POST", "/api/instructor/courses", payload);
-        return await courseRes.json();
-      }
+      const courseUrl = isEditMode
+        ? `/api/instructor/courses/${courseId}`
+        : "/api/instructor/courses";
+
+      const requestUrl = isAdmin && selectedInstructorId
+        ? `${courseUrl}${courseUrl.includes("?") ? "&" : "?"}onBehalfOf=${encodeURIComponent(selectedInstructorId)}`
+        : courseUrl;
+
+      const courseRes = await apiRequest(
+        isEditMode ? "PUT" : "POST",
+        requestUrl,
+        payload,
+      );
+      return await courseRes.json();
     },
     onSuccess: (course) => {
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
@@ -224,11 +268,10 @@ export default function CreateCourse() {
         title: "Success",
         description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",
       });
-      if (isEditMode) {
-        setLocation(`/instructor/courses/${course.id}/curriculum`);
-      } else {
-        setLocation(`/instructor/courses/${course.id}/curriculum`);
-      }
+      const nextPath = isRouteAdmin
+        ? `/admin/courses/${course.id}/curriculum`
+        : `/instructor/courses/${course.id}/curriculum`;
+      setLocation(nextPath);
     },
     onError: (error) => {
       toast({
@@ -240,6 +283,15 @@ export default function CreateCourse() {
   });
 
   const onSubmit = (data: CourseFormData) => {
+    if (isAdmin && !selectedInstructorId) {
+      toast({
+        title: "Instructor required",
+        description: "Choose an instructor before creating the course on their behalf.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (data.categoryId === CUSTOM_CATEGORY_VALUE && !customCategory.trim()) {
       toast({
         title: "Error",
@@ -249,6 +301,11 @@ export default function CreateCourse() {
       return;
     }
     saveCourse.mutate(data);
+  };
+
+  const handleInstructorSelection = (instructorId: string, instructor?: any) => {
+    setSelectedInstructorId(instructorId);
+    setSelectedInstructor(instructor || null);
   };
 
   const handleCategoryChange = (
@@ -276,7 +333,7 @@ export default function CreateCourse() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/instructor">
+            <Link href={isRouteAdmin ? "/admin" : "/instructor"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Link>
@@ -304,6 +361,33 @@ export default function CreateCourse() {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
+                {isAdmin && (
+                  <div className="space-y-4 rounded-xl border border-[#d4c5b0]/40 bg-[#faf9f6] p-4">
+                    <div className="flex flex-col gap-2">
+                      <h2 className="text-lg font-semibold text-[#2c2015]">Admin mode</h2>
+                      <p className="text-sm text-[#6b5d4f]">
+                        You can create and manage the course on behalf of an instructor, including curriculum and announcements.
+                      </p>
+                    </div>
+                    <AdminContextBadge
+                      instructorId={selectedInstructorId}
+                      instructorName={selectedInstructor ? `${selectedInstructor.first_name} ${selectedInstructor.last_name}` : "Select an instructor"}
+                      instructorImage={selectedInstructor?.profile_image_url}
+                      showClearButton={!!selectedInstructorId}
+                      onClearContext={() => {
+                        setSelectedInstructorId("");
+                        setSelectedInstructor(null);
+                      }}
+                    />
+                    <InstructorSelector
+                      value={selectedInstructorId}
+                      onChange={handleInstructorSelection}
+                      label="Instructor to manage" 
+                      placeholder="Choose instructor to act for"
+                    />
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-6">
                     <FormField
@@ -629,7 +713,7 @@ export default function CreateCourse() {
 
                 <div className="flex items-center justify-end gap-4 pt-4 border-t">
                   <Button type="button" variant="outline" asChild>
-                    <Link href="/instructor">Cancel</Link>
+                    <Link href={isRouteAdmin ? "/admin" : "/instructor"}>Cancel</Link>
                   </Button>
                   <Button type="submit" disabled={saveCourse.isPending}>
                         {saveCourse.isPending ? (

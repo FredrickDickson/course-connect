@@ -75,18 +75,18 @@ export default function Dashboard() {
     },
   });
 
-  const { data: upcomingEvents = [] } = useQuery({
+  const { data: upcomingEvents = [] } = useQuery<any[]>({
     queryKey: ["upcoming-events"],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("live_sessions")
         .select("*")
         .gte("scheduled_at", new Date().toISOString())
         .order("scheduled_at", { ascending: true })
         .limit(3);
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
   });
 
@@ -200,13 +200,13 @@ export default function Dashboard() {
                         Upcoming Live Session
                       </p>
                       <h3 className="text-base font-bold line-clamp-1">
-                        {upcomingEvents[0].title}
+                        {(upcomingEvents[0] as any).title}
                       </h3>
                       <p className="text-xs text-white/80 mt-1">
-                        {new Date(upcomingEvents[0].scheduled_at).toLocaleDateString('en-US', { 
+                        {new Date((upcomingEvents[0] as any).scheduled_at).toLocaleDateString('en-US', { 
                           day: 'numeric', 
                           month: 'short' 
-                        })} · {new Date(upcomingEvents[0].scheduled_at).toLocaleTimeString('en-US', { 
+                        })} · {new Date((upcomingEvents[0] as any).scheduled_at).toLocaleTimeString('en-US', { 
                           hour: '2-digit', 
                           minute: '2-digit' 
                         })}

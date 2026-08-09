@@ -26,6 +26,7 @@ import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
 import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
+import InstructorList from "@/components/admin/instructor-list";
 import {
   Users,
   BookOpen,
@@ -311,6 +312,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
               <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Overview</TabsTrigger>
+              <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
               <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Templates</TabsTrigger>
@@ -334,6 +336,11 @@ export default function AdminDashboard() {
           {/* Overview Tab — Year selector, charts, YoY */}
           <TabsContent value="overview">
             <AdminOverviewStats />
+          </TabsContent>
+
+          {/* Instructors Tab */}
+          <TabsContent value="instructors">
+            <InstructorList />
           </TabsContent>
 
           {/* Enrollments Tab */}

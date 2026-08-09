@@ -81,6 +81,7 @@ const AdminSetup = lazy(() => import("@/pages/admin-setup"));
 const BecomeInstructor = lazy(() => import("@/pages/become-instructor"));
 const CreateCourse = lazy(() => import("@/pages/create-course"));
 const CourseCurriculum = lazy(() => import("@/pages/course-curriculum"));
+const AdminInstructorProfile = lazy(() => import("@/pages/admin-instructor-profile"));
 
 // Lazy loaded heavy pages for performance
 const CourseDetail = lazy(() => import("@/pages/course-detail"));
@@ -113,6 +114,11 @@ const LazyCreateCourse = () => (
 const LazyCourseCurriculum = () => (
   <Suspense fallback={<PageLoader />}>
     <CourseCurriculum />
+  </Suspense>
+);
+const LazyAdminInstructorProfile = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminInstructorProfile />
   </Suspense>
 );
 const LazyBecomeInstructor = () => (
@@ -262,10 +268,14 @@ function Router() {
       <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/edit" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
+      <ProtectedRoute path="/admin/courses/new" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/edit" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/curriculum" requiredRole="admin" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
       <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
+      <ProtectedRoute path="/admin/instructors/:instructorId/profile" requiredRole="admin" component={LazyAdminInstructorProfile} />
+      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>
