@@ -78,37 +78,37 @@ export default function Home() {
       {/* Hero Section — Executive Portal */}
       <section className="relative flex flex-col md:flex-row items-stretch">
         {/* Left: Burgundy welcome panel */}
-        <div className="w-full md:w-3/5 bg-[#8b0000] text-white p-6 sm:p-8 md:p-16 lg:p-20 flex flex-col justify-center relative overflow-hidden min-h-[500px] sm:min-h-[520px] md:min-h-[480px]">
+        <div className="w-full md:w-3/5 bg-[#8b0000] text-white p-4 sm:p-6 md:p-16 lg:p-20 flex flex-col justify-center relative overflow-hidden min-h-[auto] sm:min-h-[520px] md:min-h-[480px]">
           {/* Decorative gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
-          <div className="relative z-10 max-w-2xl">
-            <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[10px] sm:text-xs mb-3 sm:mb-4 block">
+          <div className="relative z-10 max-w-2xl w-full">
+            <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[9px] sm:text-xs mb-2 sm:mb-4 block">
               {user ? `Welcome back, ${user.firstName || "Learner"}`.toUpperCase() : "Executive Portal"}
             </span>
-            <h1 className="font-['Noto_Serif'] text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6 md:mb-8 leading-tight">
-              Master dispute resolution.
+            <h1 className="font-['Noto_Serif'] text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-3 sm:mb-6 md:mb-8 leading-tight break-words">
+              Master dispute<br className="hidden sm:block" /> resolution.
               <br />
-              <span className="text-[#8b0000] font-normal">
+              <span className="text-white/90 font-normal">
                 Anywhere, anytime.
               </span>
             </h1>
-            <p className="font-['Inter'] text-sm sm:text-base md:text-lg text-white/80 max-w-lg mb-6 sm:mb-8 md:mb-12 leading-relaxed">
+            <p className="font-['Inter'] text-xs sm:text-base md:text-lg text-white/80 max-w-lg mb-4 sm:mb-8 md:mb-12 leading-relaxed">
               World-class, self-paced learning in Arbitration, Mediation, Litigation, Negotiation, Adjudication and more.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-4">
               <Link href="/dashboard">
-                <button className="w-full sm:w-auto bg-white text-[#610000] px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-xs sm:text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  CONTINUE LEARNING
-                  <ArrowRight className="w-4 h-4" />
+                <button className="w-full sm:w-auto bg-white text-[#610000] px-4 sm:px-8 md:px-10 py-2 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-[10px] sm:text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2">
+                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>CONTINUE LEARNING</span>
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </Link>
               <Link href="/courses">
-                <button className="w-full sm:w-auto border-2 border-white/30 bg-transparent text-white px-6 sm:px-8 py-3 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-xs sm:text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-2">
+                <button className="w-full sm:w-auto border-2 border-white/30 bg-transparent text-white px-4 sm:px-8 py-2 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-[10px] sm:text-sm tracking-widest hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-2">
                   EXPLORE COURSES
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </Link>
             </div>
@@ -294,19 +294,19 @@ export default function Home() {
           </div>
         </section>
       ) : !enrollmentsLoading && user ? (
-        <section className="py-12 sm:py-16">
+        <section className="py-8 sm:py-12 md:py-16">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl p-8 sm:p-12 text-center shadow-lg border border-[#d4c5b0]/30">
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#1b1c15] mb-4 font-['Noto_Serif']">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 md:p-12 text-center shadow-lg border border-[#d4c5b0]/30">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1b1c15] mb-3 sm:mb-4 font-['Noto_Serif']">
                 Start your learning journey today!
               </h2>
-              <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
                 Discover our world-class courses in Arbitration, Mediation, Litigation, Negotiation, Adjudication and more.
               </p>
               <Link href="/course-catalog">
                 <Button 
                   size="lg"
-                  className="bg-[#8b0000] hover:bg-[#610000] text-white px-8 py-6 text-base font-semibold rounded-lg shadow-xl"
+                  className="bg-[#8b0000] hover:bg-[#610000] text-white px-6 sm:px-8 py-3 sm:py-6 text-sm sm:text-base font-semibold rounded-lg shadow-xl w-full sm:w-auto"
                 >
                   Explore Courses
                 </Button>
@@ -388,16 +388,16 @@ export default function Home() {
       </section>
 
       {/* Call to Action — Academic Ledger vibe */}
-      <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#8b0000] overflow-hidden">
+      <section className="relative py-12 sm:py-16 md:py-24 lg:py-32 bg-[#8b0000] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
-          <h2 className="font-['Noto_Serif'] text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-tight mb-4 sm:mb-6">
+          <h2 className="font-['Noto_Serif'] text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-white leading-tight mb-3 sm:mb-6">
             Ready to Advance
             <br />
             <span className="italic font-light">Your Professional Career?</span>
           </h2>
-          <p className="font-['Inter'] text-base sm:text-lg md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12">
+          <p className="font-['Inter'] text-sm sm:text-base md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8 md:mb-12">
             Join 80,000+ professionals who have elevated their careers with
             CIMA's internationally recognized ADR programs.
           </p>
@@ -406,10 +406,10 @@ export default function Home() {
             <Link href="/course-catalog">
               <button
                 data-testid="button-explore-programs"
-                className="w-full sm:w-auto bg-white text-[#610000] px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-xs sm:text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-white text-[#610000] px-4 sm:px-8 md:px-10 py-2 sm:py-4 rounded-sm font-['Work_Sans'] font-medium text-[10px] sm:text-sm tracking-widest hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-2"
               >
                 EXPLORE PROGRAMS
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </Link>
           </div>
