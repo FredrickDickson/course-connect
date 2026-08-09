@@ -136,6 +136,22 @@ export default function AdminDashboard() {
     }
   }, [location]); // Re-run when location changes
   
+  // Listen for custom tab change events from sidebar
+  useEffect(() => {
+    const handleTabChangeEvent = () => {
+      const newTab = getActiveTab();
+      if (newTab !== activeTab) {
+        setActiveTab(newTab);
+      }
+    };
+    
+    window.addEventListener("tabchange", handleTabChangeEvent);
+    
+    return () => {
+      window.removeEventListener("tabchange", handleTabChangeEvent);
+    };
+  }, [activeTab]);
+  
   // Update URL when tab changes
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);

@@ -208,16 +208,30 @@ export default function AdminSidebar({
                 const Icon = item.icon;
 
                 return (
-                  <Link key={item.name} href={item.href}>
-                    <button
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-[12px] transition-all duration-300 group relative",
-                        collapsed && "justify-center",
-                        isActive
-                          ? "bg-[#610000] text-white shadow-md"
-                          : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#610000]"
-                      )}
-                    >
+                  <button
+                    key={item.name}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Handle navigation for tab-based links
+                      if (item.tab && (location === "/admin" || location === "/admin-dashboard")) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("tab", item.tab);
+                        window.history.pushState({}, "", url);
+                        // Force a re-render by triggering a custom event
+                        window.dispatchEvent(new Event("tabchange"));
+                      } else {
+                        // For non-tab links, use wouter navigation
+                        window.location.href = item.href;
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-[12px] transition-all duration-300 group relative",
+                      collapsed && "justify-center",
+                      isActive
+                        ? "bg-[#610000] text-white shadow-md"
+                        : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#610000]"
+                    )}
+                  >
                       <Icon
                         className={cn(
                           "w-5 h-5 flex-shrink-0 transition-colors",
@@ -249,7 +263,6 @@ export default function AdminSidebar({
                         </span>
                       )}
                     </button>
-                  </Link>
                 );
               })}
             </div>
