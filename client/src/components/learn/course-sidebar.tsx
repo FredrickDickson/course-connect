@@ -80,15 +80,24 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
   const handleDownloadResource = async (resource: any) => {
     try {
       if (resource.storage_path) {
+        // For files stored in Supabase storage
         const { data, error } = await supabase.storage
           .from("lesson-resources")
           .createSignedUrl(resource.storage_path, 3600);
         
         if (error) throw error;
         if (data?.signedUrl) {
-          window.open(data.signedUrl, "_blank");
+          // Create a temporary link element to trigger download
+          const link = document.createElement('a');
+          link.href = data.signedUrl;
+          link.download = resource.title || 'resource';
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
       } else if (resource.external_url) {
+        // For external URLs, open in new tab
         window.open(resource.external_url, "_blank");
       }
     } catch (error) {
@@ -205,22 +214,40 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="shrink-0 h-8 px-3 border-purple-500/50 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 hover:border-purple-400"
+                                  className="shrink-0 h-8 px-3 border-[#8b6f47]/50 bg-[#8b6f47]/10 text-[#8b6f47] hover:text-[#610000] hover:bg-[#8b6f47]/20 hover:border-[#610000]/50 transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileStack className="h-3.5 w-3.5 mr-1.5" />
                                   Resources
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuContent align="end" className="w-64 bg-white border-[#d4c5b0]">
+                                <div className="px-3 py-2 border-b border-[#d4c5b0]/30">
+                                  <p className="text-xs font-semibold text-[#610000] uppercase tracking-wider">
+                                    Lesson Resources
+                                  </p>
+                                </div>
                                 {resources.map((resource: any) => (
                                   <DropdownMenuItem 
                                     key={resource.id}
                                     onClick={() => handleDownloadResource(resource)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer py-3 px-3 hover:bg-[#faf9f6] focus:bg-[#faf9f6] text-[#2c2015]"
                                   >
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    <span className="truncate">{resource.title}</span>
+                                    <div className="flex items-center gap-3 w-full">
+                                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#610000]/10 flex items-center justify-center">
+                                        <FileText className="h-4 w-4 text-[#610000]" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-[#2c2015] truncate">
+                                          {resource.title}
+                                        </p>
+                                        {resource.file_size && (
+                                          <p className="text-xs text-[#8b6f47] mt-0.5">
+                                            {(resource.file_size / 1024).toFixed(0)} KB
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
                                   </DropdownMenuItem>
                                 ))}
                               </DropdownMenuContent>
