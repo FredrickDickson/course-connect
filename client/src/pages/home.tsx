@@ -71,6 +71,51 @@ export default function Home() {
       }
     : null;
 
+  // Function to find the next incomplete lesson for Continue Learning button
+  const getContinueLearningUrl = async () => {
+    if (!user || enrollments.length === 0) return "/dashboard";
+    
+    // Get the most recently accessed enrollment
+    const recentEnrollment = enrollments[0];
+    const courseId = recentEnrollment.course.id;
+    
+    // Flatten all lessons in order
+    const modules = recentEnrollment.course.modules || [];
+    const allLessons: any[] = [];
+    modules.forEach((module: any) => {
+      if (module.lessons) {
+        allLessons.push(...module.lessons);
+      }
+    });
+    
+    if (allLessons.length === 0) return `/course/${courseId}`;
+    
+    try {
+      // Get user's progress for this course
+      const { data: progress } = await supabase
+        .from("progress")
+        .select("lesson_id, completed")
+        .eq("user_id", user.id)
+        .in("lesson_id", allLessons.map(l => l.id));
+      
+      const completedLessonIds = new Set((progress || []).filter((p: any) => p.completed).map((p: any) => p.lesson_id));
+      const nextIncompleteLesson = allLessons.find((lesson: any) => !completedLessonIds.has(lesson.id));
+      
+      // Navigate to first incomplete or first lesson
+      const targetLessonId = nextIncompleteLesson?.id ?? allLessons[0]?.id;
+      return `/learn/${courseId}/${targetLessonId}`;
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+      // Fallback to first lesson
+      return `/learn/${courseId}/${allLessons[0]?.id}`;
+    }
+  };
+
+  const handleContinueLearning = async () => {
+    const url = await getContinueLearningUrl();
+    window.location.href = url;
+  };
+
   return (
     <div className="min-h-screen bg-background mobile-bottom-spacing">
       <Header />
@@ -98,13 +143,14 @@ export default function Home() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-2 sm:gap-3">
-              <Link href="/dashboard" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto bg-white text-[#610000] px-3 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[9px] sm:text-xs md:text-sm tracking-wider hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-1.5 sm:gap-2">
-                  <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">CONTINUE LEARNING</span>
-                  <span className="sm:hidden">CONTINUE</span>
-                </button>
-              </Link>
+              <button 
+                onClick={handleContinueLearning}
+                className="w-full sm:w-auto bg-white text-[#610000] px-3 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[9px] sm:text-xs md:text-sm tracking-wider hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-1.5 sm:gap-2"
+              >
+                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">CONTINUE LEARNING</span>
+                <span className="sm:hidden">CONTINUE</span>
+              </button>
               <Link href="/courses" className="w-full sm:w-auto">
                 <button className="w-full sm:w-auto border-2 border-white/30 bg-transparent text-white px-3 sm:px-8 py-2.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[9px] sm:text-xs md:text-sm tracking-wider hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-1.5 sm:gap-2">
                   <span className="hidden sm:inline">EXPLORE COURSES</span>
