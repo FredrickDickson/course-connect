@@ -181,8 +181,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* Continue Learning */}
-      {!enrollmentsLoading && enrollments.length > 0 && (
+      {/* Continue Learning or Empty State */}
+      {!enrollmentsLoading && enrollments.length > 0 ? (
         <section className="py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
@@ -294,19 +294,42 @@ export default function Home() {
             </div>
           </div>
         </section>
-      )}
+      ) : !enrollmentsLoading && user ? (
+        <section className="py-12 sm:py-16">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-2xl p-8 sm:p-12 text-center shadow-lg border border-[#d4c5b0]/30">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#1b1c15] mb-4 font-['Noto_Serif']">
+                Start your learning journey today!
+              </h2>
+              <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+                Discover our world-class courses in Arbitration, Mediation, Litigation, Negotiation, Adjudication and more.
+              </p>
+              <Link href="/course-catalog">
+                <Button 
+                  size="lg"
+                  className="bg-[#8b0000] hover:bg-[#610000] text-white px-8 py-6 text-base font-semibold rounded-lg shadow-xl"
+                >
+                  Explore Courses
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
-      {/* Featured Courses */}
+      {/* Featured Courses - Recommended for You */}
       <section className="py-12 sm:py-16 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6">
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight">
-                Featured Programs
+                Recommended for You
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl">
-                Accelerate your career with our most popular,
-                industry-recognized certification tracks.
+                {user 
+                  ? "Curated courses to accelerate your professional development journey."
+                  : "Accelerate your career with our most popular, industry-recognized certification tracks."
+                }
               </p>
             </div>
             <Link href="/courses">
@@ -338,7 +361,7 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : (
+          ) : featuredCourses.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {featuredCourses.map((course) => {
                 const userLevel = (user?.assignedLevel || user?.currentLevel || "NONE").toUpperCase() as "NONE" | "STUDENT" | "ASSOCIATE" | "MEMBER" | "FELLOW";
@@ -352,6 +375,14 @@ export default function Home() {
                   />
                 );
               })}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Courses Available Yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                We're working on adding amazing courses. Check back soon!
+              </p>
             </div>
           )}
         </div>

@@ -157,7 +157,7 @@ export default function CourseCardStatus({
       )}
 
       {/* Thumbnail Section - Fixed Height */}
-      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-[#faf9f6]">
+      <div className="relative h-36 sm:h-44 md:h-48 flex-shrink-0 overflow-hidden bg-[#faf9f6]">
         <img
           src={course.thumbnail_url || defaultThumbnail}
           alt={course.title}
@@ -169,28 +169,28 @@ export default function CourseCardStatus({
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         
         {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 flex items-start justify-between gap-2">
           {course.is_featured && (
             <Badge
-              className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white border-0 shadow-lg"
+              className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white border-0 shadow-lg text-[10px] sm:text-xs"
               data-testid="featured-badge"
             >
-              <Crown className="w-3.5 h-3.5 mr-1.5" />
+              <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
               Featured
             </Badge>
           )}
           
-          <div className="ml-auto flex flex-col gap-2">
+          <div className="ml-auto flex flex-col gap-1.5 sm:gap-2">
             {course.programme_type === "ADJUNCT_COURSE" ? (
               <Badge
-                className="bg-white/95 text-[#4a3828] border border-[#d4c5b0] shadow-md backdrop-blur-sm"
+                className="bg-white/95 text-[#4a3828] border border-[#d4c5b0] shadow-md backdrop-blur-sm text-[10px] sm:text-xs"
                 data-testid="adjunct-course-badge"
               >
                 Adjunct Course
               </Badge>
             ) : (
               <Badge
-                className={`border shadow-md backdrop-blur-sm bg-white/95 ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
+                className={`border shadow-md backdrop-blur-sm bg-white/95 text-[10px] sm:text-xs ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
                 data-testid="level-badge"
               >
                 {course.level}
@@ -202,7 +202,7 @@ export default function CourseCardStatus({
         {/* Status badge - Bottom Left */}
         {config.badge && (
           <Badge
-            className={`absolute bottom-3 left-3 border shadow-md backdrop-blur-sm ${config.badge.class}`}
+            className={`absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border shadow-md backdrop-blur-sm text-[10px] sm:text-xs ${config.badge.class}`}
             data-testid="status-badge"
           >
             {config.badge.text}
@@ -211,26 +211,26 @@ export default function CourseCardStatus({
       </div>
 
       {/* Content Section - Flexible Height */}
-      <CardContent className="p-5 flex flex-col flex-grow">
+      <CardContent className="p-3 sm:p-4 md:p-5 flex flex-col flex-grow">
         {/* Badges Row */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
           {course.programme_type !== "ADJUNCT_COURSE" && (
             <Badge
-              className={`text-[10px] uppercase tracking-wider font-semibold border ${pathwayColors[coursePathway]}`}
+              className={`text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold border ${pathwayColors[coursePathway]}`}
               data-testid="pathway-badge"
             >
               {pathwayConfig.name}
             </Badge>
           )}
           {course.category && (
-            <Badge className="text-[10px] uppercase tracking-wider font-semibold border-[#d4c5b0] text-[#4a3828] bg-[#faf9f6]" data-testid="category-badge">
+            <Badge className="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold border-[#d4c5b0] text-[#4a3828] bg-[#faf9f6]" data-testid="category-badge">
               {course.category.name}
             </Badge>
           )}
         </div>
 
         {/* Title - Fixed 2 lines */}
-        <h3 className="text-lg font-bold text-[#2c2015] mb-2 group-hover:text-[#610000] transition-colors line-clamp-2 leading-tight min-h-[3.5rem]" data-testid="course-title">
+        <h3 className="text-base sm:text-lg font-bold text-[#2c2015] mb-1.5 sm:mb-2 group-hover:text-[#610000] transition-colors line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3.5rem]" data-testid="course-title">
           {course.title}
         </h3>
 
@@ -264,20 +264,20 @@ export default function CourseCardStatus({
         )}
 
         {/* Description - Fixed 2 lines */}
-        <p className="text-sm text-[#6b5d4f] mb-4 line-clamp-2 leading-relaxed min-h-[2.5rem]" data-testid="course-description">
+        <p className="text-xs sm:text-sm text-[#6b5d4f] mb-3 sm:mb-4 line-clamp-2 leading-relaxed min-h-[2rem] sm:min-h-[2.5rem]" data-testid="course-description">
           {course.subtitle || course.description || "Master industry-standard ADR skills with our specialized certification track."}
         </p>
 
         {/* Meta Info Row */}
-        <div className="flex items-center gap-4 mb-4 text-sm text-[#6b5d4f]">
+        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-[#6b5d4f]">
           {course.duration_hours && (
-            <span className="flex items-center gap-1.5" data-testid="course-duration">
-              <Clock className="w-4 h-4 text-[#8b6f47]" />
+            <span className="flex items-center gap-1 sm:gap-1.5" data-testid="course-duration">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8b6f47]" />
               <span className="font-medium">{course.duration_hours}h</span>
             </span>
           )}
-          <span className="flex items-center gap-1.5" data-testid="course-students">
-            <Users className="w-4 h-4 text-[#8b6f47]" />
+          <span className="flex items-center gap-1 sm:gap-1.5" data-testid="course-students">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8b6f47]" />
             <span className="font-medium">{course.enrollment_count || 0}</span>
           </span>
         </div>
