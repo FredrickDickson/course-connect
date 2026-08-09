@@ -526,8 +526,8 @@ export default function Dashboard() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {recommendedCourses.map((course: any, idx: number) => (
                 <Link key={course.id} href={`/course/${course.id}`}>
-                  <Card className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden cursor-pointer">
-                    <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
+                  <Card className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col">
+                    <div className="relative h-48 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca] flex-shrink-0">
                       {course.thumbnail_url ? (
                         <img
                           src={course.thumbnail_url}
@@ -535,47 +535,52 @@ export default function Dashboard() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000]/5 to-[#8b6f47]/5">
                           <PlayCircle className="w-16 h-16 text-[#610000]/20" />
                         </div>
                       )}
                       {course.is_featured && (
-                        <Badge className="absolute top-3 left-3 bg-[#610000] text-white text-xs">
+                        <Badge className="absolute top-3 left-3 bg-[#610000] text-white text-xs font-semibold shadow-md">
                           FEATURED
                         </Badge>
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
+                        className="absolute top-3 right-3 bg-white/90 hover:bg-white text-[#610000] hover:text-[#7d0000] rounded-full shadow-sm"
                         onClick={(e) => e.preventDefault()}
                       >
                         <Heart className="w-4 h-4" />
                       </Button>
                     </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
+                    <CardContent className="p-4 flex-1 flex flex-col">
+                      <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-base min-h-[3rem] font-display">
                         {course.title}
                       </h3>
-                      <p className="text-xs text-[#6b5d4f] mb-3">
+                      <p className="text-xs text-[#6b5d4f] mb-3 font-body">
                         {course.instructor 
                           ? `${course.instructor.first_name} ${course.instructor.last_name}` 
                           : "CIMA Instructor"}
                       </p>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          <span className="text-sm font-bold text-[#2c2015]">
-                            {course.avg_rating ? Number(course.avg_rating).toFixed(1) : "New"}
-                          </span>
-                          {course.avg_rating && (
-                            <span className="text-yellow-500 ml-1">★★★★★</span>
-                          )}
-                        </div>
+                        {course.avg_rating ? (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm font-bold text-[#2c2015]">
+                                {Number(course.avg_rating).toFixed(1)}
+                              </span>
+                              <span className="text-yellow-500 text-sm">★★★★★</span>
+                            </div>
+                          </>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-[#d4c5b0] text-[#8b6f47]">
+                            New Course
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
-                        <span>{course.level || "All levels"}</span>
-                        <span>•</span>
-                        <span className="font-semibold text-[#610000]">
+                      <div className="flex items-center justify-between text-xs mt-auto pt-3 border-t border-[#d4c5b0]/30">
+                        <span className="text-[#6b5d4f] capitalize">{course.level || "All levels"}</span>
+                        <span className="font-bold text-[#610000] text-base">
                           ${Number(course.price).toFixed(2)}
                         </span>
                       </div>
