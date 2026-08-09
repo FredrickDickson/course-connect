@@ -86,7 +86,7 @@ export default function AdminSidebar({
         { name: "Overview", href: "/admin?tab=overview", icon: LayoutDashboard, tab: "overview" },
         { name: "Enrollments", href: "/admin?tab=enrollments", icon: UserCheck, tab: "enrollments" },
         { name: "Courses", href: "/admin?tab=courses", icon: BookOpen, tab: "courses" },
-        { name: "Templates", href: "/admin?tab=templates", icon: FileText, tab: "templates" },
+        { name: "Create Course", href: "/admin?tab=templates", icon: FileText, tab: "templates" },
       ],
     },
     {
