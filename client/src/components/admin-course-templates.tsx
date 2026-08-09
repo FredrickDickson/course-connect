@@ -232,20 +232,11 @@ export default function AdminCourseTemplates() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Create Course</h2>
+          <h2 className="text-2xl font-bold">Course Templates</h2>
           <p className="text-sm text-muted-foreground">
             Create reusable course templates for recurring annual courses. Spawn new editions each year.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingId(null);
-            setForm(emptyForm);
-            setShowForm(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" /> New Course
-        </Button>
       </div>
 
       {isLoading ? (
@@ -256,10 +247,10 @@ export default function AdminCourseTemplates() {
         <Card>
           <CardContent className="p-8 text-center">
             <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first course to get started.</p>
+            <h3 className="text-lg font-semibold mb-2">No course templates yet</h3>
+            <p className="text-muted-foreground mb-4">Create your first course template to get started.</p>
             <Button onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Create Course
+              <Plus className="h-4 w-4 mr-2" /> Create Template
             </Button>
           </CardContent>
         </Card>
