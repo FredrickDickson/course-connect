@@ -27,6 +27,7 @@ import AdminCoursesTable from "@/components/admin-courses-table";
 import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
+import ResourcesManagement from "@/components/admin/resources-management";
 import {
   Users,
   BookOpen,
@@ -330,6 +331,7 @@ export default function AdminDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Users</TabsTrigger>
+              <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Resources</TabsTrigger>
             </TabsList>
           </div>
 
@@ -440,6 +442,11 @@ export default function AdminDashboard() {
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
             <AdminUsersProfiles />
+          </TabsContent>
+
+          {/* Resources Tab */}
+          <TabsContent value="resources" className="space-y-6">
+            <ResourcesManagement />
           </TabsContent>
         </Tabs>
       </div>
