@@ -68,7 +68,7 @@ export default function Dashboard() {
     queryKey: ["user-dashboard-stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [favoritesResult, completionRecordsResult, enrollmentsResult] =
+      const [favoritesResult, completionRecordsResult, enrollmentsResult, progressResult] =
         await Promise.all([
           supabase.from("favorites").select("id").eq("user_id", user!.id),
           supabase
@@ -82,11 +82,23 @@ export default function Dashboard() {
             .eq("user_id", user!.id)
             .not("completed_at", "is", null)
             .order("completed_at", { ascending: false }),
+          // Total study hours reflects actual accumulated watch time, not a
+          // course's static advertised duration (which is often unset).
+          supabase
+            .from("progress")
+            .select("watch_time_seconds")
+            .eq("user_id", user!.id),
         ]);
 
       if (favoritesResult.error) throw favoritesResult.error;
       if (completionRecordsResult.error) throw completionRecordsResult.error;
       if (enrollmentsResult.error) throw enrollmentsResult.error;
+      if (progressResult.error) throw progressResult.error;
+
+      const totalWatchSeconds = (progressResult.data || []).reduce(
+        (sum: number, p: any) => sum + (p.watch_time_seconds || 0),
+        0,
+      );
 
       const completedEnrollments = enrollmentsResult.data || [];
       const courseIds = completedEnrollments.map((e: any) => e.course_id);
@@ -120,6 +132,7 @@ export default function Dashboard() {
       return {
         favorites: favoritesResult.data || [],
         certificates: uniqueCertificates,
+        totalStudyHours: totalWatchSeconds / 3600,
       };
     },
     staleTime: 2 * 60 * 1000,
@@ -128,6 +141,7 @@ export default function Dashboard() {
 
   const favorites = userStats?.favorites || [];
   const certificates = userStats?.certificates || [];
+  const totalStudyHours = userStats?.totalStudyHours || 0;
 
   if (authLoading || enrollmentsLoading || statsLoading) {
     return (
@@ -246,10 +260,9 @@ export default function Dashboard() {
               },
               {
                 icon: Clock,
-                value: enrollments.reduce(
-                  (sum, e) => sum + (e.course?.duration_hours || 0),
-                  0
-                ),
+                value: totalStudyHours >= 10 || totalStudyHours === 0
+                  ? Math.round(totalStudyHours)
+                  : Math.round(totalStudyHours * 10) / 10,
                 label: "Total Study Hours",
                 color: "from-[#8b6f47] to-[#c5a572]",
               },
