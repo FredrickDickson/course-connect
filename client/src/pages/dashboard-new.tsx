@@ -165,7 +165,7 @@ export default function Dashboard() {
             <div className="flex flex-col justify-center space-y-4 relative z-10">
               {/* Card 1 - Learning Path */}
               {primaryLearningPath ? (
-                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl">🎯</span>
@@ -187,7 +187,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30">
+                <Card className="bg-white border-[#d4c5b0]/30">
                   <CardContent className="p-5 text-center">
                     <p className="text-[#6b5d4f] mb-3">Start your learning journey today!</p>
                     <Link href="/course-catalog">
@@ -201,7 +201,7 @@ export default function Dashboard() {
 
               {/* Card 2 - Certificate Progress */}
               {inProgressEnrollments.length > 0 && (
-                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl">🎓</span>
@@ -226,7 +226,7 @@ export default function Dashboard() {
 
               {/* Upcoming Event Card - if available */}
               {upcomingEvents.length > 0 && (
-                <Card className="bg-[#610000]/95 backdrop-blur-sm text-white border-0 hover:shadow-lg transition-all">
+                <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl">📚</span>
@@ -254,15 +254,15 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Decorative Background Image - More Visible */}
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block overflow-hidden">
+          {/* Decorative Background Image - Clear and Visible */}
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-40 pointer-events-none hidden lg:block overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=90"
               alt=""
               className="w-full h-full object-cover"
               style={{ imageRendering: 'crisp-edges' }}
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/20 to-[#faf9f6]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/10 to-[#faf9f6]" />
           </div>
         </section>
 
