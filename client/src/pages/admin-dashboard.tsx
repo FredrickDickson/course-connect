@@ -47,6 +47,7 @@ import {
   AlertCircle,
   UserPlus,
   Shield,
+  Plus,
 } from "lucide-react";
 import {
   Select,
@@ -311,13 +312,19 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
             <p className="text-[#6b5d4f] mt-1 font-sf-pro-text">
               Manage instructors, courses, and platform operations
             </p>
           </div>
+          <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
+            <Link href="/admin/courses/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Course
+            </Link>
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

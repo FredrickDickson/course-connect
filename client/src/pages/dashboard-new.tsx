@@ -75,6 +75,33 @@ export default function Dashboard() {
     },
   });
 
+  // Fetch recommended courses from database
+  const { data: recommendedCourses = [] } = useQuery({
+    queryKey: ["recommended-courses"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select(`
+          id,
+          title,
+          subtitle,
+          price,
+          thumbnail_url,
+          level,
+          avg_rating,
+          is_published,
+          is_featured,
+          instructor:users!instructor_id(first_name, last_name)
+        `)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: upcomingEvents = [] } = useQuery<any[]>({
     queryKey: ["upcoming-events"],
     enabled: !!user,
@@ -126,7 +153,7 @@ export default function Dashboard() {
         <section className="relative bg-gradient-to-br from-[#f8f7f5] via-[#faf9f6] to-[#f5f3ed] rounded-[32px] overflow-hidden border border-[#d4c5b0]/20">
           <div className="grid lg:grid-cols-2 gap-8 p-8 lg:p-12">
             {/* Left Content */}
-            <div className="flex flex-col justify-center space-y-6">
+            <div className="flex flex-col justify-center space-y-6 relative z-10">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
@@ -162,9 +189,9 @@ export default function Dashboard() {
             </div>
 
             {/* Right Content - Learning Path Cards */}
-            <div className="flex flex-col justify-center space-y-4">
+            <div className="flex flex-col justify-center space-y-4 relative z-10">
               {/* Card 1 - Learning Path */}
-              {primaryLearningPath && (
+              {primaryLearningPath ? (
                 <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
@@ -186,9 +213,45 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              ) : (
+                <Card className="bg-white border-[#d4c5b0]/30">
+                  <CardContent className="p-5 text-center">
+                    <p className="text-[#6b5d4f] mb-3">Start your learning journey today!</p>
+                    <Link href="/course-catalog">
+                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]" size="sm">
+                        Explore Courses
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               )}
 
-              {/* Card 2 - Upcoming Event */}
+              {/* Card 2 - Certificate Progress */}
+              {inProgressEnrollments.length > 0 && (
+                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🎓</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                        Certificate Progress
+                      </p>
+                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
+                        {inProgressEnrollments[0].course?.title || "Course"}
+                      </h3>
+                      <div className="mt-2">
+                        <Progress value={Number(inProgressEnrollments[0].progress) || 0} className="h-2" />
+                        <p className="text-xs text-[#6b5d4f] mt-1">
+                          {Math.round(Number(inProgressEnrollments[0].progress) || 0)}% Complete
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Upcoming Event Card - if available */}
               {upcomingEvents.length > 0 && (
                 <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
@@ -215,57 +278,18 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Card 3 - Certificate Progress */}
-              {inProgressEnrollments.length > 0 && (
-                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">🎓</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
-                        Certificate Progress
-                      </p>
-                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
-                        {inProgressEnrollments[0].course?.title || "Course"}
-                      </h3>
-                      <div className="mt-2">
-                        <Progress value={Number(inProgressEnrollments[0].progress) || 0} className="h-2" />
-                        <p className="text-xs text-[#6b5d4f] mt-1">
-                          {Math.round(Number(inProgressEnrollments[0].progress) || 0)}% Complete
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Fallback Card if no data */}
-              {!primaryLearningPath && !upcomingEvents.length && !inProgressEnrollments.length && (
-                <Card className="bg-white border-[#d4c5b0]/30">
-                  <CardContent className="p-8 text-center">
-                    <p className="text-[#6b5d4f] mb-4">Start your learning journey today!</p>
-                    <Link href="/course-catalog">
-                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
-                        Explore Courses
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
 
-          {/* Decorative Background Image - Clear and Sharp */}
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-60 pointer-events-none hidden lg:block overflow-hidden">
+          {/* Decorative Background Image - Clear and Visible */}
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-40 pointer-events-none hidden lg:block overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=90"
               alt=""
               className="w-full h-full object-cover"
               style={{ imageRendering: 'crisp-edges' }}
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/40 to-[#faf9f6]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/10 to-[#faf9f6]" />
           </div>
         </section>
 
@@ -295,14 +319,14 @@ export default function Dashboard() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {inProgressEnrollments.slice(0, 1).map((enrollment: any) => (
+                {inProgressEnrollments.map((enrollment: any) => (
                   <Card
                     key={enrollment.id}
                     className="bg-white border-[#d4c5b0]/30 hover:shadow-xl transition-all overflow-hidden"
                   >
-                    <div className="flex flex-col md:flex-row">
+                    <div className="flex flex-col sm:flex-row gap-0">
                       {/* Course Image */}
-                      <div className="relative w-full md:w-72 h-48 bg-gradient-to-br from-[#610000] to-[#8b0000]">
+                      <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0">
                         {enrollment.course?.thumbnail_url ? (
                           <img
                             src={enrollment.course.thumbnail_url}
@@ -310,45 +334,50 @@ export default function Dashboard() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
                             <PlayCircle className="w-16 h-16 text-white/50" />
                           </div>
                         )}
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-[#610000] text-white">IN PROGRESS</Badge>
-                        </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                            <PlayCircle className="w-10 h-10 text-white" />
+                          <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer">
+                            <PlayCircle className="w-12 h-12 text-[#610000] fill-[#610000]" />
                           </div>
                         </div>
                       </div>
 
                       {/* Course Info */}
-                      <CardContent className="flex-1 p-6">
+                      <CardContent className="flex-1 p-6 flex flex-col justify-between">
                         <div className="space-y-4">
                           <div>
-                            <h3 className="text-xl font-bold text-[#2c2015] mb-2">
+                            <Badge className="bg-[#610000]/10 text-[#610000] hover:bg-[#610000]/20 mb-3 font-semibold uppercase text-xs">
+                              IN PROGRESS
+                            </Badge>
+                            <h3 className="text-2xl font-bold text-[#2c2015] mb-2 leading-tight">
                               {enrollment.course?.title}
                             </h3>
                             <p className="text-sm text-[#6b5d4f]">
-                              Course 6 of 8 · Arbitration Procedure
+                              {enrollment.course?.lessons?.length 
+                                ? `Lesson ${enrollment.last_lesson_id || 1} of ${enrollment.course.lessons.length}`
+                                : "Course"} · {enrollment.course?.track || "Arbitration Procedure"}
                             </p>
                           </div>
 
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-[#6b5d4f]">40% complete</span>
+                            <Progress value={Number(enrollment.progress) || 0} className="h-2.5" />
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-[#6b5d4f] font-medium">
+                                {Math.round(Number(enrollment.progress) || 0)}% complete
+                              </span>
                             </div>
-                            <Progress value={Number(enrollment.progress) || 40} className="h-2" />
                           </div>
 
                           <Link href={`/learn/${enrollment.course?.id}`}>
                             <Button
+                              className="text-[#610000] hover:text-[#7d0000] p-0 h-auto font-bold text-base group"
                               variant="link"
-                              className="text-[#610000] p-0 h-auto font-semibold"
                             >
-                              Go to course <ArrowRight className="w-4 h-4 ml-1" />
+                              Go to course 
+                              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                             </Button>
                           </Link>
                         </div>
@@ -468,56 +497,6 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Upcoming Activities */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2c2015] font-display">Upcoming activities</h3>
-                <Link href="/programs">
-                  <Button variant="link" className="text-[#610000] text-sm p-0 h-auto">
-                    View all <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
-              </div>
-              <Card className="bg-white border-[#d4c5b0]/30">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 text-center">
-                      <div className="bg-[#610000] text-white rounded-xl p-3 min-w-[60px]">
-                        <div className="text-xs font-medium">MAY</div>
-                        <div className="text-2xl font-bold">27</div>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-[#2c2015] mb-1">
-                        Live Q&A: Drafting Arbitration Clauses
-                      </h4>
-                      <p className="text-sm text-[#6b5d4f] mb-2">
-                        with Prof. Emile Oswere
-                      </p>
-                      <p className="text-xs text-[#8b6f47]">16:00 AM GMT</p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="flex -space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-[#8b6f47] border-2 border-white" />
-                          <div className="w-6 h-6 rounded-full bg-[#610000] border-2 border-white" />
-                          <div className="w-6 h-6 rounded-full bg-[#d4c5b0] border-2 border-white" />
-                        </div>
-                        <span className="text-xs text-[#6b5d4f]">+102 attending</span>
-                      </div>
-                      <Button className="w-full mt-3 bg-[#610000] text-white hover:bg-[#7d0000] rounded-lg">
-                        Join session
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-4 right-4 text-[#6b5d4f] hover:text-[#610000]"
-                      >
-                        <Calendar className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </section>
         </div>
 
@@ -532,93 +511,80 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                badge: "BESTSELLER",
-                title: "International Commercial Arbitration Fundamentals",
-                instructor: "Dr. Cian-Bennu Ernshill",
-                rating: 4.8,
-                reviews: 334,
-                hours: "6 total hours",
-                level: "Beginner",
-                badgeColor: "bg-[#610000]",
-              },
-              {
-                badge: "POPULAR",
-                title: "Mediation: Principles, Process & Practice",
-                instructor: "Prof. Emike Oswere",
-                rating: 4.7,
-                reviews: 182,
-                hours: "5.5 total hours",
-                level: "Intermediate",
-                badgeColor: "bg-[#8b6f47]",
-              },
-              {
-                badge: "NEW",
-                title: "Negotiation Mastery for Professionals",
-                instructor: "Dr. Michelle Jamer",
-                rating: 4.9,
-                reviews: 89,
-                hours: "4 total hours",
-                level: "All levels",
-                badgeColor: "bg-[#610000]",
-              },
-              {
-                badge: "TRENDING",
-                title: "Enforcement of Arbitral Awards: Global Practice",
-                instructor: "Dr. Samson Peter Talepu",
-                rating: 4.7,
-                reviews: 261,
-                hours: "3.5 total hours",
-                level: "Intermediate",
-                badgeColor: "bg-[#8b6f47]",
-              },
-            ].map((course, idx) => (
-              <Card
-                key={idx}
-                className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden"
-              >
-                <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
-                  <img
-                    src={`https://images.unsplash.com/photo-${
-                      1589829545856 + idx * 100
-                    }-d10d557cf95f?auto=format&fit=crop&w=400`}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className={`absolute top-3 left-3 ${course.badgeColor} text-white text-xs`}>
-                    {course.badge}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
-                  >
-                    <Heart className="w-4 h-4" />
+          {recommendedCourses.length === 0 ? (
+            <Card className="border-[#d4c5b0]/30">
+              <CardContent className="py-12 text-center">
+                <p className="text-[#6b5d4f] mb-4">No courses available at the moment</p>
+                <Link href="/course-catalog">
+                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                    Browse Courses
                   </Button>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
-                    {course.title}
-                  </h3>
-                  <p className="text-xs text-[#6b5d4f] mb-3">{course.instructor}</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center">
-                      <span className="text-sm font-bold text-[#2c2015]">{course.rating}</span>
-                      <span className="text-yellow-500 ml-1">★★★★★</span>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recommendedCourses.map((course: any, idx: number) => (
+                <Link key={course.id} href={`/course/${course.id}`}>
+                  <Card className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden cursor-pointer">
+                    <div className="relative h-40 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca]">
+                      {course.thumbnail_url ? (
+                        <img
+                          src={course.thumbnail_url}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <PlayCircle className="w-16 h-16 text-[#610000]/20" />
+                        </div>
+                      )}
+                      {course.is_featured && (
+                        <Badge className="absolute top-3 left-3 bg-[#610000] text-white text-xs">
+                          FEATURED
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-3 right-3 bg-white/80 hover:bg-white text-[#610000] rounded-full"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <Heart className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <span className="text-xs text-[#6b5d4f]">({course.reviews})</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
-                    <span>{course.hours}</span>
-                    <span>•</span>
-                    <span>{course.level}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-[#2c2015] mb-2 line-clamp-2 text-sm">
+                        {course.title}
+                      </h3>
+                      <p className="text-xs text-[#6b5d4f] mb-3">
+                        {course.instructor 
+                          ? `${course.instructor.first_name} ${course.instructor.last_name}` 
+                          : "CIMA Instructor"}
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center">
+                          <span className="text-sm font-bold text-[#2c2015]">
+                            {course.avg_rating ? Number(course.avg_rating).toFixed(1) : "New"}
+                          </span>
+                          {course.avg_rating && (
+                            <span className="text-yellow-500 ml-1">★★★★★</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[#6b5d4f]">
+                        <span>{course.level || "All levels"}</span>
+                        <span>•</span>
+                        <span className="font-semibold text-[#610000]">
+                          ${Number(course.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </StudentLayout>
