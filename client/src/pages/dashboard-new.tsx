@@ -126,7 +126,7 @@ export default function Dashboard() {
         <section className="relative bg-gradient-to-br from-[#f8f7f5] via-[#faf9f6] to-[#f5f3ed] rounded-[32px] overflow-hidden border border-[#d4c5b0]/20">
           <div className="grid lg:grid-cols-2 gap-8 p-8 lg:p-12">
             {/* Left Content */}
-            <div className="flex flex-col justify-center space-y-6">
+            <div className="flex flex-col justify-center space-y-6 relative z-10">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
@@ -162,10 +162,10 @@ export default function Dashboard() {
             </div>
 
             {/* Right Content - Learning Path Cards */}
-            <div className="flex flex-col justify-center space-y-4">
+            <div className="flex flex-col justify-center space-y-4 relative z-10">
               {/* Card 1 - Learning Path */}
-              {primaryLearningPath && (
-                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+              {primaryLearningPath ? (
+                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl">🎯</span>
@@ -186,11 +186,47 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              ) : (
+                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30">
+                  <CardContent className="p-5 text-center">
+                    <p className="text-[#6b5d4f] mb-3">Start your learning journey today!</p>
+                    <Link href="/course-catalog">
+                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]" size="sm">
+                        Explore Courses
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               )}
 
-              {/* Card 2 - Upcoming Event */}
+              {/* Card 2 - Certificate Progress */}
+              {inProgressEnrollments.length > 0 && (
+                <Card className="bg-white/95 backdrop-blur-sm border-[#d4c5b0]/30 hover:shadow-lg transition-all">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">🎓</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
+                        Certificate Progress
+                      </p>
+                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
+                        {inProgressEnrollments[0].course?.title || "Course"}
+                      </h3>
+                      <div className="mt-2">
+                        <Progress value={Number(inProgressEnrollments[0].progress) || 0} className="h-2" />
+                        <p className="text-xs text-[#6b5d4f] mt-1">
+                          {Math.round(Number(inProgressEnrollments[0].progress) || 0)}% Complete
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Upcoming Event Card - if available */}
               {upcomingEvents.length > 0 && (
-                <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
+                <Card className="bg-[#610000]/95 backdrop-blur-sm text-white border-0 hover:shadow-lg transition-all">
                   <CardContent className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl">📚</span>
@@ -215,57 +251,18 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Card 3 - Certificate Progress */}
-              {inProgressEnrollments.length > 0 && (
-                <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#8b6f47]/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">🎓</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-[#8b6f47] font-medium uppercase tracking-wide mb-1">
-                        Certificate Progress
-                      </p>
-                      <h3 className="text-base font-bold text-[#2c2015] line-clamp-1">
-                        {inProgressEnrollments[0].course?.title || "Course"}
-                      </h3>
-                      <div className="mt-2">
-                        <Progress value={Number(inProgressEnrollments[0].progress) || 0} className="h-2" />
-                        <p className="text-xs text-[#6b5d4f] mt-1">
-                          {Math.round(Number(inProgressEnrollments[0].progress) || 0)}% Complete
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Fallback Card if no data */}
-              {!primaryLearningPath && !upcomingEvents.length && !inProgressEnrollments.length && (
-                <Card className="bg-white border-[#d4c5b0]/30">
-                  <CardContent className="p-8 text-center">
-                    <p className="text-[#6b5d4f] mb-4">Start your learning journey today!</p>
-                    <Link href="/course-catalog">
-                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
-                        Explore Courses
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
 
-          {/* Decorative Background Image - Clear and Sharp */}
-          <div className="absolute right-0 top-0 w-1/2 h-full opacity-60 pointer-events-none hidden lg:block overflow-hidden">
+          {/* Decorative Background Image - More Visible */}
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=90"
               alt=""
               className="w-full h-full object-cover"
               style={{ imageRendering: 'crisp-edges' }}
             />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/40 to-[#faf9f6]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#faf9f6]/20 to-[#faf9f6]" />
           </div>
         </section>
 
