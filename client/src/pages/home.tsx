@@ -130,32 +130,36 @@ export default function Home() {
             <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.08em] sm:tracking-[0.15em] text-[8px] sm:text-xs mb-1.5 sm:mb-4 block">
               {user ? `Welcome back, ${user.firstName || "Learner"}`.toUpperCase() : "Executive Portal"}
             </span>
-            <h1 className="font-['Noto_Serif'] text-lg sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-2 sm:mb-6 md:mb-8 leading-snug sm:leading-tight break-words">
-              Master dispute resolution.
+            <h1 className="font-['Noto_Serif'] text-base sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-2 sm:mb-6 md:mb-8 leading-tight">
+              Master
               <br />
-              <span className="text-white/90 font-normal">
-                Anywhere, anytime.
+              dispute
+              <br />
+              resolution.
+              <br />
+              <span className="text-white/90 font-normal text-sm">
+                Anywhere,
+                <br />
+                anytime.
               </span>
             </h1>
-            <p className="font-['Inter'] text-[11px] sm:text-base md:text-lg text-white/80 max-w-lg mb-3 sm:mb-8 md:mb-12 leading-relaxed">
-              World-class, self-paced learning in Arbitration, Mediation, Litigation, Negotiation, Adjudication and more.
+            <p className="font-['Inter'] text-[10px] sm:text-base md:text-lg text-white/80 max-w-full mb-3 sm:mb-8 md:mb-12 leading-snug">
+              Self-paced learning in Arbitration, Mediation, Litigation, Negotiation &amp; more.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-2 sm:gap-3">
               <button 
                 onClick={handleContinueLearning}
-                className="w-full sm:w-auto bg-white text-[#610000] px-3 sm:px-8 md:px-10 py-2.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[9px] sm:text-xs md:text-sm tracking-wider hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-1.5 sm:gap-2"
+                className="bg-white text-[#610000] px-2.5 sm:px-8 md:px-10 py-1.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[7px] sm:text-xs md:text-sm tracking-wider hover:bg-[#f5f4e8] transition-colors duration-300 shadow-xl inline-flex items-center justify-center gap-0.5 sm:gap-2 whitespace-nowrap"
               >
-                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">CONTINUE LEARNING</span>
-                <span className="sm:hidden">CONTINUE</span>
+                <BookOpen className="w-2.5 h-2.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">CONTINUE</span>
               </button>
-              <Link href="/courses" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto border-2 border-white/30 bg-transparent text-white px-3 sm:px-8 py-2.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[9px] sm:text-xs md:text-sm tracking-wider hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-1.5 sm:gap-2">
-                  <span className="hidden sm:inline">EXPLORE COURSES</span>
-                  <span className="sm:hidden">EXPLORE</span>
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              <Link href="/courses" className="w-auto">
+                <button className="border-2 border-white/30 bg-transparent text-white px-2.5 sm:px-8 py-1.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[7px] sm:text-xs md:text-sm tracking-wider hover:bg-white/10 transition-all duration-300 inline-flex items-center justify-center gap-0.5 sm:gap-2 whitespace-nowrap">
+                  <span>EXPLORE</span>
+                  <ArrowRight className="w-2.5 h-2.5 sm:w-4 sm:h-4" />
                 </button>
               </Link>
             </div>
