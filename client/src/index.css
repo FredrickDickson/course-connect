@@ -546,3 +546,16 @@ html {
     0 0 40px rgba(139, 0, 0, 0.2),
     inset 0 0 20px rgba(255, 255, 255, 0.1);
 }
+
+/* Mobile Bottom Navigation Spacing */
+@layer utilities {
+  /* Add padding to bottom of pages on mobile to account for bottom nav */
+  .mobile-bottom-spacing {
+    @apply pb-20 lg:pb-0;
+  }
+  
+  /* Safe area padding for devices with notches */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

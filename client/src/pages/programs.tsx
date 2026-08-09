@@ -4,30 +4,104 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudentLayout from "@/components/student-layout";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BookOpen } from "lucide-react";
 
 export default function Programs() {
+  // Fetch all published courses from the database
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ["all-programs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select(`
+          *,
+          category:categories(*),
+          instructor:users!courses_instructor_id_fkey(first_name, last_name)
+        `)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Categorize courses by level
+  const flagshipPrograms = courses.filter(c => 
+    c.level === "FELLOW" || c.is_featured
+  );
+  const specializedCourses = courses.filter(c => 
+    c.level !== "FELLOW" && !c.is_featured
+  );
+
+  const renderCourseCard = (course: any) => (
+    <Card key={course.id} className="hover:shadow-lg transition-shadow" data-testid={`course-${course.id}`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <Badge className={
+            course.level === "FELLOW" ? "bg-accent/10 text-accent" :
+            course.level === "MEMBER" ? "bg-green-100 text-green-700" :
+            "bg-secondary/10 text-secondary"
+          }>
+            {course.level || "Associate"}
+          </Badge>
+          {course.avg_rating && course.avg_rating > 0 && (
+            <div className="flex items-center space-x-1 text-sm">
+              <i className="fas fa-star text-accent"></i>
+              <span className="text-muted-foreground">
+                {Number(course.avg_rating).toFixed(1)} ({course.rating_count})
+              </span>
+            </div>
+          )}
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">{course.title}</h3>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {course.description || course.subtitle}
+        </p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            {course.duration_hours && (
+              <span><i className="fas fa-clock mr-1"></i>{course.duration_hours} hours</span>
+            )}
+            <span><i className="fas fa-users mr-1"></i>{course.enrollment_count || 0}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-xl font-bold text-foreground">
+            ${Number(course.price).toFixed(0)}
+          </div>
+          <Link href={`/course-detail/${course.id}`}>
+            <Button size="sm">Learn More</Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
   return (
     <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-12 sm:py-16 md:py-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-5xl font-bold font-sf-pro-display mb-6" data-testid="programs-title">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-sf-pro-display mb-4 sm:mb-6" data-testid="programs-title">
             Professional ADR Programs
           </h1>
-          <p className="text-xl text-white/80 max-w-4xl mx-auto mb-8 font-sf-pro-text">
+          <p className="text-base sm:text-lg md:text-xl text-white/80 max-w-4xl mx-auto mb-6 sm:mb-8 font-sf-pro-text">
             Advance your career with internationally recognized qualifications designed for aspiring and experienced ADR professionals. Join our global community of mediators and arbitrators.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button 
               data-testid="button-compare-programs"
-              className="bg-[#8b6f47] text-white px-8 py-4 rounded-lg font-semibold hover:bg-[#6b5d4f] transition-colors"
+              className="w-full sm:w-auto bg-[#8b6f47] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-[#6b5d4f] transition-colors"
             >
               Compare Programs
             </Button>
             <Button 
               data-testid="button-speak-advisor"
               variant="outline"
-              className="border-2 border-white bg-white/10 text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-[#610000] transition-colors backdrop-blur-sm"
+              className="w-full sm:w-auto border-2 border-white bg-white/10 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-white hover:text-[#610000] transition-colors backdrop-blur-sm"
             >
               Speak to an Advisor
             </Button>
@@ -36,13 +110,13 @@ export default function Programs() {
       </section>
 
       {/* Program Categories */}
-      <section className="py-20">
+      <section className="py-12 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="flagship" className="space-y-8">
-            <TabsList className="grid w-full grid-cols-3" data-testid="program-tabs">
-              <TabsTrigger value="flagship">Flagship Programs</TabsTrigger>
-              <TabsTrigger value="specialized">Specialized Courses</TabsTrigger>
-              <TabsTrigger value="certification">Certification Paths</TabsTrigger>
+          <Tabs defaultValue="flagship" className="space-y-6 sm:space-y-8">
+            <TabsList className="grid w-full grid-cols-3 h-auto" data-testid="program-tabs">
+              <TabsTrigger value="flagship" className="text-xs sm:text-sm py-2 sm:py-2.5">Flagship Programs</TabsTrigger>
+              <TabsTrigger value="specialized" className="text-xs sm:text-sm py-2 sm:py-2.5">Specialized Courses</TabsTrigger>
+              <TabsTrigger value="certification" className="text-xs sm:text-sm py-2 sm:py-2.5">Certification Paths</TabsTrigger>
             </TabsList>
 
             {/* Flagship Programs */}
@@ -54,167 +128,112 @@ export default function Programs() {
                 </p>
               </div>
 
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Global M&A Program */}
-                <Card className="relative overflow-hidden group hover:shadow-xl transition-shadow" data-testid="program-ma">
-                  <div className="absolute top-4 right-4 z-10">
-                    <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                  </div>
-                  <img 
-                    src="https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400" 
-                    alt="Global M&A Program" 
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <CardContent className="p-8">
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-2xl font-bold text-foreground mb-2">Global M&A Program</h3>
-                        <p className="text-lg text-accent font-medium mb-4">International Arbitration & Mediation</p>
-                        <p className="text-muted-foreground">
-                          An expedited route for career development in international M&A dispute resolution. Master complex cross-border transactions, regulatory frameworks, and dispute resolution mechanisms used in global mergers and acquisitions.
-                        </p>
-                      </div>
+              {isLoading ? (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {[...Array(2)].map((_, i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <Skeleton className="w-full h-64" />
+                      <CardContent className="p-8">
+                        <Skeleton className="h-8 w-3/4 mb-4" />
+                        <Skeleton className="h-24 w-full mb-6" />
+                        <Skeleton className="h-32 w-full" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : flagshipPrograms.length > 0 ? (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {flagshipPrograms.map((course) => (
+                    <Card key={course.id} className="relative overflow-hidden group hover:shadow-xl transition-shadow" data-testid={`program-${course.id}`}>
+                      {course.is_featured && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                        </div>
+                      )}
+                      <img 
+                        src={course.thumbnail_url || "https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400"} 
+                        alt={course.title} 
+                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <CardContent className="p-8">
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-2xl font-bold text-foreground mb-2">{course.title}</h3>
+                            {course.subtitle && (
+                              <p className="text-lg text-accent font-medium mb-4">{course.subtitle}</p>
+                            )}
+                            <p className="text-muted-foreground line-clamp-3">
+                              {course.description}
+                            </p>
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-clock text-primary"></i>
-                            <span className="text-sm text-muted-foreground">12 weeks intensive</span>
+                          <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                              {course.duration_hours && (
+                                <div className="flex items-center space-x-3">
+                                  <i className="fas fa-clock text-primary"></i>
+                                  <span className="text-sm text-muted-foreground">{course.duration_hours} hours</span>
+                                </div>
+                              )}
+                              <div className="flex items-center space-x-3">
+                                <i className="fas fa-users text-primary"></i>
+                                <span className="text-sm text-muted-foreground">{course.enrollment_count || 0} enrolled</span>
+                              </div>
+                              {course.instructor && (
+                                <div className="flex items-center space-x-3">
+                                  <i className="fas fa-user text-primary"></i>
+                                  <span className="text-sm text-muted-foreground">
+                                    {course.instructor.first_name} {course.instructor.last_name}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              <div className="flex items-center space-x-3">
+                                <i className="fas fa-certificate text-primary"></i>
+                                <span className="text-sm text-muted-foreground">{course.level || "Professional"} level</span>
+                              </div>
+                              {course.avg_rating && course.avg_rating > 0 && (
+                                <div className="flex items-center space-x-3">
+                                  <i className="fas fa-star text-accent"></i>
+                                  <span className="text-sm text-muted-foreground">
+                                    {Number(course.avg_rating).toFixed(1)} ({course.rating_count} reviews)
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-globe text-primary"></i>
-                            <span className="text-sm text-muted-foreground">International faculty</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-users text-primary"></i>
-                            <span className="text-sm text-muted-foreground">Live case studies</span>
+
+                          <div className="flex items-center justify-between pt-4 border-t">
+                            <div>
+                              <div className="text-3xl font-bold text-foreground" data-testid={`price-${course.id}`}>
+                                ${Number(course.price).toFixed(0)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{course.currency || "USD"}</div>
+                            </div>
+                            <Link href={`/course-detail/${course.id}`}>
+                              <Button 
+                                data-testid={`button-enroll-${course.id}`}
+                                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors"
+                              >
+                                Learn More
+                              </Button>
+                            </Link>
                           </div>
                         </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-certificate text-primary"></i>
-                            <span className="text-sm text-muted-foreground">Professional certification</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-network-wired text-primary"></i>
-                            <span className="text-sm text-muted-foreground">Alumni network</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-briefcase text-primary"></i>
-                            <span className="text-sm text-muted-foreground">Career placement</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-muted/30 rounded-lg p-4">
-                        <h4 className="font-semibold text-foreground mb-2">Program Highlights</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          <li>• Cross-border transaction structuring</li>
-                          <li>• Regulatory compliance frameworks</li>
-                          <li>• Due diligence and risk assessment</li>
-                          <li>• Dispute prevention strategies</li>
-                          <li>• International arbitration procedures</li>
-                        </ul>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div>
-                          <div className="text-3xl font-bold text-foreground" data-testid="ma-price">$2,950</div>
-                          <div className="text-sm text-muted-foreground">USD • Payment plans available</div>
-                        </div>
-                        <Link href="/courses">
-                          <Button 
-                            data-testid="button-enroll-ma"
-                            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors"
-                          >
-                            Learn More
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* FCIMArb Fellowship */}
-                <Card className="relative overflow-hidden group hover:shadow-xl transition-shadow" data-testid="program-fellowship">
-                  <div className="absolute top-4 right-4 z-10">
-                    <Badge className="bg-accent text-accent-foreground">Premium</Badge>
-                  </div>
-                  <img 
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400" 
-                    alt="FCIMArb Fellowship" 
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <CardContent className="p-8">
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-2xl font-bold text-foreground mb-2">FCIMArb Fellowship</h3>
-                        <p className="text-lg text-accent font-medium mb-4">Fellow of the Center for International Mediators and Arbitrators</p>
-                        <p className="text-muted-foreground">
-                          Our most prestigious qualification. Internationally recognized and respected designation upon program completion. Join an elite community of certified arbitrators and mediators with global practice opportunities.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-award text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Fellow designation</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-users text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Global network access</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-gavel text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Tribunal appointments</span>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-infinity text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Lifetime membership</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-handshake text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Referral network</span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <i className="fas fa-graduation-cap text-accent"></i>
-                            <span className="text-sm text-muted-foreground">Continuing education</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-accent/10 rounded-lg p-4 border border-accent/20">
-                        <h4 className="font-semibold text-foreground mb-2">Fellowship Benefits</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          <li>• Use of FCIMArb post-nominal letters</li>
-                          <li>• Priority placement on arbitrator panels</li>
-                          <li>• Exclusive networking events</li>
-                          <li>• Fellow-level practice opportunities</li>
-                          <li>• Mentorship programs</li>
-                        </ul>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div>
-                          <div className="text-3xl font-bold text-foreground" data-testid="fellowship-price">$4,750</div>
-                          <div className="text-sm text-muted-foreground">USD • Includes all materials</div>
-                        </div>
-                        <Link href="/courses">
-                          <Button 
-                            data-testid="button-apply-fellowship"
-                            className="bg-accent text-accent-foreground px-6 py-3 rounded-lg font-medium hover:bg-yellow-500 transition-colors"
-                          >
-                            Apply Now
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Programs Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    We're working on adding flagship programs. Check back soon for updates!
+                  </p>
+                </div>
+              )}
             </TabsContent>
 
             {/* Specialized Courses */}
@@ -226,109 +245,55 @@ export default function Programs() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Mediation Fundamentals */}
-                <Card className="hover:shadow-lg transition-shadow" data-testid="course-mediation">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-secondary/10 text-secondary">Part I (Associate)</Badge>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <i className="fas fa-star text-accent"></i>
-                        <span className="text-muted-foreground">4.8 (156)</span>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Fundamentals of Mediation</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Master the core principles and techniques of effective mediation practice.
-                    </p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span><i className="fas fa-clock mr-1"></i>8 hours</span>
-                        <span><i className="fas fa-video mr-1"></i>12 lessons</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-foreground">$450</div>
-                      <Button size="sm">Enroll Now</Button>
-                    </div>
-                  </CardContent>
-                </Card>
+              {isLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <Skeleton className="h-6 w-24 mb-4" />
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-16 w-full mb-4" />
+                        <Skeleton className="h-10 w-full" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : specializedCourses.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {specializedCourses.slice(0, 6).map(renderCourseCard)}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Programs Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    We're working on adding specialized courses. Check back soon for updates!
+                  </p>
+                </div>
+              )}
 
-                {/* International Arbitration */}
-                <Card className="hover:shadow-lg transition-shadow" data-testid="course-arbitration">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-accent/10 text-accent">Part III (Fellow)</Badge>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <i className="fas fa-star text-accent"></i>
-                        <span className="text-muted-foreground">4.9 (89)</span>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">International Arbitration</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Fellow-level strategies for complex cross-border commercial disputes.
-                    </p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span><i className="fas fa-clock mr-1"></i>16 hours</span>
-                        <span><i className="fas fa-video mr-1"></i>24 lessons</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-foreground">$850</div>
-                      <Button size="sm">Enroll Now</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* ADR Ethics */}
-                <Card className="hover:shadow-lg transition-shadow" data-testid="course-ethics">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-green-100 text-green-700">Part II (Member)</Badge>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <i className="fas fa-star text-accent"></i>
-                        <span className="text-muted-foreground">4.7 (124)</span>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">ADR Ethics & Standards</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Professional conduct and ethical considerations in dispute resolution.
-                    </p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span><i className="fas fa-clock mr-1"></i>6 hours</span>
-                        <span><i className="fas fa-video mr-1"></i>10 lessons</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-foreground">$350</div>
-                      <Button size="sm">Enroll Now</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="text-center">
-                <Link href="/courses">
-                  <Button variant="outline" size="lg" data-testid="view-all-courses">
-                    View All Courses
-                    <i className="fas fa-arrow-right ml-2"></i>
-                  </Button>
-                </Link>
-              </div>
+              {specializedCourses.length > 6 && (
+                <div className="text-center">
+                  <Link href="/courses">
+                    <Button variant="outline" size="lg" data-testid="view-all-courses">
+                      View All Courses
+                      <i className="fas fa-arrow-right ml-2"></i>
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </TabsContent>
 
             {/* Certification Paths */}
-            <TabsContent value="certification" className="space-y-8" data-testid="tab-certification">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold text-foreground mb-4">Certification Paths</h2>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <TabsContent value="certification" className="space-y-6 sm:space-y-8" data-testid="tab-certification">
+              <div className="text-center mb-8 sm:mb-12">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">Certification Paths</h2>
+                <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
                   Choose your path to professional certification based on your career goals and experience level.
                 </p>
               </div>
 
-              <div className="grid lg:grid-cols-3 gap-8">
+              <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
                 {/* Foundation Path */}
                 <Card className="border-2 border-secondary/20 hover:border-secondary transition-colors" data-testid="path-foundation">
                   <CardContent className="p-8 text-center">
@@ -442,17 +407,17 @@ export default function Programs() {
       </section>
 
       {/* Call to Action */}
-      <section className="py-20 bg-gradient-to-r from-[#8b6f47] to-[#6b5d4f] text-white -mx-4 sm:-mx-6 lg:-mx-8 mb-0">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-[#8b6f47] to-[#6b5d4f] text-white -mx-4 sm:-mx-6 lg:-mx-8 mb-0">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold font-sf-pro-display mb-4">Ready to Start Your ADR Journey?</h2>
-          <p className="text-xl mb-8 opacity-90 font-sf-pro-text">
+          <h2 className="text-2xl sm:text-3xl font-bold font-sf-pro-display mb-3 sm:mb-4">Ready to Start Your ADR Journey?</h2>
+          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90 font-sf-pro-text">
             Join thousands of professionals who have elevated their careers with CIMA's internationally recognized programs.
           </p>
-          <div className="space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button 
               data-testid="button-get-started"
               size="lg" 
-              className="bg-[#610000] text-white hover:bg-[#7d0000]"
+              className="w-full sm:w-auto bg-[#610000] text-white hover:bg-[#7d0000]"
             >
               Get Started Today
             </Button>
@@ -460,7 +425,7 @@ export default function Programs() {
               data-testid="button-schedule-consultation"
               size="lg" 
               variant="outline" 
-              className="border-2 border-white bg-white/10 text-white hover:bg-white hover:text-[#8b6f47] backdrop-blur-sm transition-colors"
+              className="w-full sm:w-auto border-2 border-white bg-white/10 text-white hover:bg-white hover:text-[#8b6f47] backdrop-blur-sm transition-colors"
             >
               Schedule Consultation
             </Button>
