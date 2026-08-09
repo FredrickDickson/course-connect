@@ -29,7 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useRoute } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/header";
+import StudentLayout from "@/components/student-layout";
 import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
@@ -328,30 +328,29 @@ export default function CreateCourse() {
   if (!hasAccess) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="sm" asChild>
+    <StudentLayout>
+      <div className="space-y-8">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
             <Link href={isRouteAdmin ? "/admin" : "/instructor"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-[#2c2015] font-display">
               {isEditMode ? "Edit Course" : "Create New Course"}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-[#6b5d4f] mt-2 font-body">
               {isEditMode ? "Update your course details" : "Fill in the details to create your new course"}
             </p>
           </div>
         </div>
 
-        <Card>
+        <Card className="bg-white border-[#d4c5b0]/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-[#2c2015] font-display">
+              <BookOpen className="h-5 w-5 text-[#610000]" />
               Course Information
             </CardTitle>
           </CardHeader>
@@ -711,14 +710,14 @@ export default function CreateCourse() {
                   )}
                 />
 
-                <div className="flex items-center justify-end gap-4 pt-4 border-t">
-                  <Button type="button" variant="outline" asChild>
+                <div className="flex items-center justify-end gap-4 pt-4 border-t border-[#d4c5b0]/30">
+                  <Button type="button" variant="outline" asChild className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">
                     <Link href={isRouteAdmin ? "/admin" : "/instructor"}>Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={saveCourse.isPending}>
+                  <Button type="submit" disabled={saveCourse.isPending} className="bg-[#610000] text-white hover:bg-[#7d0000]">
                         {saveCourse.isPending ? (
                           <>
-                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                             {isEditMode ? "Updating..." : "Creating..."}
                           </>
                         ) : (
@@ -734,6 +733,6 @@ export default function CreateCourse() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </StudentLayout>
   );
 }
