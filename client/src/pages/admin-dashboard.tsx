@@ -316,7 +316,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Templates</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Create Course</TabsTrigger>
               <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
               <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
               <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#610000]">
