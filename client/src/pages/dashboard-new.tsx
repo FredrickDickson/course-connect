@@ -497,56 +497,6 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Upcoming Activities */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2c2015] font-display">Upcoming activities</h3>
-                <Link href="/programs">
-                  <Button variant="link" className="text-[#610000] text-sm p-0 h-auto">
-                    View all <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
-              </div>
-              <Card className="bg-white border-[#d4c5b0]/30">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 text-center">
-                      <div className="bg-[#610000] text-white rounded-xl p-3 min-w-[60px]">
-                        <div className="text-xs font-medium">MAY</div>
-                        <div className="text-2xl font-bold">27</div>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-[#2c2015] mb-1">
-                        Live Q&A: Drafting Arbitration Clauses
-                      </h4>
-                      <p className="text-sm text-[#6b5d4f] mb-2">
-                        with Prof. Emile Oswere
-                      </p>
-                      <p className="text-xs text-[#8b6f47]">16:00 AM GMT</p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="flex -space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-[#8b6f47] border-2 border-white" />
-                          <div className="w-6 h-6 rounded-full bg-[#610000] border-2 border-white" />
-                          <div className="w-6 h-6 rounded-full bg-[#d4c5b0] border-2 border-white" />
-                        </div>
-                        <span className="text-xs text-[#6b5d4f]">+102 attending</span>
-                      </div>
-                      <Button className="w-full mt-3 bg-[#610000] text-white hover:bg-[#7d0000] rounded-lg">
-                        Join session
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-4 right-4 text-[#6b5d4f] hover:text-[#610000]"
-                      >
-                        <Calendar className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </section>
         </div>
 
