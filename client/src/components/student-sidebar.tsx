@@ -70,13 +70,16 @@ export default function StudentSidebar({
     }
   };
 
-  // Navigation structure
+  // Navigation structure - conditionally include Instructor link
   const navigationSections: NavSection[] = [
     {
       items: [
         { name: "Home", href: "/home", icon: Home },
         { name: "My Learning", href: "/dashboard", icon: BookOpen },
         { name: "Discover Courses", href: "/course-catalog", icon: Search },
+        ...(user?.role === "instructor" 
+          ? [{ name: "Instructor", href: "/instructor", icon: GraduationCap }] 
+          : []),
       ],
     },
     {
