@@ -123,4 +123,34 @@ router.get("/pricing", requireSupabaseAuth, eligibilityLimiter, async (req: Auth
   }
 });
 
+/**
+ * GET /api/renewal/status
+ * Poll the current renewal state for the authenticated user's membership.
+ * Used by the client after a Paystack payment to confirm the webhook has
+ * actually applied the renewal, rather than trusting the popup callback.
+ */
+router.get("/status", requireSupabaseAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { data: member, error } = await supabaseAdmin
+      .from("members")
+      .select("status, expiry_date, certificate_url, last_renewal_at, renewal_count")
+      .eq("user_id", user_id)
+      .single();
+
+    if (error || !member) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    res.json({ success: true, data: member });
+  } catch (error) {
+    console.error("Renewal status endpoint error:", error);
+    res.status(500).json({ error: "Failed to get renewal status" });
+  }
+});
+
 export default router;

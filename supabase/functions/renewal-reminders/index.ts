@@ -3,7 +3,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const INTERNAL_API_KEY = Deno.env.get("INTERNAL_API_KEY")!;
 
 const THRESHOLDS = [60, 30, 7, 0, -30];
 
@@ -91,6 +91,34 @@ function buildEmailHtml(
 </html>`;
 }
 
+async function sendViaSharedEmailFunction(
+  to: string,
+  subject: string,
+  html: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${INTERNAL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        html,
+        from: "CIMA Learn <noreply@thecima.org>",
+      }),
+    });
+    if (!resp.ok) {
+      return { ok: false, error: await resp.text() };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 Deno.serve(async (_req: Request) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -98,11 +126,13 @@ Deno.serve(async (_req: Request) => {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
 
-    // Fetch all active members
+    // sync_membership_statuses() runs just before this on the cron schedule, so a
+    // member can already be 'expiring'/'expired' by the time this executes — filter
+    // broadly rather than just 'active' or the -30 (overdue) threshold would never match.
     const { data: members, error: fetchErr } = await supabase
       .from("members")
-      .select("id, member_id, full_name, email, expiry_date, last_reminder_sent, reminder_type")
-      .eq("status", "active")
+      .select("id, member_id, user_id, full_name, email, expiry_date, last_reminder_sent")
+      .in("status", ["active", "expiring", "expired"])
       .not("expiry_date", "is", null);
 
     if (fetchErr || !members) {
@@ -110,10 +140,29 @@ Deno.serve(async (_req: Request) => {
       return new Response("Failed to fetch members", { status: 500 });
     }
 
-    console.log(`Fetched ${members.length} active members`);
+    console.log(`Fetched ${members.length} members`);
+
+    // Batch-fetch notification preferences; default to "send" when a member has no
+    // preference row yet (matches how NotificationContext seeds defaults on login).
+    const userIds = members.map((m) => m.user_id).filter(Boolean) as string[];
+    const prefsByUser = new Map<string, boolean>();
+    if (userIds.length > 0) {
+      const { data: prefs, error: prefsErr } = await supabase
+        .from("notification_preferences")
+        .select("user_id, email_administrative")
+        .in("user_id", userIds);
+      if (prefsErr) {
+        console.error("Failed to fetch notification preferences:", prefsErr);
+      } else {
+        for (const p of prefs ?? []) {
+          prefsByUser.set(p.user_id, p.email_administrative !== false);
+        }
+      }
+    }
 
     let sent = 0;
     let skipped = 0;
+    let optedOut = 0;
 
     for (const member of members) {
       const expiryDate = new Date(member.expiry_date);
@@ -135,6 +184,12 @@ Deno.serve(async (_req: Request) => {
         }
       }
 
+      // Respect explicit opt-out of administrative emails
+      if (member.user_id && prefsByUser.get(member.user_id) === false) {
+        optedOut++;
+        continue;
+      }
+
       const reminderType = getReminderType(daysUntilExpiry);
       const expiryDateFormatted = expiryDate.toLocaleDateString("en-GB", {
         day: "numeric",
@@ -143,65 +198,47 @@ Deno.serve(async (_req: Request) => {
       });
 
       const renewalUrl = `${appUrl}/renew-membership`;
+      const subject = REMINDER_TEMPLATES[daysUntilExpiry]?.subject ||
+        "CIMA Membership Renewal Reminder";
+      const html = buildEmailHtml(
+        member.full_name,
+        member.member_id,
+        daysUntilExpiry,
+        expiryDateFormatted,
+        renewalUrl,
+      );
 
-      // Send email via Resend
-      try {
-        const resendResp = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "CIMA <info@thecima.org>",
-            to: member.email,
-            subject: REMINDER_TEMPLATES[daysUntilExpiry]?.subject ||
-              "CIMA Membership Renewal Reminder",
-            html: buildEmailHtml(
-              member.full_name,
-              member.member_id,
-              daysUntilExpiry,
-              expiryDateFormatted,
-              renewalUrl,
-            ),
-          }),
-        });
-
-        if (!resendResp.ok) {
-          const errText = await resendResp.text();
-          console.error(`Failed to send reminder to ${member.email}:`, errText);
-          continue;
-        }
-
-        // Update member reminder status
-        await supabase
-          .from("members")
-          .update({
-            last_reminder_sent: todayStr,
-            reminder_type: reminderType,
-          })
-          .eq("id", member.id);
-
-        // Log email
-        await supabase.from("email_logs").insert({
-          member_id: member.id,
-          email_type: `renewal_reminder_${reminderType}`,
-          recipient: member.email,
-          subject: REMINDER_TEMPLATES[daysUntilExpiry]?.subject || "Renewal Reminder",
-          status: "sent",
-          sent_at: new Date().toISOString(),
-        });
-
-        sent++;
-        console.log(`Reminder sent to ${member.email} (${reminderType})`);
-      } catch (emailErr) {
-        console.error(`Error sending to ${member.email}:`, emailErr);
+      const result = await sendViaSharedEmailFunction(member.email, subject, html);
+      if (!result.ok) {
+        console.error(`Failed to send reminder to ${member.email}:`, result.error);
+        continue;
       }
+
+      // Update member reminder status
+      await supabase
+        .from("members")
+        .update({ last_reminder_sent: todayStr })
+        .eq("id", member.id);
+
+      // Log email (real email_logs columns: member_id, template_type, email_to, subject, sent_at)
+      const { error: logErr } = await supabase.from("email_logs").insert({
+        member_id: member.id,
+        template_type: `renewal_reminder_${reminderType}`,
+        email_to: member.email,
+        subject,
+        sent_at: new Date().toISOString(),
+      });
+      if (logErr) {
+        console.error(`Failed to log email for ${member.email}:`, logErr);
+      }
+
+      sent++;
+      console.log(`Reminder sent to ${member.email} (${reminderType})`);
     }
 
-    console.log(`Done. Sent: ${sent}, Skipped (already sent today): ${skipped}`);
+    console.log(`Done. Sent: ${sent}, Skipped (already sent today): ${skipped}, Opted out: ${optedOut}`);
     return new Response(
-      JSON.stringify({ success: true, sent, skipped, total: members.length }),
+      JSON.stringify({ success: true, sent, skipped, optedOut, total: members.length }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {

@@ -5,8 +5,14 @@
 
 import { Router, Request, Response } from "express";
 import { createClient } from "@supabase/supabase-js";
-import jsPDF from "jspdf";
+// jsPDF's Node build (dist/jspdf.node.min.js, selected via the package's
+// "node" export condition) exposes the constructor as a named export, not
+// a CJS module.exports default — unlike its browser/ESM build, which is
+// what `import jsPDF from "jspdf"` resolves to in the client bundle.
+import { jsPDF } from "jspdf";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import { sendCertificateIssuedEmail } from "../utils/email";
 
 const supabaseAdmin = createClient(
@@ -102,24 +108,63 @@ function getDescription(level: string): string {
   return descriptions[level as keyof typeof descriptions];
 }
 
-// Generate certificate PDF server-side
+// Loads a certificate image (crest/seal/signature) from the built static
+// output first (fast, no network hop when the Express server has direct
+// filesystem access to its own build), falling back to an HTTPS fetch of
+// the deployed static asset if that fails — robust regardless of exactly
+// how the server is hosted.
+async function loadImageBytes(relPath: string): Promise<Buffer | null> {
+  try {
+    const localPath = path.join(process.cwd(), "dist", "public", relPath);
+    if (fs.existsSync(localPath)) {
+      return fs.readFileSync(localPath);
+    }
+  } catch {
+    // fall through to HTTP fallback
+  }
+  try {
+    const appUrl = process.env.VITE_APP_URL || "https://cima-learn.vercel.app";
+    const res = await fetch(`${appUrl}${relPath}`);
+    if (res.ok) {
+      return Buffer.from(await res.arrayBuffer());
+    }
+  } catch {
+    // ignore, caller treats null as "skip this image"
+  }
+  return null;
+}
+
+// Generate certificate PDF server-side. Layout mirrors
+// client/src/lib/certificate-generator.ts so an auto-emailed renewal
+// certificate looks the same as one a member views/downloads in-app.
 async function generateCertificatePDF(data: CertificateRequest): Promise<Buffer> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pw = 210;
   const cx = pw / 2;
-  
+
   const pathway = data.pathway || "ARBITRATION";
   const postNominal = getPostNominal(data.membership_level, pathway);
   const title = getCertificateTitle(data.membership_level);
   const description = getDescription(data.membership_level);
 
+  const [crestBytes, sealBytes, sigBytes] = await Promise.all([
+    loadImageBytes("/images/cima_crest.png"),
+    loadImageBytes("/images/cima_seal.png"),
+    loadImageBytes("/images/signature.png"),
+  ]);
+
   // White background
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, 210, 297, "F");
 
-  // Note: Images would need to be loaded from Supabase Storage or local files
-  // For now, we'll use text placeholders
-  doc.setFont("helvetica", "normal"); 
+  // Crest (matches client generator's coordinates)
+  const crestW = 55;
+  const crestH = 48;
+  if (crestBytes) {
+    doc.addImage(crestBytes, "PNG", (pw - crestW) / 2, 15, crestW, crestH);
+  }
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(18);
   doc.setTextColor(60, 60, 60);
   doc.text("The Center for International", cx, 72, { align: "center" });
@@ -158,9 +203,31 @@ async function generateCertificatePDF(data: CertificateRequest): Promise<Buffer>
   doc.text("Given under the seal of the Center for", cx, 210, { align: "center" });
   doc.text("International Mediators and Arbitrators", cx, 217, { align: "center" });
 
+  // Seal (matches client generator's coordinates)
+  const sealSize = 52;
+  const sealX = (pw - sealSize) / 2;
+  const sealY = 225;
+  if (sealBytes) {
+    doc.addImage(sealBytes, "PNG", sealX, sealY, sealSize, sealSize);
+  }
+
+  // Signature + caption (matches client generator's coordinates)
+  const sigW = 40;
+  const sigH = 15;
+  const sigX = 15;
+  const sigY = 230;
+  if (sigBytes) {
+    doc.addImage(sigBytes, "PNG", sigX, sigY, sigW, sigH);
+  }
+  doc.setFontSize(9);
+  const sigCx = sigX + sigW / 2;
+  doc.text("Francesco Campagna FCIMArb", sigCx, sigY + sigH + 5, { align: "center" });
+  doc.setFont("helvetica", "bolditalic");
+  doc.text("President", sigCx, sigY + sigH + 10, { align: "center" });
+  doc.setFont("helvetica", "normal");
+
   // Member ID block
   const rightCx = 175;
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("Issued on", rightCx, 245, { align: "center" });
   doc.text(formatDate(data.issue_date), rightCx, 251, { align: "center" });
@@ -248,19 +315,23 @@ router.post("/generate", authenticateAPIKey, async (req: Request, res: Response)
       filename: filename,
     });
 
-    // Send email notification
+    // Send email notification. Look this up against `members` (keyed by the
+    // human-readable member_id code, which is what callers pass) rather than
+    // `users` (keyed by a UUID) — members already carries email/full_name
+    // directly, and the previous `.eq("id", data.member_id)` against `users`
+    // could never match since data.member_id is never a users.id UUID.
     try {
-      const { data: user } = await supabaseAdmin
-        .from("users")
-        .select("email, first_name, last_name")
-        .eq("id", data.member_id)
+      const { data: memberRow } = await supabaseAdmin
+        .from("members")
+        .select("email, full_name")
+        .eq("member_id", data.member_id)
         .single();
 
-      if (user?.email) {
+      if (memberRow?.email) {
         await sendCertificateIssuedEmail({
-          to: user.email,
-          firstName: user.first_name || "Member",
-          fullName: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+          to: memberRow.email,
+          firstName: (memberRow.full_name || "Member").split(" ")[0],
+          fullName: memberRow.full_name || data.full_name,
           membershipLevel: data.membership_level,
           pathway: data.pathway || "ARBITRATION",
           memberId: data.member_id,

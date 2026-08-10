@@ -379,6 +379,18 @@ verify_jwt = false
 [functions.mux-webhook]
 verify_jwt = false
 
+[functions.paystack-webhook]
+# Paystack calls this from their own servers with only their HMAC signature
+# (x-paystack-signature, verified in-function) — they can never supply a
+# Supabase JWT, so the gateway's default JWT check must be disabled here or
+# every real webhook call from Paystack is rejected before it's even seen.
+verify_jwt = false
+
+# confirm-manual-renewal intentionally has no override here: it keeps the
+# gateway's default verify_jwt = true (reject unauthenticated calls before
+# the function even runs) as a first layer, on top of its own in-function
+# check that the caller is specifically an admin, not just any logged-in user.
+
 [analytics]
 enabled = true
 port = 54327
