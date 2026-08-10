@@ -134,6 +134,7 @@ export default function CourseCurriculum() {
   const [, instructorParams] = useRoute("/instructor/courses/:courseId/curriculum");
   const [, adminParams] = useRoute("/admin/courses/:courseId/curriculum");
   const courseId = instructorParams?.courseId || adminParams?.courseId;
+  const isAdminRoute = window.location.pathname.startsWith("/admin");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -450,7 +451,7 @@ export default function CourseCurriculum() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f5f3ed]">
       <Header />
 
       <div className="max-w-6xl mx-auto p-6">
@@ -458,16 +459,16 @@ export default function CourseCurriculum() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Curriculum Builder</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold mb-2 text-[#2c2015] font-display">Curriculum Builder</h1>
+              <p className="text-[#6b5d4f] font-body">
                 Build your course content with sections and lectures
               </p>
               <div className="flex items-center gap-4 mt-2">
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium text-[#2c2015]">
                   {modules.length} Section{modules.length !== 1 ? "s" : ""}
                 </span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-sm font-medium">
+                <span className="text-[#8b6f47]">•</span>
+                <span className="text-sm font-medium text-[#2c2015]">
                   {modules.reduce(
                     (total, m) => total + (m.lessons?.length || 0),
                     0,
@@ -482,8 +483,8 @@ export default function CourseCurriculum() {
                 </span>
                 {totalDuration > 0 && (
                   <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-sm font-medium">
+                    <span className="text-[#8b6f47]">•</span>
+                    <span className="text-sm font-medium text-[#2c2015]">
                       {formatDuration(totalDuration)} total duration
                     </span>
                   </>
@@ -495,31 +496,32 @@ export default function CourseCurriculum() {
                 variant={courseDetails?.isPublished ? "outline" : "default"}
                 onClick={() => setPublishDialogOpen(true)}
                 data-testid="button-publish-course"
+                className={courseDetails?.isPublished ? "border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white" : "bg-[#610000] text-white hover:bg-[#7d0000]"}
               >
                 <Rocket className="w-4 h-4 mr-2" />
                 {courseDetails?.isPublished
                   ? "Unpublish Course"
                   : "Publish Course"}
               </Button>
-              <Link href="/instructor">
-                <Button variant="outline">← Back to Dashboard</Button>
+              <Link href={isAdminRoute ? "/admin" : "/instructor"}>
+                <Button variant="outline" className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">← Back to Dashboard</Button>
               </Link>
             </div>
           </div>
         </div>
 
         {/* Instructions */}
-        <Card className="mb-6 bg-blue-50 border-blue-200">
+        <Card className="mb-6 bg-[#610000]/5 border-[#610000]/20">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
-              <div className="bg-blue-500 rounded-full p-2">
+              <div className="bg-[#610000] rounded-full p-2">
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">
+                <h3 className="font-semibold mb-1 text-[#2c2015] font-display">
                   How to structure your course
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-[#6b5d4f] font-body">
                   Organize your course into <strong>sections</strong> (modules)
                   and <strong>lectures</strong>. Each lecture can be a video,
                   article, quiz, or assignment.
@@ -547,7 +549,7 @@ export default function CourseCurriculum() {
                   moduleIndex={moduleIndex}
                 >
                   {({ attributes, listeners }: any) => (
-                    <Card className="border-l-4 border-l-primary">
+                    <Card className="border-l-4 border-l-[#610000] bg-white border-[#d4c5b0]/30">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1">
@@ -556,33 +558,33 @@ export default function CourseCurriculum() {
                               {...listeners}
                               className="cursor-move"
                             >
-                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                              <GripVertical className="h-5 w-5 text-[#8b6f47]" />
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleModule(module.id)}
-                              className="p-0 h-auto"
+                              className="p-0 h-auto hover:bg-[#f5f3ed]"
                             >
                               {expandedModules.has(module.id) ? (
-                                <ChevronDown className="h-5 w-5" />
+                                <ChevronDown className="h-5 w-5 text-[#610000]" />
                               ) : (
-                                <ChevronRight className="h-5 w-5" />
+                                <ChevronRight className="h-5 w-5 text-[#610000]" />
                               )}
                             </Button>
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
-                                <span className="font-semibold text-sm text-muted-foreground">
+                                <span className="font-semibold text-sm text-[#8b6f47] font-body">
                                   Section {moduleIndex + 1}:
                                 </span>
-                                <h3 className="font-bold">{module.title}</h3>
+                                <h3 className="font-bold text-[#2c2015] font-display">{module.title}</h3>
                               </div>
                               {module.description && (
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-sm text-[#6b5d4f] mt-1 font-body">
                                   {module.description}
                                 </p>
                               )}
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-[#8b6f47] mt-1">
                                 {module.lessons?.length || 0} lectures
                               </p>
                             </div>
@@ -594,8 +596,9 @@ export default function CourseCurriculum() {
                               onClick={() =>
                                 deleteModuleMutation.mutate(module.id)
                               }
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -621,35 +624,35 @@ export default function CourseCurriculum() {
                                       lessonIndex={lessonIndex}
                                     >
                                       {({ attributes, listeners }: any) => (
-                                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                                        <div className="flex items-center justify-between p-3 bg-[#f5f3ed] rounded-lg hover:bg-[#d4c5b0]/20 transition-colors border border-[#d4c5b0]/30">
                                           <div className="flex items-center space-x-3 flex-1">
                                             <div
                                               {...attributes}
                                               {...listeners}
                                               className="cursor-move"
                                             >
-                                              <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                              <GripVertical className="h-4 w-4 text-[#8b6f47]" />
                                             </div>
                                             {lesson.contentType === "video" && (
-                                              <Play className="h-4 w-4" />
+                                              <Play className="h-4 w-4 text-[#610000]" />
                                             )}
                                             {lesson.contentType === "text" && (
-                                              <FileText className="h-4 w-4" />
+                                              <FileText className="h-4 w-4 text-[#610000]" />
                                             )}
                                             {lesson.contentType === "quiz" && (
-                                              <ClipboardList className="h-4 w-4" />
+                                              <ClipboardList className="h-4 w-4 text-[#610000]" />
                                             )}
                                             {lesson.contentType ===
                                               "assignment" && (
-                                              <FileText className="h-4 w-4" />
+                                              <FileText className="h-4 w-4 text-[#610000]" />
                                             )}
                                             <div className="flex-1">
-                                              <p className="font-medium text-sm">
+                                              <p className="font-medium text-sm text-[#2c2015]">
                                                 Lecture {lessonIndex + 1}:{" "}
                                                 {lesson.title}
                                               </p>
                                               {lesson.duration && (
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-[#8b6f47]">
                                                   {Math.floor(
                                                     lesson.duration / 60,
                                                   )}
@@ -668,6 +671,7 @@ export default function CourseCurriculum() {
                                               onClick={() =>
                                                 handlePreviewLecture(lesson)
                                               }
+                                              className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]"
                                             >
                                               <Eye className="h-3 w-3" />
                                             </Button>
@@ -680,6 +684,7 @@ export default function CourseCurriculum() {
                                                   module.id,
                                                 )
                                               }
+                                              className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]"
                                             >
                                               <Edit className="h-3 w-3" />
                                             </Button>
@@ -691,8 +696,9 @@ export default function CourseCurriculum() {
                                                   lesson.id,
                                                 )
                                               }
+                                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                             >
-                                              <Trash2 className="h-3 w-3 text-destructive" />
+                                              <Trash2 className="h-3 w-3" />
                                             </Button>
                                           </div>
                                         </div>
@@ -702,7 +708,7 @@ export default function CourseCurriculum() {
                                 </SortableContext>
                               </DndContext>
                             ) : (
-                              <p className="text-sm text-muted-foreground italic py-4">
+                              <p className="text-sm text-[#8b6f47] italic py-4">
                                 No lectures yet. Add your first lecture below.
                               </p>
                             )}
@@ -710,7 +716,7 @@ export default function CourseCurriculum() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full mt-2"
+                              className="w-full mt-2 border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
                               onClick={() => handleAddLecture(module.id)}
                             >
                               <Plus className="h-4 w-4 mr-2" />
@@ -725,20 +731,21 @@ export default function CourseCurriculum() {
               ))}
 
               {isAddingModule ? (
-                <Card className="border-dashed border-2">
+                <Card className="border-dashed border-2 border-[#d4c5b0] bg-white">
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="module-title">Section Title *</Label>
+                        <Label htmlFor="module-title" className="text-[#2c2015]">Section Title *</Label>
                         <Input
                           id="module-title"
                           placeholder="e.g., Introduction to Mediation"
                           value={newModuleTitle}
                           onChange={(e) => setNewModuleTitle(e.target.value)}
+                          className="border-[#d4c5b0]"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="module-desc">
+                        <Label htmlFor="module-desc" className="text-[#2c2015]">
                           Section Description (optional)
                         </Label>
                         <Textarea
@@ -747,12 +754,14 @@ export default function CourseCurriculum() {
                           rows={3}
                           value={newModuleDesc}
                           onChange={(e) => setNewModuleDesc(e.target.value)}
+                          className="border-[#d4c5b0]"
                         />
                       </div>
                       <div className="flex space-x-2">
                         <Button
                           onClick={handleAddModule}
                           disabled={addModuleMutation.isPending}
+                          className="bg-[#610000] text-white hover:bg-[#7d0000]"
                         >
                           {addModuleMutation.isPending
                             ? "Adding..."
@@ -761,6 +770,7 @@ export default function CourseCurriculum() {
                         <Button
                           variant="outline"
                           onClick={() => setIsAddingModule(false)}
+                          className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
                         >
                           Cancel
                         </Button>
@@ -772,7 +782,7 @@ export default function CourseCurriculum() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full border-dashed border-2"
+                  className="w-full border-dashed border-2 border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
                   onClick={() => setIsAddingModule(true)}
                 >
                   <Plus className="h-5 w-5 mr-2" />

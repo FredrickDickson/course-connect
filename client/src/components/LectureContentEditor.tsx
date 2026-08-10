@@ -552,6 +552,13 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
             {saving ? <>Saving...</> : <><Save className="w-4 h-4 mr-2" />{lesson ? 'Update Lecture' : 'Create Lecture'}</>}
           </Button>
         </div>
+        {!savedLessonId && (
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Note:</strong> After creating the lecture, you can add downloadable resources (PDFs, documents, links) for students in the Resources tab when editing the lesson.
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
