@@ -80,6 +80,7 @@ import qualificationRouter from "./routes/qualification";
 
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
+import renewalAutomationRouter from "./routes/renewal-automation";
 import muxRouter from "./routes/mux";
 import adminInstructorsRouter from "./routes/admin/instructors";
 import {
@@ -343,6 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount renewal and certificate routes
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
+  app.use("/api/renewal-automation", renewalAutomationRouter);
   app.use("/api/mux", muxRouter);
   
   // Mount admin instructor management routes
@@ -2163,12 +2165,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Admin can create courses on behalf of instructors
       const onBehalfOf = req.query.onBehalfOf as string | undefined;
+      const instructors = req.body.instructors as Array<{
+        name: string;
+        title?: string;
+        bio?: string;
+        email?: string;
+        profileImageUrl?: string;
+        expertise?: string[];
+        linkedinUrl?: string;
+        websiteUrl?: string;
+      }> | undefined;
       
       let instructorId: string;
       let createdByAdminId: string | undefined;
       
-      if (currentUserRole === 'admin' && onBehalfOf) {
-        // Admin creating for an instructor
+      // If admin is providing instructor details, create/find instructor user
+      if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
+        const primaryInstructor = instructors[0];
+        
+        // Check if instructor exists by email
+        if (primaryInstructor.email) {
+          const { data: existingUser } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('email', primaryInstructor.email)
+            .eq('role', 'instructor')
+            .single();
+          
+          if (existingUser) {
+            instructorId = existingUser.id;
+          }
+        }
+        
+        // If not found, create a new instructor user
+        if (!instructorId) {
+          const [firstName, ...lastNameParts] = primaryInstructor.name.trim().split(' ');
+          const lastName = lastNameParts.join(' ') || '';
+          
+          const { data: newUser, error: userError } = await supabaseAdmin
+            .from('users')
+            .insert({
+              email: primaryInstructor.email || `instructor-${Date.now()}@thecima.org`,
+              first_name: firstName,
+              last_name: lastName,
+              role: 'instructor',
+              profile_image_url: primaryInstructor.profileImageUrl || null,
+            })
+            .select()
+            .single();
+          
+          if (userError) throw userError;
+          instructorId = newUser.id;
+          
+          // Create instructor profile
+          const { error: profileError } = await supabaseAdmin
+            .from('instructor_profiles')
+            .insert({
+              user_id: instructorId,
+              bio: primaryInstructor.bio || null,
+              title: primaryInstructor.title || null,
+              expertise: primaryInstructor.expertise || [],
+              website_url: primaryInstructor.websiteUrl || null,
+              linkedin_url: primaryInstructor.linkedinUrl || null,
+              profile_image_url: primaryInstructor.profileImageUrl || null,
+              is_verified: false,
+            });
+          
+          if (profileError) console.error('Error creating instructor profile:', profileError);
+        }
+        
+        createdByAdminId = currentUserId;
+      } else if (currentUserRole === 'admin' && onBehalfOf) {
+        // Admin creating for an existing instructor (legacy behavior)
         instructorId = onBehalfOf;
         createdByAdminId = currentUserId;
       } else if (currentUserRole === 'instructor' || currentUserRole === 'admin') {
