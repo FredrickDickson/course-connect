@@ -95,8 +95,11 @@ async function sendViaSharedEmailFunction(
   to: string,
   subject: string,
   html: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; id?: string }> {
   try {
+    const emailFrom = Deno.env.get("EMAIL_FROM") || "noreply@thecima.org";
+    const emailFromName = Deno.env.get("EMAIL_FROM_NAME") || "CIMA Learn";
+
     const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
@@ -107,13 +110,14 @@ async function sendViaSharedEmailFunction(
         to,
         subject,
         html,
-        from: "CIMA Learn <noreply@thecima.org>",
+        from: `${emailFromName} <${emailFrom}>`,
       }),
     });
     if (!resp.ok) {
       return { ok: false, error: await resp.text() };
     }
-    return { ok: true };
+    const data = await resp.json().catch(() => ({}));
+    return { ok: true, id: (data as { id?: string }).id };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
@@ -211,6 +215,16 @@ Deno.serve(async (_req: Request) => {
       const result = await sendViaSharedEmailFunction(member.email, subject, html);
       if (!result.ok) {
         console.error(`Failed to send reminder to ${member.email}:`, result.error);
+        await supabase.from("email_logs").insert({
+          member_id: member.id,
+          template_type: `renewal_reminder_${reminderType}`,
+          email_to: member.email,
+          subject,
+          status: "failed",
+          provider: "brevo",
+          error_message: result.error || "Unknown email error",
+          sent_at: new Date().toISOString(),
+        });
         continue;
       }
 
@@ -226,6 +240,9 @@ Deno.serve(async (_req: Request) => {
         template_type: `renewal_reminder_${reminderType}`,
         email_to: member.email,
         subject,
+        status: "sent",
+        provider: "brevo",
+        provider_message_id: result.id || null,
         sent_at: new Date().toISOString(),
       });
       if (logErr) {

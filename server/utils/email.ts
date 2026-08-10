@@ -20,6 +20,20 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+function getDefaultFromAddress(): string {
+  const email = process.env.EMAIL_FROM || "noreply@thecima.org";
+  const name = process.env.EMAIL_FROM_NAME || "CIMA Learn";
+  return `${name} <${email}>`;
+}
+
+interface RawEmailData {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+  from?: string;
+}
+
 interface EmailData {
   to: string | string[];
   subject: string;
@@ -56,6 +70,45 @@ function loadTemplate(templateName: string, data: Record<string, any>): string {
 }
 
 /**
+ * Send raw HTML email via the send-email Edge Function (Brevo)
+ */
+export async function sendRawEmail(
+  emailData: RawEmailData,
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  try {
+    const { to, subject, html, text, from } = emailData;
+
+    const { data, error } = await supabaseAdmin.functions.invoke("send-email", {
+      body: {
+        to,
+        subject,
+        html,
+        text,
+        from: from || getDefaultFromAddress(),
+      },
+      headers: {
+        Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
+      },
+    });
+
+    if (error) {
+      console.error("Edge Function error:", error);
+      return { success: false, error: error.message };
+    }
+
+    const messageId = (data as { id?: string } | null)?.id;
+    console.log(
+      `Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to}`,
+    );
+    return { success: true, id: messageId };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Email send error:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
  * Send email using the send-email Edge Function
  */
 export async function sendEmail(emailData: EmailData): Promise<{ success: boolean; error?: string }> {
@@ -65,22 +118,15 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
     // Load and process template
     const html = loadTemplate(template, templateData);
     
-    // Call Edge Function
-    const { data, error } = await supabaseAdmin.functions.invoke("send-email", {
-      body: {
-        to,
-        subject,
-        html,
-        from: from || "CIMA Learn <noreply@thecima.org>",
-      },
-      headers: {
-        Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
-      },
+    const result = await sendRawEmail({
+      to,
+      subject,
+      html,
+      from: from || getDefaultFromAddress(),
     });
-    
-    if (error) {
-      console.error("Edge Function error:", error);
-      return { success: false, error: error.message };
+
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
     
     console.log(`Email sent successfully to ${Array.isArray(to) ? to.join(", ") : to} - template: ${template}`);

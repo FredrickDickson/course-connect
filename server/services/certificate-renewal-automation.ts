@@ -13,6 +13,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { formatPrice, type Currency } from "../../shared/renewal-pricing";
+import { sendRawEmail } from "../utils/email";
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -76,6 +77,10 @@ interface EmailLog {
   template_type: string;
   email_to: string;
   subject: string;
+  status?: "sent" | "failed" | "pending";
+  provider?: string;
+  provider_message_id?: string | null;
+  error_message?: string | null;
 }
 
 /**
@@ -87,15 +92,42 @@ export async function getMembersDueForRenewal(daysOffset: number): Promise<Membe
   
   const targetDateStr = targetDate.toISOString().split('T')[0];
 
+  const statuses =
+    daysOffset >= 0 ? ["active", "expiring"] : ["expired", "expiring"];
+
   const { data, error } = await supabaseAdmin
     .from("members")
     .select("*")
-    .eq("status", daysOffset >= 0 ? "active" : "expired")
+    .in("status", statuses)
     .gte("expiry_date", `${targetDateStr}T00:00:00`)
     .lte("expiry_date", `${targetDateStr}T23:59:59`);
 
   if (error) {
     console.error("Error fetching members due for renewal:", error);
+    return [];
+  }
+
+  return (data || []) as Member[];
+}
+
+/**
+ * Get members expiring within the next N days (inclusive)
+ */
+export async function getUpcomingRenewals(withinDays: number): Promise<Member[]> {
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + withinDays);
+
+  const { data, error } = await supabaseAdmin
+    .from("members")
+    .select("*")
+    .in("status", ["active", "expiring", "expired"])
+    .gte("expiry_date", now.toISOString())
+    .lte("expiry_date", endDate.toISOString())
+    .order("expiry_date", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching upcoming renewals:", error);
     return [];
   }
 
@@ -471,13 +503,25 @@ export async function processRenewalReminders(
         renewalUrl
       );
 
-      // Send email via your email service (Resend, SendGrid, etc.)
-      // This would call your email service
-      await sendEmail({
+      const emailResult = await sendRenewalEmail({
         to: member.email,
         subject: emailContent.subject,
         html: emailContent.html,
       });
+
+      if (!emailResult.success) {
+        await logEmailSent({
+          member_id: member.id,
+          template_type: stageKey,
+          email_to: member.email,
+          subject: emailContent.subject,
+          status: "failed",
+          provider: "brevo",
+          error_message: emailResult.error || "Unknown email error",
+        });
+        stats.errors++;
+        continue;
+      }
 
       // Log email sent
       await logEmailSent({
@@ -485,19 +529,26 @@ export async function processRenewalReminders(
         template_type: stageKey,
         email_to: member.email,
         subject: emailContent.subject,
+        status: "sent",
+        provider: "brevo",
+        provider_message_id: emailResult.id || null,
       });
+
+      await supabaseAdmin
+        .from("members")
+        .update({ last_reminder_sent: new Date().toISOString().split("T")[0] })
+        .eq("id", member.id);
 
       // Log activity
       await supabaseAdmin.from("activity_log").insert({
         user_id: member.user_id,
-        action_type: "renewal_reminder_sent",
-        entity_type: "member",
-        entity_id: member.id,
+        event_type: "renewal_reminder_sent",
         description: `Renewal reminder sent (${stage.name})`,
         metadata: {
           stage: stageKey,
           days_offset: daysOffset,
           email_to: member.email,
+          member_id: member.id,
         },
       });
 
@@ -511,27 +562,16 @@ export async function processRenewalReminders(
   return stats;
 }
 
-/**
- * Placeholder for email sending
- * Replace with your actual email service (Resend, SendGrid, etc.)
- */
-async function sendEmail(params: {
+async function sendRenewalEmail(params: {
   to: string;
   subject: string;
   html: string;
-}): Promise<void> {
-  // TODO: Integrate with your email service
-  // Example with Resend:
-  // const { Resend } = require("resend");
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({
-  //   from: "CIMA <noreply@thecima.org>",
-  //   to: params.to,
-  //   subject: params.subject,
-  //   html: params.html,
-  // });
-  
-  console.log(`[EMAIL] To: ${params.to}, Subject: ${params.subject}`);
+}): Promise<{ success: boolean; error?: string; id?: string }> {
+  return sendRawEmail({
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
+  });
 }
 
 /**

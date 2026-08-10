@@ -3,14 +3,17 @@
  * Provides endpoints for automated certificate renewal management
  */
 
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { requireSupabaseAuth } from "../supabaseAuth";
+import { requireAdmin } from "../middleware/roleProtection";
 import {
   processRenewalReminders,
   updateMemberStatuses,
   RENEWAL_STAGES,
   getMembersDueForRenewal,
+  getUpcomingRenewals,
 } from "../services/certificate-renewal-automation";
 
 const supabaseAdmin = createClient(
@@ -20,28 +23,37 @@ const supabaseAdmin = createClient(
 
 const router = Router();
 
-// Authentication middleware for cron jobs
-const authenticateCronKey = (req: Request, res: Response, next: Function) => {
-  const cronKey = req.headers.authorization?.replace("Bearer ", "");
+function isValidCronKey(token?: string): boolean {
   const validKey = process.env.CRON_SECRET_KEY;
+  if (!validKey || !token) return false;
 
-  if (!validKey) {
-    return res.status(500).json({ error: "CRON_SECRET_KEY not configured" });
+  try {
+    const tokenBuffer = Buffer.from(token);
+    const validKeyBuffer = Buffer.from(validKey);
+    return (
+      tokenBuffer.length === validKeyBuffer.length &&
+      crypto.timingSafeEqual(tokenBuffer, validKeyBuffer)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Accept CRON_SECRET_KEY (automated jobs) or admin JWT (dashboard UI) */
+async function authenticateRenewalAccess(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (isValidCronKey(token)) {
+    return next();
   }
 
-  const cronKeyBuffer = cronKey ? Buffer.from(cronKey) : null;
-  const validKeyBuffer = Buffer.from(validKey);
-  const isValid =
-    !!cronKeyBuffer &&
-    cronKeyBuffer.length === validKeyBuffer.length &&
-    crypto.timingSafeEqual(cronKeyBuffer, validKeyBuffer);
-
-  if (!isValid) {
-    return res.status(401).json({ error: "Unauthorized: Invalid cron key" });
-  }
-
-  next();
-};
+  await requireSupabaseAuth(req, res, () => {
+    requireAdmin()(req, res, next);
+  });
+}
 
 /**
  * POST /api/renewal-automation/process-reminders
@@ -50,7 +62,7 @@ const authenticateCronKey = (req: Request, res: Response, next: Function) => {
  */
 router.post(
   "/process-reminders",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       const results: Record<string, any> = {};
@@ -107,7 +119,7 @@ router.post(
  */
 router.post(
   "/process-stage",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       const { stage } = req.body;
@@ -159,13 +171,13 @@ router.post(
  */
 router.get(
   "/upcoming-renewals",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       const { days = 60 } = req.query;
       const daysNumber = parseInt(days as string);
 
-      const members = await getMembersDueForRenewal(daysNumber);
+      const members = await getUpcomingRenewals(daysNumber);
 
       res.json({
         success: true,
@@ -198,7 +210,7 @@ router.get(
  */
 router.get(
   "/stats",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       // Get counts by status
@@ -278,7 +290,7 @@ router.get(
  */
 router.post(
   "/update-statuses",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       await updateMemberStatuses();
@@ -305,7 +317,7 @@ router.post(
  */
 router.get(
   "/email-logs",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       const { member_id, template_type, limit = 100, offset = 0 } = req.query;
@@ -353,7 +365,7 @@ router.get(
  */
 router.post(
   "/test-email",
-  authenticateCronKey,
+  authenticateRenewalAccess,
   async (req: Request, res: Response) => {
     try {
       const { member_id, stage } = req.body;

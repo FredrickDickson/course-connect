@@ -369,8 +369,15 @@ deno_version = 2
 [edge_runtime.secrets]
 PAYSTACK_SECRET_KEY = "env(PAYSTACK_SECRET_KEY)"
 PAYSTACK_PUBLIC_KEY = "env(PAYSTACK_PUBLIC_KEY)"
+BREVO_API_KEY = "env(BREVO_API_KEY)"
+EMAIL_FROM = "env(EMAIL_FROM)"
+EMAIL_FROM_NAME = "env(EMAIL_FROM_NAME)"
+INTERNAL_API_KEY = "env(INTERNAL_API_KEY)"
 
 [functions.send-email]
+verify_jwt = false
+
+[functions.renewal-reminders]
 verify_jwt = false
 
 [functions.quiz-submit]

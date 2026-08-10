@@ -487,10 +487,10 @@ export default function RenewalManagement() {
                           <TableCell>
                             <div>
                               <div className="font-medium">
-                                {log.members.full_name}
+                                {log.members?.full_name || log.email_to}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {log.members.member_id}
+                                {log.members?.member_id || "—"}
                               </div>
                             </div>
                           </TableCell>

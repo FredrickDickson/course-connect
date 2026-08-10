@@ -20,6 +20,7 @@ import {
   LogOut,
   AlertCircle,
   Zap,
+  Mail,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +95,7 @@ export default function AdminSidebar({
       items: [
         { name: "Members", href: "/admin?tab=members", icon: Users, tab: "members" },
         { name: "Renewals", href: "/admin?tab=renewals", icon: RefreshCw, tab: "renewals" },
+        { name: "Renewal Automation", href: "/admin/renewals", icon: Mail },
         { 
           name: "Applications", 
           href: "/admin?tab=applications", 
