@@ -64,8 +64,8 @@ const courseSchema = z
     thumbnailUrl: z.string().url().optional().or(z.literal("")),
     isPublished: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
-    // For admin: instructor details
-    instructors: z.array(instructorSchema).min(1, "At least one instructor is required").optional(),
+    // For admin: instructor details (optional array, but if provided must have items)
+    instructors: z.array(instructorSchema).optional(),
   })
   .superRefine((data, ctx) => {
     // Level/track only apply to the Professional Programme (Associate/Member/
