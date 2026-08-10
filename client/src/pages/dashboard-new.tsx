@@ -339,8 +339,19 @@ export default function Dashboard() {
                           </div>
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer">
-                            <PlayCircle className="w-12 h-12 text-[#610000] fill-[#610000]" />
+                          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform cursor-pointer group">
+                            <svg 
+                              className="w-8 h-8 ml-1" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path 
+                                d="M8 5v14l11-7L8 5z" 
+                                fill="#610000" 
+                                className="group-hover:fill-[#7d0000] transition-colors"
+                              />
+                            </svg>
                           </div>
                         </div>
                       </div>

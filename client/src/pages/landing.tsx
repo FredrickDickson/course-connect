@@ -102,7 +102,6 @@ export default function Landing() {
       <main>
         <HeroSection />
         <StatsBarSection />
-        <TrustBadgesSection />
         <FeaturedCoursesSection />
         <LearningPathwaysSection />
         <WhyLearnWithCIMASection />
@@ -237,56 +236,6 @@ function StatsBarSection() {
   );
 }
 
-// Trust Badges Section
-function TrustBadgesSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-
-  const badges = [
-    { name: "CIArb", subtitle: "Chartered Institute" },
-    { name: "ICC", subtitle: "International Chamber" },
-    { name: "UNCITRAL", subtitle: "United Nations" },
-    { name: "LCIA", subtitle: "London Court" },
-    { name: "ACICA", subtitle: "Australian Centre" },
-    { name: "IAI", subtitle: "Arbitration Institute" },
-  ];
-
-  return (
-    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=2880&h=900&auto=format&fit=crop&q=100"
-          alt="Legal documents and professional workspace"
-          className="w-full h-full object-cover opacity-25"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-gray-50/70 to-gray-50" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-light text-gray-900 font-display">Recognized Worldwide</h2>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10">
-          {badges.map((badge, index) => (
-            <div 
-              key={index} 
-              className="group relative bg-white/95 backdrop-blur-sm rounded-lg p-8 border border-gray-200 hover:border-[#8b0000]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className="relative text-center">
-                <p className="text-3xl font-semibold text-gray-900 mb-1 font-display">{badge.name}</p>
-                <p className="text-xs text-gray-700 font-body">{badge.subtitle}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // Featured Courses Section
 function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
@@ -335,10 +284,10 @@ function FeaturedCoursesSection() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {courses.map((course, index: number) => (
             <Link key={course.id} href={`/course/${course.id}`}>
-              <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full">
-                {/* Badge */}
+              <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full relative">
+                {/* Badge - Fixed positioning */}
                 {index === 0 && (
-                  <div className="absolute top-5 left-5 bg-[#8b0000] text-white px-4 py-2 rounded-md text-sm font-semibold z-10 font-body">
+                  <div className="absolute top-5 left-5 bg-[#8b0000] text-white px-4 py-2 rounded-md text-sm font-semibold z-20 font-body">
                     Featured
                   </div>
                 )}
