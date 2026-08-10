@@ -2176,7 +2176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         websiteUrl?: string;
       }> | undefined;
       
-      let instructorId: string;
+      let instructorId: string | undefined;
       let createdByAdminId: string | undefined;
       
       // If admin is providing instructor details, create/find instructor user
@@ -2244,6 +2244,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         instructorId = currentUserId;
       } else {
         return res.status(403).json({ message: "Must be instructor or admin" });
+      }
+      
+      // Ensure instructorId is defined
+      if (!instructorId) {
+        return res.status(400).json({ message: "Instructor ID is required" });
       }
 
       const courseData = insertCourseSchema.parse({
