@@ -26,15 +26,25 @@ function validateCourseData(data: any) {
     errors.push('Category ID is required');
   }
   
-  if (!data.level || !['associate', 'member', 'fellow'].includes(data.level)) {
-    errors.push('Level must be associate, member, or fellow');
+  // Programme type validation
+  if (!data.programmeType || !['PROFESSIONAL_PROGRAMME', 'ADJUNCT_COURSE'].includes(data.programmeType)) {
+    errors.push('Programme type must be PROFESSIONAL_PROGRAMME or ADJUNCT_COURSE');
   }
   
-  if (!data.track || !['ARBITRATION', 'MEDIATION'].includes(data.track)) {
-    errors.push('Track must be ARBITRATION or MEDIATION');
+  // Level and track only required for Professional Programme
+  if (data.programmeType === 'PROFESSIONAL_PROGRAMME') {
+    if (!data.level || !['associate', 'member', 'fellow'].includes(data.level)) {
+      errors.push('Level must be associate, member, or fellow for Professional Programme');
+    }
+    
+    if (!data.track || !['ARBITRATION', 'MEDIATION'].includes(data.track)) {
+      errors.push('Track must be ARBITRATION or MEDIATION for Professional Programme');
+    }
   }
   
-  if (typeof data.price !== 'number' || data.price < 0) {
+  // Price can be string or number - convert to number
+  const price = typeof data.price === 'string' ? parseFloat(data.price) : data.price;
+  if (typeof price !== 'number' || isNaN(price) || price < 0) {
     errors.push('Price must be a non-negative number');
   }
   
@@ -47,9 +57,10 @@ function validateCourseData(data: any) {
     subtitle: data.subtitle,
     description: data.description,
     category_id: data.categoryId,
-    level: data.level,
-    track: data.track,
-    price: data.price,
+    programme_type: data.programmeType,
+    level: data.programmeType === 'ADJUNCT_COURSE' ? null : data.level,
+    track: data.programmeType === 'ADJUNCT_COURSE' ? null : data.track,
+    price: price,
     currency: data.currency || 'USD',
     thumbnail_url: data.thumbnailUrl || null,
     is_published: data.isPublished || false,
