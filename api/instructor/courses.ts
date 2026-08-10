@@ -112,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User not found' });
     }
 
-    // Check user role
+    // Check if user is an instructor
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('role')
@@ -128,89 +128,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Not found', message: 'User profile not found' });
     }
 
-    const currentUserRole = userData.role;
-    
-    // Get instructor details if admin is providing them
-    const instructors = req.body.instructors as Array<{
-      name: string;
-      title?: string;
-      bio?: string;
-      email?: string;
-      profileImageUrl?: string;
-      expertise?: string[];
-      linkedinUrl?: string;
-      websiteUrl?: string;
-    }> | undefined;
-    
-    let instructorId: string | undefined;
-    let createdByAdminId: string | undefined;
-    
-    // If admin is providing instructor details, create/find instructor user
-    if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
-      const primaryInstructor = instructors[0];
-      
-      // Check if instructor exists by email
-      if (primaryInstructor.email) {
-        const { data: existingUser } = await supabaseAdmin
-          .from('users')
-          .select('id')
-          .eq('email', primaryInstructor.email)
-          .eq('role', 'instructor')
-          .single();
-        
-        if (existingUser) {
-          instructorId = existingUser.id;
-        }
-      }
-      
-      // If not found, create a new instructor user
-      if (!instructorId) {
-        const [firstName, ...lastNameParts] = primaryInstructor.name.trim().split(' ');
-        const lastName = lastNameParts.join(' ') || '';
-        
-        const { data: newUser, error: userError } = await supabaseAdmin
-          .from('users')
-          .insert({
-            email: primaryInstructor.email || `instructor-${Date.now()}@thecima.org`,
-            first_name: firstName,
-            last_name: lastName,
-            role: 'instructor',
-            profile_image_url: primaryInstructor.profileImageUrl || null,
-          })
-          .select()
-          .single();
-        
-        if (userError) throw userError;
-        instructorId = newUser.id;
-        
-        // Create instructor profile
-        const { error: profileError } = await supabaseAdmin
-          .from('instructor_profiles')
-          .insert({
-            user_id: instructorId,
-            bio: primaryInstructor.bio || null,
-            title: primaryInstructor.title || null,
-            expertise: primaryInstructor.expertise || [],
-            website_url: primaryInstructor.websiteUrl || null,
-            linkedin_url: primaryInstructor.linkedinUrl || null,
-            profile_image_url: primaryInstructor.profileImageUrl || null,
-            is_verified: false,
-          });
-        
-        if (profileError) console.error('Error creating instructor profile:', profileError);
-      }
-      
-      createdByAdminId = user.id;
-    } else if (currentUserRole === 'instructor' || currentUserRole === 'admin') {
-      // Instructor creating their own course OR admin creating as instructor
-      instructorId = user.id;
-    } else {
-      return res.status(403).json({ error: 'Forbidden', message: 'Access denied. Instructor or admin role required.' });
-    }
-    
-    // Ensure instructorId is defined
-    if (!instructorId) {
-      return res.status(400).json({ error: 'Bad request', message: 'Instructor ID is required' });
+    if (userData.role !== 'instructor') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Access denied. Instructor role required.' });
     }
 
     // Validate and prepare course data
@@ -221,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('courses')
       .insert({
         ...courseData,
-        instructor_id: instructorId,
+        instructor_id: user.id,
         enrollment_count: 0,
         rating_count: 0,
         avg_rating: 0,
@@ -238,15 +157,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: 'Failed to create course',
         message 
       });
-    }
-    
-    // Update admin tracking if applicable
-    if (createdByAdminId) {
-      const { error: trackError } = await supabaseAdmin
-        .from("courses")
-        .update({ created_by_admin_id: createdByAdminId })
-        .eq("id", course.id);
-      if (trackError) console.error('Error tracking admin action:', trackError);
     }
 
     // Transform response to match frontend expectations

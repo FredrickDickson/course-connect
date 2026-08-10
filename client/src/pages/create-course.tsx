@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,24 +30,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useRoute } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import StudentLayout from "@/components/student-layout";
-import { ArrowLeft, Save, BookOpen, Plus, Shield, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, BookOpen } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useAuth } from "@/contexts/AuthContext";
+import InstructorSelector from "@/components/admin/instructor-selector";
+import AdminContextBadge from "@/components/admin/admin-context-badge";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
-
-// Instructor schema for admin course creation
-const instructorSchema = z.object({
-  name: z.string().min(1, "Instructor name is required"),
-  title: z.string().optional(),
-  bio: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  profileImageUrl: z.string().url().optional().or(z.literal("")),
-  expertise: z.array(z.string()).optional(),
-  linkedinUrl: z.string().url().optional().or(z.literal("")),
-  websiteUrl: z.string().url().optional().or(z.literal("")),
-});
 
 const courseSchema = z
   .object({
@@ -64,8 +53,6 @@ const courseSchema = z
     thumbnailUrl: z.string().url().optional().or(z.literal("")),
     isPublished: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
-    // For admin: instructor details
-    instructors: z.array(instructorSchema).min(1, "At least one instructor is required").optional(),
   })
   .superRefine((data, ctx) => {
     // Level/track only apply to the Professional Programme (Associate/Member/
@@ -89,7 +76,6 @@ const courseSchema = z
   });
 
 type CourseFormData = z.infer<typeof courseSchema>;
-type InstructorFormData = z.infer<typeof instructorSchema>;
 
 interface Category {
   id: string;
@@ -109,10 +95,9 @@ export default function CreateCourse() {
   const [customCategory, setCustomCategory] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   
-  // Admin context: instructor details
-  const [instructors, setInstructors] = useState<InstructorFormData[]>([
-    { name: "", title: "", bio: "", email: "", profileImageUrl: "", expertise: [], linkedinUrl: "", websiteUrl: "" }
-  ]);
+  // Admin context: creating on behalf of instructor
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>("");
+  const [selectedInstructor, setSelectedInstructor] = useState<any>(null);
   const isAdmin = user?.role === "admin";
   const [isRouteAdmin, setIsRouteAdmin] = useState(false);
 
@@ -168,14 +153,35 @@ export default function CreateCourse() {
       thumbnailUrl: "",
       isPublished: false,
       isFeatured: false,
-      instructors: [],
     },
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const instructorId = params.get("instructorId");
+    if (instructorId) {
+      setSelectedInstructorId(instructorId);
+    }
+
     const path = window.location.pathname;
     setIsRouteAdmin(path.startsWith("/admin"));
   }, []);
+
+  useEffect(() => {
+    if (!selectedInstructorId || !isAdmin) return;
+
+    const fetchInstructor = async () => {
+      try {
+        const res = await apiRequest("GET", `/api/admin/instructors/${selectedInstructorId}`);
+        const instructor = await res.json();
+        setSelectedInstructor(instructor);
+      } catch (error) {
+        console.error("Failed to load selected instructor:", error);
+      }
+    };
+
+    fetchInstructor();
+  }, [selectedInstructorId, isAdmin]);
 
   useEffect(() => {
     if (courseData) {
@@ -192,8 +198,12 @@ export default function CreateCourse() {
         isPublished: courseData.is_published || false,
         isFeatured: courseData.is_featured || false,
       });
+
+      if (isAdmin && courseData.instructor_id && !selectedInstructorId) {
+        setSelectedInstructorId(courseData.instructor_id);
+      }
     }
-  }, [courseData, form]);
+  }, [courseData, form, isAdmin, selectedInstructorId]);
 
   const saveCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
@@ -233,17 +243,19 @@ export default function CreateCourse() {
         thumbnailUrl: data.thumbnailUrl || null,
         isPublished: data.isPublished,
         isFeatured: data.isFeatured,
-        // Include instructors for admin
-        ...(isAdmin && data.instructors ? { instructors: data.instructors.filter(i => i.name.trim()) } : {}),
       };
 
       const courseUrl = isEditMode
         ? `/api/instructor/courses/${courseId}`
         : "/api/instructor/courses";
 
+      const requestUrl = isAdmin && selectedInstructorId
+        ? `${courseUrl}${courseUrl.includes("?") ? "&" : "?"}onBehalfOf=${encodeURIComponent(selectedInstructorId)}`
+        : courseUrl;
+
       const courseRes = await apiRequest(
         isEditMode ? "PUT" : "POST",
-        courseUrl,
+        requestUrl,
         payload,
       );
       return await courseRes.json();
@@ -271,10 +283,10 @@ export default function CreateCourse() {
   });
 
   const onSubmit = (data: CourseFormData) => {
-    if (isAdmin && instructors.filter(i => i.name.trim()).length === 0) {
+    if (isAdmin && !selectedInstructorId) {
       toast({
         title: "Instructor required",
-        description: "Please add at least one instructor with their details.",
+        description: "Choose an instructor before creating the course on their behalf.",
         variant: "destructive",
       });
       return;
@@ -288,35 +300,12 @@ export default function CreateCourse() {
       });
       return;
     }
-    
-    // Add instructors data for admin
-    const courseData = isAdmin ? { ...data, instructors } : data;
-    saveCourse.mutate(courseData);
+    saveCourse.mutate(data);
   };
 
-  const addInstructor = () => {
-    setInstructors([...instructors, { 
-      name: "", 
-      title: "", 
-      bio: "", 
-      email: "", 
-      profileImageUrl: "", 
-      expertise: [], 
-      linkedinUrl: "", 
-      websiteUrl: "" 
-    }]);
-  };
-
-  const removeInstructor = (index: number) => {
-    if (instructors.length > 1) {
-      setInstructors(instructors.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateInstructor = (index: number, field: keyof InstructorFormData, value: any) => {
-    const updated = [...instructors];
-    updated[index] = { ...updated[index], [field]: value };
-    setInstructors(updated);
+  const handleInstructorSelection = (instructorId: string, instructor?: any) => {
+    setSelectedInstructorId(instructorId);
+    setSelectedInstructor(instructor || null);
   };
 
   const handleCategoryChange = (
@@ -372,148 +361,29 @@ export default function CreateCourse() {
                 className="space-y-6"
               >
                 {isAdmin && (
-                  <div className="space-y-6 rounded-xl border-2 border-[#610000]/20 bg-gradient-to-br from-[#faf9f6] to-[#f5f3ed] p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-bold text-[#610000] font-display flex items-center gap-2">
-                          <Shield className="w-5 h-5" />
-                          Admin Mode: Instructor Details
-                        </h2>
-                        <p className="text-sm text-[#6b5d4f] mt-1 font-body">
-                          Add instructor information for this course. You can add multiple instructors.
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={addInstructor}
-                        className="bg-[#610000] text-white hover:bg-[#7d0000]"
-                        size="sm"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Instructor
-                      </Button>
+                  <div className="space-y-4 rounded-xl border border-[#d4c5b0]/40 bg-[#faf9f6] p-4">
+                    <div className="flex flex-col gap-2">
+                      <h2 className="text-lg font-semibold text-[#2c2015]">Admin mode</h2>
+                      <p className="text-sm text-[#6b5d4f]">
+                        You can create and manage the course on behalf of an instructor, including curriculum and announcements.
+                      </p>
                     </div>
-
-                    {instructors.map((instructor, index) => (
-                      <Card key={index} className="bg-white border-[#d4c5b0]/30">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base font-display text-[#2c2015]">
-                              Instructor {index + 1}
-                            </CardTitle>
-                            {instructors.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeInstructor(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-name-${index}`}>Full Name *</Label>
-                              <Input
-                                id={`instructor-name-${index}`}
-                                value={instructor.name}
-                                onChange={(e) => updateInstructor(index, 'name', e.target.value)}
-                                placeholder="e.g., Dr. John Smith"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-title-${index}`}>Title/Designation</Label>
-                              <Input
-                                id={`instructor-title-${index}`}
-                                value={instructor.title || ''}
-                                onChange={(e) => updateInstructor(index, 'title', e.target.value)}
-                                placeholder="e.g., Professor of Law"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-email-${index}`}>Email</Label>
-                              <Input
-                                id={`instructor-email-${index}`}
-                                type="email"
-                                value={instructor.email || ''}
-                                onChange={(e) => updateInstructor(index, 'email', e.target.value)}
-                                placeholder="instructor@example.com"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-image-${index}`}>Profile Image URL</Label>
-                              <Input
-                                id={`instructor-image-${index}`}
-                                type="url"
-                                value={instructor.profileImageUrl || ''}
-                                onChange={(e) => updateInstructor(index, 'profileImageUrl', e.target.value)}
-                                placeholder="https://example.com/image.jpg"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`instructor-bio-${index}`}>Bio</Label>
-                            <Textarea
-                              id={`instructor-bio-${index}`}
-                              value={instructor.bio || ''}
-                              onChange={(e) => updateInstructor(index, 'bio', e.target.value)}
-                              placeholder="Brief biography and credentials..."
-                              rows={4}
-                              className="border-[#d4c5b0]"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-linkedin-${index}`}>LinkedIn URL</Label>
-                              <Input
-                                id={`instructor-linkedin-${index}`}
-                                type="url"
-                                value={instructor.linkedinUrl || ''}
-                                onChange={(e) => updateInstructor(index, 'linkedinUrl', e.target.value)}
-                                placeholder="https://linkedin.com/in/username"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`instructor-website-${index}`}>Website URL</Label>
-                              <Input
-                                id={`instructor-website-${index}`}
-                                type="url"
-                                value={instructor.websiteUrl || ''}
-                                onChange={(e) => updateInstructor(index, 'websiteUrl', e.target.value)}
-                                placeholder="https://example.com"
-                                className="border-[#d4c5b0]"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor={`instructor-expertise-${index}`}>Areas of Expertise</Label>
-                            <Input
-                              id={`instructor-expertise-${index}`}
-                              value={(instructor.expertise || []).join(', ')}
-                              onChange={(e) => updateInstructor(index, 'expertise', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                              placeholder="Arbitration, Mediation, Commercial Law (comma separated)"
-                              className="border-[#d4c5b0]"
-                            />
-                            <p className="text-xs text-[#8b6f47]">Separate multiple areas with commas</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    <AdminContextBadge
+                      instructorId={selectedInstructorId}
+                      instructorName={selectedInstructor ? `${selectedInstructor.first_name} ${selectedInstructor.last_name}` : "Select an instructor"}
+                      instructorImage={selectedInstructor?.profile_image_url}
+                      showClearButton={!!selectedInstructorId}
+                      onClearContext={() => {
+                        setSelectedInstructorId("");
+                        setSelectedInstructor(null);
+                      }}
+                    />
+                    <InstructorSelector
+                      value={selectedInstructorId}
+                      onChange={handleInstructorSelection}
+                      label="Instructor to manage" 
+                      placeholder="Choose instructor to act for"
+                    />
                   </div>
                 )}
 

@@ -77,8 +77,6 @@ export default function Home() {
     
     // Get the most recently accessed enrollment
     const recentEnrollment = enrollments[0];
-    if (!recentEnrollment.course) return "/dashboard";
-    
     const courseId = recentEnrollment.course.id;
     
     // Flatten all lessons in order
