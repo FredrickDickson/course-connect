@@ -177,10 +177,6 @@ export default function CreateCourse() {
     setIsRouteAdmin(path.startsWith("/admin"));
   }, []);
 
-    const path = window.location.pathname;
-    setIsRouteAdmin(path.startsWith("/admin"));
-  }, []);
-
   useEffect(() => {
     if (courseData) {
       form.reset({
@@ -196,12 +192,8 @@ export default function CreateCourse() {
         isPublished: courseData.is_published || false,
         isFeatured: courseData.is_featured || false,
       });
-
-      if (isAdmin && courseData.instructor_id && !selectedInstructorId) {
-        setSelectedInstructorId(courseData.instructor_id);
-      }
     }
-  }, [courseData, form, isAdmin, selectedInstructorId]);
+  }, [courseData, form]);
 
   const saveCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
