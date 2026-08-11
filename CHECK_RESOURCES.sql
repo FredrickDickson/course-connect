@@ -21,7 +21,7 @@ SELECT
   file_url,
   resource_type
 FROM lesson_resources
-WHERE lesson_id IS NULL OR lesson_id = '';
+WHERE lesson_id IS NULL;
 
 -- Count resources per lesson
 SELECT 
