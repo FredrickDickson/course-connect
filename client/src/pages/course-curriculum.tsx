@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/header";
+import StudentLayout from "@/components/student-layout";
 import { LectureContentEditor } from "@/components/LectureContentEditor";
 import { LecturePreview } from "@/components/LecturePreview";
 import { PublishCourseDialog } from "@/components/PublishCourseDialog";
@@ -441,26 +441,23 @@ export default function CourseCurriculum() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <StudentLayout>
         <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading curriculum...</p>
+          <div className="animate-spin w-8 h-8 border-4 border-[#610000] border-t-transparent rounded-full" />
         </div>
-      </div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f3ed]">
-      <Header />
-
-      <div className="max-w-6xl mx-auto p-6">
+    <StudentLayout>
+      <div className="space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2 text-[#2c2015] font-display">Curriculum Builder</h1>
-              <p className="text-[#6b5d4f] font-body">
+              <h1 className="text-3xl font-bold text-[#2c2015] font-display">Curriculum Builder</h1>
+              <p className="text-[#6b5d4f] font-body mt-2">
                 Build your course content with sections and lectures
               </p>
               <div className="flex items-center gap-4 mt-2">
@@ -823,6 +820,6 @@ export default function CourseCurriculum() {
           isPublished={courseDetails?.isPublished || false}
         />
       )}
-    </div>
+    </StudentLayout>
   );
 }
