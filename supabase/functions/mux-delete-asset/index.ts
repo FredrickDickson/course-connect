@@ -70,10 +70,18 @@ Deno.serve(async (req) => {
     }
     const instructorId = (lesson as any).modules?.courses?.instructor_id;
     if (instructorId !== userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const { data: callerRow } = await admin
+        .from("users")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (callerRow?.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Find associated mux assets
