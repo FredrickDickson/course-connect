@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 import { VideoUploader } from './VideoUploader';
 import { MuxUploader } from './MuxUploader';
 import { RichTextEditor } from './RichTextEditor';
@@ -12,10 +13,11 @@ import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
 import { VideoSourceSelector, VideoSource } from './VideoSourceSelector';
 import { VideoUrlInput } from './VideoUrlInput';
-import { Video, FileText, ClipboardCheck, FileUp, Save, Upload, Trash2 } from 'lucide-react';
+import { Video, FileText, ClipboardCheck, FileUp, Save, Upload, Trash2, Download, File, Link as LinkIcon, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchQuizForLesson, fetchAssignmentForLesson } from '@/lib/curriculum-mutations';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface LectureContentEditorProps {
   open: boolean;
@@ -407,11 +409,12 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
             <div>
               <Label className="mb-3 block">Lecture Type</Label>
               <Tabs value={contentType} onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
                   <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
                   <TabsTrigger value="quiz"><ClipboardCheck className="w-4 h-4 mr-2" />Quiz</TabsTrigger>
                   <TabsTrigger value="assignment"><FileUp className="w-4 h-4 mr-2" />Assignment</TabsTrigger>
+                  <TabsTrigger value="resources"><Download className="w-4 h-4 mr-2" />Resources</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="video" className="mt-6">
@@ -541,6 +544,27 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                     </div>
                   )}
                 </TabsContent>
+
+                <TabsContent value="resources" className="mt-6">
+                  {currentLessonId ? (
+                    <LessonResourceManager lessonId={currentLessonId} />
+                  ) : (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                      <Download className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="font-medium mb-2">Enter a lecture title first</p>
+                      <p className="text-sm text-muted-foreground">Type a title above, then you can add downloadable resources for students</p>
+                      {title.trim() && (
+                        <Button className="mt-4" onClick={async () => {
+                          try { await ensureLessonExists(); } catch (err) {
+                            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                          }
+                        }}>
+                          Create Lecture & Add Resources
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
           </div>
@@ -561,5 +585,259 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Lesson Resource Manager Component
+function LessonResourceManager({ lessonId }: { lessonId: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isAdding, setIsAdding] = useState(false);
+  const [resourceName, setResourceName] = useState('');
+  const [resourceFile, setResourceFile] = useState<File | null>(null);
+  const [resourceLink, setResourceLink] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // Fetch resources for this lesson
+  const { data: resources = [], isLoading } = useQuery({
+    queryKey: ['lesson-resources', lessonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lesson_resources')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!lessonId,
+  });
+
+  // Delete resource mutation
+  const deleteResource = useMutation({
+    mutationFn: async (resourceId: string) => {
+      const { error } = await supabase
+        .from('lesson_resources')
+        .delete()
+        .eq('id', resourceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lesson-resources', lessonId] });
+      toast({ title: 'Success', description: 'Resource deleted successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to delete resource', variant: 'destructive' });
+    },
+  });
+
+  const handleAddResource = async () => {
+    if (!resourceName.trim()) {
+      toast({ title: 'Error', description: 'Please enter a resource name', variant: 'destructive' });
+      return;
+    }
+
+    if (!resourceFile && !resourceLink.trim()) {
+      toast({ title: 'Error', description: 'Please select a file or enter a link', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      let fileUrl = resourceLink || null;
+      let fileName = resourceName;
+      let fileSize = null;
+      let fileType = 'link';
+
+      // Upload file if provided
+      if (resourceFile) {
+        const fileExt = resourceFile.name.split('.').pop();
+        const filePath = `${lessonId}/${Date.now()}_${resourceFile.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('lesson-resources')
+          .upload(filePath, resourceFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('lesson-resources')
+          .getPublicUrl(filePath);
+
+        fileUrl = urlData.publicUrl;
+        fileName = resourceFile.name;
+        fileSize = resourceFile.size;
+        fileType = resourceFile.type || 'file';
+      }
+
+      // Insert resource record
+      const { error: insertError } = await supabase
+        .from('lesson_resources')
+        .insert({
+          lesson_id: lessonId as any,
+          name: resourceName,
+          file_name: fileName as any,
+          file_url: fileUrl as any,
+          file_type: fileType as any,
+          file_size_mb: fileSize ? parseFloat((fileSize / (1024 * 1024)).toFixed(2)) : null as any,
+          resource_type: (resourceFile ? 'file' : 'link') as any,
+        });
+
+      if (insertError) throw insertError;
+
+      toast({ title: 'Success', description: 'Resource added successfully' });
+      queryClient.invalidateQueries({ queryKey: ['lesson-resources', lessonId] });
+      
+      // Reset form
+      setResourceName('');
+      setResourceFile(null);
+      setResourceLink('');
+      setIsAdding(false);
+    } catch (error) {
+      console.error('Error adding resource:', error);
+      toast({ title: 'Error', description: 'Failed to add resource', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getResourceIcon = (type: string) => {
+    if (type?.includes('pdf')) return <File className="w-5 h-5 text-red-500" />;
+    if (type?.includes('image')) return <File className="w-5 h-5 text-blue-500" />;
+    if (type?.includes('video')) return <Video className="w-5 h-5 text-purple-500" />;
+    if (type === 'link') return <LinkIcon className="w-5 h-5 text-green-500" />;
+    return <File className="w-5 h-5 text-gray-500" />;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-[#2c2015]">Lesson Resources</h3>
+          <p className="text-sm text-[#6b5d4f]">Add downloadable files or links for students</p>
+        </div>
+        {!isAdding && (
+          <Button onClick={() => setIsAdding(true)} size="sm" className="bg-[#610000] text-white hover:bg-[#7d0000]">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Resource
+          </Button>
+        )}
+      </div>
+
+      {isAdding && (
+        <Card className="bg-[#f5f3ed] border-[#d4c5b0]/30">
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <Label htmlFor="resource-name" className="text-[#2c2015]">Resource Name *</Label>
+              <Input
+                id="resource-name"
+                value={resourceName}
+                onChange={(e) => setResourceName(e.target.value)}
+                placeholder="e.g., Lecture Notes, Exercise Sheet"
+                className="border-[#d4c5b0]"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="resource-file" className="text-[#2c2015]">Upload File</Label>
+              <Input
+                id="resource-file"
+                type="file"
+                onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
+                className="border-[#d4c5b0]"
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip,.png,.jpg,.jpeg"
+              />
+            </div>
+
+            <div className="text-center text-sm text-[#8b6f47]">— or —</div>
+
+            <div>
+              <Label htmlFor="resource-link" className="text-[#2c2015]">External Link</Label>
+              <Input
+                id="resource-link"
+                value={resourceLink}
+                onChange={(e) => setResourceLink(e.target.value)}
+                placeholder="https://example.com/resource"
+                className="border-[#d4c5b0]"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAddResource}
+                disabled={uploading}
+                className="bg-[#610000] text-white hover:bg-[#7d0000]"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Resource
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAdding(false);
+                  setResourceName('');
+                  setResourceFile(null);
+                  setResourceLink('');
+                }}
+                disabled={uploading}
+                className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed]"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#610000]" />
+        </div>
+      ) : resources.length === 0 ? (
+        <div className="text-center py-8 text-[#8b6f47]">
+          <Download className="w-12 h-12 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No resources added yet</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {resources.map((resource: any) => (
+            <Card key={resource.id} className="bg-white border-[#d4c5b0]/30">
+              <CardContent className="p-4 flex items-center gap-3">
+                {getResourceIcon(resource.resource_type || resource.file_type)}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[#2c2015] truncate">{resource.name}</p>
+                  <p className="text-xs text-[#8b6f47]">
+                    {(resource.resource_type || 'file').toUpperCase()}
+                    {resource.file_size_mb ? ` · ${resource.file_size_mb} MB` : ''}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    if (confirm('Delete this resource?')) {
+                      deleteResource.mutate(resource.id);
+                    }
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
