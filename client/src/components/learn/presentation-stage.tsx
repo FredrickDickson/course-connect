@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Presentation as PresentationIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LearnLesson } from "./types";
 import { LazyPresentationViewer } from "./LazyPresentationViewer";
@@ -28,13 +27,8 @@ export default function PresentationStage({ lesson, initialSlide, completed, onP
   });
 
   return (
-    <div className="bg-background min-h-[60vh] py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-4">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wide">
-          <PresentationIcon className="h-4 w-4" /> Presentation
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif">{lesson.title}</h1>
-
+    <div className="bg-background pt-6 pb-4 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl w-full">
         {isLoading ? (
           <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
             Loading presentation…

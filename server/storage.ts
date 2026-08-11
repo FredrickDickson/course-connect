@@ -568,9 +568,42 @@ export class DatabaseStorage implements IStorage {
     id: string,
     updates: Partial<InsertCourse>,
   ): Promise<Course> {
+    // Same camelCase -> snake_case mapping as createCourse (see comment
+    // there): passing InsertCourse's camelCase keys straight through 500s
+    // on the first mismatched column. JSON.stringify drops the `undefined`
+    // entries below, so only fields actually present in `updates` are sent.
+    const c = updates as any;
+    const updatePayload = {
+      title: c.title,
+      subtitle: c.subtitle,
+      description: c.description,
+      instructor_id: c.instructorId,
+      category_id: c.categoryId,
+      programme_type: c.programmeType,
+      level: c.level,
+      track: c.track,
+      price: c.price,
+      currency: c.currency,
+      associate_price: c.associatePrice,
+      member_price: c.memberPrice,
+      fellow_price: c.fellowPrice,
+      requires_approval: c.requiresApproval,
+      thumbnail_url: c.thumbnailUrl,
+      promo_video_url: c.promoVideoUrl,
+      duration_hours: c.duration,
+      is_published: c.isPublished,
+      is_featured: c.isFeatured,
+      avg_rating: c.avgRating,
+      rating_count: c.ratingCount,
+      enrollment_count: c.enrollmentCount,
+      tags: c.tags,
+      ticket_types: c.ticketTypes,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabaseAdmin
       .from("courses")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", id)
       .select()
       .single();

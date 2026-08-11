@@ -716,7 +716,7 @@ export default function CourseDetail() {
                               <div>
                                 <h4 className="font-semibold text-lg">{ins.first_name} {ins.last_name}</h4>
                                 {ins.bio ? (
-                                  <p className="text-sm text-muted-foreground mt-2">{ins.bio}</p>
+                                  <p className="text-sm text-muted-foreground mt-2 text-justify">{ins.bio}</p>
                                 ) : (
                                   <p className="text-sm text-muted-foreground mt-2 italic">No bio provided yet.</p>
                                 )}

@@ -3,6 +3,7 @@
  * per-course enrollment list, lifecycle management, capacity monitoring
  */
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,7 @@ import { formatCoursePrice } from "@/lib/format-price";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
-  MapPin, Clock, Layers,
+  MapPin, Clock, Layers, Pencil,
 } from "lucide-react";
 
 interface CourseWithEnrollments {
@@ -101,6 +102,7 @@ function StatusBadge({ course }: { course: CourseWithEnrollments }) {
 export default function AdminCoursesTable() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<CourseTab>("all");
   const [selectedCourse, setSelectedCourse] = useState<CourseWithEnrollments | null>(null);

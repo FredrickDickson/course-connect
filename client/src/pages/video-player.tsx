@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingState } from "@/components/ui/loading-state";
 import { LazyVideoPlayer, type VideoPlayerRef } from "@/components/ui/lazy-video-player";
@@ -380,7 +381,10 @@ export default function VideoPlayerPage() {
             />
           ) : null}
 
-          <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full">
+          <div className={cn(
+            "px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full",
+            lessonType === "presentation" && "border-t mt-2",
+          )}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Section {sectionIndex} · {currentModule?.title}</p>

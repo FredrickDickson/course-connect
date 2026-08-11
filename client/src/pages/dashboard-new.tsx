@@ -326,35 +326,37 @@ export default function Dashboard() {
                   >
                     <div className="flex flex-col sm:flex-row gap-0">
                       {/* Course Image */}
-                      <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0">
-                        {enrollment.course?.thumbnail_url ? (
-                          <img
-                            src={enrollment.course.thumbnail_url}
-                            alt={enrollment.course.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
-                            <PlayCircle className="w-16 h-16 text-white/50" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform cursor-pointer group">
-                            <svg 
-                              className="w-8 h-8 ml-1" 
-                              viewBox="0 0 24 24" 
-                              fill="none" 
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path 
-                                d="M8 5v14l11-7L8 5z" 
-                                fill="#610000" 
-                                className="group-hover:fill-[#7d0000] transition-colors"
-                              />
-                            </svg>
+                      <Link href={`/learn/${enrollment.course?.id}`}>
+                        <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0 cursor-pointer">
+                          {enrollment.course?.thumbnail_url ? (
+                            <img
+                              src={enrollment.course.thumbnail_url}
+                              alt={enrollment.course.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
+                              <PlayCircle className="w-16 h-16 text-white/50" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform group">
+                              <svg
+                                className="w-8 h-8 ml-1"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M8 5v14l11-7L8 5z"
+                                  fill="#610000"
+                                  className="group-hover:fill-[#7d0000] transition-colors"
+                                />
+                              </svg>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       {/* Course Info */}
                       <CardContent className="flex-1 p-6 flex flex-col justify-between">
