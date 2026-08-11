@@ -44,6 +44,7 @@ import {
   Play,
   Eye,
   Rocket,
+  Presentation,
 } from "lucide-react";
 
 interface Module {
@@ -58,7 +59,7 @@ interface Lesson {
   id: string;
   title: string;
   description: string;
-  contentType: "video" | "text" | "quiz" | "assignment";
+  contentType: "video" | "text" | "quiz" | "assignment" | "presentation";
   videoUrl?: string;
   videoPlatform?: "youtube" | "vimeo";
   videoId?: string;
@@ -642,6 +643,10 @@ export default function CourseCurriculum() {
                                             {lesson.contentType ===
                                               "assignment" && (
                                               <FileText className="h-4 w-4 text-[#610000]" />
+                                            )}
+                                            {lesson.contentType ===
+                                              "presentation" && (
+                                              <Presentation className="h-4 w-4 text-[#610000]" />
                                             )}
                                             <div className="flex-1">
                                               <p className="font-medium text-sm text-[#2c2015]">

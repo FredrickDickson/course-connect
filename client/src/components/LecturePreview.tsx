@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import VideoPlayer from '@/components/ui/video-player';
+import { LazyPresentationViewer } from '@/components/learn/LazyPresentationViewer';
 import {
   Video,
   FileText,
@@ -17,6 +18,7 @@ import {
   Clock,
   Circle,
   X,
+  Presentation as PresentationIcon,
 } from 'lucide-react';
 
 interface LecturePreviewProps {
@@ -24,7 +26,7 @@ interface LecturePreviewProps {
   onOpenChange: (open: boolean) => void;
   lessonId: string;
   lessonTitle: string;
-  lessonType: 'video' | 'text' | 'quiz' | 'assignment';
+  lessonType: 'video' | 'text' | 'quiz' | 'assignment' | 'presentation';
 }
 
 export function LecturePreview({
@@ -100,6 +102,23 @@ export function LecturePreview({
       return data;
     },
     enabled: open && !!lessonId && lessonType === 'assignment',
+  });
+
+  // Fetch presentation
+  const { data: presentationData, isLoading: presentationLoading } = useQuery({
+    queryKey: ['lesson-preview-presentation', lessonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('presentations')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!lessonId && lessonType === 'presentation',
   });
 
   const renderVideoPreview = () => {
@@ -277,6 +296,34 @@ export function LecturePreview({
     );
   };
 
+  const renderPresentationPreview = () => {
+    if (presentationLoading) {
+      return (
+        <div className="text-center py-12">
+          <PresentationIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading presentation...</p>
+        </div>
+      );
+    }
+    if (!presentationData) {
+      return (
+        <div className="text-center py-12">
+          <PresentationIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">No presentation content available</p>
+        </div>
+      );
+    }
+
+    return (
+      <LazyPresentationViewer
+        fileUrl={presentationData.file_url}
+        fileName={presentationData.file_name}
+        allowDownload={!!presentationData.allow_download}
+        className="min-h-[60vh]"
+      />
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
@@ -291,6 +338,7 @@ export function LecturePreview({
             {lessonType === 'text' && renderArticlePreview()}
             {lessonType === 'quiz' && renderQuizPreview()}
             {lessonType === 'assignment' && renderAssignmentPreview()}
+            {lessonType === 'presentation' && renderPresentationPreview()}
           </div>
         </ScrollArea>
       </DialogContent>

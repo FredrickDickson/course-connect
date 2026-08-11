@@ -11,12 +11,13 @@ import { MuxUploader } from './MuxUploader';
 import { RichTextEditor } from './RichTextEditor';
 import { QuizBuilder } from './QuizBuilder';
 import { AssignmentBuilder } from './AssignmentBuilder';
+import { PresentationBuilder } from './PresentationBuilder';
 import { VideoSourceSelector, VideoSource } from './VideoSourceSelector';
 import { VideoUrlInput } from './VideoUrlInput';
-import { Video, FileText, ClipboardCheck, FileUp, Save, Upload, Trash2, Download, File, Link as LinkIcon, Loader2, Plus } from 'lucide-react';
+import { Video, FileText, ClipboardCheck, FileUp, Save, Upload, Trash2, Download, File, Link as LinkIcon, Loader2, Plus, Presentation as PresentationIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchQuizForLesson, fetchAssignmentForLesson } from '@/lib/curriculum-mutations';
+import { fetchQuizForLesson, fetchAssignmentForLesson, fetchPresentationForLesson } from '@/lib/curriculum-mutations';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface LectureContentEditorProps {
@@ -28,7 +29,7 @@ interface LectureContentEditorProps {
     id: string;
     title: string;
     description?: string;
-    contentType: 'video' | 'text' | 'quiz' | 'assignment';
+    contentType: 'video' | 'text' | 'quiz' | 'assignment' | 'presentation';
     videoUrl?: string;
     videoPlatform?: 'youtube' | 'vimeo';
     videoId?: string;
@@ -53,10 +54,11 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const [muxAssetId, setMuxAssetId] = useState<string>('');
   const [muxPlaybackId, setMuxPlaybackId] = useState<string>('');
   const [muxStatus, setMuxStatus] = useState<string>('pending');
-  const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment'>('video');
+  const [contentType, setContentType] = useState<'video' | 'text' | 'quiz' | 'assignment' | 'presentation'>('video');
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id || null);
   const [existingQuiz, setExistingQuiz] = useState<any>(null);
   const [existingAssignment, setExistingAssignment] = useState<any>(null);
+  const [existingPresentation, setExistingPresentation] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [deletingVideo, setDeletingVideo] = useState(false);
   const { toast } = useToast();
@@ -81,17 +83,20 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setSavedLessonId(lesson?.id || null);
     setExistingQuiz(null);
     setExistingAssignment(null);
+    setExistingPresentation(null);
     ensureLessonPromiseRef.current = null;
     setVideoDirty(false);
   }, [open, lesson?.id]);
 
   const refreshAttachments = async (lessonId: string) => {
-    const [quiz, assignment] = await Promise.all([
+    const [quiz, assignment, presentation] = await Promise.all([
       fetchQuizForLesson(lessonId),
       fetchAssignmentForLesson(lessonId),
+      fetchPresentationForLesson(lessonId),
     ]);
     setExistingQuiz(quiz);
     setExistingAssignment(assignment);
+    setExistingPresentation(presentation);
   };
 
   // Fetch existing quiz/assignment data when an existing lesson is opened
@@ -372,7 +377,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
   const handleTabChange = async (value: string) => {
     setContentType(value as any);
     // For quiz/assignment tabs, auto-save the lesson first if it has a title
-    if ((value === 'quiz' || value === 'assignment' || value === 'video') && !savedLessonId && title.trim()) {
+    if ((value === 'quiz' || value === 'assignment' || value === 'video' || value === 'presentation') && !savedLessonId && title.trim()) {
       try {
         await ensureLessonExists();
       } catch (err) {
@@ -409,8 +414,9 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
             <div>
               <Label className="mb-3 block">Lecture Type</Label>
               <Tabs value={contentType} onValueChange={handleTabChange}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="video"><Video className="w-4 h-4 mr-2" />Video</TabsTrigger>
+                  <TabsTrigger value="presentation"><PresentationIcon className="w-4 h-4 mr-2" />Presentation</TabsTrigger>
                   <TabsTrigger value="text"><FileText className="w-4 h-4 mr-2" />Article</TabsTrigger>
                   <TabsTrigger value="quiz"><ClipboardCheck className="w-4 h-4 mr-2" />Quiz</TabsTrigger>
                   <TabsTrigger value="assignment"><FileUp className="w-4 h-4 mr-2" />Assignment</TabsTrigger>
@@ -485,6 +491,33 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
                       />
                     )}
                   </div>
+                </TabsContent>
+
+                <TabsContent value="presentation" className="mt-6">
+                  {currentLessonId ? (
+                    <PresentationBuilder
+                      key={`presentation-${currentLessonId}-${existingPresentation?.id || 'new'}`}
+                      lessonId={currentLessonId}
+                      initialPresentation={existingPresentation}
+                      onSaved={() => refreshAttachments(currentLessonId)}
+                      onDeleted={() => refreshAttachments(currentLessonId)}
+                    />
+                  ) : (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                      <PresentationIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="font-medium mb-2">Enter a lecture title first</p>
+                      <p className="text-sm text-muted-foreground">Type a title above, then the presentation uploader will appear automatically</p>
+                      {title.trim() && (
+                        <Button className="mt-4" onClick={async () => {
+                          try { await ensureLessonExists(); } catch (err) {
+                            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+                          }
+                        }}>
+                          Create Lecture & Add Presentation
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="text" className="mt-6">

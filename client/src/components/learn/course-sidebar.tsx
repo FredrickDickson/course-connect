@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown, FileStack } from "lucide-react";
+import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown, FileStack, Presentation } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const lessonIcon = (t?: string | null) => {
     case "pdf": case "reading": return FileText;
     case "quiz": case "assessment": return HelpCircle;
     case "assignment": return Target;
+    case "presentation": return Presentation;
     default: return Play;
   }
 };

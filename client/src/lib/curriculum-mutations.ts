@@ -225,3 +225,70 @@ export async function deleteAssignmentByLesson(lessonId: string) {
     .eq("lesson_id", lessonId);
   if (error) throw error;
 }
+
+export interface PresentationInput {
+  fileUrl: string;
+  fileName: string;
+  fileType?: "pdf" | "pptx";
+  pageCount?: number | null;
+  allowDownload?: boolean;
+}
+
+export async function fetchPresentationForLesson(lessonId: string) {
+  const { data, error } = await supabase
+    .from("presentations")
+    .select("*")
+    .eq("lesson_id", lessonId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    id: data.id,
+    fileUrl: data.file_url,
+    fileName: data.file_name,
+    fileType: data.file_type as "pdf" | "pptx",
+    pageCount: data.page_count ?? null,
+    allowDownload: data.allow_download ?? false,
+  };
+}
+
+export async function upsertPresentation(lessonId: string, input: PresentationInput) {
+  const { data: existing } = await supabase
+    .from("presentations")
+    .select("id")
+    .eq("lesson_id", lessonId)
+    .maybeSingle();
+
+  const payload = {
+    file_url: input.fileUrl,
+    file_name: input.fileName,
+    file_type: input.fileType || "pdf",
+    page_count: input.pageCount ?? null,
+    allow_download: input.allowDownload ?? false,
+  };
+
+  if (existing) {
+    const { error } = await supabase
+      .from("presentations")
+      .update(payload)
+      .eq("id", existing.id);
+    if (error) throw error;
+    return existing.id;
+  }
+
+  const { data, error } = await supabase
+    .from("presentations")
+    .insert({ lesson_id: lessonId, ...payload })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function deletePresentationByLesson(lessonId: string) {
+  const { error } = await supabase
+    .from("presentations")
+    .delete()
+    .eq("lesson_id", lessonId);
+  if (error) throw error;
+}

@@ -17,6 +17,7 @@ import CourseCompleteModal from "@/components/learn/course-complete-modal";
 import ArticleStage from "@/components/learn/article-stage";
 import QuizStage from "@/components/learn/quiz-stage";
 import AssignmentStage from "@/components/learn/assignment-stage";
+import PresentationStage from "@/components/learn/presentation-stage";
 import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -368,6 +369,15 @@ export default function VideoPlayerPage() {
             <QuizStage lesson={currentLesson} onComplete={() => handleToggleComplete(currentLesson.id, true)} />
           ) : lessonType === "assignment" ? (
             <AssignmentStage lesson={currentLesson} onComplete={() => handleToggleComplete(currentLesson.id, true)} />
+          ) : lessonType === "presentation" ? (
+            <PresentationStage
+              lesson={currentLesson}
+              initialSlide={resumeSeconds}
+              completed={!!lessonProgress?.completed}
+              onProgress={(slideIndex, completed) =>
+                upsertProgress.mutate({ id: currentLesson.id, completed, watch: slideIndex })
+              }
+            />
           ) : null}
 
           <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full">

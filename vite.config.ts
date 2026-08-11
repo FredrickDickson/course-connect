@@ -47,6 +47,9 @@ export default defineConfig(async ({ mode }) => ({
             if (id.includes('@tiptap')) {
               return 'vendor-editor';
             }
+            if (id.includes('pdfjs-dist')) {
+              return 'vendor-pdf';
+            }
             if (id.includes('framer-motion') || id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'vendor-misc';
             }
