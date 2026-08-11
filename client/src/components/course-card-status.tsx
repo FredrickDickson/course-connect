@@ -257,7 +257,7 @@ export default function CourseCardStatus({
             </Badge>
             {eligibility.status === "upgrade-required" && course.track && (
               <p className="text-xs text-muted-foreground mt-1.5">
-                Complete Associate in {course.track} to unlock
+                Complete {eligibility.label.replace(/^Requires\s+/i, "")} in {course.track} to unlock
               </p>
             )}
           </div>
