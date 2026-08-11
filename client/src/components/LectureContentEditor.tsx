@@ -321,27 +321,16 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     }
   };
 
-  const handleMuxUploadComplete = async (assetId: string, playbackId: string) => {
+  const handleMuxUploadComplete = (assetId: string, playbackId: string) => {
+    // The lessons row is already persisted server-side by this point: MuxUploader only
+    // calls onUploadComplete after mux-asset-status confirms the DB record is ready
+    // (webhook, or the polling endpoint's own fallback write). Writing it again here
+    // from the client would just race those two server-side writers, so we only update
+    // local state — the explicit "Save Lecture" click still persists from this state too.
     setVideoDirty(true);
     setMuxAssetId(assetId);
     setMuxPlaybackId(playbackId);
     setMuxStatus('ready');
-
-    // Auto-save mux data to lesson if it exists
-    if (savedLessonId && assetId) {
-      const { error } = await supabase.from('lessons').update({
-        video_url: null,
-        video_platform: null,
-        video_id: null,
-        mux_asset_id: assetId,
-        mux_playback_id: playbackId,
-        mux_status: 'ready',
-      }).eq('id', savedLessonId);
-      if (error) {
-        console.error('Error saving mux asset:', error);
-        toast({ title: 'Error', description: 'Failed to save Mux asset', variant: 'destructive' });
-      }
-    }
   };
 
   const handleMuxUploadError = (errorMessage: string) => {

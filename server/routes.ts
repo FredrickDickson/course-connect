@@ -81,7 +81,6 @@ import qualificationRouter from "./routes/qualification";
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
 import renewalAutomationRouter from "./routes/renewal-automation";
-import muxRouter from "./routes/mux";
 import adminInstructorsRouter from "./routes/admin/instructors";
 import {
   insertCourseSchema,
@@ -345,8 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
   app.use("/api/renewal-automation", renewalAutomationRouter);
-  app.use("/api/mux", muxRouter);
-  
+
   // Mount admin instructor management routes
   app.use("/api/admin/instructors", adminInstructorsRouter);
 
