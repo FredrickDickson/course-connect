@@ -23,13 +23,13 @@ interface AdminTopNavProps {
 
 export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Admin search functionality - can be customized
-    console.log("Admin search:", searchQuery);
+    const q = searchQuery.trim();
+    setLocation(q ? `/admin?tab=users&search=${encodeURIComponent(q)}` : "/admin?tab=users");
   };
 
   const handleSignOut = async () => {

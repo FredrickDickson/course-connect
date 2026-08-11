@@ -7,8 +7,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import AdminLayout from "@/components/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -231,9 +230,8 @@ export default function RenewalManagement() {
     stats?.email_activity_last_30_days.reduce((acc, e) => acc + e.count, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Renewal Management</h1>
@@ -642,7 +640,6 @@ export default function RenewalManagement() {
           </TabsContent>
         </Tabs>
       </div>
-      <Footer />
-    </div>
+    </AdminLayout>
   );
 }

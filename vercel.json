@@ -14,6 +14,10 @@
       "destination": "/api/instructor/courses.ts"
     },
     {
+      "source": "/api/instructor/courses/:id",
+      "destination": "/api/instructor/courses/[id].ts"
+    },
+    {
       "source": "/api/verify-payment",
       "destination": "/api/verify-payment.ts"
     },

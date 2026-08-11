@@ -30,6 +30,8 @@ import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import StudentSidebar from "@/components/student-sidebar";
 import { useEligibility } from "@/hooks/useEligibility";
 import { formatCoursePrice } from "@/lib/format-price";
+import { FormattedText } from "@/lib/format-text";
+import { formatDuration } from "@/components/learn/types";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -78,25 +80,51 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
-  // Fetch instructor profile (avatar) from profiles table
-  const { data: instructorProfile } = useQuery<any>({
-    queryKey: ["instructor-profile", course?.instructor?.id],
+  // Multiple instructors can be credited on a course (course_instructors,
+  // ordered for display). Fall back to the single legacy instructor_id join
+  // for courses saved before multi-instructor support existed — no backfill
+  // migration needed, this is a natural fallback at read time.
+  const { data: courseInstructorRows } = useQuery<any[]>({
+    queryKey: ["course-instructors", id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("avatar_url")
-        .eq("user_id", course.instructor.id)
-        .maybeSingle();
-      return data;
+      const { data, error } = await (supabase as any)
+        .from("course_instructors")
+        .select("user_id, sort_order, instructor:users!course_instructors_user_id_fkey(*)")
+        .eq("course_id", id!)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
-    enabled: !!course?.instructor?.id,
+    enabled: !!id,
   });
 
-  const instructorAvatar =
-    instructorProfile?.avatar_url || course?.instructor?.profile_image_url || null;
-  const instructorInitials = course?.instructor
-    ? `${course.instructor.first_name?.[0] || ""}${course.instructor.last_name?.[0] || ""}`.toUpperCase()
-    : "";
+  const instructorList: any[] = useMemo(() => {
+    if (courseInstructorRows && courseInstructorRows.length > 0) {
+      return courseInstructorRows.map((r) => r.instructor).filter(Boolean);
+    }
+    return course?.instructor ? [course.instructor] : [];
+  }, [courseInstructorRows, course?.instructor]);
+
+  // Batch-fetch avatars for every credited instructor in one query.
+  const { data: instructorAvatarsByUserId } = useQuery<Record<string, string | null>>({
+    queryKey: ["instructor-avatars", instructorList.map((i) => i.id).join(",")],
+    queryFn: async () => {
+      const ids = instructorList.map((i) => i.id);
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", ids);
+      const map: Record<string, string | null> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p.avatar_url; });
+      return map;
+    },
+    enabled: instructorList.length > 0,
+  });
+
+  const avatarFor = (instructor: any) =>
+    instructorAvatarsByUserId?.[instructor.id] || instructor.profile_image_url || null;
+  const initialsFor = (instructor: any) =>
+    `${instructor.first_name?.[0] || ""}${instructor.last_name?.[0] || ""}`.toUpperCase();
 
   const { data: enrollment } = useQuery({
     queryKey: ["enrollment-check", id, user?.id],
@@ -115,18 +143,25 @@ export default function CourseDetail() {
     enabled: !!id && !!user,
   });
 
-  // Fetch lesson progress for enrolled users
+  // Fetch lesson progress for enrolled users — scoped to THIS course's
+  // lessons only. Without the lesson_id filter, this would count every
+  // lesson the user has ever completed on the platform (any course), so a
+  // brand-new enrollee who'd completed lessons elsewhere would see a
+  // nonzero "X/N completed" the instant they enrolled.
   const { data: progress = [] } = useQuery<any[]>({
     queryKey: ["lesson-progress", id, user?.id],
     queryFn: async () => {
+      const lessonIds = (course?.modules || []).flatMap((m: any) => (m.lessons || []).map((l: any) => l.id));
+      if (lessonIds.length === 0) return [];
       const { data, error } = await supabase
         .from("progress")
         .select("lesson_id, completed")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .in("lesson_id", lessonIds);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id && !!user && !!enrollment,
+    enabled: !!id && !!user && !!enrollment && !!course,
   });
 
   const { data: reviews = [] } = useQuery<any[]>({
@@ -415,20 +450,31 @@ export default function CourseDetail() {
                     <p className="text-lg text-primary-foreground/90 mb-6" data-testid="course-subtitle">{course.subtitle}</p>
                   )}
                   <div className="flex flex-wrap items-center gap-6 text-sm">
-                    {course.instructor && (
+                    {instructorList.length > 0 && (
                       <div className="flex items-center space-x-2">
-                        {instructorAvatar ? (
-                          <img
-                            src={instructorAvatar}
-                            alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold">
-                            {instructorInitials}
-                          </div>
-                        )}
-                        <span>By {course.instructor.first_name} {course.instructor.last_name}</span>
+                        <div className="flex -space-x-2">
+                          {instructorList.slice(0, 3).map((ins: any) => (
+                            avatarFor(ins) ? (
+                              <img
+                                key={ins.id}
+                                src={avatarFor(ins)}
+                                alt={`${ins.first_name} ${ins.last_name}`}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-primary"
+                              />
+                            ) : (
+                              <div
+                                key={ins.id}
+                                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold border-2 border-primary"
+                              >
+                                {initialsFor(ins)}
+                              </div>
+                            )
+                          ))}
+                        </div>
+                        <span>
+                          By {instructorList.slice(0, 3).map((ins: any) => `${ins.first_name} ${ins.last_name}`).join(", ")}
+                          {instructorList.length > 3 ? ` +${instructorList.length - 3} more` : ""}
+                        </span>
                       </div>
                     )}
                     {course.duration_hours && (
@@ -553,7 +599,11 @@ export default function CourseDetail() {
                       <div className="prose prose-slate max-w-none">
                         <h3 className="text-xl font-semibold mb-4">Course Description</h3>
                         <div className="text-muted-foreground leading-relaxed mb-6" data-testid="course-description">
-                          {course.description || "No description available."}
+                          {course.description ? (
+                            <FormattedText text={course.description} />
+                          ) : (
+                            "No description available."
+                          )}
                         </div>
                         {course.tags && course.tags.length > 0 && (
                           <div>
@@ -570,14 +620,28 @@ export default function CourseDetail() {
 
                     <TabsContent value="curriculum" className="mt-6">
                       <div className="space-y-4">
-                        <h3 className="text-xl font-semibold">Course Curriculum</h3>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <h3 className="text-xl font-semibold">Course Curriculum</h3>
+                          {course.modules && course.modules.length > 0 && (
+                            <span className="text-sm text-muted-foreground">
+                              {formatDuration(
+                                course.modules.reduce(
+                                  (total: number, module: any) =>
+                                    total + (module.lessons || []).reduce((s: number, l: any) => s + (l.duration_seconds || 0), 0),
+                                  0,
+                                ),
+                              )}{" "}
+                              total
+                            </span>
+                          )}
+                        </div>
                         {course.modules && course.modules.length > 0 ? (
                           <div className="space-y-4">
                             {course.modules.map((module: any, moduleIndex: number) => (
                               <Card key={module.id}>
                                 <CardContent className="p-4">
                                   <h4 className="font-semibold mb-2">{module.title}</h4>
-                                  {module.description && <p className="text-sm text-muted-foreground mb-3">{module.description}</p>}
+                                  <FormattedText text={module.description} className="text-sm text-muted-foreground mb-3" />
                                   {module.lessons && module.lessons.length > 0 && (
                                     <div className="space-y-2 ml-4">
                                       {module.lessons.map((lesson: any, lessonIndex: number) => (
@@ -586,6 +650,9 @@ export default function CourseDetail() {
                                             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">{lessonIndex + 1}</div>
                                             <span className="text-sm">{lesson.title}</span>
                                           </div>
+                                          {lesson.duration_seconds ? (
+                                            <span className="text-xs text-muted-foreground">{formatDuration(lesson.duration_seconds)}</span>
+                                          ) : null}
                                         </div>
                                       ))}
                                     </div>
@@ -655,31 +722,37 @@ export default function CourseDetail() {
                 </div>
 
                 {/* Instructor Info */}
-                <div className="lg:col-span-1">
-                  {course.instructor && (
+                <div className="lg:col-span-1 space-y-6">
+                  {instructorList.length > 0 && (
                     <Card>
                       <CardContent className="p-6">
-                        <h3 className="text-lg font-semibold mb-4">Instructor</h3>
-                        <div className="text-center space-y-4">
-                          {instructorAvatar ? (
-                            <img
-                              src={instructorAvatar}
-                              alt={`${course.instructor.first_name} ${course.instructor.last_name}`}
-                              className="w-20 h-20 rounded-full object-cover mx-auto"
-                            />
-                          ) : (
-                            <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
-                              {instructorInitials}
+                        <h3 className="text-lg font-semibold mb-4">
+                          {instructorList.length > 1 ? "Instructors" : "Instructor"}
+                        </h3>
+                        <div className="space-y-6">
+                          {instructorList.map((ins: any) => (
+                            <div key={ins.id} className="text-center space-y-4">
+                              {avatarFor(ins) ? (
+                                <img
+                                  src={avatarFor(ins)}
+                                  alt={`${ins.first_name} ${ins.last_name}`}
+                                  className="w-20 h-20 rounded-full object-cover mx-auto"
+                                />
+                              ) : (
+                                <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl font-bold">
+                                  {initialsFor(ins)}
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-semibold text-lg">{ins.first_name} {ins.last_name}</h4>
+                                {ins.bio ? (
+                                  <p className="text-sm text-muted-foreground mt-2 text-justify">{ins.bio}</p>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground mt-2 italic">No bio provided yet.</p>
+                                )}
+                              </div>
                             </div>
-                          )}
-                          <div>
-                            <h4 className="font-semibold text-lg">{course.instructor.first_name} {course.instructor.last_name}</h4>
-                            {course.instructor.bio ? (
-                              <p className="text-sm text-muted-foreground mt-2">{course.instructor.bio}</p>
-                            ) : (
-                              <p className="text-sm text-muted-foreground mt-2 italic">No bio provided yet.</p>
-                            )}
-                          </div>
+                          ))}
                         </div>
                       </CardContent>
                     </Card>

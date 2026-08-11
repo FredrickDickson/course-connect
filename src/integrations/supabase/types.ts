@@ -3091,6 +3091,7 @@ export type Database = {
           id: string
           last_watched_at: string | null
           lesson_id: string | null
+          slide_index: number | null
           user_id: string | null
           watch_time_seconds: number | null
         }
@@ -3099,6 +3100,7 @@ export type Database = {
           id?: string
           last_watched_at?: string | null
           lesson_id?: string | null
+          slide_index?: number | null
           user_id?: string | null
           watch_time_seconds?: number | null
         }
@@ -3107,6 +3109,7 @@ export type Database = {
           id?: string
           last_watched_at?: string | null
           lesson_id?: string | null
+          slide_index?: number | null
           user_id?: string | null
           watch_time_seconds?: number | null
         }

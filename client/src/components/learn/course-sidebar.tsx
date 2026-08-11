@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown, FileStack } from "lucide-react";
+import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown, FileStack, Presentation } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const lessonIcon = (t?: string | null) => {
     case "pdf": case "reading": return FileText;
     case "quiz": case "assessment": return HelpCircle;
     case "assignment": return Target;
+    case "presentation": return Presentation;
     default: return Play;
   }
 };
@@ -146,7 +147,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                 onClick={() => setOpen(o => ({ ...o, [module.id]: !isOpen }))}
               >
                 <div className="min-w-0 pr-2">
-                  <p className="font-medium text-sm truncate">Section {mIdx + 1}: {module.title}</p>
+                  <p className="font-medium text-sm line-clamp-2">Section {mIdx + 1}: {module.title}</p>
                   <p className="text-xs text-white/60 mt-0.5">{sectionDoneCount} / {lessons.length} · {formatDuration(sectionDuration)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -199,7 +200,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                               <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className={cn("truncate", isActive ? "font-semibold text-white" : "text-white/90")}>
+                              <p className={cn("line-clamp-2", isActive ? "font-semibold text-white" : "text-white/90")}>
                                 {lIdx + 1}. {lesson.title}
                               </p>
                               {lesson.duration_seconds ? (

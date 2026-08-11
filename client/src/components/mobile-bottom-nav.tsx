@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Home, BookOpen, Users, HelpCircle, User, Menu, X, GraduationCap, Search, Target, Award, FileText, Bookmark, Settings, LogOut } from "lucide-react";
 import { Link } from "wouter";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface NavSection {
 
 export default function MobileBottomNav() {
   const [location] = useLocation();
+  const search = useSearch();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
 
@@ -83,11 +84,16 @@ export default function MobileBottomNav() {
   ];
 
   const isActivePath = (path: string) => {
-    if (path.includes("?")) {
-      const [basePath] = path.split("?");
-      if (location === basePath || location.startsWith(basePath)) {
-        return true;
-      }
+    const [basePath, queryString] = path.split("?");
+
+    // The Profile page uses a `?tab=` query param to switch between its
+    // Information/Courses/Certificates tabs, so pathname alone can't tell
+    // "Profile" and "Certificates" apart - compare the tab too.
+    if (basePath === "/profile") {
+      if (location !== "/profile") return false;
+      const currentTab = new URLSearchParams(search).get("tab");
+      const itemTab = new URLSearchParams(queryString || "").get("tab");
+      return itemTab ? currentTab === itemTab : currentTab !== "certificates";
     }
     if (path === "/dashboard") {
       return location === "/dashboard";

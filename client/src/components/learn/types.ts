@@ -35,6 +35,7 @@ export interface ProgressRow {
   lesson_id: string | null;
   completed: boolean | null;
   watch_time_seconds: number | null;
+  slide_index: number | null;
 }
 export const formatDuration = (s?: number | null) => {
   if (!s) return "0min";
