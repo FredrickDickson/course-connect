@@ -109,7 +109,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
 
   // Auto-save to create the lesson so video/quiz/assignment can be attached immediately.
   // Concurrent-safe: returns the same in-flight promise to prevent duplicate inserts.
-  const ensureLessonExists = async (): Promise<string> => {
+  const ensureLessonExists = async (contentTypeOverride?: typeof contentType): Promise<string> => {
     if (savedLessonId) return savedLessonId;
     if (!title.trim()) throw new Error('Please enter a lecture title first');
     if (ensureLessonPromiseRef.current) return ensureLessonPromiseRef.current;
@@ -119,7 +119,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
         _module_id: moduleId,
         _title: title,
         _description: description || null,
-        _content_type: contentType,
+        _content_type: contentTypeOverride ?? contentType,
         _mux_asset_id: muxAssetId || null,
         _mux_playback_id: muxPlaybackId || null,
         _mux_status: muxStatus || null,
@@ -144,6 +144,10 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     }
     if (!moduleId) {
       toast({ title: 'Error', description: 'Missing section. Please reopen the editor from a section.', variant: 'destructive' });
+      return;
+    }
+    if (contentType === 'presentation' && !existingPresentation) {
+      toast({ title: 'Missing presentation file', description: 'Upload a PDF in the Presentation tab before saving, or switch to a different lecture type.', variant: 'destructive' });
       return;
     }
 
@@ -379,7 +383,10 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     // For quiz/assignment tabs, auto-save the lesson first if it has a title
     if ((value === 'quiz' || value === 'assignment' || value === 'video' || value === 'presentation') && !savedLessonId && title.trim()) {
       try {
-        await ensureLessonExists();
+        // Pass the newly-selected type explicitly: `contentType` state hasn't
+        // re-rendered yet at this point, so reading it here would still see
+        // the previous tab's value.
+        await ensureLessonExists(value as typeof contentType);
       } catch (err) {
         // Ignore - user hasn't entered title yet
       }
