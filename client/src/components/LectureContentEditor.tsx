@@ -677,9 +677,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
         .insert({
           lesson_id: lessonId as any,
           name: resourceName,
-          file_name: fileName as any,
           file_url: fileUrl as any,
-          file_type: fileType as any,
           file_size_mb: fileSize ? parseFloat((fileSize / (1024 * 1024)).toFixed(2)) : null as any,
           resource_type: (resourceFile ? 'file' : 'link') as any,
         });
