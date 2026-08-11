@@ -12,6 +12,13 @@ import { requireRole } from '../../middleware/roleProtection';
 const router = Router();
 
 // Validation schemas
+const createInstructorSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
 const instructorProfileSchema = z.object({
   bio: z.string().optional(),
   title: z.string().optional(),
@@ -49,6 +56,68 @@ async function logAdminAction(params: {
     // Don't throw - logging failure shouldn't break the main operation
   }
 }
+
+/**
+ * POST /api/admin/instructors
+ * Create a new instructor account
+ */
+router.post('/', requireSupabaseAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const adminId = req.user!.id;
+    const { firstName, lastName, email, password } = createInstructorSchema.parse(req.body);
+
+    const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { first_name: firstName, last_name: lastName },
+    });
+
+    if (signUpError || !authData?.user) {
+      const message = signUpError?.message || 'Failed to create instructor account';
+      const status = /already.*registered|already exists/i.test(message) ? 409 : 400;
+      return res.status(status).json({ error: message });
+    }
+
+    const { error: insertError } = await supabaseAdmin.from('users').upsert({
+      id: authData.user.id,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      role: 'instructor',
+      created_by_admin_id: adminId,
+    });
+
+    if (insertError) {
+      // Roll back the auth user so we don't leave an orphaned account behind
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(() => {});
+      throw insertError;
+    }
+
+    await logAdminAction({
+      adminId,
+      instructorId: authData.user.id,
+      actionType: 'CREATE_INSTRUCTOR',
+      resourceType: 'USER',
+      resourceId: authData.user.id,
+      details: { email, firstName, lastName },
+    });
+
+    res.status(201).json({
+      id: authData.user.id,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      role: 'instructor',
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid instructor data', details: error.errors });
+    }
+    console.error('Error creating instructor:', error);
+    res.status(500).json({ error: 'Failed to create instructor' });
+  }
+});
 
 /**
  * GET /api/admin/instructors

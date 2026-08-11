@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,38 @@ export default function AdminMembershipTable() {
   const [overrideReason, setOverrideReason] = useState("");
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { user } = useAuth();
+
+  const applyOverride = useMutation({
+    mutationFn: async () => {
+      if (!selectedMember) throw new Error("No member selected");
+      const { error: updateError } = await supabase
+        .from("members")
+        .update({ part: overrideLevel } as any)
+        .eq("id", selectedMember.id);
+      if (updateError) throw updateError;
+
+      const { error: historyError } = await supabase.from("level_history").insert({
+        user_id: selectedMember.user_id,
+        changed_from: selectedMember.part,
+        changed_to: overrideLevel,
+        changed_by: user?.id || "admin",
+        reason: overrideReason,
+      } as any);
+      if (historyError) throw historyError;
+    },
+    onSuccess: () => {
+      toast({ title: "Level override applied", description: `${selectedMember?.full_name} → ${LEVEL_LABELS[overrideLevel]}` });
+      qc.invalidateQueries({ queryKey: ["admin-members"] });
+      qc.invalidateQueries({ queryKey: ["admin-member-level-history", selectedMember?.user_id] });
+      setShowOverride(false);
+      setOverrideLevel("");
+      setOverrideReason("");
+    },
+    onError: (e: Error) => {
+      toast({ title: "Failed to apply override", description: e.message, variant: "destructive" });
+    },
+  });
 
   const { data: members = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-members"],
@@ -363,15 +396,10 @@ export default function AdminMembershipTable() {
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setShowOverride(false)}>Cancel</Button>
                         <Button
-                          disabled={!overrideLevel || !overrideReason || overrideLevel === selectedMember.part}
-                          onClick={() => {
-                            toast({ title: "Level override applied", description: `${selectedMember.full_name} → ${LEVEL_LABELS[overrideLevel]}` });
-                            setShowOverride(false);
-                            setOverrideLevel("");
-                            setOverrideReason("");
-                          }}
+                          disabled={!overrideLevel || !overrideReason || overrideLevel === selectedMember.part || applyOverride.isPending}
+                          onClick={() => applyOverride.mutate()}
                         >
-                          Apply Override
+                          {applyOverride.isPending ? "Applying..." : "Apply Override"}
                         </Button>
                       </DialogFooter>
                     </DialogContent>

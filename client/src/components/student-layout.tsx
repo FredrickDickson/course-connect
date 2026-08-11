@@ -11,9 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, User, BookOpen, Settings, LogOut } from "lucide-react";
+import { User, BookOpen, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MobileBottomNav from "@/components/mobile-bottom-nav";
+import NotificationBellMerged from "@/components/notification-bell-merged";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 
@@ -69,12 +70,7 @@ export default function StudentLayout({
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <Link href="/community/notifications">
-              <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                <Bell className="w-5 h-5 text-[#610000]" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </Button>
-            </Link>
+            <NotificationBellMerged />
 
             {/* Profile Dropdown Menu */}
             <DropdownMenu>

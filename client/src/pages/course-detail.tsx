@@ -31,6 +31,7 @@ import StudentSidebar from "@/components/student-sidebar";
 import { useEligibility } from "@/hooks/useEligibility";
 import { formatCoursePrice } from "@/lib/format-price";
 import { FormattedText } from "@/lib/format-text";
+import { formatDuration } from "@/components/learn/types";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -619,7 +620,21 @@ export default function CourseDetail() {
 
                     <TabsContent value="curriculum" className="mt-6">
                       <div className="space-y-4">
-                        <h3 className="text-xl font-semibold">Course Curriculum</h3>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <h3 className="text-xl font-semibold">Course Curriculum</h3>
+                          {course.modules && course.modules.length > 0 && (
+                            <span className="text-sm text-muted-foreground">
+                              {formatDuration(
+                                course.modules.reduce(
+                                  (total: number, module: any) =>
+                                    total + (module.lessons || []).reduce((s: number, l: any) => s + (l.duration_seconds || 0), 0),
+                                  0,
+                                ),
+                              )}{" "}
+                              total
+                            </span>
+                          )}
+                        </div>
                         {course.modules && course.modules.length > 0 ? (
                           <div className="space-y-4">
                             {course.modules.map((module: any, moduleIndex: number) => (
@@ -635,6 +650,9 @@ export default function CourseDetail() {
                                             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">{lessonIndex + 1}</div>
                                             <span className="text-sm">{lesson.title}</span>
                                           </div>
+                                          {lesson.duration_seconds ? (
+                                            <span className="text-xs text-muted-foreground">{formatDuration(lesson.duration_seconds)}</span>
+                                          ) : null}
                                         </div>
                                       ))}
                                     </div>

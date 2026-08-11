@@ -114,6 +114,9 @@ export default function AdminOverviewStats() {
     const yearWaitlist = waitlist.filter(
       (w: any) => new Date(w.created_at).getFullYear() === selectedYear
     );
+    const uniqueStudents = new Set(
+      confirmed.map((e: any) => e.email).filter(Boolean)
+    ).size;
 
     return {
       totalEnrollments: yearEnrollments.length,
@@ -122,6 +125,7 @@ export default function AdminOverviewStats() {
       revenue,
       totalCourses: yearCourses.length,
       liveCourses: publishedCourses.length,
+      uniqueStudents,
       waitlisted: yearWaitlist.length,
     };
   }, [yearEnrollments, yearCourses, waitlist, selectedYear]);
@@ -266,8 +270,8 @@ export default function AdminOverviewStats() {
           },
           {
             icon: TrendingUp,
-            label: "This Year Total",
-            value: stats.totalCourses,
+            label: "Unique Students",
+            value: stats.uniqueStudents,
             color: "text-purple-600",
           },
           {

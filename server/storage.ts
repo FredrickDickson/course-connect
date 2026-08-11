@@ -304,12 +304,6 @@ export interface IStorage {
     search?: string;
     role?: string;
   }): Promise<User[]>;
-  getCoursesForAdmin(filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    instructor?: string;
-  }): Promise<Course[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1571,27 +1565,6 @@ export class DatabaseStorage implements IStorage {
       query = query.or(
         `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`,
       );
-    }
-    query = query.order("created_at", { ascending: false });
-    if (filters?.page && filters?.limit) {
-      const from = (filters.page - 1) * filters.limit;
-      const to = from + filters.limit - 1;
-      query = query.range(from, to);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getCoursesForAdmin(filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    instructor?: string;
-  }): Promise<Course[]> {
-    let query = supabaseAdmin.from("courses").select("*");
-    if (filters?.instructor) {
-      query = query.eq("instructor_id", filters.instructor);
     }
     query = query.order("created_at", { ascending: false });
     if (filters?.page && filters?.limit) {

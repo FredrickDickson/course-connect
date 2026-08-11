@@ -10,6 +10,14 @@ import { Trash2, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { upsertAssignment, deleteAssignmentByLesson } from '@/lib/curriculum-mutations';
 
+// See QuizBuilder.tsx's parseClampedInt for why this exists: clamping/defaulting on
+// every keystroke makes a controlled numeric input impossible to clear while editing.
+function parseClampedInt(raw: string, min: number, max: number, fallback: number): number {
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 interface AssignmentBuilderProps {
   lessonId: string;
   initialAssignment?: {
@@ -29,7 +37,7 @@ export function AssignmentBuilder({ lessonId, initialAssignment, onSaved, onDele
   const [title, setTitle] = useState(initialAssignment?.title || '');
   const [description, setDescription] = useState(initialAssignment?.description || '');
   const [instructions, setInstructions] = useState(initialAssignment?.instructions || '');
-  const [maxPoints, setMaxPoints] = useState(initialAssignment?.maxPoints || 100);
+  const [maxPoints, setMaxPoints] = useState(String(initialAssignment?.maxPoints ?? 100));
   const [dueDate, setDueDate] = useState(initialAssignment?.dueDate || '');
   const [allowLateSubmission, setAllowLateSubmission] = useState(initialAssignment?.allowLateSubmission ?? true);
   const [saving, setSaving] = useState(false);
@@ -62,7 +70,7 @@ export function AssignmentBuilder({ lessonId, initialAssignment, onSaved, onDele
         title,
         description,
         instructions,
-        maxPoints,
+        maxPoints: parseClampedInt(maxPoints, 1, 100000, 100),
         dueDate: dueDate || null,
         allowLateSubmission,
       });
@@ -139,7 +147,8 @@ export function AssignmentBuilder({ lessonId, initialAssignment, onSaved, onDele
                 type="number"
                 min="1"
                 value={maxPoints}
-                onChange={(e) => setMaxPoints(parseInt(e.target.value) || 100)}
+                onChange={(e) => setMaxPoints(e.target.value)}
+                onBlur={() => setMaxPoints(String(parseClampedInt(maxPoints, 1, 100000, 100)))}
                 data-testid="input-max-points"
               />
             </div>

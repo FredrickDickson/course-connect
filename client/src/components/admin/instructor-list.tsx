@@ -4,24 +4,34 @@
  */
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Edit, 
-  BookOpen, 
-  Users, 
-  Plus, 
-  Eye, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  Edit,
+  BookOpen,
+  Users,
+  Plus,
+  Eye,
   Shield,
   CheckCircle
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Instructor {
   id: string;
@@ -40,6 +50,15 @@ interface Instructor {
 
 export default function InstructorList() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddInstructor, setShowAddInstructor] = useState(false);
+  const [newInstructor, setNewInstructor] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data: instructorsData, isLoading } = useQuery({
     queryKey: ["admin-instructors", searchTerm],
@@ -47,7 +66,7 @@ export default function InstructorList() {
       const params = new URLSearchParams();
       if (searchTerm) params.append("search", searchTerm);
       params.append("limit", "100");
-      
+
       const res = await apiRequest("GET", `/api/admin/instructors?${params}`);
       return await res.json();
     },
@@ -55,6 +74,26 @@ export default function InstructorList() {
   });
 
   const instructors = instructorsData?.instructors || [];
+
+  const createInstructor = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/instructors", newInstructor);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to create instructor");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-instructors"] });
+      toast({ title: "Instructor created" });
+      setNewInstructor({ firstName: "", lastName: "", email: "", password: "" });
+      setShowAddInstructor(false);
+    },
+    onError: (e: Error) => {
+      toast({ title: "Failed to create instructor", description: e.message, variant: "destructive" });
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -66,10 +105,74 @@ export default function InstructorList() {
             Manage instructor profiles and create content on their behalf
           </p>
         </div>
-        <Button className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Instructor
-        </Button>
+        <Dialog open={showAddInstructor} onOpenChange={setShowAddInstructor}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Instructor
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Instructor</DialogTitle>
+              <DialogDescription>
+                Creates an instructor account directly. They can sign in with the email and password below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="instFirstName">First Name</Label>
+                  <Input
+                    id="instFirstName"
+                    value={newInstructor.firstName}
+                    onChange={(e) => setNewInstructor((p) => ({ ...p, firstName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="instLastName">Last Name</Label>
+                  <Input
+                    id="instLastName"
+                    value={newInstructor.lastName}
+                    onChange={(e) => setNewInstructor((p) => ({ ...p, lastName: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="instEmail">Email</Label>
+                <Input
+                  id="instEmail"
+                  type="email"
+                  value={newInstructor.email}
+                  onChange={(e) => setNewInstructor((p) => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="instPassword">Password</Label>
+                <Input
+                  id="instPassword"
+                  type="password"
+                  value={newInstructor.password}
+                  onChange={(e) => setNewInstructor((p) => ({ ...p, password: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters.</p>
+              </div>
+              <Button
+                className="w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white"
+                disabled={
+                  createInstructor.isPending ||
+                  !newInstructor.firstName ||
+                  !newInstructor.lastName ||
+                  !newInstructor.email ||
+                  newInstructor.password.length < 8
+                }
+                onClick={() => createInstructor.mutate()}
+              >
+                {createInstructor.isPending ? "Creating..." : "Create Instructor"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search */}
@@ -184,7 +287,7 @@ export default function InstructorList() {
                     className="w-full border-[#d4c5b0] hover:bg-[#f5f3ed]"
                     asChild
                   >
-                    <Link href={`/admin/instructors/${instructor.id}/courses`}>
+                    <Link href={`/admin?tab=courses&instructor=${instructor.id}`}>
                       <BookOpen className="w-3 h-3 mr-1" />
                       Courses
                     </Link>

@@ -106,7 +106,7 @@ export default function VideoPlayerPage() {
       const ids = allLessons.map(l => l.id);
       if (!ids.length) return [];
       const { data, error } = await supabase.from("progress")
-        .select("lesson_id, completed, watch_time_seconds")
+        .select("lesson_id, completed, watch_time_seconds, slide_index")
         .eq("user_id", user!.id).in("lesson_id", ids);
       if (error) throw error;
       return (data || []) as ProgressRow[];
@@ -141,21 +141,27 @@ export default function VideoPlayerPage() {
   }, [course, lessonId, progress, isAuthenticated, courseId, navigate]);
 
   const upsertProgress = useMutation({
-    mutationFn: async ({ id, completed, watch }: { id: string; completed: boolean; watch: number }) => {
-      const { error } = await supabase.from("progress").upsert({
-        user_id: user!.id, lesson_id: id, completed, watch_time_seconds: Math.floor(watch),
+    mutationFn: async ({ id, completed, watchTimeSeconds, slideIndex }: { id: string; completed: boolean; watchTimeSeconds?: number; slideIndex?: number }) => {
+      const payload: Record<string, any> = {
+        user_id: user!.id, lesson_id: id, completed,
         last_watched_at: new Date().toISOString(),
-      }, { onConflict: "user_id,lesson_id" });
+      };
+      if (watchTimeSeconds !== undefined) payload.watch_time_seconds = Math.floor(watchTimeSeconds);
+      if (slideIndex !== undefined) payload.slide_index = Math.floor(slideIndex);
+      const { error } = await supabase.from("progress").upsert(payload, { onConflict: "user_id,lesson_id" });
       if (error) throw error;
     },
-    onMutate: async ({ id, completed, watch }) => {
+    onMutate: async ({ id, completed, watchTimeSeconds, slideIndex }) => {
       // Optimistic update so checkbox/progress tick immediately
       const key = ["learn-progress", courseId, user?.id];
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<ProgressRow[]>(key) || [];
+      const patch: Partial<ProgressRow> = { completed };
+      if (watchTimeSeconds !== undefined) patch.watch_time_seconds = Math.floor(watchTimeSeconds);
+      if (slideIndex !== undefined) patch.slide_index = Math.floor(slideIndex);
       const next = prev.some(p => p.lesson_id === id)
-        ? prev.map(p => p.lesson_id === id ? { ...p, completed, watch_time_seconds: Math.floor(watch) } : p)
-        : [...prev, { lesson_id: id, completed, watch_time_seconds: Math.floor(watch) } as ProgressRow];
+        ? prev.map(p => p.lesson_id === id ? { ...p, ...patch } : p)
+        : [...prev, { lesson_id: id, watch_time_seconds: null, slide_index: null, ...patch } as ProgressRow];
       qc.setQueryData(key, next);
       return { prev };
     },
@@ -220,17 +226,33 @@ export default function VideoPlayerPage() {
   const completedCount = progress.filter(p => p.completed).length;
 
   const goToLesson = (id: string) => navigate(`/learn/${courseId}/${id}`);
-  const handleToggleComplete = (id: string, completed: boolean) =>
-    upsertProgress.mutate({ id, completed, watch: progress.find(p => p.lesson_id === id)?.watch_time_seconds || 0 });
+  const handleToggleComplete = (id: string, completed: boolean) => {
+    const existing = progress.find(p => p.lesson_id === id);
+    upsertProgress.mutate({
+      id, completed,
+      watchTimeSeconds: existing?.watch_time_seconds ?? undefined,
+      slideIndex: existing?.slide_index ?? undefined,
+    });
+  };
 
   const resumeSeconds = currentLesson
     ? (progress.find(p => p.lesson_id === currentLesson.id)?.watch_time_seconds || 0)
+    : 0;
+  const resumeSlideIndex = currentLesson
+    ? (progress.find(p => p.lesson_id === currentLesson.id)?.slide_index || 0)
     : 0;
 
   // Reset autosave clock when switching lesson; show resume toast once.
   useEffect(() => {
     lastSavedSec.current = 0;
-    if (currentLesson && resumeSeconds > 5 && resumeToastShown.current !== currentLesson.id) {
+    if (!currentLesson || resumeToastShown.current === currentLesson.id) return;
+    const isPresentation = (currentLesson.content_type || "").toLowerCase() === "presentation";
+    if (isPresentation) {
+      if (resumeSlideIndex > 0) {
+        resumeToastShown.current = currentLesson.id;
+        toast({ title: "Resumed playback", description: `Continuing from slide ${resumeSlideIndex + 1}` });
+      }
+    } else if (resumeSeconds > 5) {
       resumeToastShown.current = currentLesson.id;
       const mm = Math.floor(resumeSeconds / 60);
       const ss = String(Math.floor(resumeSeconds % 60)).padStart(2, "0");
@@ -245,7 +267,7 @@ export default function VideoPlayerPage() {
       const dur = videoRef.current?.duration || 0;
       if (!currentLesson || !cur) return;
       try {
-        upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
+        upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watchTimeSeconds: cur });
       } catch {}
     };
     window.addEventListener("beforeunload", onUnload);
@@ -343,10 +365,10 @@ export default function VideoPlayerPage() {
                   startAt={resumeSeconds}
                   onTimeUpdate={(cur: number, dur: number) => {
                     if (!cur) return;
-                    upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watch: cur });
+                    upsertProgress.mutate({ id: currentLesson.id, completed: dur ? cur >= dur * 0.9 : false, watchTimeSeconds: cur });
                   }}
                   onEnded={() => {
-                    upsertProgress.mutate({ id: currentLesson.id, completed: true, watch: videoRef.current?.duration || 0 });
+                    upsertProgress.mutate({ id: currentLesson.id, completed: true, watchTimeSeconds: videoRef.current?.duration || 0 });
                     if (nextLesson) setShowUpNext(true);
                   }}
                   onTheatreModeChange={setTheatreMode}
@@ -373,10 +395,10 @@ export default function VideoPlayerPage() {
           ) : lessonType === "presentation" ? (
             <PresentationStage
               lesson={currentLesson}
-              initialSlide={resumeSeconds}
+              initialSlide={resumeSlideIndex}
               completed={!!lessonProgress?.completed}
               onProgress={(slideIndex, completed) =>
-                upsertProgress.mutate({ id: currentLesson.id, completed, watch: slideIndex })
+                upsertProgress.mutate({ id: currentLesson.id, completed, slideIndex })
               }
             />
           ) : null}

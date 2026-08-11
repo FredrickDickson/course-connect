@@ -11,11 +11,21 @@ import { useToast } from '@/hooks/use-toast';
 import { QuizBulkImport } from '@/components/QuizBulkImport';
 import { upsertQuiz, deleteQuizByLesson } from '@/lib/curriculum-mutations';
 
+// Clamps a raw text-input value to an integer range, falling back when empty/invalid.
+// Used on blur so the field can be freely cleared while typing without snapping back
+// to the default on every keystroke (parseInt('') || default treats mid-edit blank
+// the same as an invalid value, forcing the input back to non-empty immediately).
+function parseClampedInt(raw: string, min: number, max: number, fallback: number): number {
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 interface QuizQuestion {
   id: string;
   question: string;
   questionType: 'multiple_choice' | 'true_false' | 'fill_blank';
-  points: number;
+  points: number | '';
   order?: number;
   answers: QuizAnswer[];
   correctAnswer?: string; // For fill-in-the-blank
@@ -46,8 +56,8 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [description, setDescription] = useState(initialQuiz?.description || '');
   const [timeLimit, setTimeLimit] = useState(initialQuiz?.timeLimit?.toString() || '');
-  const [passingScore, setPassingScore] = useState(initialQuiz?.passingScore || 80);
-  const [maxAttempts, setMaxAttempts] = useState(initialQuiz?.maxAttempts || 3);
+  const [passingScore, setPassingScore] = useState(String(initialQuiz?.passingScore ?? 80));
+  const [maxAttempts, setMaxAttempts] = useState(String(initialQuiz?.maxAttempts ?? 3));
   const [questions, setQuestions] = useState<QuizQuestion[]>(initialQuiz?.questions || []);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -169,9 +179,12 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
       return;
     }
 
-    // Validate each question
+    // Validate each question. Field values are guarded with `|| ''` since malformed
+    // data (e.g. from a bulk import that didn't match the expected shape) could leave
+    // question/answer text as undefined — that must degrade to a normal validation
+    // toast here, not an uncaught TypeError that silently aborts the save.
     for (const question of questions) {
-      if (!question.question.trim()) {
+      if (!(question.question || '').trim()) {
         toast({
           title: 'Validation Error',
           description: 'All questions must have text',
@@ -181,7 +194,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
       }
 
       if (question.questionType === 'fill_blank') {
-        if (!question.correctAnswer?.trim()) {
+        if (!(question.correctAnswer || '').trim()) {
           toast({
             title: 'Validation Error',
             description: 'Fill-in-the-blank questions must have a correct answer',
@@ -190,7 +203,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
           return;
         }
       } else {
-        if (question.answers.length < 2) {
+        if ((question.answers || []).length < 2) {
           toast({
             title: 'Validation Error',
             description: 'Each question must have at least 2 answer options',
@@ -210,7 +223,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
         }
 
         for (const answer of question.answers) {
-          if (!answer.answer.trim()) {
+          if (!(answer.answer || '').trim()) {
             toast({
               title: 'Validation Error',
               description: 'All answer options must have text',
@@ -228,12 +241,12 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
         title,
         description,
         timeLimit: timeLimit ? parseInt(timeLimit) : null,
-        passingScore,
-        maxAttempts,
+        passingScore: parseClampedInt(passingScore, 0, 100, 80),
+        maxAttempts: parseClampedInt(maxAttempts, 1, 100, 3),
         questions: questions.map((q, index) => ({
           question: q.question,
           questionType: q.questionType,
-          points: q.points,
+          points: typeof q.points === 'number' ? q.points : parseClampedInt(String(q.points), 1, 1000, 1),
           order: index,
           correctAnswer: q.correctAnswer,
           answers: q.answers,
@@ -325,7 +338,8 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
                 min="0"
                 max="100"
                 value={passingScore}
-                onChange={(e) => setPassingScore(parseInt(e.target.value) || 80)}
+                onChange={(e) => setPassingScore(e.target.value)}
+                onBlur={() => setPassingScore(String(parseClampedInt(passingScore, 0, 100, 80)))}
                 data-testid="input-passing-score"
               />
             </div>
@@ -337,7 +351,8 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
                 type="number"
                 min="1"
                 value={maxAttempts}
-                onChange={(e) => setMaxAttempts(parseInt(e.target.value) || 3)}
+                onChange={(e) => setMaxAttempts(e.target.value)}
+                onBlur={() => setMaxAttempts(String(parseClampedInt(maxAttempts, 1, 100, 3)))}
                 data-testid="input-max-attempts"
               />
             </div>
@@ -400,7 +415,13 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
                           type="number"
                           min="1"
                           value={question.points}
-                          onChange={(e) => updateQuestion(question.id, 'points', parseInt(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === '') { updateQuestion(question.id, 'points', ''); return; }
+                            const n = parseInt(v, 10);
+                            updateQuestion(question.id, 'points', Number.isNaN(n) ? '' : n);
+                          }}
+                          onBlur={() => updateQuestion(question.id, 'points', parseClampedInt(String(question.points), 1, 1000, 1))}
                           data-testid={`input-points-${qIndex}`}
                         />
                       </div>

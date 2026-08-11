@@ -89,6 +89,7 @@ const CourseDetail = lazy(() => import("@/pages/course-detail"));
 const CommunityPost = lazy(() => import("@/pages/community-post"));
 const Onboarding = lazy(() => import("@/pages/onboarding"));
 const Profile = lazy(() => import("@/pages/profile"));
+const NotificationSettings = lazy(() => import("@/pages/notification-settings"));
 const QuizPage = lazy(() => import("@/pages/quiz"));
 
 // Wrapped components with Suspense for ProtectedRoute
@@ -150,6 +151,11 @@ const LazyOnboarding = () => (
 const LazyProfile = () => (
   <Suspense fallback={<PageLoader />}>
     <Profile />
+  </Suspense>
+);
+const LazyNotificationSettings = () => (
+  <Suspense fallback={<PageLoader />}>
+    <NotificationSettings />
   </Suspense>
 );
 const LazyQuizPage = () => (
@@ -245,6 +251,7 @@ function Router() {
 
       {/* Protected routes - using ProtectedRoute for proper redirection and role checking */}
       <ProtectedRoute path="/profile" component={LazyProfile} />
+      <ProtectedRoute path="/notification-settings" component={LazyNotificationSettings} />
       <ProtectedRoute path="/courses" component={Courses} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/programs" component={Programs} />

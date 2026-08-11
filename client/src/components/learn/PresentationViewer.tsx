@@ -87,10 +87,17 @@ export function PresentationViewer({
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
     if (!context) return;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
 
-    const renderTask = page.render({ canvasContext: context, viewport });
+    // Render at device-pixel resolution and pin the CSS size to the fit size,
+    // otherwise high-DPR (mobile) screens upscale a 1x backing store and slides look blurry.
+    const outputScale = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+    const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
+
+    const renderTask = page.render({ canvasContext: context, viewport, transform });
     renderTaskRef.current = renderTask;
     try {
       await renderTask.promise;

@@ -79,82 +79,31 @@ export async function fetchQuizForLesson(lessonId: string) {
 }
 
 export async function upsertQuiz(lessonId: string, input: QuizInput) {
-  // Delete existing quiz (cascade removes questions and answers)
-  const { data: existing } = await supabase
-    .from("quizzes")
-    .select("id")
-    .eq("lesson_id", lessonId)
-    .maybeSingle();
-
-  if (existing) {
-    const { error: delErr } = await supabase
-      .from("quizzes")
-      .delete()
-      .eq("id", existing.id);
-    if (delErr) throw delErr;
-  }
-
-  const { data: quiz, error: quizErr } = await supabase
-    .from("quizzes")
-    .insert({
-      lesson_id: lessonId,
-      title: input.title,
-      description: input.description || null,
-      time_limit_minutes: input.timeLimit || null,
-      passing_score: input.passingScore ?? 80,
-      max_attempts: input.maxAttempts ?? 3,
-    })
-    .select("id")
-    .single();
-  if (quizErr) throw quizErr;
-
-  const questionsToInsert = (input.questions || []).map((q, idx) => ({
-    quiz_id: quiz.id,
+  // A single RPC call is one DB transaction, so a failure partway through (bad row,
+  // RLS denial, etc.) rolls back everything instead of leaving a broken partial quiz
+  // behind, which is what the previous four-separate-calls implementation risked.
+  const questionsPayload = (input.questions || []).map((q) => ({
     question: q.question,
-    question_type: q.questionType,
+    questionType: q.questionType,
     points: q.points ?? 1,
-    order: q.order ?? idx,
+    correctAnswer: q.correctAnswer,
+    answers:
+      q.questionType === "fill_blank"
+        ? []
+        : (q.answers || []).map((a) => ({ answer: a.answer, isCorrect: !!a.isCorrect })),
   }));
 
-  if (questionsToInsert.length === 0) return quiz.id;
-
-  const { data: insertedQuestions, error: qErr } = await supabase
-    .from("quiz_questions")
-    .insert(questionsToInsert)
-    .select("id");
-  if (qErr) throw qErr;
-
-  const answerRows: any[] = [];
-  insertedQuestions.forEach((row: any, i: number) => {
-    const src = input.questions[i];
-    if (src.questionType === "fill_blank") {
-      const v = (src.correctAnswer || "").trim();
-      if (v) {
-        answerRows.push({
-          question_id: row.id,
-          answer: v,
-          is_correct: true,
-          order: 0,
-        });
-      }
-    } else {
-      (src.answers || []).forEach((a, idx) =>
-        answerRows.push({
-          question_id: row.id,
-          answer: a.answer,
-          is_correct: !!a.isCorrect,
-          order: a.order ?? idx,
-        }),
-      );
-    }
+  const { data, error } = await (supabase as any).rpc("upsert_quiz", {
+    _lesson_id: lessonId,
+    _title: input.title,
+    _description: input.description || null,
+    _time_limit_minutes: input.timeLimit || null,
+    _passing_score: input.passingScore ?? 80,
+    _max_attempts: input.maxAttempts ?? 3,
+    _questions: questionsPayload,
   });
-
-  if (answerRows.length > 0) {
-    const { error: aErr } = await supabase.from("quiz_answers").insert(answerRows);
-    if (aErr) throw aErr;
-  }
-
-  return quiz.id;
+  if (error) throw error;
+  return data as string;
 }
 
 export async function deleteQuizByLesson(lessonId: string) {

@@ -108,6 +108,7 @@ import {
 } from "@shared/schema";
 import { validateAndExtractVideoUrl } from "./utils/videoValidator";
 import { sanitizeRichText } from "./utils/sanitizeHtml";
+import { sendRawEmail } from "./utils/email";
 import { z } from "zod";
 
 
@@ -3847,38 +3848,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.get(
-
-    "/api/admin/courses",
-
-    requireSupabaseAuth,
-
-    requireRole("admin"),
-
-    asyncHandler(async (req: Request, res: Response) => {
-
-      const { page = "1", limit = "20", status, instructor } = req.query;
-
-      const courses = await storage.getCoursesForAdmin({
-
-        page: parseInt(page as string),
-
-        limit: parseInt(limit as string),
-
-        status: status as string,
-
-        instructor: instructor as string,
-
-      });
-
-      res.json(courses);
-
-    }),
-
-  );
-
-
-
   app.put(
 
     "/api/admin/users/:id/role",
@@ -3911,7 +3880,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   );
 
+  app.post(
+    "/api/admin/users/bulk-reminder",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const bulkReminderSchema = z.object({
+        userIds: z.array(z.string()).min(1).max(500),
+      });
+      const { userIds } = bulkReminderSchema.parse(req.body);
 
+      const { data: recipients, error } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .in("id", userIds);
+      if (error) throw error;
+
+      const emails = (recipients || []).map((r) => r.email).filter(Boolean);
+      if (emails.length === 0) {
+        return res.json({ sent: 0, failed: 0, total: 0 });
+      }
+
+      const html = `<p>Hi,</p><p>Your CIMA Learn profile is incomplete. Please take a moment to finish setting it up so we can personalize your experience.</p><p><a href="${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/profile">Complete your profile</a></p>`;
+
+      let sent = 0;
+      let failed = 0;
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const result = await sendRawEmail({ to: batch, subject: "Complete your CIMA Learn profile", html });
+        if (result.success) sent += batch.length;
+        else failed += batch.length;
+      }
+
+      res.json({ sent, failed, total: emails.length });
+    }),
+  );
+
+  app.post(
+    "/api/admin/courses/:id/issue-certificates",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id: courseId } = req.params;
+
+      const { data: course, error: courseError } = await supabaseAdmin
+        .from("courses")
+        .select("id, title")
+        .eq("id", courseId)
+        .single();
+      if (courseError || !course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const { data: confirmedOrders, error: ordersError } = await supabaseAdmin
+        .from("orders")
+        .select("user_id")
+        .eq("course_id", courseId)
+        .eq("status", "completed");
+      if (ordersError) throw ordersError;
+
+      const userIds = Array.from(
+        new Set((confirmedOrders || []).map((o) => o.user_id).filter(Boolean)),
+      );
+      if (userIds.length === 0) {
+        return res.json({ issued: 0, skipped: 0, total: 0 });
+      }
+
+      const { data: existingCerts, error: certsError } = await supabaseAdmin
+        .from("certifications")
+        .select("id, user_id")
+        .eq("course_id", courseId)
+        .in("user_id", userIds);
+      if (certsError) throw certsError;
+
+      const alreadyIssued = new Set((existingCerts || []).map((c) => c.user_id));
+      const toIssue = userIds.filter((uid) => !alreadyIssued.has(uid));
+
+      let issued = 0;
+      for (const userId of toIssue) {
+        const cert = await storage.createCertification({
+          userId,
+          courseId,
+          certificateUrl: null,
+        });
+        issued += 1;
+
+        const { data: recipient } = await supabaseAdmin
+          .from("users")
+          .select("email, first_name")
+          .eq("id", userId)
+          .single();
+        if (recipient?.email) {
+          const certUrl = `${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/certificates/completion/${cert.id}`;
+          await sendRawEmail({
+            to: recipient.email,
+            subject: `Your Certificate is Ready — ${course.title}`,
+            html: `<p>Hi ${recipient.first_name || "there"},</p><p>Your certificate of completion for <strong>${course.title}</strong> is ready.</p><p><a href="${certUrl}">View your certificate</a></p>`,
+          }).catch((err) => console.error("Failed to send certificate email:", err));
+        }
+      }
+
+      res.json({ issued, skipped: alreadyIssued.size, total: userIds.length });
+    }),
+  );
+
+  app.post(
+    "/api/admin/courses/:id/bulk-email",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id: courseId } = req.params;
+      const bulkEmailSchema = z.object({
+        subject: z.string().trim().min(1).max(300),
+        body: z.string().trim().min(1).max(20000),
+        recipientFilter: z.enum(["confirmed", "pending", "all"]).default("confirmed"),
+      });
+      const { subject, body, recipientFilter } = bulkEmailSchema.parse(req.body);
+
+      const { data: course, error: courseError } = await supabaseAdmin
+        .from("courses")
+        .select("id, title")
+        .eq("id", courseId)
+        .single();
+      if (courseError || !course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      let ordersQuery = supabaseAdmin
+        .from("orders")
+        .select("user_id, status")
+        .eq("course_id", courseId);
+      if (recipientFilter === "confirmed") {
+        ordersQuery = ordersQuery.eq("status", "completed");
+      } else if (recipientFilter === "pending") {
+        ordersQuery = ordersQuery.eq("status", "pending");
+      }
+      const { data: orders, error: ordersError } = await ordersQuery;
+      if (ordersError) throw ordersError;
+
+      const userIds = Array.from(
+        new Set((orders || []).map((o) => o.user_id).filter(Boolean)),
+      );
+      if (userIds.length === 0) {
+        return res.json({ sent: 0, failed: 0, total: 0 });
+      }
+
+      const { data: recipients, error: usersError } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .in("id", userIds);
+      if (usersError) throw usersError;
+
+      const emails = (recipients || []).map((r) => r.email).filter(Boolean);
+      const html = `<div>${body.replace(/\n/g, "<br/>")}</div>`;
+
+      let sent = 0;
+      let failed = 0;
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const result = await sendRawEmail({ to: batch, subject, html });
+        if (result.success) sent += batch.length;
+        else failed += batch.length;
+      }
+
+      res.json({ sent, failed, total: emails.length });
+    }),
+  );
 
   // ============================================================================
 

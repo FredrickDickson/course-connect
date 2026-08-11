@@ -321,7 +321,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     }
   };
 
-  const handleMuxUploadComplete = (assetId: string, playbackId: string) => {
+  const handleMuxUploadComplete = (assetId: string, playbackId: string, durationSeconds?: number) => {
     // The lessons row is already persisted server-side by this point: MuxUploader only
     // calls onUploadComplete after mux-asset-status confirms the DB record is ready
     // (webhook, or the polling endpoint's own fallback write). Writing it again here
@@ -331,6 +331,7 @@ export function LectureContentEditor({ open, onOpenChange, lesson, courseId, mod
     setMuxAssetId(assetId);
     setMuxPlaybackId(playbackId);
     setMuxStatus('ready');
+    if (durationSeconds) setVideoDuration(Math.round(durationSeconds));
   };
 
   const handleMuxUploadError = (errorMessage: string) => {

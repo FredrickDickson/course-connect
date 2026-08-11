@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, ShoppingCart, Bell, ChevronDown, User, Settings, LogOut } from "lucide-react";
+import { Search, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import NotificationBellMerged from "@/components/notification-bell-merged";
 
 interface TopNavbarProps {
   onSearch?: (query: string) => void;
@@ -79,30 +79,8 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
             </Button>
           </Link>
 
-          {/* Shopping Cart */}
-          <Link href="/courses">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-[#4a3828] hover:text-[#610000] hover:bg-[#faf9f6]"
-            >
-              <ShoppingCart className="w-5 h-5" />
-            </Button>
-          </Link>
-
           {/* Notifications */}
-          <Link href="/community/notifications">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-[#4a3828] hover:text-[#610000] hover:bg-[#faf9f6]"
-            >
-              <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-[#610000] text-white text-[10px] rounded-full">
-                3
-              </Badge>
-            </Button>
-          </Link>
+          <NotificationBellMerged />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>

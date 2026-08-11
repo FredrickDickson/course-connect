@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface MuxUploaderProps {
   lessonId: string;
-  onUploadComplete: (muxAssetId: string, playbackId: string) => void;
+  onUploadComplete: (muxAssetId: string, playbackId: string, durationSeconds?: number) => void;
   onError: (error: string) => void;
   className?: string;
 }
@@ -162,7 +162,8 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
             });
             const playbackId = muxAsset?.mux_playback_id || asset?.playback_ids?.[0]?.id || '';
             const finalAssetId = muxAsset?.mux_asset_id || asset?.id || assetId || '';
-            onUploadComplete(finalAssetId, playbackId);
+            const durationSeconds = muxAsset?.duration_seconds ?? asset?.duration ?? undefined;
+            onUploadComplete(finalAssetId, playbackId, durationSeconds);
             setIsUploading(false);
           } else if (dbErrored || apiErrored) {
             clearInterval(pollInterval);

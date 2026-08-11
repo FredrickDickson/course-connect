@@ -3,9 +3,10 @@
  * per-course enrollment list, lifecycle management, capacity monitoring
  */
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ interface CourseWithEnrollments {
   course_status?: string | null;
   duration_hours?: number | null;
   template_id?: string | null;
+  instructor_id?: string | null;
   instructor?: { first_name: string | null; last_name: string | null } | null;
   confirmedCount: number;
   pendingCount: number;
@@ -103,6 +105,8 @@ export default function AdminCoursesTable() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  const instructorFilter = new URLSearchParams(searchString).get("instructor");
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<CourseTab>("all");
   const [selectedCourse, setSelectedCourse] = useState<CourseWithEnrollments | null>(null);
@@ -157,9 +161,10 @@ export default function AdminCoursesTable() {
   const getEffectiveStatus = (c: CourseWithEnrollments) => c.course_status || (c.is_published ? "registration_open" : "draft");
 
   const filtered = courses.filter((c) => {
+    const matchesInstructor = !instructorFilter || c.instructor_id === instructorFilter;
     const matchesSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.cohort_id?.toLowerCase().includes(search.toLowerCase());
-    if (tab === "all") return matchesSearch;
-    return matchesSearch && getEffectiveStatus(c) === tab;
+    if (tab === "all") return matchesInstructor && matchesSearch;
+    return matchesInstructor && matchesSearch && getEffectiveStatus(c) === tab;
   });
 
   const countByStatus = (status: string) => courses.filter((c) => getEffectiveStatus(c) === status).length;
@@ -188,6 +193,51 @@ export default function AdminCoursesTable() {
     },
   });
 
+  const issueCertificates = useMutation({
+    mutationFn: async (courseId: string) => {
+      const res = await apiRequest("POST", `/api/admin/courses/${courseId}/issue-certificates`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to issue certificates");
+      }
+      return res.json() as Promise<{ issued: number; skipped: number; total: number }>;
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Certificates issued",
+        description: `${result.issued} new certificate${result.issued === 1 ? "" : "s"} issued, ${result.skipped} already had one.`,
+      });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Failed to issue certificates", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const sendBulkEmail = useMutation({
+    mutationFn: async () => {
+      if (!bulkEmailCourse) throw new Error("No course selected");
+      const res = await apiRequest("POST", `/api/admin/courses/${bulkEmailCourse.id}/bulk-email`, {
+        subject: emailSubject,
+        body: emailBody,
+        recipientFilter: "confirmed",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to send email");
+      }
+      return res.json() as Promise<{ sent: number; failed: number; total: number }>;
+    },
+    onSuccess: (result) => {
+      toast({ title: "Email sent", description: `Sent to ${result.sent} of ${result.total} recipients.` });
+      setBulkEmailCourse(null);
+      setEmailSubject("");
+      setEmailBody("");
+    },
+    onError: (e: Error) => {
+      toast({ title: "Failed to send email", description: e.message, variant: "destructive" });
+    },
+  });
+
   const exportCourseCSV = (courseId: string, courseTitle: string) => {
     const courseEnr = allEnrollments.filter((e: any) => e.course_id === courseId);
     const headers = ["Name", "Email", "Ticket", "Amount", "Status", "Booking Ref", "Date"];
@@ -213,6 +263,17 @@ export default function AdminCoursesTable() {
         <h2 className="text-2xl font-bold">Course Management</h2>
         <Badge variant="secondary">{courses.length} courses</Badge>
       </div>
+
+      {instructorFilter && (
+        <div className="flex items-center justify-between bg-muted/50 border rounded-lg px-3 py-2 text-sm">
+          <span>
+            Showing {filtered.length} course{filtered.length !== 1 ? "s" : ""} for this instructor
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setLocation("/admin?tab=courses")}>
+            Clear filter
+          </Button>
+        </div>
+      )}
 
       {/* Status Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as CourseTab)}>
@@ -317,7 +378,10 @@ export default function AdminCoursesTable() {
                           {effectiveStatus === "completed" && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => toast({ title: "Certificate generation", description: "Certificates will be generated for all confirmed participants." })}>
+                              <DropdownMenuItem
+                                disabled={issueCertificates.isPending}
+                                onClick={() => issueCertificates.mutate(c.id)}
+                              >
                                 <Award className="h-4 w-4 mr-2" /> Issue Certificates
                               </DropdownMenuItem>
                             </>
@@ -506,7 +570,13 @@ export default function AdminCoursesTable() {
                       <Eye className="w-3.5 h-3.5 mr-1.5" /> Preview Public Page
                     </Button>
                     {getEffectiveStatus(selectedCourse) === "completed" && (
-                      <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => toast({ title: "Certificates queued for generation" })}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        disabled={issueCertificates.isPending}
+                        onClick={() => issueCertificates.mutate(selectedCourse.id)}
+                      >
                         <Award className="w-3.5 h-3.5 mr-1.5" /> Issue Certificates
                       </Button>
                     )}
@@ -562,12 +632,15 @@ export default function AdminCoursesTable() {
           <div className="space-y-4">
             <div><label className="text-sm font-medium">Subject</label><Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Email subject..." /></div>
             <div><label className="text-sm font-medium">Body</label><Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} placeholder="Write your message..." /></div>
-            <p className="text-xs text-muted-foreground">Sends to all confirmed enrollees. Requires configured email domain.</p>
+            <p className="text-xs text-muted-foreground">Sends to all confirmed enrollees.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkEmailCourse(null)}>Cancel</Button>
-            <Button onClick={() => { toast({ title: "Email sending requires email domain setup" }); setBulkEmailCourse(null); }}>
-              <Mail className="h-4 w-4 mr-2" /> Send
+            <Button
+              disabled={sendBulkEmail.isPending || !emailSubject.trim() || !emailBody.trim()}
+              onClick={() => sendBulkEmail.mutate()}
+            >
+              <Mail className="h-4 w-4 mr-2" /> {sendBulkEmail.isPending ? "Sending..." : "Send"}
             </Button>
           </DialogFooter>
         </DialogContent>

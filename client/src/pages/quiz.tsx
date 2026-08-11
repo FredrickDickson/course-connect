@@ -152,19 +152,26 @@ export default function QuizPage() {
   const { data: quiz = null, isLoading: quizLoading } = useQuery<any>({
     queryKey: ["quiz", quizId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: quizRow, error } = await supabase
         .from("quizzes")
-        .select(
-          `
-          *,
-          questions:quiz_questions!quiz_questions_quiz_id_fkey(*, answers:quiz_answers!quiz_answers_question_id_fkey(*))
-        `,
-        )
+        .select("*")
         .eq("id", quizId)
         .single();
-
       if (error) throw error;
-      return data;
+
+      // Queried from quiz_questions directly (rather than embedding it under quizzes)
+      // so the top-level .order("order") is a plain, reliable order-by — no reliance on
+      // PostgREST's doubly-nested embedded-resource ordering. Matches the same pattern
+      // already used by fetchQuizForLesson (curriculum-mutations.ts) and LecturePreview.tsx.
+      const { data: questions, error: qErr } = await supabase
+        .from("quiz_questions")
+        .select("*, answers:quiz_answers!quiz_answers_question_id_fkey(*)")
+        .eq("quiz_id", quizId)
+        .order("order")
+        .order("order", { referencedTable: "answers" });
+      if (qErr) throw qErr;
+
+      return { ...quizRow, questions: questions || [] };
     },
     enabled: !!quizId && isAuthenticated,
   });
@@ -625,40 +632,48 @@ export default function QuizPage() {
               )}
 
               {currentQ.question_type === "true_false" && (
-                <RadioGroup
-                  value={answers[currentQ.id] || ""}
-                  onValueChange={(value: string) =>
-                    handleAnswerChange(currentQ.id, value)
-                  }
-                  data-testid="true-false-answers"
-                  className="gap-3"
-                >
-                  {(currentQ.answers && currentQ.answers.length > 0
-                    ? [...currentQ.answers].sort(
-                        (a: QuizAnswer, b: QuizAnswer) => a.order - b.order,
-                      )
-                    : [
-                        { id: `${currentQ.id}-true`, answer: "True", is_correct: false, order: 0 },
-                        { id: `${currentQ.id}-false`, answer: "False", is_correct: false, order: 1 },
-                      ]
-                  ).map((answer: QuizAnswer) => {
-                    const selected = answers[currentQ.id] === answer.id;
-                    return (
-                      <Label
-                        key={answer.id}
-                        htmlFor={answer.id}
-                        className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent ${
-                          selected
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "border-border"
-                        }`}
-                      >
-                        <RadioGroupItem value={answer.id} id={answer.id} />
-                        <span className="flex-1 text-sm">{answer.answer}</span>
-                      </Label>
-                    );
-                  })}
-                </RadioGroup>
+                currentQ.answers && currentQ.answers.length > 0 ? (
+                  <RadioGroup
+                    value={answers[currentQ.id] || ""}
+                    onValueChange={(value: string) =>
+                      handleAnswerChange(currentQ.id, value)
+                    }
+                    data-testid="true-false-answers"
+                    className="gap-3"
+                  >
+                    {[...currentQ.answers]
+                      .sort((a: QuizAnswer, b: QuizAnswer) => a.order - b.order)
+                      .map((answer: QuizAnswer) => {
+                        const selected = answers[currentQ.id] === answer.id;
+                        return (
+                          <Label
+                            key={answer.id}
+                            htmlFor={answer.id}
+                            className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent ${
+                              selected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border"
+                            }`}
+                          >
+                            <RadioGroupItem value={answer.id} id={answer.id} />
+                            <span className="flex-1 text-sm">{answer.answer}</span>
+                          </Label>
+                        );
+                      })}
+                  </RadioGroup>
+                ) : (
+                  // No real quiz_answers rows for this question — offering synthetic
+                  // True/False options here would let a student "answer" but grading
+                  // (quiz-submit) can never match a fake id, so it always counts wrong
+                  // with no visible error. Surface the misconfiguration instead.
+                  <Alert variant="destructive" data-testid="true-false-misconfigured">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      This question isn't configured correctly (no answer options were saved).
+                      Please contact your instructor — it can't be graded as-is.
+                    </AlertDescription>
+                  </Alert>
+                )
               )}
 
               {currentQ.question_type === "fill_blank" && (

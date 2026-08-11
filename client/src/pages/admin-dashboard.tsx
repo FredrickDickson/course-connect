@@ -24,6 +24,7 @@ import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
+import AdminQuizResults from "@/components/admin-quiz-results";
 import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
@@ -263,21 +264,35 @@ export default function AdminDashboard() {
     }
     setIsCreatingAdmin(true);
     try {
-      const response = await fetch("/api/admin/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
           firstName: newAdmin.firstName,
           lastName: newAdmin.lastName,
           email: newAdmin.email,
           password: newAdmin.password,
-          role: "admin",
-        }),
+          createByAdmin: true,
+        },
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create admin");
+      if (error) {
+        const response = (error as any).context;
+        let errorMessage = error.message || "Failed to create admin";
+        if (response?.body) {
+          try {
+            const text = await response.text();
+            if (text) {
+              try {
+                errorMessage = JSON.parse(text).error || text;
+              } catch {
+                errorMessage = text;
+              }
+            }
+          } catch {
+            // fall back to error.message
+          }
+        }
+        throw new Error(errorMessage);
       }
+      if (data?.error) throw new Error(data.error);
       toast({ title: "Admin Created", description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.` });
       setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
       setShowCreateAdmin(false);
@@ -319,12 +334,76 @@ export default function AdminDashboard() {
               Manage instructors, courses, and platform operations
             </p>
           </div>
-          <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
-            <Link href="/admin/courses/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Course
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000]/5">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Create Admin
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create Admin Account</DialogTitle>
+                  <DialogDescription>
+                    Grants full admin access to the platform. Use with care.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="newAdminFirstName">First Name</Label>
+                      <Input
+                        id="newAdminFirstName"
+                        value={newAdmin.firstName}
+                        onChange={(e) => setNewAdmin((p) => ({ ...p, firstName: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="newAdminLastName">Last Name</Label>
+                      <Input
+                        id="newAdminLastName"
+                        value={newAdmin.lastName}
+                        onChange={(e) => setNewAdmin((p) => ({ ...p, lastName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="newAdminEmail">Email</Label>
+                    <Input
+                      id="newAdminEmail"
+                      type="email"
+                      value={newAdmin.email}
+                      onChange={(e) => setNewAdmin((p) => ({ ...p, email: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newAdminPassword">Password</Label>
+                    <Input
+                      id="newAdminPassword"
+                      type="password"
+                      value={newAdmin.password}
+                      onChange={(e) => setNewAdmin((p) => ({ ...p, password: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters.</p>
+                  </div>
+                  <Button
+                    className="w-full bg-[#610000] text-white hover:bg-[#7d0000]"
+                    onClick={handleCreateAdmin}
+                    disabled={isCreatingAdmin}
+                  >
+                    {isCreatingAdmin ? "Creating..." : "Create Admin"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
+              <Link href="/admin/courses/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -334,6 +413,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
+              <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Quizzes</TabsTrigger>
               <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Create Course</TabsTrigger>
               <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
               <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
@@ -371,6 +451,11 @@ export default function AdminDashboard() {
           {/* Courses Tab — Enhanced with capacity bars */}
           <TabsContent value="courses">
             <AdminCoursesTable />
+          </TabsContent>
+
+          {/* Quizzes Tab */}
+          <TabsContent value="quizzes">
+            <AdminQuizResults />
           </TabsContent>
 
           {/* Templates Tab — Reusable course templates & cohort system */}
