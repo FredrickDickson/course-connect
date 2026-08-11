@@ -127,10 +127,22 @@ export default function AdminCoursesTable() {
     queryKey: ["admin-all-enrollments-courses"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("course_id, payment_status, ticket_price, full_name, email, ticket_type, booking_ref, created_at, confirmed_at");
+        .from("orders")
+        .select("course_id, status, amount, booking_ref, created_at, enrollment_metadata");
       if (error) throw error;
-      return data || [];
+      // Flatten to the shape this component expects (was course_enrollments,
+      // now split across orders + orders.enrollment_metadata).
+      return (data || []).map((o: any) => ({
+        course_id: o.course_id,
+        payment_status: o.status === "completed" ? "confirmed" : o.status === "cancelled" ? "cancelled" : "pending_bank",
+        ticket_price: o.amount,
+        full_name: o.enrollment_metadata?.full_name || "",
+        email: o.enrollment_metadata?.email || "",
+        ticket_type: o.enrollment_metadata?.programme_selected || "",
+        booking_ref: o.booking_ref,
+        created_at: o.created_at,
+        confirmed_at: o.status === "completed" ? o.created_at : null,
+      }));
     },
   });
 
@@ -269,6 +281,12 @@ export default function AdminCoursesTable() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => window.open(`/course/${c.id}`, "_blank")}>
                             <Eye className="h-4 w-4 mr-2" /> Preview Page
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setLocation(`/admin/courses/${c.id}/edit`)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit Course
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setLocation(`/admin/courses/${c.id}/curriculum`)}>
+                            <BookOpen className="h-4 w-4 mr-2" /> Manage Curriculum
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => exportCourseCSV(c.id, c.title)}>
                             <Download className="h-4 w-4 mr-2" /> Export CSV
@@ -475,6 +493,12 @@ export default function AdminCoursesTable() {
                   </div>
 
                   <div className="pt-3 space-y-2">
+                    <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setLocation(`/admin/courses/${selectedCourse.id}/edit`)}>
+                      <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Course
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setLocation(`/admin/courses/${selectedCourse.id}/curriculum`)}>
+                      <BookOpen className="w-3.5 h-3.5 mr-1.5" /> Manage Curriculum
+                    </Button>
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => { setBulkEmailCourse(selectedCourse); setSelectedCourse(null); }}>
                       <Mail className="w-3.5 h-3.5 mr-1.5" /> Send Bulk Email
                     </Button>

@@ -123,6 +123,14 @@ export default function CreateCourse() {
   const isAdmin = user?.role === "admin";
   const [isRouteAdmin, setIsRouteAdmin] = useState(false);
 
+  // Tracks how many ImageUploader instances (thumbnail + any instructor
+  // photos) are currently mid-upload, so the form can't be submitted with a
+  // file selected but not yet actually saved to storage.
+  const [uploadingImagesCount, setUploadingImagesCount] = useState(0);
+  const handleUploadingChange = (uploading: boolean) => {
+    setUploadingImagesCount((c) => Math.max(0, c + (uploading ? 1 : -1)));
+  };
+
   // Edit mode detection for instructor and admin routes
   const [, instructorEditParams] = useRoute("/instructor/courses/:courseId/edit");
   const [, adminEditParams] = useRoute("/admin/courses/:courseId/edit");
@@ -337,6 +345,11 @@ export default function CreateCourse() {
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      // Public listings use different query keys than the ones above — without
+      // these, a newly published course wouldn't show up on the catalog until
+      // React Query's 5-minute staleTime expired.
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["courses_filtered"] });
       toast({
         title: "Success",
         description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",
@@ -559,6 +572,7 @@ export default function CreateCourse() {
                                 bucket="instructor-avatars"
                                 currentImageUrl={instructor.profileImageUrl}
                                 onUploadComplete={(url) => updateInstructor(index, 'profileImageUrl', url)}
+                                onUploadingChange={handleUploadingChange}
                               />
                             )}
                           </div>
@@ -849,6 +863,7 @@ export default function CreateCourse() {
                               <ImageUploader
                                 currentImageUrl={field.value}
                                 onUploadComplete={(url) => field.onChange(url)}
+                                onUploadingChange={handleUploadingChange}
                               />
                               <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
@@ -945,8 +960,13 @@ export default function CreateCourse() {
                   <Button type="button" variant="outline" asChild className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">
                     <Link href={isRouteAdmin ? "/admin" : "/instructor"}>Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={saveCourse.isPending} className="bg-[#610000] text-white hover:bg-[#7d0000]">
-                        {saveCourse.isPending ? (
+                  <Button type="submit" disabled={saveCourse.isPending || uploadingImagesCount > 0} className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                        {uploadingImagesCount > 0 ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                            Uploading image...
+                          </>
+                        ) : saveCourse.isPending ? (
                           <>
                             <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                             {isEditMode ? "Updating..." : "Creating..."}

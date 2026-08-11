@@ -10,6 +10,11 @@ interface ImageUploaderProps {
   acceptedTypes?: string;
   maxSize?: number;
   bucket?: string;
+  // Fires whenever an upload starts/finishes, so a parent form can disable
+  // submission while a file is mid-upload — previously nothing stopped
+  // submitting the form between "file selected" and "upload finished",
+  // silently saving a blank URL.
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 export function ImageUploader({
@@ -18,71 +23,25 @@ export function ImageUploader({
   acceptedTypes = "image/*",
   maxSize = 5 * 1024 * 1024, // 5MB default
   bucket = 'course-thumbnails',
+  onUploadingChange,
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState(currentImageUrl);
   const [previewUrl, setPreviewUrl] = useState(currentImageUrl);
   const { toast } = useToast();
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find(file => file.type.startsWith('image/'));
-
-    if (imageFile) {
-      if (imageFile.size > maxSize) {
-        toast({
-          title: 'File Too Large',
-          description: `Image must be less than ${maxSize / (1024 * 1024)}MB`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      setImageFile(imageFile);
-      setPreviewUrl(URL.createObjectURL(imageFile));
-    } else {
-      toast({
-        title: 'Invalid File',
-        description: 'Please upload an image file (JPG, PNG, etc.)',
-        variant: 'destructive',
-      });
-    }
-  }, [toast, maxSize]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      if (files[0].size > maxSize) {
-        toast({
-          title: 'File Too Large',
-          description: `Image must be less than ${maxSize / (1024 * 1024)}MB`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      setImageFile(files[0]);
-      setPreviewUrl(URL.createObjectURL(files[0]));
-    }
-  };
-
-  const uploadImage = async () => {
-    if (!imageFile) return;
-
+  // Uploads are triggered immediately on file selection/drop rather than
+  // requiring a separate manual "Upload" click — a two-step flow let admins
+  // submit the surrounding form after only the (instant, local) preview
+  // appeared, before the async upload had actually completed, silently
+  // saving a blank image URL.
+  const uploadImage = async (file: File) => {
     setUploading(true);
+    setUploadFailed(false);
+    onUploadingChange?.(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -90,13 +49,13 @@ export function ImageUploader({
         throw new Error('User not authenticated');
       }
 
-      const fileExt = imageFile.name.split('.').pop() || 'jpg';
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
-        .upload(fileName, imageFile, {
-          contentType: imageFile.type,
+        .upload(fileName, file, {
+          contentType: file.type,
           upsert: false,
         });
 
@@ -113,10 +72,10 @@ export function ImageUploader({
           }
 
           // Retry upload after creating bucket
-          const { data: retryData, error: retryError } = await supabase.storage
+          const { error: retryError } = await supabase.storage
             .from(bucket)
-            .upload(fileName, imageFile, {
-              contentType: imageFile.type,
+            .upload(fileName, file, {
+              contentType: file.type,
               upsert: false,
             });
 
@@ -163,9 +122,60 @@ export function ImageUploader({
         description: error instanceof Error ? error.message : 'Failed to upload image',
         variant: 'destructive',
       });
-      setPreviewUrl(currentImageUrl);
+      setUploadFailed(true);
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
+    }
+  };
+
+  const selectFile = (file: File) => {
+    if (file.size > maxSize) {
+      toast({
+        title: 'File Too Large',
+        description: `Image must be less than ${maxSize / (1024 * 1024)}MB`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    uploadImage(file);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+
+    if (imageFile) {
+      selectFile(imageFile);
+    } else {
+      toast({
+        title: 'Invalid File',
+        description: 'Please upload an image file (JPG, PNG, etc.)',
+        variant: 'destructive',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast, maxSize, bucket]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      selectFile(files[0]);
     }
   };
 
@@ -173,6 +183,7 @@ export function ImageUploader({
     setImageFile(null);
     setUploadedUrl(undefined);
     setPreviewUrl(undefined);
+    setUploadFailed(false);
     if (previewUrl && previewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -212,36 +223,35 @@ export function ImageUploader({
       {previewUrl && (
         <div className="space-y-3">
           <div className="relative aspect-video w-full rounded-lg overflow-hidden border-2 border-gray-200">
-            <img 
-              src={previewUrl} 
-              alt="Preview" 
+            <img
+              src={previewUrl}
+              alt="Preview"
               className="w-full h-full object-cover"
               data-testid="image-preview"
             />
           </div>
 
-          {!uploadedUrl && imageFile && (
+          {uploading && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2" data-testid="uploading-image">
+              <Upload className="w-4 h-4 animate-pulse" />
+              Uploading...
+            </div>
+          )}
+
+          {!uploading && uploadFailed && imageFile && (
             <div className="flex gap-2">
-              <Button 
-                onClick={uploadImage} 
-                disabled={uploading}
+              <Button
+                onClick={() => uploadImage(imageFile)}
                 className="flex-1"
                 data-testid="button-upload-image"
               >
-                {uploading ? (
-                  <>Uploading...</>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Image
-                  </>
-                )}
+                <Upload className="w-4 h-4 mr-2" />
+                Retry Upload
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={removeImage}
-                disabled={uploading}
                 data-testid="button-remove-image"
               >
                 <X className="w-4 h-4" />
@@ -249,7 +259,7 @@ export function ImageUploader({
             </div>
           )}
 
-          {uploadedUrl && (
+          {!uploading && uploadedUrl && (
             <div className="border rounded-lg p-4 bg-green-50" data-testid="upload-complete-image">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

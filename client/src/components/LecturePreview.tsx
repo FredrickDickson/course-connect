@@ -123,7 +123,7 @@ export function LecturePreview({
 
   const renderVideoPreview = () => {
     const lessonDataAny = lessonData as any;
-    if (!lessonDataAny?.video_url && !lessonDataAny?.video_id) {
+    if (!lessonDataAny?.video_url && !lessonDataAny?.video_id && !lessonDataAny?.mux_playback_id) {
       return (
         <div className="text-center py-12">
           <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -132,12 +132,17 @@ export function LecturePreview({
       );
     }
 
+    // Mux-hosted lectures store video_url/video_platform as null and are
+    // identified via mux_playback_id instead (see LectureContentEditor.tsx).
+    const videoPlatform = lessonDataAny?.mux_playback_id ? 'mux' : lessonDataAny?.video_platform;
+
     return (
       <div className="space-y-4">
         <VideoPlayer
           videoUrl={lessonDataAny?.video_url || undefined}
-          videoPlatform={lessonDataAny?.video_platform as 'youtube' | 'vimeo' | undefined}
+          videoPlatform={videoPlatform as 'youtube' | 'vimeo' | 'mux' | undefined}
           videoId={lessonDataAny?.video_id || undefined}
+          muxPlaybackId={lessonDataAny?.mux_playback_id || undefined}
         />
         {lessonDataAny.duration_seconds && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

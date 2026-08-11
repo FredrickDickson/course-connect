@@ -59,26 +59,6 @@ export default function CourseBrowser() {
     },
   });
 
-  // Get enrollment counts per course
-  const courseIds = courses.map((c: any) => c.id);
-  const { data: enrollmentCounts = {} } = useQuery({
-    queryKey: ["enrollment-counts", courseIds],
-    queryFn: async () => {
-      if (courseIds.length === 0) return {};
-      const counts: Record<string, number> = {};
-      for (const id of courseIds) {
-        const { count } = await (supabase as any)
-          .from("course_enrollments")
-          .select("id", { count: "exact", head: true })
-          .eq("course_id", id)
-          .neq("payment_status", "cancelled");
-        counts[id] = count || 0;
-      }
-      return counts;
-    },
-    enabled: courseIds.length > 0,
-  });
-
   const hasFilters = search || levelFilter !== "all";
 
   return (
@@ -157,7 +137,7 @@ export default function CourseBrowser() {
               {courses.map((course: any) => {
                 const levelKey = (course.level || "associate").toLowerCase();
                 const style = LEVEL_STYLES[levelKey] || LEVEL_STYLES.associate;
-                const enrolled = (enrollmentCounts as any)[course.id] || 0;
+                const enrolled = course.enrollment_count || 0;
                 const capacity = course.total_capacity || 30;
                 const spotsLeft = Math.max(0, capacity - enrolled);
                 const isSoldOut = spotsLeft === 0;

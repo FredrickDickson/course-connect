@@ -5,6 +5,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchJoinedEnrollments } from "@/lib/joined-enrollments";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,23 +35,21 @@ interface Notification {
 export default function AdminNotifications() {
   const [open, setOpen] = useState(false);
 
-  // Fetch recent enrollments (last 7 days)
-  const { data: recentEnrollments = [] } = useQuery({
+  // Fetch enrollments (joined against orders for payment info), polled for notifications
+  const { data: allEnrollments = [] } = useQuery({
     queryKey: ["admin-notifications-enrollments"],
-    queryFn: async () => {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("id, full_name, payment_status, ticket_price, created_at, course:courses(title)")
-        .gte("created_at", sevenDaysAgo.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchJoinedEnrollments(),
     refetchInterval: 30000, // poll every 30s
   });
+
+  // Recent enrollments (last 7 days)
+  const recentEnrollments = useMemo(() => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return allEnrollments
+      .filter((e) => e.order?.created_at && new Date(e.order.created_at) >= sevenDaysAgo)
+      .slice(0, 50);
+  }, [allEnrollments]);
 
   // Fetch courses near capacity
   const { data: courses = [] } = useQuery({
@@ -66,55 +65,48 @@ export default function AdminNotifications() {
     refetchInterval: 60000,
   });
 
-  // Fetch pending bank transfers older than 3 days
-  const { data: stalePending = [] } = useQuery({
-    queryKey: ["admin-notifications-stale"],
-    queryFn: async () => {
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("id, full_name, created_at")
-        .eq("payment_status", "pending_bank")
-        .lte("created_at", threeDaysAgo.toISOString())
-        .limit(10);
-      if (error) throw error;
-      return data || [];
-    },
-    refetchInterval: 60000,
-  });
+  // Pending payments older than 3 days
+  const stalePending = useMemo(() => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    return allEnrollments
+      .filter((e) => e.order?.status === "pending" && e.order?.created_at && new Date(e.order.created_at) <= threeDaysAgo)
+      .slice(0, 10);
+  }, [allEnrollments]);
 
   const notifications: Notification[] = useMemo(() => {
     const notifs: Notification[] = [];
 
     // New enrollments
-    recentEnrollments.forEach((e: any) => {
-      if (e.payment_status === "confirmed") {
+    recentEnrollments.forEach((e) => {
+      const fullName = e.order?.enrollment_metadata?.full_name || "Someone";
+      const time = e.order?.created_at || e.enrolled_at;
+      if (e.order?.status === "completed") {
         notifs.push({
           id: `payment-${e.id}`,
           icon: CreditCard,
-          message: `Payment received: ${e.full_name} — GHS ${Number(e.ticket_price).toLocaleString()}`,
-          time: e.created_at,
+          message: `Payment received: ${fullName} — GHS ${Number(e.order?.amount || 0).toLocaleString()}`,
+          time,
           type: "payment",
         });
       } else {
         notifs.push({
           id: `enroll-${e.id}`,
           icon: UserPlus,
-          message: `New enrollment: ${e.full_name} — ${e.course?.title || "Course"}`,
-          time: e.created_at,
+          message: `New enrollment: ${fullName} — ${e.course?.title || "Course"}`,
+          time,
           type: "info",
         });
       }
     });
 
     // Stale pending bank transfers
-    stalePending.forEach((e: any) => {
+    stalePending.forEach((e) => {
       notifs.push({
         id: `stale-${e.id}`,
         icon: AlertTriangle,
-        message: `Bank transfer pending 3+ days: ${e.full_name}`,
-        time: e.created_at,
+        message: `Payment pending 3+ days: ${e.order?.enrollment_metadata?.full_name || "Someone"}`,
+        time: e.order?.created_at || e.enrolled_at,
         type: "warning",
       });
     });

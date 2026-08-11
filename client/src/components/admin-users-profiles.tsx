@@ -156,12 +156,22 @@ export default function AdminUsersProfiles() {
     enabled: !!selectedUser,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("*, course:courses(title, cohort_id)")
+        .from("orders")
+        .select("id, status, amount, booking_ref, created_at, enrollment_metadata, course:courses(title, cohort_id)")
         .eq("user_id", selectedUser!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      // Flatten to the shape this component expects (was course_enrollments,
+      // now split across orders + orders.enrollment_metadata).
+      return (data || []).map((o: any) => ({
+        id: o.id,
+        course: o.course,
+        ticket_type: o.enrollment_metadata?.programme_selected || "",
+        ticket_price: o.amount,
+        booking_ref: o.booking_ref,
+        created_at: o.created_at,
+        payment_status: o.status === "completed" ? "confirmed" : o.status === "cancelled" ? "cancelled" : "pending_bank",
+      }));
     },
   });
 

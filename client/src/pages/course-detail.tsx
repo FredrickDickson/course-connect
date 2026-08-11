@@ -30,6 +30,7 @@ import type { EligibilityResponse } from "@shared/enrollmentEligibility";
 import StudentSidebar from "@/components/student-sidebar";
 import { useEligibility } from "@/hooks/useEligibility";
 import { formatCoursePrice } from "@/lib/format-price";
+import { FormattedText } from "@/lib/format-text";
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -141,18 +142,25 @@ export default function CourseDetail() {
     enabled: !!id && !!user,
   });
 
-  // Fetch lesson progress for enrolled users
+  // Fetch lesson progress for enrolled users — scoped to THIS course's
+  // lessons only. Without the lesson_id filter, this would count every
+  // lesson the user has ever completed on the platform (any course), so a
+  // brand-new enrollee who'd completed lessons elsewhere would see a
+  // nonzero "X/N completed" the instant they enrolled.
   const { data: progress = [] } = useQuery<any[]>({
     queryKey: ["lesson-progress", id, user?.id],
     queryFn: async () => {
+      const lessonIds = (course?.modules || []).flatMap((m: any) => (m.lessons || []).map((l: any) => l.id));
+      if (lessonIds.length === 0) return [];
       const { data, error } = await supabase
         .from("progress")
         .select("lesson_id, completed")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .in("lesson_id", lessonIds);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id && !!user && !!enrollment,
+    enabled: !!id && !!user && !!enrollment && !!course,
   });
 
   const { data: reviews = [] } = useQuery<any[]>({
@@ -590,7 +598,11 @@ export default function CourseDetail() {
                       <div className="prose prose-slate max-w-none">
                         <h3 className="text-xl font-semibold mb-4">Course Description</h3>
                         <div className="text-muted-foreground leading-relaxed mb-6" data-testid="course-description">
-                          {course.description || "No description available."}
+                          {course.description ? (
+                            <FormattedText text={course.description} />
+                          ) : (
+                            "No description available."
+                          )}
                         </div>
                         {course.tags && course.tags.length > 0 && (
                           <div>
@@ -614,7 +626,7 @@ export default function CourseDetail() {
                               <Card key={module.id}>
                                 <CardContent className="p-4">
                                   <h4 className="font-semibold mb-2">{module.title}</h4>
-                                  {module.description && <p className="text-sm text-muted-foreground mb-3">{module.description}</p>}
+                                  <FormattedText text={module.description} className="text-sm text-muted-foreground mb-3" />
                                   {module.lessons && module.lessons.length > 0 && (
                                     <div className="space-y-2 ml-4">
                                       {module.lessons.map((lesson: any, lessonIndex: number) => (

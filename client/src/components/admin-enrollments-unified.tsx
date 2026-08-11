@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { fetchJoinedEnrollments, type JoinedEnrollment } from "@/lib/joined-enrollments";
 import {
   Search, Download, Eye, CheckCircle, XCircle, StickyNote, Users,
   DollarSign, Clock, Mail, Phone, MapPin, Building2, Briefcase,
@@ -26,35 +27,7 @@ import {
   History, Shield, AlertTriangle, FileText,
 } from "lucide-react";
 
-interface UnifiedEnrollment {
-  id: string;
-  user_id: string | null;
-  course_id: string;
-  enrollment_level: string;
-  status: string;
-  enrolled_at: string;
-  course?: { title: string; cohort_id?: string } | null;
-  order?: {
-    id: string;
-    booking_ref: string | null;
-    amount: number;
-    currency: string | null;
-    status: string;
-    paystack_reference: string | null;
-    enrollment_metadata: {
-      email?: string;
-      full_name?: string;
-      phone?: string;
-      whatsapp?: string;
-      country?: string;
-      institution?: string;
-      address?: string;
-      personal_statement?: string;
-      admin_notes?: string;
-      notes_updated_at?: string;
-    } | null;
-  } | null;
-}
+type UnifiedEnrollment = JoinedEnrollment;
 
 // Status mapping for display
 const ORDER_STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -85,18 +58,7 @@ export default function AdminEnrollmentsUnified() {
   // Fetch from unified tables
   const { data: enrollments = [], isLoading } = useQuery<UnifiedEnrollment[]>({
     queryKey: ["admin-unified-enrollments"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("enrollments")
-        .select(`
-          *,
-          course:courses(title, cohort_id),
-          order:orders(booking_ref, amount, currency, status, paystack_reference, enrollment_metadata)
-        `)
-        .order("enrolled_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as UnifiedEnrollment[];
-    },
+    queryFn: () => fetchJoinedEnrollments(),
   });
 
   const { data: userProfile } = useQuery({
@@ -110,22 +72,8 @@ export default function AdminEnrollmentsUnified() {
   });
 
   const { data: enrollmentHistory = [] } = useQuery<UnifiedEnrollment[]>({
-    queryKey: ["admin-user-enrollment-history", selectedEnrollment?.order?.enrollment_metadata?.email],
-    queryFn: async () => {
-      const email = selectedEnrollment?.order?.enrollment_metadata?.email;
-      if (!email) return [];
-      // Query by user_id instead of email for unified table
-      const { data } = await (supabase as any)
-        .from("enrollments")
-        .select(`
-          *,
-          course:courses(title),
-          order:orders(enrollment_metadata)
-        `)
-        .eq("user_id", selectedEnrollment?.user_id)
-        .order("enrolled_at", { ascending: false });
-      return (data || []) as UnifiedEnrollment[];
-    },
+    queryKey: ["admin-user-enrollment-history", selectedEnrollment?.user_id],
+    queryFn: () => fetchJoinedEnrollments({ userId: selectedEnrollment!.user_id! }),
     enabled: !!selectedEnrollment?.user_id,
   });
 

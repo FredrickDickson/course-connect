@@ -105,7 +105,21 @@ export function PresentationBuilder({ lessonId, initialPresentation, onSaved, on
       setPageCount(detectedPages);
       setProgress(100);
 
-      toast({ title: 'Success', description: 'Presentation uploaded successfully' });
+      // Persist immediately — don't rely on a separate "Save Presentation"
+      // click. Previously, a file could be uploaded to storage (and shown as
+      // "complete" in the UI) without ever getting a presentations row, so
+      // every viewer reported "No presentation attached" even though the
+      // instructor had uploaded a file.
+      await upsertPresentation(lessonId, {
+        fileUrl: url,
+        fileName: file.name,
+        fileType: 'pdf',
+        pageCount: detectedPages,
+        allowDownload,
+      });
+      onSaved?.();
+
+      toast({ title: 'Success', description: 'Presentation uploaded and attached' });
     } catch (error) {
       console.error('Presentation upload error:', error);
       toast({
