@@ -132,7 +132,7 @@ export default function Home() {
             <span className="font-['Work_Sans'] text-white/60 uppercase tracking-[0.08em] sm:tracking-[0.15em] text-[8px] sm:text-xs mb-1.5 sm:mb-4 block">
               {user ? `Welcome back, ${user.firstName || "Learner"}`.toUpperCase() : "Executive Portal"}
             </span>
-            <h1 className="font-['Noto_Serif'] text-base sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-2 sm:mb-6 md:mb-8 leading-tight">
+            <h1 className="font-['Noto_Serif'] text-base sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-2 sm:mb-6 md:mb-8 leading-tight text-red-600">
               Master
               <br />
               dispute
