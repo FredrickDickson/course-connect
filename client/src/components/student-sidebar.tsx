@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,6 +51,7 @@ export default function StudentSidebar({
   onCollapseChange,
 }: StudentSidebarProps) {
   const [location] = useLocation();
+  const search = useSearch();
   const { user, isAuthenticated } = useAuth();
   const [internalCollapsed, setInternalCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
@@ -117,14 +118,18 @@ export default function StudentSidebar({
   ];
 
   const isActivePath = (path: string) => {
-    // Handle special fragment identifiers
-    if (path.includes("?")) {
-      const [basePath] = path.split("?");
-      if (location === basePath || location.startsWith(basePath)) {
-        return true;
-      }
+    const [basePath, queryString] = path.split("?");
+
+    // The Profile page uses a `?tab=` query param to switch between its
+    // Information/Courses/Certificates tabs, so pathname alone can't tell
+    // "Profile" and "Certificates" apart - compare the tab too.
+    if (basePath === "/profile") {
+      if (location !== "/profile") return false;
+      const currentTab = new URLSearchParams(search).get("tab");
+      const itemTab = new URLSearchParams(queryString || "").get("tab");
+      return itemTab ? currentTab === itemTab : currentTab !== "certificates";
     }
-    
+
     // Exact match for dashboard
     if (path === "/dashboard") {
       return location === "/dashboard";
