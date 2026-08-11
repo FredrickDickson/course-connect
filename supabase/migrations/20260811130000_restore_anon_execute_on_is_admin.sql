@@ -1,0 +1,22 @@
+-- Fixes a regression from 20260430131500_revoke_anon_security_definer_functions.sql:
+-- that migration revoked anon's EXECUTE on public.is_admin(text) to address a
+-- generic "Public Can Execute SECURITY DEFINER Function" linter warning.
+--
+-- But is_admin(text) is a small, read-only, STABLE boolean helper
+-- ( SELECT EXISTS (SELECT 1 FROM users WHERE id = _user_id AND role = 'admin') )
+-- referenced directly inside many RLS policies (lessons, modules, quizzes,
+-- assignments, instructor_applications, instructor_payouts, and others) as
+-- the "...OR is_admin(auth.uid()::text)" admin-bypass branch. Postgres checks
+-- EXECUTE permission on every function referenced in a policy expression up
+-- front, regardless of OR short-circuiting -- so once anon lost EXECUTE,
+-- ANY query touching a table whose RLS policy references is_admin() started
+-- failing outright for anonymous visitors with "permission denied for
+-- function is_admin" (42501), including the public course-detail page
+-- (its modules/lessons join hits exactly this).
+--
+-- Fix: restore anon's EXECUTE grant. The function only returns a boolean for
+-- a caller-supplied user id and never returns row data or allows mutation,
+-- so exposing it to anon does not leak PII beyond "is this id an admin" --
+-- this is the standard, Supabase-documented pattern for RLS helper
+-- functions that need to be evaluable by every role, including anon.
+GRANT EXECUTE ON FUNCTION public.is_admin(text) TO anon;

@@ -2152,6 +2152,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // ============================================================================
+  // Shared instructor resolve/sync helpers for admin direct-instructor-input.
+  // MUST be kept in sync with the identical copy in api/instructor/courses.ts
+  // (the Vercel serverless function used for this route in production).
+  // ============================================================================
+
+  interface InstructorInput {
+    userId?: string;
+    name: string;
+    title?: string;
+    bio?: string;
+    email?: string;
+    profileImageUrl?: string;
+    expertise?: string[];
+    linkedinUrl?: string;
+    websiteUrl?: string;
+  }
+
+  interface ResolvedInstructor {
+    userId: string;
+    isAdminManaged: boolean;
+  }
+
+  async function upsertInstructorAvatarProfile(userId: string, profileImageUrl: string | null | undefined) {
+    if (!profileImageUrl) return;
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .upsert(
+        { user_id: userId, avatar_url: profileImageUrl, avatar_updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
+    if (error) console.error('Error upserting instructor avatar profile:', error);
+  }
+
+  async function syncAdminManagedInstructor(userId: string, input: InstructorInput) {
+    const [firstName, ...lastNameParts] = input.name.trim().split(' ');
+    const { error: userErr } = await supabaseAdmin
+      .from('users')
+      .update({
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || '',
+        bio: input.bio || null,
+        profile_image_url: input.profileImageUrl || null,
+      })
+      .eq('id', userId);
+    if (userErr) console.error('Error syncing admin-managed instructor user row:', userErr);
+
+    await upsertInstructorAvatarProfile(userId, input.profileImageUrl);
+
+    const { error: profileErr } = await supabaseAdmin
+      .from('instructor_profiles')
+      .upsert(
+        {
+          user_id: userId,
+          bio: input.bio || null,
+          title: input.title || null,
+          expertise: input.expertise || [],
+          website_url: input.websiteUrl || null,
+          linkedin_url: input.linkedinUrl || null,
+          profile_image_url: input.profileImageUrl || null,
+          is_verified: false,
+        },
+        { onConflict: 'user_id' },
+      );
+    if (profileErr) console.error('Error syncing instructor_profiles:', profileErr);
+  }
+
+  // Resolves one instructor form entry to a real user, per the rules:
+  // - has userId -> reuse it; sync bio/photo only if admin-managed
+  // - no userId but email matches an existing instructor -> reuse it; same sync rule
+  // - otherwise -> create a brand-new admin-managed instructor user
+  async function resolveOrCreateInstructor(
+    input: InstructorInput,
+    adminUserId: string,
+    sortOrder: number,
+  ): Promise<ResolvedInstructor> {
+    if (input.userId) {
+      const { data: existingUser, error } = await supabaseAdmin
+        .from('users')
+        .select('id, created_by_admin_id')
+        .eq('id', input.userId)
+        .single();
+      if (error || !existingUser) throw new Error(`Instructor ${input.userId} not found`);
+
+      const isAdminManaged = !!existingUser.created_by_admin_id;
+      if (isAdminManaged) await syncAdminManagedInstructor(existingUser.id, input);
+      return { userId: existingUser.id, isAdminManaged };
+    }
+
+    if (input.email) {
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id, created_by_admin_id')
+        .eq('email', input.email)
+        .eq('role', 'instructor')
+        .maybeSingle();
+
+      if (existingUser) {
+        const isAdminManaged = !!existingUser.created_by_admin_id;
+        if (isAdminManaged) await syncAdminManagedInstructor(existingUser.id, input);
+        return { userId: existingUser.id, isAdminManaged };
+      }
+    }
+
+    const [firstName, ...lastNameParts] = input.name.trim().split(' ');
+    const { data: newUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        email: input.email || `instructor-${Date.now()}-${sortOrder}@thecima.org`,
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || '',
+        role: 'instructor',
+        profile_image_url: input.profileImageUrl || null,
+        bio: input.bio || null,
+        created_by_admin_id: adminUserId,
+      })
+      .select()
+      .single();
+    if (userError) throw userError;
+
+    await upsertInstructorAvatarProfile(newUser.id, input.profileImageUrl);
+
+    const { error: profileError } = await supabaseAdmin
+      .from('instructor_profiles')
+      .insert({
+        user_id: newUser.id,
+        bio: input.bio || null,
+        title: input.title || null,
+        expertise: input.expertise || [],
+        website_url: input.websiteUrl || null,
+        linkedin_url: input.linkedinUrl || null,
+        profile_image_url: input.profileImageUrl || null,
+        is_verified: false,
+      });
+    if (profileError) console.error('Error creating instructor profile:', profileError);
+
+    return { userId: newUser.id, isAdminManaged: true };
+  }
+
+  async function resolveCourseInstructors(
+    instructors: InstructorInput[],
+    adminUserId: string,
+  ): Promise<ResolvedInstructor[]> {
+    const resolved: ResolvedInstructor[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < instructors.length; i++) {
+      const r = await resolveOrCreateInstructor(instructors[i], adminUserId, i);
+      if (seen.has(r.userId)) continue; // dedupe: same instructor listed twice
+      seen.add(r.userId);
+      resolved.push(r);
+    }
+    return resolved;
+  }
+
+  async function writeCourseInstructors(courseId: string, resolved: ResolvedInstructor[]) {
+    if (resolved.length === 0) return;
+    const rows = resolved.map((r, i) => ({ course_id: courseId, user_id: r.userId, sort_order: i }));
+    const { error } = await supabaseAdmin
+      .from('course_instructors')
+      .upsert(rows, { onConflict: 'course_id,user_id' });
+    if (error) console.error('Error writing course_instructors:', error);
+  }
+
+  // Diffs the resolved instructor list against existing course_instructors
+  // rows instead of delete-and-reinsert, so untouched rows keep their
+  // created_at and are never spuriously re-touched.
+  async function reconcileCourseInstructors(courseId: string, resolved: ResolvedInstructor[]) {
+    const { data: existingRows } = await supabaseAdmin
+      .from('course_instructors')
+      .select('user_id')
+      .eq('course_id', courseId);
+    const existingIds = new Set((existingRows || []).map((r: any) => r.user_id));
+    const newIds = new Set(resolved.map((r) => r.userId));
+
+    const toDelete = Array.from(existingIds).filter((uid) => !newIds.has(uid));
+    if (toDelete.length > 0) {
+      const { error } = await supabaseAdmin
+        .from('course_instructors')
+        .delete()
+        .eq('course_id', courseId)
+        .in('user_id', toDelete); // removes the credit link only, never the users row
+      if (error) console.error('Error removing stale course_instructors rows:', error);
+    }
+
+    await writeCourseInstructors(courseId, resolved);
+  }
+
   app.post(
 
     "/api/instructor/courses",
@@ -2162,90 +2349,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const currentUserId = req.user.claims.sub;
       const currentUserRole = req.user.role;
-      
+
       // Admin can create courses on behalf of instructors
       const onBehalfOf = req.query.onBehalfOf as string | undefined;
-      const instructors = req.body.instructors as Array<{
-        name: string;
-        title?: string;
-        bio?: string;
-        email?: string;
-        profileImageUrl?: string;
-        expertise?: string[];
-        linkedinUrl?: string;
-        websiteUrl?: string;
-      }> | undefined;
-      
+      const instructors = req.body.instructors as InstructorInput[] | undefined;
+
       let instructorId: string | undefined;
       let createdByAdminId: string | undefined;
-      
-      // If admin is providing instructor details, create/find instructor user
+      let resolvedInstructors: ResolvedInstructor[] = [];
+
+      // If admin is providing instructor details, resolve/create every one
       if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
-        const primaryInstructor = instructors[0];
-        
-        // Check if instructor exists by email
-        if (primaryInstructor.email) {
-          const { data: existingUser } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .eq('email', primaryInstructor.email)
-            .eq('role', 'instructor')
-            .single();
-          
-          if (existingUser) {
-            instructorId = existingUser.id;
-          }
-        }
-        
-        // If not found, create a new instructor user
-        if (!instructorId) {
-          const [firstName, ...lastNameParts] = primaryInstructor.name.trim().split(' ');
-          const lastName = lastNameParts.join(' ') || '';
-          
-          const { data: newUser, error: userError } = await supabaseAdmin
-            .from('users')
-            .insert({
-              email: primaryInstructor.email || `instructor-${Date.now()}@thecima.org`,
-              first_name: firstName,
-              last_name: lastName,
-              role: 'instructor',
-              profile_image_url: primaryInstructor.profileImageUrl || null,
-            })
-            .select()
-            .single();
-          
-          if (userError) throw userError;
-          instructorId = newUser.id;
-          
-          // Create instructor profile
-          const { error: profileError } = await supabaseAdmin
-            .from('instructor_profiles')
-            .insert({
-              user_id: instructorId,
-              bio: primaryInstructor.bio || null,
-              title: primaryInstructor.title || null,
-              expertise: primaryInstructor.expertise || [],
-              website_url: primaryInstructor.websiteUrl || null,
-              linkedin_url: primaryInstructor.linkedinUrl || null,
-              profile_image_url: primaryInstructor.profileImageUrl || null,
-              is_verified: false,
-            });
-          
-          if (profileError) console.error('Error creating instructor profile:', profileError);
-        }
-        
+        resolvedInstructors = await resolveCourseInstructors(instructors, currentUserId);
+        instructorId = resolvedInstructors[0].userId; // primary/owner, unchanged semantics
         createdByAdminId = currentUserId;
       } else if (currentUserRole === 'admin' && onBehalfOf) {
         // Admin creating for an existing instructor (legacy behavior)
         instructorId = onBehalfOf;
         createdByAdminId = currentUserId;
+        resolvedInstructors = [{ userId: onBehalfOf, isAdminManaged: false }];
       } else if (currentUserRole === 'instructor' || currentUserRole === 'admin') {
         // Instructor creating their own course OR admin creating as instructor
         instructorId = currentUserId;
+        resolvedInstructors = [{ userId: currentUserId, isAdminManaged: false }];
       } else {
         return res.status(403).json({ message: "Must be instructor or admin" });
       }
-      
+
       // Ensure instructorId is defined
       if (!instructorId) {
         return res.status(400).json({ message: "Instructor ID is required" });
@@ -2260,7 +2390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const course = await storage.createCourse(courseData);
-      
+
       // Update admin tracking if applicable
       if (createdByAdminId) {
         const { error } = await supabaseAdmin
@@ -2269,6 +2399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("id", course.id);
         if (error) throw error;
       }
+
+      // Public crediting for every resolved instructor (including the primary)
+      await writeCourseInstructors(course.id, resolvedInstructors);
 
       res.json(course);
 
@@ -2311,7 +2444,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = insertCourseSchema.partial().parse(req.body);
 
       const updatedCourse = await storage.updateCourse(id, updates);
-      
+
+      // Reconcile instructor credits: resolve/sync every entry, keep the
+      // first as primary/owner, diff course_instructors against the new set.
+      const instructors = req.body.instructors as InstructorInput[] | undefined;
+      if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
+        const resolved = await resolveCourseInstructors(instructors, currentUserId);
+
+        const newPrimaryId = resolved[0].userId;
+        if (course && newPrimaryId !== course.instructor_id) {
+          const { error } = await supabaseAdmin
+            .from('courses')
+            .update({ instructor_id: newPrimaryId })
+            .eq('id', id);
+          if (error) throw error;
+        }
+
+        await reconcileCourseInstructors(id, resolved);
+      }
+
       // Track admin edits
       if (currentUserRole === 'admin') {
         const { error } = await supabaseAdmin

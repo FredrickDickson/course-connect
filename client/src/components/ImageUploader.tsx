@@ -9,13 +9,15 @@ interface ImageUploaderProps {
   onUploadComplete: (imageUrl: string) => void;
   acceptedTypes?: string;
   maxSize?: number;
+  bucket?: string;
 }
 
-export function ImageUploader({ 
-  currentImageUrl, 
+export function ImageUploader({
+  currentImageUrl,
   onUploadComplete,
   acceptedTypes = "image/*",
-  maxSize = 5 * 1024 * 1024 // 5MB default
+  maxSize = 5 * 1024 * 1024, // 5MB default
+  bucket = 'course-thumbnails',
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -92,7 +94,7 @@ export function ImageUploader({
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { data, error } = await supabase.storage
-        .from('course-thumbnails')
+        .from(bucket)
         .upload(fileName, imageFile, {
           contentType: imageFile.type,
           upsert: false,
@@ -101,7 +103,7 @@ export function ImageUploader({
       if (error) {
         // If bucket doesn't exist, create it first
         if (error.message.includes('Bucket not found') || error.message.includes('The bucket was not found')) {
-          const { error: createError } = await supabase.storage.createBucket('course-thumbnails', {
+          const { error: createError } = await supabase.storage.createBucket(bucket, {
             public: true,
             fileSizeLimit: 5 * 1024 * 1024, // 5MB
           });
@@ -112,7 +114,7 @@ export function ImageUploader({
 
           // Retry upload after creating bucket
           const { data: retryData, error: retryError } = await supabase.storage
-            .from('course-thumbnails')
+            .from(bucket)
             .upload(fileName, imageFile, {
               contentType: imageFile.type,
               upsert: false,
@@ -123,7 +125,7 @@ export function ImageUploader({
           }
 
           const { data: { publicUrl } } = supabase.storage
-            .from('course-thumbnails')
+            .from(bucket)
             .getPublicUrl(fileName);
 
           setUploadedUrl(publicUrl);
@@ -142,7 +144,7 @@ export function ImageUploader({
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('course-thumbnails')
+        .from(bucket)
         .getPublicUrl(fileName);
 
       setUploadedUrl(publicUrl);
