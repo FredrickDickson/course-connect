@@ -12,6 +12,7 @@ import Footer from "@/components/footer";
 import { Link } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, MapPin, Users, ArrowRight, X, Clock } from "lucide-react";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 const LEVEL_STYLES: Record<string, { bg: string; text: string }> = {
   associate: { bg: "bg-[#888780]", text: "text-white" },
@@ -147,11 +148,11 @@ export default function CourseBrowser() {
                   <Card key={course.id} className={`overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${isSoldOut ? "opacity-75" : ""}`}>
                     {/* Banner */}
                     <div className="relative h-40 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                      {course.thumbnail_url ? (
-                        <img src={course.thumbnail_url} alt={course.title} className={`w-full h-full object-cover ${isSoldOut ? "grayscale" : ""}`} />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
-                      )}
+                      <CourseThumbnail
+                        src={course.thumbnail_url}
+                        alt={course.title}
+                        className={`h-full w-full ${isSoldOut ? "grayscale" : ""}`}
+                      />
                       <Badge className={`absolute top-3 left-3 ${style.bg} ${style.text} border-0`}>
                         {levelLabel}
                       </Badge>

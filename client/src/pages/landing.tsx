@@ -4,8 +4,9 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, GraduationCap, Scale, BadgeCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export default function Landing() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -129,8 +130,6 @@ function HeroSection() {
           loading="eager"
           style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
-        {/* Subtle gradient for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent" />
       </div>
 
       {/* Minimalist Text Content */}
@@ -294,12 +293,12 @@ function FeaturedCoursesSection() {
                 
                 {/* Large Sharp Image */}
                 <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={course.thumbnail_url || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"}
+                  <CourseThumbnail
+                    src={course.thumbnail_url}
+                    fallbackSrc="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"
                     alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    style={{ imageRendering: 'crisp-edges' }}
+                    className="w-full h-full"
+                    imgClassName="group-hover:scale-125 transition-transform duration-500"
                   />
                 </div>
 
@@ -749,70 +748,70 @@ function FinalCTASection() {
 // Footer
 function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-20">
+    <footer className="bg-white text-black py-20 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           {/* Logo & Description */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <img src={cimaLogo} alt="CIMA Learn" className="h-14 w-auto" />
+              <img src="/images/b and w.png" alt="CIMA Learn" className="h-14 w-auto" />
               <div>
-                <p className="text-white font-semibold text-lg font-display">CIMA Learn</p>
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-body">Professional ADR Education</p>
+                <p className="text-black font-semibold text-lg font-display">CIMA Learn</p>
+                <p className="text-xs text-gray-700 uppercase tracking-wider font-body">Professional ADR Education</p>
               </div>
             </div>
-            <p className="text-base text-gray-400 leading-relaxed mb-6 font-body max-w-md">
+            <p className="text-base text-black leading-relaxed mb-6 font-body max-w-md">
               World-class arbitration and mediation education with a focus on real-world application and professional advancement.
             </p>
             <div className="flex gap-4">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition">
+                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition">
+                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
               </a>
             </div>
           </div>
 
           {/* Products */}
           <div>
-            <h3 className="text-white font-semibold mb-5 text-lg font-display">Products</h3>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Products</h3>
             <ul className="space-y-3 text-base font-body">
-              <li><Link href="/courses" className="text-gray-300 hover:text-white transition">All Courses</Link></li>
-              <li><Link href="/course-catalog" className="text-gray-300 hover:text-white transition">Course Bundles</Link></li>
-              <li><a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition">All Pathways</a></li>
+              <li><Link href="/courses" className="text-black hover:text-gray-600 transition">All Courses</Link></li>
+              <li><Link href="/course-catalog" className="text-black hover:text-gray-600 transition">Course Bundles</Link></li>
+              <li><a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-black hover:text-gray-600 transition">All Pathways</a></li>
             </ul>
           </div>
 
           {/* Company */}
           <div>
-            <h3 className="text-white font-semibold mb-5 text-lg font-display">Company</h3>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Company</h3>
             <ul className="space-y-3 text-base font-body">
-              <li><Link href="/contact" className="text-gray-300 hover:text-white transition">About CIMA</Link></li>
-              <li><Link href="/become-instructor" className="text-gray-300 hover:text-white transition">Become Instructor</Link></li>
-              <li><Link href="/contact" className="text-gray-300 hover:text-white transition">Contact Us</Link></li>
+              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">About CIMA</Link></li>
+              <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Become Instructor</Link></li>
+              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">Contact Us</Link></li>
             </ul>
           </div>
 
           {/* Support */}
           <div>
-            <h3 className="text-white font-semibold mb-5 text-lg font-display">Support</h3>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Support</h3>
             <ul className="space-y-3 text-base font-body">
-              <li><Link href="/help-center" className="text-gray-300 hover:text-white transition">Help Center</Link></li>
-              <li><Link href="/technical-support" className="text-gray-300 hover:text-white transition">Technical Support</Link></li>
-              <li><Link href="/privacy-policy" className="text-gray-300 hover:text-white transition">Privacy Policy</Link></li>
-              <li><Link href="/terms-of-service" className="text-gray-300 hover:text-white transition">Terms & Conditions</Link></li>
+              <li><Link href="/help-center" className="text-black hover:text-gray-600 transition">Help Center</Link></li>
+              <li><Link href="/technical-support" className="text-black hover:text-gray-600 transition">Technical Support</Link></li>
+              <li><Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy Policy</Link></li>
+              <li><Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms & Conditions</Link></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-base text-gray-400 font-body">© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
+        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-base text-black font-body">© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
           <div className="flex gap-8 text-base font-body">
-            <Link href="/privacy-policy" className="text-gray-300 hover:text-white transition">Privacy</Link>
-            <Link href="/terms-of-service" className="text-gray-300 hover:text-white transition">Terms</Link>
-            <Link href="/cookie-policy" className="text-gray-300 hover:text-white transition">Cookies</Link>
+            <Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy</Link>
+            <Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms</Link>
+            <Link href="/cookie-policy" className="text-black hover:text-gray-600 transition">Cookies</Link>
           </div>
         </div>
       </div>

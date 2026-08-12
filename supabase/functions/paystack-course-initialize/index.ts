@@ -33,6 +33,11 @@ interface CoursePaymentRequest {
   amount: number;
   currency: string;
   email: string;
+  /** Optional coupon code for a partial percentage discount. 100%-off
+   * access tokens are never sent here — the client routes those to the
+   * redeem-access-token function instead, since a free enrollment never
+   * goes through Paystack. */
+  accessCode?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -133,14 +138,49 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Verify amount matches course price
-    const expectedAmount = parseFloat(course.price);
+    // Optional coupon support (percentage discount < 100%; 100%-off access
+    // tokens never reach this endpoint — they're redeemed for free via the
+    // redeem-access-token function instead). When no accessCode is sent,
+    // expectedAmount is exactly the course price, identical to before.
+    let expectedAmount = parseFloat(course.price);
+    let accessTokenId: string | null = null;
+
+    if (body.accessCode) {
+      const { data: validation, error: validationError } = await supabase.rpc(
+        "validate_course_access_token",
+        { _token: body.accessCode, _course_id: body.courseId },
+      );
+      const v = Array.isArray(validation) ? validation[0] : validation;
+      if (validationError || !v?.valid) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired code" }),
+          { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } },
+        );
+      }
+      if (v.discounted_amount <= 0) {
+        // Defensive: a 100%-off token should never reach this endpoint.
+        return new Response(
+          JSON.stringify({ error: "This code grants free access — use the redeem-access-token endpoint" }),
+          { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } },
+        );
+      }
+      expectedAmount = v.discounted_amount;
+
+      const { data: tokenRow } = await supabase
+        .from("course_access_tokens")
+        .select("id")
+        .eq("token", body.accessCode.toUpperCase().trim())
+        .single();
+      accessTokenId = tokenRow?.id ?? null;
+    }
+
+    // Verify amount matches course price (or the validated discounted price)
     if (Math.abs(body.amount - expectedAmount) > 0.01) {
       return new Response(
         JSON.stringify({ error: "Amount mismatch" }),
-        { 
-          status: 400, 
-          headers: { 
+        {
+          status: 400,
+          headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
           },
@@ -180,6 +220,7 @@ Deno.serve(async (req: Request) => {
           exchangeRate: USD_TO_GHS_RATE,
           originalCurrency: body.currency || "USD",
           chargedCurrency: "GHS",
+          ...(accessTokenId && { accessTokenId, accessCode: body.accessCode }),
           ...(body.paymentType === "company_invoice" && {
             companyName: body.companyName,
             companyEmail: body.companyEmail,

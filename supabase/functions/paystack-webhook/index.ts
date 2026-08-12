@@ -210,6 +210,26 @@ Deno.serve(async (req: Request) => {
           .update({ enrollment_count: (courseRow?.enrollment_count || 0) + 1 })
           .eq("id", metadata.courseId);
 
+        // If a partial-percentage coupon (access token) was used to reach
+        // this discounted Paystack charge, record its usage against the
+        // order now that payment is confirmed. 100%-off access tokens never
+        // reach this webhook — they're redeemed directly, without Paystack,
+        // by the redeem-access-token function.
+        if (metadata.accessTokenId) {
+          const { data: incremented, error: tokenError } = await supabase.rpc(
+            "increment_access_token_usage",
+            { p_access_token_id: metadata.accessTokenId },
+          );
+          if (tokenError || !incremented) {
+            console.error("Failed to increment coupon usage (non-fatal):", tokenError);
+          } else {
+            await supabase
+              .from("orders")
+              .update({ payment_method: "access_token", access_token_id: metadata.accessTokenId })
+              .eq("id", order.id);
+          }
+        }
+
         // Trigger immediate provisioning
         await triggerProvisioning(supabase, metadata);
 

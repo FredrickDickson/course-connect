@@ -14,6 +14,7 @@ import { Search, Calendar, MapPin, Users, ArrowRight, X, Star, Filter } from "lu
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCoursePrice } from "@/lib/format-price";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import EnrollmentGateModal from "@/components/enrollment-gate-modal";
 import { 
   PATHWAY_TYPES, 
@@ -491,11 +492,11 @@ export default function CourseSearch() {
                   <Card key={course.id} className={`overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${isSoldOut ? "opacity-75" : ""}`}>
                     {/* Banner */}
                     <div className="relative h-40 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                      {course.thumbnail_url ? (
-                        <img src={course.thumbnail_url} alt={course.title} className={`w-full h-full object-cover ${isSoldOut ? "grayscale" : ""}`} />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
-                      )}
+                      <CourseThumbnail
+                        src={course.thumbnail_url}
+                        alt={course.title}
+                        className={`h-full w-full ${isSoldOut ? "grayscale" : ""}`}
+                      />
                       <Badge className={`absolute top-3 left-3 ${style.bg} ${style.text} border-0`}>
                         {levelLabel}
                       </Badge>

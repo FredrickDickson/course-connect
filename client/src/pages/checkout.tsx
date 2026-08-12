@@ -13,7 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
@@ -37,6 +39,8 @@ import {
   Loader2,
   AlertCircle,
   Lock,
+  Tag,
+  X,
 } from "lucide-react";
 
 declare global {
@@ -68,6 +72,15 @@ export default function Checkout() {
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [vatId, setVatId] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+  const [appliedToken, setAppliedToken] = useState<null | {
+    token: string;
+    discountType: string;
+    discountValue: number;
+    discountedAmount: number;
+    currency: string;
+  }>(null);
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
 
   // Load course
   const { data: course, isLoading: courseLoading } = useQuery<any>({
@@ -163,10 +176,63 @@ export default function Checkout() {
   const coursePrice = parseFloat(course?.price?.toString() || "0");
   const currency = course?.currency || "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
-  
+
+  // Effective price after any applied access/coupon code. This is purely
+  // a display convenience — the server always re-validates the code and
+  // computes the authoritative price itself before charging or enrolling.
+  const effectivePrice = appliedToken ? appliedToken.discountedAmount : coursePrice;
+  const isFreeViaToken = !!appliedToken && appliedToken.discountedAmount === 0;
+
   // Convert USD to GHS for display
-  const paymentConversion = convertPayment(coursePrice);
+  const paymentConversion = convertPayment(effectivePrice);
   const amountGHS = paymentConversion.amountGHS;
+
+  const CODE_ERROR_MESSAGES: Record<string, string> = {
+    course_not_found: "Course not found.",
+    invalid_token: "This code is not valid.",
+    token_disabled: "This code has been disabled.",
+    token_course_mismatch: "This code is not valid for this course.",
+    token_expired: "This code has expired.",
+    token_exhausted: "This code has already been used.",
+  };
+
+  const handleApplyCode = async () => {
+    if (!accessCode.trim() || !courseId) return;
+    setIsValidatingCode(true);
+    try {
+      const { data, error } = await supabase.rpc("validate_course_access_token" as never, {
+        _token: accessCode.trim(),
+        _course_id: courseId,
+      } as never);
+      const result: any = Array.isArray(data) ? data[0] : data;
+      if (error || !result?.valid) {
+        toast.error(CODE_ERROR_MESSAGES[result?.reason] || "Invalid or expired code");
+        setAppliedToken(null);
+        return;
+      }
+      setAppliedToken({
+        token: accessCode.trim(),
+        discountType: result.discount_type,
+        discountValue: result.discount_value,
+        discountedAmount: result.discounted_amount,
+        currency: result.currency,
+      });
+      toast.success(
+        result.discount_value === 100
+          ? "Access code applied — this course is free!"
+          : `Code applied — ${result.discount_value}% off`
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to validate code");
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
+
+  const handleRemoveCode = () => {
+    setAppliedToken(null);
+    setAccessCode("");
+  };
 
   const handlePaystackPayment = async () => {
     if (!user || !course) return;
@@ -195,9 +261,10 @@ export default function Checkout() {
             companyEmail,
             vatId,
           }),
-          amount: coursePrice,
+          amount: effectivePrice,
           currency,
           email: user.email || "",
+          ...(appliedToken && { accessCode: appliedToken.token }),
         }),
       });
 
@@ -213,6 +280,51 @@ export default function Checkout() {
     } catch (error: any) {
       console.error("Payment initialization error:", error);
       toast.error(error?.message || "Failed to initialize payment. Please try again.");
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTokenRedeem = async () => {
+    if (!user || !course || !appliedToken) return;
+
+    setIsProcessing(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-access-token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseId: course.id,
+          userId: user.id,
+          token: appliedToken.token,
+          enrollmentLevel: course.programme_type === "ADJUNCT_COURSE" ? null : (course.level?.toUpperCase() || "ASSOCIATE"),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to redeem code");
+      }
+
+      // Note: deliberately not invalidating the ["enrollment-check", ...]
+      // query here — doing so would trigger the existing "already
+      // enrolled" redirect effect above and skip straight past this
+      // confirmation step before the user sees it.
+      setBookingResult({
+        reference: data.orderId,
+        amount: 0,
+        currency,
+        courseName: course.title,
+        paymentMethod: "access_token",
+      });
+      setStep("confirm");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to redeem code");
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -268,7 +380,9 @@ export default function Checkout() {
   };
 
   const handleConfirmPayment = () => {
-    if (paymentMethod === "paystack") {
+    if (isFreeViaToken) {
+      handleTokenRedeem();
+    } else if (paymentMethod === "paystack") {
       handlePaystackPayment();
     } else {
       // TODO: Work on bank transfer later
@@ -378,7 +492,7 @@ export default function Checkout() {
                     <div className="flex gap-4">
                       <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {course.thumbnail_url ? (
-                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                          <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                             <BookOpen className="w-6 h-6 text-primary" />
@@ -539,39 +653,92 @@ export default function Checkout() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Course Price</span>
-                        <span>{formatCurrency(coursePrice, 'USD')}</span>
+                        <span className={appliedToken ? "line-through text-muted-foreground" : ""}>
+                          {formatCurrency(coursePrice, 'USD')}
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">You'll be charged</span>
-                        <span className="font-semibold text-primary">{formatCurrency(amountGHS, 'GHS')}</span>
-                      </div>
+                      {appliedToken && (
+                        <div className="flex justify-between text-green-600 font-medium">
+                          <span>
+                            {appliedToken.discountValue === 100 ? "Access Code Discount" : "Coupon Discount"}
+                          </span>
+                          <span>-{formatCurrency(coursePrice - effectivePrice, 'USD')}</span>
+                        </div>
+                      )}
+                      {!isFreeViaToken && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">You'll be charged</span>
+                          <span className="font-semibold text-primary">{formatCurrency(amountGHS, 'GHS')}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Processing Fee</span>
                         <span className="text-green-600">Free</span>
                       </div>
                     </div>
+
+                    <Separator />
+
+                    {/* Access / coupon code */}
+                    <div className="space-y-2">
+                      <Label htmlFor="access-code" className="text-sm font-medium flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5" /> Have an access or coupon code?
+                      </Label>
+                      {appliedToken ? (
+                        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm">
+                          <span className="text-green-800 font-medium flex items-center gap-1.5">
+                            <CheckCircle className="w-4 h-4" /> {appliedToken.token} applied
+                          </span>
+                          <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={handleRemoveCode}>
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Input
+                            id="access-code"
+                            placeholder="Enter code"
+                            value={accessCode}
+                            onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={handleApplyCode}
+                            disabled={!accessCode.trim() || isValidatingCode}
+                          >
+                            {isValidatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
                     <Separator />
                     <div className="space-y-3">
                       <div className="flex justify-between text-lg font-bold">
                         <span>Total</span>
                         <div className="text-right">
-                          <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
-                          <div className="text-sm font-normal text-muted-foreground">
-                            (~{formatCurrency(amountGHS, 'GHS')} will be charged)
+                          <div className="text-primary">{formatCurrency(effectivePrice, 'USD')}</div>
+                          {!isFreeViaToken && (
+                            <div className="text-sm font-normal text-muted-foreground">
+                              (~{formatCurrency(amountGHS, 'GHS')} will be charged)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {!isFreeViaToken && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <span>
+                              Price shown in USD. You will be charged in Ghana Cedis (GHS) at current exchange rate.
+                            </span>
                           </div>
                         </div>
-                      </div>
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-                        <div className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>
-                            Price shown in USD. You will be charged in Ghana Cedis (GHS) at current exchange rate.
-                          </span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                     <Button className="w-full" size="lg" onClick={handleProceedToPayment}>
-                      Proceed to Payment
+                      {isFreeViaToken ? "Continue" : "Proceed to Payment"}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                     <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
@@ -597,6 +764,20 @@ export default function Checkout() {
 
             <div className="grid md:grid-cols-5 gap-6">
               <div className="md:col-span-3 space-y-4">
+                {isFreeViaToken ? (
+                  <Card className="border-green-200 bg-green-50">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 text-green-800 font-semibold">
+                        <Tag className="w-5 h-5" />
+                        Access code applied
+                      </div>
+                      <p className="text-sm text-green-700 mt-2">
+                        Your access code covers the full cost of this course. No payment is required — click
+                        below to complete your enrollment.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
                 <RadioGroup
                   value={paymentMethod}
                   onValueChange={setPaymentMethod}
@@ -646,6 +827,7 @@ export default function Checkout() {
                     </div>
                   </Label> */}
                 </RadioGroup>
+                )}
 
                 {/* Bank transfer details - TODO: Work on this later */}
                 {/* {paymentMethod === "bank_transfer" && (
@@ -668,7 +850,7 @@ export default function Checkout() {
                     <div className="flex gap-3">
                       <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {course.thumbnail_url ? (
-                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                          <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                         ) : (
                           <div className="w-full h-full bg-primary/20 flex items-center justify-center">
                             <BookOpen className="w-5 h-5 text-primary" />
@@ -684,10 +866,12 @@ export default function Checkout() {
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
                       <div className="text-right">
-                        <div className="text-primary">{formatCurrency(coursePrice, 'USD')}</div>
-                        <div className="text-sm font-normal text-muted-foreground">
-                          ({formatCurrency(amountGHS, 'GHS')} charged)
-                        </div>
+                        <div className="text-primary">{formatCurrency(effectivePrice, 'USD')}</div>
+                        {!isFreeViaToken && (
+                          <div className="text-sm font-normal text-muted-foreground">
+                            ({formatCurrency(amountGHS, 'GHS')} charged)
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -697,21 +881,28 @@ export default function Checkout() {
                       </Button>
                       <Button
                         onClick={handleConfirmPayment}
-                        disabled={isProcessing || (paymentMethod === "paystack" && !isPaystackReady)}
+                        disabled={isProcessing || (!isFreeViaToken && paymentMethod === "paystack" && !isPaystackReady)}
                         size="lg"
                         className="w-full h-12 text-base font-semibold"
                         aria-label={
                           isProcessing
                             ? "Processing payment"
-                            : paymentMethod === "paystack" && !isPaystackReady
-                              ? "Loading payment system"
-                              : `Pay ${formatCurrency(amountGHS, 'GHS')} for ${course.title}`
+                            : isFreeViaToken
+                              ? `Complete enrollment in ${course.title}`
+                              : paymentMethod === "paystack" && !isPaystackReady
+                                ? "Loading payment system"
+                                : `Pay ${formatCurrency(amountGHS, 'GHS')} for ${course.title}`
                         }
                       >
                         {isProcessing ? (
                           <>
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Processing Payment
+                            {isFreeViaToken ? "Enrolling" : "Processing Payment"}
+                          </>
+                        ) : isFreeViaToken ? (
+                          <>
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Complete Enrollment
                           </>
                         ) : paymentMethod === "paystack" && !isPaystackReady ? (
                           <>
@@ -749,12 +940,14 @@ export default function Checkout() {
               <h1 className="text-2xl font-bold">
                 {bookingResult.paymentMethod === "bank_transfer"
                   ? "Registration Received!"
-                  : "Payment Successful!"}
+                  : bookingResult.paymentMethod === "access_token"
+                    ? "You're Enrolled!"
+                    : "Payment Successful!"}
               </h1>
               <p className="text-muted-foreground mt-2">
                 {bookingResult.paymentMethod === "bank_transfer"
                   ? "Complete your bank transfer to confirm your enrollment."
-                  : `You're now enrolled in ${bookingResult.courseName}. Start learning right away!`}
+                  : `You now have full access to ${bookingResult.courseName}. Start learning right away!`}
               </p>
             </div>
 
@@ -783,7 +976,11 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <Badge variant={bookingResult.paymentMethod === "bank_transfer" ? "secondary" : "default"}>
-                    {bookingResult.paymentMethod === "bank_transfer" ? "Pending Payment" : "✓ Confirmed"}
+                    {bookingResult.paymentMethod === "bank_transfer"
+                      ? "Pending Payment"
+                      : bookingResult.paymentMethod === "access_token"
+                        ? "✓ Redeemed"
+                        : "✓ Confirmed"}
                   </Badge>
                 </div>
               </CardContent>

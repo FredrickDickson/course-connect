@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen } from "lucide-react";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export default function Programs() {
   // Fetch all published courses from the database
@@ -150,10 +151,12 @@ export default function Programs() {
                           <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
                         </div>
                       )}
-                      <img 
-                        src={course.thumbnail_url || "https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400"} 
-                        alt={course.title} 
-                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                      <CourseThumbnail
+                        src={course.thumbnail_url}
+                        fallbackSrc="https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400"
+                        alt={course.title}
+                        className="w-full h-64"
+                        imgClassName="group-hover:scale-125 transition-transform duration-300"
                       />
                       <CardContent className="p-8">
                         <div className="space-y-6">

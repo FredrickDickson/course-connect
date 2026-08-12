@@ -30,7 +30,7 @@ import { formatCoursePrice } from "@/lib/format-price";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
-  MapPin, Clock, Layers, Pencil,
+  MapPin, Clock, Layers, Pencil, KeyRound,
 } from "lucide-react";
 
 interface CourseWithEnrollments {
@@ -562,6 +562,9 @@ export default function AdminCoursesTable() {
                     </Button>
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setLocation(`/admin/courses/${selectedCourse.id}/curriculum`)}>
                       <BookOpen className="w-3.5 h-3.5 mr-1.5" /> Manage Curriculum
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setLocation(`/admin/access-tokens?courseId=${selectedCourse.id}`)}>
+                      <KeyRound className="w-3.5 h-3.5 mr-1.5" /> Manage Access Tokens
                     </Button>
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => { setBulkEmailCourse(selectedCourse); setSelectedCourse(null); }}>
                       <Mail className="w-3.5 h-3.5 mr-1.5" /> Send Bulk Email

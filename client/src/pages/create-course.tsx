@@ -344,12 +344,21 @@ export default function CreateCourse() {
     onSuccess: (course) => {
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
       // Public listings use different query keys than the ones above — without
       // these, a newly published course wouldn't show up on the catalog until
       // React Query's 5-minute staleTime expired.
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["courses_filtered"] });
+      // These drive the admin course table, instructor dashboard list, and
+      // the instructor-photo fields on this same form — without them a
+      // fresh thumbnail/instructor-photo upload looks like it "didn't stick"
+      // because those views keep serving their pre-save cached data.
+      queryClient.invalidateQueries({ queryKey: ["admin-courses-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["instructor_courses"] });
+      queryClient.invalidateQueries({ queryKey: ["course-instructors", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["instructor-profiles-for-course", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["legacy-course-instructor", courseData?.instructor_id] });
       toast({
         title: "Success",
         description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",
@@ -678,7 +687,7 @@ export default function CreateCourse() {
                             onValueChange={(v) =>
                               handleCategoryChange(v, field.onChange)
                             }
-                            defaultValue={field.value}
+                            value={field.value}
                             disabled={categoriesLoading}
                           >
                             <FormControl>
@@ -720,7 +729,7 @@ export default function CreateCourse() {
                           <FormLabel>Course Type *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -751,7 +760,7 @@ export default function CreateCourse() {
                               <FormLabel>Difficulty Level *</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -777,7 +786,7 @@ export default function CreateCourse() {
                               <FormLabel>Qualification Track *</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -832,7 +841,7 @@ export default function CreateCourse() {
                             <FormLabel>Currency</FormLabel>
                             <Select
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -864,6 +873,7 @@ export default function CreateCourse() {
                                 currentImageUrl={field.value}
                                 onUploadComplete={(url) => field.onChange(url)}
                                 onUploadingChange={handleUploadingChange}
+                                variant="thumbnail"
                               />
                               <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
