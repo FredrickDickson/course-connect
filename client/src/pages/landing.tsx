@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, Sparkles } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 
@@ -379,7 +379,7 @@ function LearningPathwaysSection() {
         "Learn to represent clients effectively in mediation through case preparation, opening strategy, negotiation, caucusing, risk assessment and settlement documentation.",
     },
     {
-      icon: Sparkles,
+      icon: BrainCircuit,
       title: "5. AI, Online Mediation & Digital Dispute Resolution",
       description:
         "Develop practical skills in using AI and digital platforms for dispute analysis, case preparation, negotiation support, online mediation and settlement processes.",
