@@ -300,7 +300,7 @@ export default function AdminSetup() {
                         <FormControl><Input type="password" placeholder="Enter setup key" {...field} data-testid="input-setup-key" /></FormControl>
                         <FormMessage />
                         {!adminExists && (
-                          <p className="text-xs text-muted-foreground">Default key: CIMA_ADMIN_SETUP_2024</p>
+                          <p className="text-xs text-muted-foreground">Contact your system administrator for the setup key.</p>
                         )}
                       </FormItem>
                     )}

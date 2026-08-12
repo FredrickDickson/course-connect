@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,15 +18,17 @@ import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/header";
+import AdminLayout from "@/components/admin-layout";
 import AdminMembershipTable from "@/components/admin-membership-table";
 import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
-import AdminNotifications from "@/components/admin-notifications";
+import AdminQuizResults from "@/components/admin-quiz-results";
 import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
+import InstructorList from "@/components/admin/instructor-list";
+import ResourcesManagement from "@/components/admin/resources-management";
 import {
   Users,
   BookOpen,
@@ -46,6 +48,7 @@ import {
   AlertCircle,
   UserPlus,
   Shield,
+  Plus,
 } from "lucide-react";
 import {
   Select,
@@ -105,7 +108,18 @@ export default function AdminDashboard() {
   });
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [location] = useLocation();
+  
+  // Get active tab from URL params
+  const getActiveTab = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("tab") || "overview";
+    }
+    return "overview";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getActiveTab());
   const [reviewComments, setReviewComments] = useState("");
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({
@@ -115,6 +129,38 @@ export default function AdminDashboard() {
     password: "",
   });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  
+  // Sync active tab with URL whenever location changes
+  useEffect(() => {
+    const newTab = getActiveTab();
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location]); // Re-run when location changes
+  
+  // Listen for custom tab change events from sidebar
+  useEffect(() => {
+    const handleTabChangeEvent = () => {
+      const newTab = getActiveTab();
+      if (newTab !== activeTab) {
+        setActiveTab(newTab);
+      }
+    };
+    
+    window.addEventListener("tabchange", handleTabChangeEvent);
+    
+    return () => {
+      window.removeEventListener("tabchange", handleTabChangeEvent);
+    };
+  }, [activeTab]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", newTab);
+    window.history.pushState({}, "", url);
+  };
 
   // Fetch stats for pending badge
   const { data: pendingCount } = useQuery({
@@ -218,21 +264,35 @@ export default function AdminDashboard() {
     }
     setIsCreatingAdmin(true);
     try {
-      const response = await fetch("/api/admin/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("admin-setup", {
+        body: {
           firstName: newAdmin.firstName,
           lastName: newAdmin.lastName,
           email: newAdmin.email,
           password: newAdmin.password,
-          role: "admin",
-        }),
+          createByAdmin: true,
+        },
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create admin");
+      if (error) {
+        const response = (error as any).context;
+        let errorMessage = error.message || "Failed to create admin";
+        if (response?.body) {
+          try {
+            const text = await response.text();
+            if (text) {
+              try {
+                errorMessage = JSON.parse(text).error || text;
+              } catch {
+                errorMessage = text;
+              }
+            }
+          } catch {
+            // fall back to error.message
+          }
+        }
+        throw new Error(errorMessage);
       }
+      if (data?.error) throw new Error(data.error);
       toast({ title: "Admin Created", description: `${newAdmin.firstName} ${newAdmin.lastName} has been added as an admin.` });
       setNewAdmin({ firstName: "", lastName: "", email: "", password: "" });
       setShowCreateAdmin(false);
@@ -250,9 +310,11 @@ export default function AdminDashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -262,39 +324,100 @@ export default function AdminDashboard() {
   const reviewedApps = applications.filter((a) => a.status !== "pending");
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
+            <p className="text-[#6b5d4f] mt-1 font-sf-pro-text">
               Manage instructors, courses, and platform operations
             </p>
           </div>
-          <div className="flex items-center gap-2 mt-3 sm:mt-0">
-            <Button asChild size="sm" variant="secondary">
-              <Link href="/admin/expedited">Expedited Reviews</Link>
+          <div className="flex gap-2">
+            <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000]/5">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Create Admin
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create Admin Account</DialogTitle>
+                  <DialogDescription>
+                    Grants full admin access to the platform. Use with care.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="newAdminFirstName">First Name</Label>
+                      <Input
+                        id="newAdminFirstName"
+                        value={newAdmin.firstName}
+                        onChange={(e) => setNewAdmin((p) => ({ ...p, firstName: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="newAdminLastName">Last Name</Label>
+                      <Input
+                        id="newAdminLastName"
+                        value={newAdmin.lastName}
+                        onChange={(e) => setNewAdmin((p) => ({ ...p, lastName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="newAdminEmail">Email</Label>
+                    <Input
+                      id="newAdminEmail"
+                      type="email"
+                      value={newAdmin.email}
+                      onChange={(e) => setNewAdmin((p) => ({ ...p, email: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newAdminPassword">Password</Label>
+                    <Input
+                      id="newAdminPassword"
+                      type="password"
+                      value={newAdmin.password}
+                      onChange={(e) => setNewAdmin((p) => ({ ...p, password: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters.</p>
+                  </div>
+                  <Button
+                    className="w-full bg-[#610000] text-white hover:bg-[#7d0000]"
+                    onClick={handleCreateAdmin}
+                    disabled={isCreatingAdmin}
+                  >
+                    {isCreatingAdmin ? "Creating..." : "Create Admin"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
+              <Link href="/admin/courses/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Link>
             </Button>
-            <AdminNotifications />
-            <Badge variant="outline" className="text-xs">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              Admin
-            </Badge>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1">
-              <TabsTrigger value="overview" className="text-sm px-4 py-2">Overview</TabsTrigger>
-              <TabsTrigger value="enrollments" className="text-sm px-4 py-2">Enrollments</TabsTrigger>
-              <TabsTrigger value="courses" className="text-sm px-4 py-2">Courses</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2">Templates</TabsTrigger>
-              <TabsTrigger value="members" className="text-sm px-4 py-2">Members</TabsTrigger>
-              <TabsTrigger value="renewals" className="text-sm px-4 py-2">Renewals</TabsTrigger>
-              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
+              <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Overview</TabsTrigger>
+              <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
+              <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
+              <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
+              <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Quizzes</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Create Course</TabsTrigger>
+              <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
+              <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
+              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#610000]">
                 Applications
                 {(pendingCount || 0) > 0 && (
                   <Badge
@@ -305,13 +428,19 @@ export default function AdminDashboard() {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="users" className="text-sm px-4 py-2">Users</TabsTrigger>
+              <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Users</TabsTrigger>
+              <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Resources</TabsTrigger>
             </TabsList>
           </div>
 
           {/* Overview Tab — Year selector, charts, YoY */}
           <TabsContent value="overview">
             <AdminOverviewStats />
+          </TabsContent>
+
+          {/* Instructors Tab */}
+          <TabsContent value="instructors">
+            <InstructorList />
           </TabsContent>
 
           {/* Enrollments Tab */}
@@ -322,6 +451,11 @@ export default function AdminDashboard() {
           {/* Courses Tab — Enhanced with capacity bars */}
           <TabsContent value="courses">
             <AdminCoursesTable />
+          </TabsContent>
+
+          {/* Quizzes Tab */}
+          <TabsContent value="quizzes">
+            <AdminQuizResults />
           </TabsContent>
 
           {/* Templates Tab — Reusable course templates & cohort system */}
@@ -412,9 +546,14 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-6">
             <AdminUsersProfiles />
           </TabsContent>
+
+          {/* Resources Tab */}
+          <TabsContent value="resources" className="space-y-6">
+            <ResourcesManagement />
+          </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 

@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
-import { Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { fileTypeFromFile } from 'file-type';
 
 // File filter for different types
 const createFileFilter = (allowedTypes: string[], maxSize: number) => {
@@ -118,6 +119,80 @@ export const memoryUpload = multer({
     files: 1,
   },
 });
+
+// Magic-byte types that are never acceptable regardless of claimed extension —
+// catches the classic "renamed executable/script" upload bypass.
+const DANGEROUS_DETECTED_TYPES = new Set([
+  'exe', 'dll', 'msi', 'sh', 'bat', 'cmd', 'com', 'jar',
+  'html', 'htm', 'xml', 'svg', 'js', 'php', 'py', 'apk', 'deb', 'rpm',
+]);
+
+// Extensions we can reliably verify via magic bytes, mapped to the
+// file-type `ext` value(s) that legitimately match. Extensions not listed
+// here (e.g. .txt, .rtf, .doc) don't have a reliable binary signature, so
+// they're only checked against the dangerous-type blocklist above, not
+// required to match a specific detected type.
+const VERIFIABLE_EXTENSIONS: Record<string, string[]> = {
+  '.jpg': ['jpg'],
+  '.jpeg': ['jpg'],
+  '.png': ['png'],
+  '.gif': ['gif'],
+  '.webp': ['webp'],
+  '.mp4': ['mp4'],
+  '.mov': ['mov'],
+  '.webm': ['webm'],
+  '.avi': ['avi'],
+  '.pdf': ['pdf'],
+  '.docx': ['docx'],
+};
+
+/**
+ * Post-multer middleware: verifies the uploaded file's actual content
+ * (magic bytes) is consistent with its extension, rejecting files whose
+ * true type is a dangerous format (executable/script/html) regardless of
+ * the claimed extension, or whose detected type contradicts a verifiable
+ * extension's expected type. Extensions without a reliable signature (.txt,
+ * .rtf, .doc) are only checked against the dangerous-type blocklist.
+ */
+export const verifyFileContent = () => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const files: Express.Multer.File[] = req.file
+      ? [req.file]
+      : Array.isArray(req.files)
+        ? req.files
+        : [];
+
+    for (const file of files) {
+      try {
+        const detected = await fileTypeFromFile(file.path);
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (detected && DANGEROUS_DETECTED_TYPES.has(detected.ext)) {
+          cleanupFile(file.path);
+          return res.status(400).json({
+            error: 'File Upload Error',
+            message: 'File content does not match an allowed file type',
+          });
+        }
+
+        const expected = VERIFIABLE_EXTENSIONS[ext];
+        if (expected && detected && !expected.includes(detected.ext)) {
+          cleanupFile(file.path);
+          return res.status(400).json({
+            error: 'File Upload Error',
+            message: 'File content does not match its extension',
+          });
+        }
+      } catch (error) {
+        console.error('File content verification error:', error);
+        // Don't block the upload on a verification-tooling failure —
+        // extension/size checks already ran via multer's fileFilter.
+      }
+    }
+
+    next();
+  };
+};
 
 // Upload error handler
 export const handleUploadError = (err: any, req: Request, res: any, next: any) => {

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,13 +30,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useRoute } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/header";
-import { ArrowLeft, Save, BookOpen } from "lucide-react";
+import StudentLayout from "@/components/student-layout";
+import { ArrowLeft, Save, BookOpen, Plus, Shield, Trash2, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useAuth } from "@/contexts/AuthContext";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
+
+// Instructor schema for admin course creation
+const instructorSchema = z.object({
+  // Set when this entry represents an instructor already linked to the
+  // course being edited (existing account OR a previously-created
+  // admin-managed one) — tells the server whether to sync bio/photo or
+  // leave a real self-managed instructor's profile untouched.
+  userId: z.string().optional(),
+  name: z.string().min(1, "Instructor name is required"),
+  title: z.string().optional(),
+  bio: z.string().optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  profileImageUrl: z.string().url().optional().or(z.literal("")),
+  expertise: z.array(z.string()).optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
+  websiteUrl: z.string().url().optional().or(z.literal("")),
+});
 
 const courseSchema = z
   .object({
@@ -51,6 +69,8 @@ const courseSchema = z
     thumbnailUrl: z.string().url().optional().or(z.literal("")),
     isPublished: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
+    // For admin: instructor details (optional array, but if provided must have items)
+    instructors: z.array(instructorSchema).optional(),
   })
   .superRefine((data, ctx) => {
     // Level/track only apply to the Professional Programme (Associate/Member/
@@ -74,6 +94,9 @@ const courseSchema = z
   });
 
 type CourseFormData = z.infer<typeof courseSchema>;
+// isAdminManaged is a client-only UI flag (stripped before submit) marking
+// whether an already-linked instructor is safe to edit bio/photo for here.
+type InstructorFormData = z.infer<typeof instructorSchema> & { isAdminManaged?: boolean };
 
 interface Category {
   id: string;
@@ -92,10 +115,26 @@ export default function CreateCourse() {
   const { user } = useAuth();
   const [customCategory, setCustomCategory] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  
+  // Admin context: instructor details for direct input
+  const [instructors, setInstructors] = useState<InstructorFormData[]>([
+    { name: "", title: "", bio: "", email: "", profileImageUrl: "", expertise: [], linkedinUrl: "", websiteUrl: "" }
+  ]);
+  const isAdmin = user?.role === "admin";
+  const [isRouteAdmin, setIsRouteAdmin] = useState(false);
 
-  // Edit mode detection
-  const [, editParams] = useRoute("/instructor/courses/:courseId/edit");
-  const courseId = editParams?.courseId;
+  // Tracks how many ImageUploader instances (thumbnail + any instructor
+  // photos) are currently mid-upload, so the form can't be submitted with a
+  // file selected but not yet actually saved to storage.
+  const [uploadingImagesCount, setUploadingImagesCount] = useState(0);
+  const handleUploadingChange = (uploading: boolean) => {
+    setUploadingImagesCount((c) => Math.max(0, c + (uploading ? 1 : -1)));
+  };
+
+  // Edit mode detection for instructor and admin routes
+  const [, instructorEditParams] = useRoute("/instructor/courses/:courseId/edit");
+  const [, adminEditParams] = useRoute("/admin/courses/:courseId/edit");
+  const courseId = instructorEditParams?.courseId || adminEditParams?.courseId;
   const isEditMode = !!courseId;
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<
@@ -144,10 +183,15 @@ export default function CreateCourse() {
       thumbnailUrl: "",
       isPublished: false,
       isFeatured: false,
+      instructors: [],
     },
   });
 
-  // Pre-fill form when course data loads
+  useEffect(() => {
+    const path = window.location.pathname;
+    setIsRouteAdmin(path.startsWith("/admin"));
+  }, []);
+
   useEffect(() => {
     if (courseData) {
       form.reset({
@@ -165,6 +209,81 @@ export default function CreateCourse() {
       });
     }
   }, [courseData, form]);
+
+  // Edit mode: load the course's credited instructors (course_instructors,
+  // falling back to the single legacy instructor_id join for courses saved
+  // before multi-instructor support existed) so the admin form doesn't open
+  // blank and re-saving doesn't wipe out title/expertise/links.
+  const { data: existingCourseInstructors } = useQuery({
+    queryKey: ["course-instructors", courseId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("course_instructors")
+        .select("user_id, sort_order, instructor:users!course_instructors_user_id_fkey(id, first_name, last_name, email, bio, profile_image_url, created_by_admin_id)")
+        .eq("course_id", courseId)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin && isEditMode && !!courseId,
+  });
+
+  const instructorIds = (existingCourseInstructors || []).map((r) => r.user_id);
+  const { data: instructorProfilesById } = useQuery({
+    queryKey: ["instructor-profiles-for-course", courseId, instructorIds.join(",")],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("instructor_profiles")
+        .select("*")
+        .in("user_id", instructorIds);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin && isEditMode && instructorIds.length > 0,
+  });
+
+  // Legacy fallback for courses saved before course_instructors existed.
+  const { data: legacyInstructorUser } = useQuery({
+    queryKey: ["legacy-course-instructor", courseData?.instructor_id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("users")
+        .select("id, first_name, last_name, email, bio, profile_image_url, created_by_admin_id")
+        .eq("id", courseData!.instructor_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled:
+      isAdmin && isEditMode && !!courseData?.instructor_id &&
+      (existingCourseInstructors?.length ?? 0) === 0,
+  });
+
+  useEffect(() => {
+    if (!isAdmin || !isEditMode) return;
+    const rows = existingCourseInstructors && existingCourseInstructors.length > 0
+      ? existingCourseInstructors
+      : legacyInstructorUser
+        ? [{ user_id: legacyInstructorUser.id, instructor: legacyInstructorUser }]
+        : null;
+    if (!rows) return;
+
+    setInstructors(rows.map((row: any) => {
+      const p = (instructorProfilesById || []).find((ip: any) => ip.user_id === row.user_id);
+      return {
+        userId: row.instructor.id,
+        name: `${row.instructor.first_name || ""} ${row.instructor.last_name || ""}`.trim(),
+        title: p?.title || "",
+        bio: row.instructor.bio || "",
+        email: row.instructor.email || "",
+        profileImageUrl: row.instructor.profile_image_url || "",
+        expertise: p?.expertise || [],
+        linkedinUrl: p?.linkedin_url || "",
+        websiteUrl: p?.website_url || "",
+        isAdminManaged: !!row.instructor.created_by_admin_id,
+      };
+    }));
+  }, [existingCourseInstructors, legacyInstructorUser, instructorProfilesById, isAdmin, isEditMode]);
 
   const saveCourse = useMutation({
     mutationFn: async (data: CourseFormData) => {
@@ -204,31 +323,41 @@ export default function CreateCourse() {
         thumbnailUrl: data.thumbnailUrl || null,
         isPublished: data.isPublished,
         isFeatured: data.isFeatured,
+        // Include instructors for admin (drop the client-only isAdminManaged
+        // UI flag before sending — the server derives that itself)
+        ...(isAdmin && instructors && instructors.filter(i => i.name.trim()).length > 0
+          ? { instructors: instructors.filter(i => i.name.trim()).map(({ isAdminManaged, ...rest }) => rest) }
+          : {}),
       };
 
-      if (isEditMode) {
-        // Update existing course
-        const courseRes = await apiRequest("PUT", `/api/instructor/courses/${courseId}`, payload);
-        return await courseRes.json();
-      } else {
-        // Create new course
-        const courseRes = await apiRequest("POST", "/api/instructor/courses", payload);
-        return await courseRes.json();
-      }
+      const courseUrl = isEditMode
+        ? `/api/instructor/courses/${courseId}`
+        : "/api/instructor/courses";
+
+      const courseRes = await apiRequest(
+        isEditMode ? "PUT" : "POST",
+        courseUrl,
+        payload,
+      );
+      return await courseRes.json();
     },
     onSuccess: (course) => {
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      // Public listings use different query keys than the ones above — without
+      // these, a newly published course wouldn't show up on the catalog until
+      // React Query's 5-minute staleTime expired.
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["courses_filtered"] });
       toast({
         title: "Success",
         description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",
       });
-      if (isEditMode) {
-        setLocation(`/instructor/courses/${course.id}/curriculum`);
-      } else {
-        setLocation(`/instructor/courses/${course.id}/curriculum`);
-      }
+      const nextPath = isRouteAdmin
+        ? `/admin/courses/${course.id}/curriculum`
+        : `/instructor/courses/${course.id}/curriculum`;
+      setLocation(nextPath);
     },
     onError: (error) => {
       toast({
@@ -240,6 +369,15 @@ export default function CreateCourse() {
   });
 
   const onSubmit = (data: CourseFormData) => {
+    if (isAdmin && instructors.filter(i => i.name.trim()).length === 0) {
+      toast({
+        title: "Instructor required",
+        description: "Please add at least one instructor with their details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (data.categoryId === CUSTOM_CATEGORY_VALUE && !customCategory.trim()) {
       toast({
         title: "Error",
@@ -249,6 +387,31 @@ export default function CreateCourse() {
       return;
     }
     saveCourse.mutate(data);
+  };
+
+  const addInstructor = () => {
+    setInstructors([...instructors, { 
+      name: "", 
+      title: "", 
+      bio: "", 
+      email: "", 
+      profileImageUrl: "", 
+      expertise: [], 
+      linkedinUrl: "", 
+      websiteUrl: "" 
+    }]);
+  };
+
+  const removeInstructor = (index: number) => {
+    if (instructors.length > 1) {
+      setInstructors(instructors.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateInstructor = (index: number, field: keyof InstructorFormData, value: any) => {
+    const updated = [...instructors];
+    updated[index] = { ...updated[index], [field]: value };
+    setInstructors(updated);
   };
 
   const handleCategoryChange = (
@@ -271,30 +434,29 @@ export default function CreateCourse() {
   if (!hasAccess) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/instructor">
+    <StudentLayout>
+      <div className="space-y-8">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+            <Link href={isRouteAdmin ? "/admin" : "/instructor"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-[#2c2015] font-display">
               {isEditMode ? "Edit Course" : "Create New Course"}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-[#6b5d4f] mt-2 font-body">
               {isEditMode ? "Update your course details" : "Fill in the details to create your new course"}
             </p>
           </div>
         </div>
 
-        <Card>
+        <Card className="bg-white border-[#d4c5b0]/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-[#2c2015] font-display">
+              <BookOpen className="h-5 w-5 text-[#610000]" />
               Course Information
             </CardTitle>
           </CardHeader>
@@ -304,6 +466,172 @@ export default function CreateCourse() {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
+                {isAdmin && (
+                  <div className="space-y-6 rounded-xl border-2 border-[#610000]/20 bg-gradient-to-br from-[#faf9f6] to-[#f5f3ed] p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-bold text-[#610000] font-display flex items-center gap-2">
+                          <Shield className="w-5 h-5" />
+                          Admin Mode: Instructor Details
+                        </h2>
+                        <p className="text-sm text-[#6b5d4f] mt-1 font-body">
+                          Add instructor information for this course. You can add multiple instructors.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={addInstructor}
+                        className="bg-[#610000] text-white hover:bg-[#7d0000]"
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Instructor
+                      </Button>
+                    </div>
+
+                    {instructors.map((instructor, index) => (
+                      <Card key={index} className="bg-white border-[#d4c5b0]/30">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base font-display text-[#2c2015]">
+                              Instructor {index + 1}
+                            </CardTitle>
+                            {instructors.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeInstructor(index)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {!!instructor.userId && instructor.isAdminManaged === false && (
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                              <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                              <p>
+                                This is an existing instructor account. Their bio and photo are
+                                managed by them and won't change here — you can still credit them
+                                on this course.
+                              </p>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`instructor-name-${index}`}>Full Name *</Label>
+                              <Input
+                                id={`instructor-name-${index}`}
+                                value={instructor.name}
+                                onChange={(e) => updateInstructor(index, 'name', e.target.value)}
+                                placeholder="e.g., Dr. John Smith"
+                                className="border-[#d4c5b0]"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`instructor-title-${index}`}>Title/Designation</Label>
+                              <Input
+                                id={`instructor-title-${index}`}
+                                value={instructor.title || ''}
+                                onChange={(e) => updateInstructor(index, 'title', e.target.value)}
+                                placeholder="e.g., Professor of Law"
+                                className="border-[#d4c5b0]"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`instructor-email-${index}`}>Email</Label>
+                            <Input
+                              id={`instructor-email-${index}`}
+                              type="email"
+                              value={instructor.email || ''}
+                              onChange={(e) => updateInstructor(index, 'email', e.target.value)}
+                              placeholder="instructor@example.com"
+                              className="border-[#d4c5b0]"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`instructor-image-${index}`}>Profile Photo</Label>
+                            {instructor.isAdminManaged === false && instructor.userId ? (
+                              instructor.profileImageUrl ? (
+                                <img
+                                  src={instructor.profileImageUrl}
+                                  alt={instructor.name}
+                                  className="w-24 h-24 rounded-full object-cover border-2 border-[#d4c5b0]"
+                                />
+                              ) : (
+                                <p className="text-sm text-[#8b6f47]">No photo set by this instructor yet.</p>
+                              )
+                            ) : (
+                              <ImageUploader
+                                bucket="instructor-avatars"
+                                currentImageUrl={instructor.profileImageUrl}
+                                onUploadComplete={(url) => updateInstructor(index, 'profileImageUrl', url)}
+                                onUploadingChange={handleUploadingChange}
+                              />
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`instructor-bio-${index}`}>Bio</Label>
+                            <Textarea
+                              id={`instructor-bio-${index}`}
+                              value={instructor.bio || ''}
+                              onChange={(e) => updateInstructor(index, 'bio', e.target.value)}
+                              placeholder="Brief biography and credentials..."
+                              rows={4}
+                              className="border-[#d4c5b0]"
+                              disabled={instructor.isAdminManaged === false && !!instructor.userId}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`instructor-linkedin-${index}`}>LinkedIn URL</Label>
+                              <Input
+                                id={`instructor-linkedin-${index}`}
+                                type="url"
+                                value={instructor.linkedinUrl || ''}
+                                onChange={(e) => updateInstructor(index, 'linkedinUrl', e.target.value)}
+                                placeholder="https://linkedin.com/in/username"
+                                className="border-[#d4c5b0]"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`instructor-website-${index}`}>Website URL</Label>
+                              <Input
+                                id={`instructor-website-${index}`}
+                                type="url"
+                                value={instructor.websiteUrl || ''}
+                                onChange={(e) => updateInstructor(index, 'websiteUrl', e.target.value)}
+                                placeholder="https://example.com"
+                                className="border-[#d4c5b0]"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`instructor-expertise-${index}`}>Areas of Expertise</Label>
+                            <Input
+                              id={`instructor-expertise-${index}`}
+                              value={(instructor.expertise || []).join(', ')}
+                              onChange={(e) => updateInstructor(index, 'expertise', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                              placeholder="Arbitration, Mediation, Commercial Law (comma separated)"
+                              className="border-[#d4c5b0]"
+                            />
+                            <p className="text-xs text-[#8b6f47]">Separate multiple areas with commas</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-6">
                     <FormField
@@ -535,6 +863,7 @@ export default function CreateCourse() {
                               <ImageUploader
                                 currentImageUrl={field.value}
                                 onUploadComplete={(url) => field.onChange(url)}
+                                onUploadingChange={handleUploadingChange}
                               />
                               <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
@@ -627,14 +956,19 @@ export default function CreateCourse() {
                   )}
                 />
 
-                <div className="flex items-center justify-end gap-4 pt-4 border-t">
-                  <Button type="button" variant="outline" asChild>
-                    <Link href="/instructor">Cancel</Link>
+                <div className="flex items-center justify-end gap-4 pt-4 border-t border-[#d4c5b0]/30">
+                  <Button type="button" variant="outline" asChild className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">
+                    <Link href={isRouteAdmin ? "/admin" : "/instructor"}>Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={saveCourse.isPending}>
-                        {saveCourse.isPending ? (
+                  <Button type="submit" disabled={saveCourse.isPending || uploadingImagesCount > 0} className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                        {uploadingImagesCount > 0 ? (
                           <>
-                            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                            Uploading image...
+                          </>
+                        ) : saveCourse.isPending ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                             {isEditMode ? "Updating..." : "Creating..."}
                           </>
                         ) : (
@@ -650,6 +984,6 @@ export default function CreateCourse() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </StudentLayout>
   );
 }

@@ -193,7 +193,7 @@ export const lessonSchema = z.object({
   moduleId: z.string().uuid().nullable().optional(),
   title: z.string().min(1),
   description: z.string().nullable().optional(),
-  contentType: z.enum(["video", "text", "quiz", "assignment"]).default("video"),
+  contentType: z.enum(["video", "text", "quiz", "assignment", "presentation"]).default("video"),
   videoUrl: z.string().nullable().optional(),
   part: z.enum(["associate", "member", "fellow"]).nullable().optional(),
   videoId: z.string().nullable().optional(),
@@ -386,6 +386,18 @@ export const assignmentSubmissionSchema = z.object({
   gradedBy: z.string().nullable().optional(),
   isLateSubmission: z.boolean().default(false),
   submittedAt: z.date().optional(),
+});
+
+// Presentation schema (PDF/PPTX slideshow lecture content)
+export const presentationSchema = z.object({
+  id: z.string().uuid(),
+  lessonId: z.string().uuid().nullable().optional(),
+  fileUrl: z.string().min(1),
+  fileName: z.string().min(1),
+  fileType: z.enum(["pdf", "pptx"]).default("pdf"),
+  pageCount: z.number().nullable().optional(),
+  allowDownload: z.boolean().default(false),
+  createdAt: z.date().optional(),
 });
 
 // Instructor payout tracking
@@ -823,6 +835,11 @@ export const insertAssignmentSubmissionSchema = assignmentSubmissionSchema.omit(
   },
 );
 
+export const insertPresentationSchema = presentationSchema.omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertInstructorPayoutSchema = instructorPayoutSchema.omit({
   id: true,
   createdAt: true,
@@ -956,6 +973,8 @@ export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type InsertAssignmentSubmission = z.infer<
   typeof insertAssignmentSubmissionSchema
 >;
+export type Presentation = z.infer<typeof presentationSchema>;
+export type InsertPresentation = z.infer<typeof insertPresentationSchema>;
 export type InsertInstructorPayout = z.infer<
   typeof insertInstructorPayoutSchema
 >;

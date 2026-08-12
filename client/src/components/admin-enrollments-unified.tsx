@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { fetchJoinedEnrollments, type JoinedEnrollment } from "@/lib/joined-enrollments";
 import {
   Search, Download, Eye, CheckCircle, XCircle, StickyNote, Users,
   DollarSign, Clock, Mail, Phone, MapPin, Building2, Briefcase,
@@ -26,35 +27,7 @@ import {
   History, Shield, AlertTriangle, FileText,
 } from "lucide-react";
 
-interface UnifiedEnrollment {
-  id: string;
-  user_id: string | null;
-  course_id: string;
-  enrollment_level: string;
-  status: string;
-  enrolled_at: string;
-  course?: { title: string; cohort_id?: string } | null;
-  order?: {
-    id: string;
-    booking_ref: string | null;
-    amount: number;
-    currency: string | null;
-    status: string;
-    paystack_reference: string | null;
-    enrollment_metadata: {
-      email?: string;
-      full_name?: string;
-      phone?: string;
-      whatsapp?: string;
-      country?: string;
-      institution?: string;
-      address?: string;
-      personal_statement?: string;
-      admin_notes?: string;
-      notes_updated_at?: string;
-    } | null;
-  } | null;
-}
+type UnifiedEnrollment = JoinedEnrollment;
 
 // Status mapping for display
 const ORDER_STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -80,52 +53,53 @@ export default function AdminEnrollmentsUnified() {
   const [selectedEnrollment, setSelectedEnrollment] = useState<UnifiedEnrollment | null>(null);
   const [adminNote, setAdminNote] = useState("");
   const [statementExpanded, setStatementExpanded] = useState(false);
-  const [showSnapshot, setShowSnapshot] = useState(false);
 
   // Fetch from unified tables
   const { data: enrollments = [], isLoading } = useQuery<UnifiedEnrollment[]>({
     queryKey: ["admin-unified-enrollments"],
+    queryFn: () => fetchJoinedEnrollments(),
+  });
+
+  // Bulk-fetched so both the table rows and the detail drawer can fall back to
+  // live profile/user data when an order's enrollment_metadata snapshot is
+  // empty (true for every enrollment made through the current checkout flow).
+  const { data: allProfiles = [] } = useQuery<Array<{ user_id: string; full_name: string | null; phone: string | null; country: string | null }>>({
+    queryKey: ["admin-all-profiles"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("enrollments")
-        .select(`
-          *,
-          course:courses(title, cohort_id),
-          order:orders(booking_ref, amount, currency, status, paystack_reference, enrollment_metadata)
-        `)
-        .order("enrolled_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as UnifiedEnrollment[];
+      const { data } = await (supabase as any).from("profiles").select("user_id, full_name, phone, country");
+      return data || [];
     },
   });
 
-  const { data: userProfile } = useQuery({
-    queryKey: ["admin-user-profile", selectedEnrollment?.user_id],
+  // profiles has no email column — that lives on users, so fetch it separately
+  const { data: allUsers = [] } = useQuery<Array<{ id: string; email: string | null; first_name: string | null; last_name: string | null }>>({
+    queryKey: ["admin-all-users"],
     queryFn: async () => {
-      if (!selectedEnrollment?.user_id) return null;
-      const { data } = await (supabase as any).from("profiles").select("*").eq("user_id", selectedEnrollment.user_id).maybeSingle();
-      return data;
+      const { data } = await (supabase as any).from("users").select("id, email, first_name, last_name");
+      return data || [];
     },
-    enabled: !!selectedEnrollment?.user_id,
   });
+
+  const profileByUserId = useMemo(() => new Map(allProfiles.map((p: any) => [p.user_id, p])), [allProfiles]);
+  const userByUserId = useMemo(() => new Map(allUsers.map((u: any) => [u.id, u])), [allUsers]);
+
+  // Prefer the checkout-time metadata snapshot when present (legacy/migrated
+  // enrollments), otherwise fall back to the live profiles/users rows.
+  const getDisplayInfo = (e: UnifiedEnrollment) => {
+    const metadata = e.order?.enrollment_metadata;
+    const profile = e.user_id ? profileByUserId.get(e.user_id) : undefined;
+    const user = e.user_id ? userByUserId.get(e.user_id) : undefined;
+    return {
+      full_name: metadata?.full_name || profile?.full_name || `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || undefined,
+      email: metadata?.email || user?.email || undefined,
+      phone: metadata?.phone || profile?.phone || undefined,
+      country: metadata?.country || profile?.country || undefined,
+    };
+  };
 
   const { data: enrollmentHistory = [] } = useQuery<UnifiedEnrollment[]>({
-    queryKey: ["admin-user-enrollment-history", selectedEnrollment?.order?.enrollment_metadata?.email],
-    queryFn: async () => {
-      const email = selectedEnrollment?.order?.enrollment_metadata?.email;
-      if (!email) return [];
-      // Query by user_id instead of email for unified table
-      const { data } = await (supabase as any)
-        .from("enrollments")
-        .select(`
-          *,
-          course:courses(title),
-          order:orders(enrollment_metadata)
-        `)
-        .eq("user_id", selectedEnrollment?.user_id)
-        .order("enrolled_at", { ascending: false });
-      return (data || []) as UnifiedEnrollment[];
-    },
+    queryKey: ["admin-user-enrollment-history", selectedEnrollment?.user_id],
+    queryFn: () => fetchJoinedEnrollments({ userId: selectedEnrollment!.user_id! }),
     enabled: !!selectedEnrollment?.user_id,
   });
 
@@ -206,12 +180,12 @@ export default function AdminEnrollmentsUnified() {
   }, [enrollments]);
 
   const filtered = enrollments.filter((e) => {
-    const metadata = e.order?.enrollment_metadata;
+    const info = getDisplayInfo(e);
     const matchesSearch = !search ||
-      (metadata?.full_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
-      (metadata?.email?.toLowerCase() || "").includes(search.toLowerCase()) ||
+      (info.full_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
+      (info.email?.toLowerCase() || "").includes(search.toLowerCase()) ||
       (e.order?.booking_ref?.toLowerCase() || "").includes(search.toLowerCase()) ||
-      (metadata?.country?.toLowerCase() || "").includes(search.toLowerCase());
+      (info.country?.toLowerCase() || "").includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || e.order?.status === statusFilter;
     const matchesCourse = courseFilter === "all" || e.course_id === courseFilter;
     return matchesSearch && matchesStatus && matchesCourse;
@@ -242,11 +216,11 @@ export default function AdminEnrollmentsUnified() {
   const exportCSV = () => {
     const headers = ["Booking Ref", "Name", "Email", "Course", "Level", "Amount", "Currency", "Status", "Date"];
     const rows = filtered.map((e) => {
-      const metadata = e.order?.enrollment_metadata;
+      const info = getDisplayInfo(e);
       return [
         e.order?.booking_ref || "N/A",
-        metadata?.full_name || "N/A",
-        metadata?.email || "N/A",
+        info.full_name || "N/A",
+        info.email || "N/A",
         (e.course as any)?.title || "",
         e.enrollment_level,
         e.order?.amount || 0,
@@ -267,10 +241,9 @@ export default function AdminEnrollmentsUnified() {
     setSelectedEnrollment(e);
     setAdminNote(e.order?.enrollment_metadata?.admin_notes || "");
     setStatementExpanded(false);
-    setShowSnapshot(false);
   };
 
-  const displayProfile = showSnapshot && selectedEnrollment?.order?.enrollment_metadata ? selectedEnrollment.order.enrollment_metadata : userProfile;
+  const displayProfile = selectedEnrollment ? getDisplayInfo(selectedEnrollment) : null;
   const otherEnrollments = enrollmentHistory.filter((e) => e.id !== selectedEnrollment?.id);
   const confirmedCount = enrollmentHistory.filter((e) => e.order?.status === "completed").length;
 
@@ -348,12 +321,12 @@ export default function AdminEnrollmentsUnified() {
               <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No enrollments found</td></tr>
             ) : (
               filtered.map((e) => {
-                const metadata = e.order?.enrollment_metadata;
+                const info = getDisplayInfo(e);
                 return (
                   <tr key={e.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => openDrawer(e)}>
                     <td className="p-3 font-mono text-[10px]">{e.order?.booking_ref || "N/A"}</td>
-                    <td className="p-3 font-medium text-xs">{metadata?.full_name || "N/A"}</td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">{metadata?.email}</td>
+                    <td className="p-3 font-medium text-xs">{info.full_name || "N/A"}</td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">{info.email}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground text-xs max-w-[180px] truncate">{(e.course as any)?.title}</td>
                     <td className="p-3 text-xs capitalize">{e.enrollment_level?.toLowerCase()}</td>
                     <td className="p-3 font-medium text-xs">{e.order?.currency || "GHS"} {Number(e.order?.amount || 0).toLocaleString()}</td>
@@ -397,7 +370,7 @@ export default function AdminEnrollmentsUnified() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="text-lg font-bold">{selectedEnrollment.order?.enrollment_metadata?.full_name || "N/A"}</h3>
+                      <h3 className="text-lg font-bold">{displayProfile?.full_name || "N/A"}</h3>
                       {memberRecord && (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">{memberRecord.post_nominal || memberRecord.part}</Badge>
@@ -408,9 +381,9 @@ export default function AdminEnrollmentsUnified() {
                     {statusBadge(selectedEnrollment.order?.status)}
                   </div>
                   <div className="grid gap-1.5 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground"><Mail className="w-3.5 h-3.5" />{selectedEnrollment.order?.enrollment_metadata?.email}</div>
-                    <div className="flex items-center gap-2 text-muted-foreground"><Phone className="w-3.5 h-3.5" />{selectedEnrollment.order?.enrollment_metadata?.phone}</div>
-                    <div className="flex items-center gap-2 text-muted-foreground"><Globe className="w-3.5 h-3.5" />{selectedEnrollment.order?.enrollment_metadata?.country}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><Mail className="w-3.5 h-3.5" />{displayProfile?.email || "N/A"}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><Phone className="w-3.5 h-3.5" />{displayProfile?.phone || "N/A"}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground"><Globe className="w-3.5 h-3.5" />{displayProfile?.country || "N/A"}</div>
                   </div>
 
                   <div className="flex gap-2 mt-4 pt-3 border-t">

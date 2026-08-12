@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import Header from "@/components/header";
@@ -85,7 +86,9 @@ export default function RenewMembership() {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>("USD");
   const [isProcessing, setIsProcessing] = useState(false);
   const [renewalResult, setRenewalResult] = useState<any>(null);
+  const [isPolling, setIsPolling] = useState(false);
   const paystackLoaded = useRef(false);
+  const paymentStartedAtRef = useRef(0);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -136,8 +139,7 @@ export default function RenewMembership() {
   const { data: pricingData, isLoading: pricingLoading } = useQuery<PricingData>({
     queryKey: ["renewal-pricing", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/renewal/pricing?user_id=${user!.id}`);
-      if (!response.ok) throw new Error("Failed to fetch pricing");
+      const response = await apiRequest("GET", "/api/renewal/pricing");
       const result = await response.json();
       return result.data;
     },
@@ -219,26 +221,81 @@ export default function RenewMembership() {
         ghs_amount: ghsPricing?.totalAmount || renewalFee,
         income_tier: incomeTier,
       },
-      callback: async (response: any) => {
-        setIsProcessing(false);
-        queryClient.invalidateQueries({ queryKey: ["membership"] });
-        queryClient.invalidateQueries({ queryKey: ["renewal-history"] });
-        queryClient.invalidateQueries({ queryKey: ["renewal-pricing"] });
-        setRenewalResult({
+      callback: (response: any) => {
+        toast({ title: "Payment received! Confirming your renewal..." });
+        pollRenewalStatus({
           reference: response.reference,
           amount: renewalFee,
           currency: selectedCurrency,
         });
-        toast({ title: "Payment received! Processing your renewal..." });
       },
       onClose: () => {
         setIsProcessing(false);
         toast({ title: "Payment cancelled", variant: "destructive" });
       },
     });
+    paymentStartedAtRef.current = Date.now();
     handler.openIframe();
   };
 
+  // The Paystack popup callback firing only proves the popup was closed —
+  // per Paystack's own docs, the webhook (or Verify Transaction) is what
+  // actually confirms payment succeeded. Poll our own backend, which reads
+  // the state the webhook writes, before showing the renewal as confirmed.
+  const pollRenewalStatus = (pendingResult: { reference: string; amount: number; currency: Currency }) => {
+    setIsPolling(true);
+    const startedAt = paymentStartedAtRef.current;
+    const deadline = Date.now() + 20000;
+
+    const finish = () => {
+      setIsPolling(false);
+      setIsProcessing(false);
+      queryClient.invalidateQueries({ queryKey: ["membership"] });
+      queryClient.invalidateQueries({ queryKey: ["renewal-history"] });
+      queryClient.invalidateQueries({ queryKey: ["renewal-pricing"] });
+      setRenewalResult(pendingResult);
+    };
+
+    const poll = async () => {
+      try {
+        const res = await apiRequest("GET", "/api/renewal/status");
+        const json = await res.json();
+        const lastRenewalAt = json?.data?.last_renewal_at ? new Date(json.data.last_renewal_at).getTime() : 0;
+        if (lastRenewalAt >= startedAt) {
+          finish();
+          return;
+        }
+      } catch {
+        // Transient network/API error — keep polling until the deadline.
+      }
+      if (Date.now() < deadline) {
+        setTimeout(poll, 2000);
+      } else {
+        // Webhook hasn't confirmed yet — fall back to the "certificate on
+        // the way" messaging instead of hanging indefinitely.
+        finish();
+      }
+    };
+    poll();
+  };
+
+
+  // INTERIM PROCESSING SCREEN — shown while waiting for the webhook to confirm
+  if (isPolling) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <h1 className="text-2xl font-bold">Processing your renewal…</h1>
+          <p className="text-muted-foreground">
+            We're confirming your payment with Paystack. This usually takes a few seconds.
+          </p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   // CONFIRMATION SCREEN
   if (renewalResult) {

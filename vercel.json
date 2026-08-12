@@ -1,16 +1,21 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "framework": "vite",
   "env": {
     "NODE_ENV": "production"
   },
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./ ':!*.md'",
   "rewrites": [
     {
       "source": "/api/instructor/courses",
       "destination": "/api/instructor/courses.ts"
+    },
+    {
+      "source": "/api/instructor/courses/:id",
+      "destination": "/api/instructor/courses/[id].ts"
     },
     {
       "source": "/api/verify-payment",
@@ -25,7 +30,7 @@
       "destination": "/api/enrollments/check-eligibility.ts"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/:path((?!api).*)",
       "destination": "/index.html"
     }
   ],

@@ -2,9 +2,11 @@
  * Admin Users & Profiles — Enhanced with role filters, incomplete profile filter,
  * level history, activity log, and bulk reminder capabilities.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearch } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,12 +109,37 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
 }
 
 export default function AdminUsersProfiles() {
-  const [search, setSearch] = useState("");
+  const searchString = useSearch();
+  const [search, setSearch] = useState(() => new URLSearchParams(searchString).get("search") || "");
   const [roleFilter, setRoleFilter] = useState("all");
   const [profileFilter, setProfileFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
+
+  // Keep in sync with ?search= when navigated here from the admin top-nav search bar
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(searchString).get("search");
+    if (fromUrl && fromUrl !== search) setSearch(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchString]);
+
+  const sendBulkReminder = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const res = await apiRequest("POST", "/api/admin/users/bulk-reminder", { userIds });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to send reminders");
+      }
+      return res.json() as Promise<{ sent: number; failed: number; total: number }>;
+    },
+    onSuccess: (result) => {
+      toast({ title: "Reminder sent", description: `Sent to ${result.sent} of ${result.total} users.` });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Failed to send reminders", description: e.message, variant: "destructive" });
+    },
+  });
 
   const updateRole = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
@@ -156,12 +183,22 @@ export default function AdminUsersProfiles() {
     enabled: !!selectedUser,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("*, course:courses(title, cohort_id)")
+        .from("orders")
+        .select("id, status, amount, booking_ref, created_at, enrollment_metadata, course:courses(title, cohort_id)")
         .eq("user_id", selectedUser!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      // Flatten to the shape this component expects (was course_enrollments,
+      // now split across orders + orders.enrollment_metadata).
+      return (data || []).map((o: any) => ({
+        id: o.id,
+        course: o.course,
+        ticket_type: o.enrollment_metadata?.programme_selected || "",
+        ticket_price: o.amount,
+        booking_ref: o.booking_ref,
+        created_at: o.created_at,
+        payment_status: o.status === "completed" ? "confirmed" : o.status === "cancelled" ? "cancelled" : "pending_bank",
+      }));
     },
   });
 
@@ -305,8 +342,9 @@ export default function AdminUsersProfiles() {
             {filtered.length} user(s) with incomplete profiles
           </p>
           <Button size="sm" variant="outline" className="text-amber-800 border-amber-300 hover:bg-amber-100"
-            onClick={() => toast({ title: "Reminder sent", description: `Bulk reminder queued for ${filtered.length} users.` })}>
-            <Bell className="w-3.5 h-3.5 mr-1" /> Send Bulk Reminder
+            disabled={sendBulkReminder.isPending}
+            onClick={() => sendBulkReminder.mutate(filtered.map((u) => u.id))}>
+            <Bell className="w-3.5 h-3.5 mr-1" /> {sendBulkReminder.isPending ? "Sending..." : "Send Bulk Reminder"}
           </Button>
         </div>
       )}

@@ -143,7 +143,12 @@ Deno.serve(async (req) => {
             if (muxAsset.lesson_id && playbackId) {
               await admin
                 .from("lessons")
-                .update({ mux_playback_id: playbackId, mux_asset_id: assetId, mux_status: "ready" })
+                .update({
+                  mux_playback_id: playbackId,
+                  mux_asset_id: assetId,
+                  mux_status: "ready",
+                  duration_seconds: Math.round(asset.duration ?? 0),
+                })
                 .eq("id", muxAsset.lesson_id);
             }
           }

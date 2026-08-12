@@ -58,8 +58,8 @@ export default function AuthCallback() {
             console.log("Auth callback: Redirecting to onboarding");
             setLocation("/onboarding");
           } else {
-            console.log("Auth callback: Redirecting to dashboard");
-            setLocation("/dashboard");
+            console.log("Auth callback: Redirecting to home");
+            setLocation("/home");
           }
         } else {
           // No session, redirect to login

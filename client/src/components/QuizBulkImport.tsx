@@ -76,22 +76,29 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function parseCSV(text: string): ImportedQuestion[] {
+interface ParseResult {
+  questions: ImportedQuestion[];
+  skipped: string[];
+}
+
+function parseCSV(text: string): ParseResult {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
 
   const questions: ImportedQuestion[] = [];
+  const skipped: string[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i]);
-    const q = parseRowToQuestion(cols, i);
+    const { question: q, reason } = parseRowToQuestion(cols, i);
     if (q) questions.push(q);
+    else if (reason) skipped.push(`Row ${i + 1}: ${reason}`);
   }
-  return questions;
+  return { questions, skipped };
 }
 
-function parseRowToQuestion(cols: string[], rowIndex: number): ImportedQuestion | null {
+function parseRowToQuestion(cols: string[], rowIndex: number): { question: ImportedQuestion | null; reason?: string } {
   const questionText = cols[0]?.replace(/^"|"$/g, '');
-  if (!questionText) return null;
+  if (!questionText) return { question: null, reason: 'missing question text' };
 
   const rawType = (cols[1] || 'multiple_choice').trim().toLowerCase();
   const questionType = rawType === 'true_false' ? 'true_false' : rawType === 'fill_blank' ? 'fill_blank' : 'multiple_choice';
@@ -100,13 +107,16 @@ function parseRowToQuestion(cols: string[], rowIndex: number): ImportedQuestion 
 
   if (questionType === 'fill_blank') {
     const correctAnswer = cols[3]?.replace(/^"|"$/g, '') || '';
+    if (!correctAnswer.trim()) return { question: null, reason: 'fill-in-the-blank question has no correct answer' };
     return {
-      id: `q_imp_${ts}`,
-      question: questionText,
-      questionType,
-      points,
-      answers: [],
-      correctAnswer,
+      question: {
+        id: `q_imp_${ts}`,
+        question: questionText,
+        questionType,
+        points,
+        answers: [],
+        correctAnswer,
+      },
     };
   }
 
@@ -118,56 +128,85 @@ function parseRowToQuestion(cols: string[], rowIndex: number): ImportedQuestion 
     answers.push({ id: `a_imp_${ts}_${j}`, answer: ansText, isCorrect });
   }
 
-  if (answers.length === 0) return null;
+  if (answers.length === 0) return { question: null, reason: 'no answer options found' };
+  if (!answers.some(a => a.isCorrect)) return { question: null, reason: 'no answer marked correct' };
 
-  return { id: `q_imp_${ts}`, question: questionText, questionType, points, answers };
+  return { question: { id: `q_imp_${ts}`, question: questionText, questionType, points, answers } };
 }
 
-function parseJSON(text: string): ImportedQuestion[] {
+function parseJSON(text: string): ParseResult {
   const data = JSON.parse(text);
   const arr = Array.isArray(data) ? data : data.questions || [data];
 
-  return arr.map((item: any, i: number) => {
+  const questions: ImportedQuestion[] = [];
+  const skipped: string[] = [];
+
+  arr.forEach((item: any, i: number) => {
     const ts = Date.now() + i;
+    const questionText = typeof item?.question === 'string' ? item.question.trim() : '';
+    if (!questionText) {
+      skipped.push(`Row ${i + 1}: missing question text`);
+      return;
+    }
+
     const rawType = (item.type || item.questionType || 'multiple_choice').toLowerCase();
     const questionType = rawType === 'true_false' ? 'true_false' : rawType === 'fill_blank' ? 'fill_blank' : 'multiple_choice';
 
     if (questionType === 'fill_blank') {
-      return {
+      const correctAnswer = item.correctAnswer || item.correct_answer || '';
+      if (!String(correctAnswer).trim()) {
+        skipped.push(`Row ${i + 1}: fill-in-the-blank question has no correct answer`);
+        return;
+      }
+      questions.push({
         id: `q_imp_${ts}`,
-        question: item.question,
+        question: questionText,
         questionType,
         points: item.points || 1,
         answers: [],
-        correctAnswer: item.correctAnswer || item.correct_answer || '',
-      };
+        correctAnswer,
+      });
+      return;
     }
 
     const answers = (item.answers || item.options || []).map((a: any, j: number) => ({
       id: `a_imp_${ts}_${j}`,
       answer: typeof a === 'string' ? a : a.answer || a.text || a.option || '',
       isCorrect: typeof a === 'string' ? false : !!(a.isCorrect || a.is_correct || a.correct),
-    }));
+    })).filter((a: any) => a.answer.trim());
 
-    return {
+    if (answers.length === 0) {
+      skipped.push(`Row ${i + 1}: no answer options found`);
+      return;
+    }
+    if (!answers.some((a: any) => a.isCorrect)) {
+      skipped.push(`Row ${i + 1}: no answer marked correct`);
+      return;
+    }
+
+    questions.push({
       id: `q_imp_${ts}`,
-      question: item.question,
+      question: questionText,
       questionType,
       points: item.points || 1,
       answers,
-    };
+    });
   });
+
+  return { questions, skipped };
 }
 
-function parseExcelRows(rows: any[][]): ImportedQuestion[] {
+function parseExcelRows(rows: any[][]): ParseResult {
   if (rows.length < 2) throw new Error('Excel file must have a header row and at least one data row');
   const questions: ImportedQuestion[] = [];
+  const skipped: string[] = [];
   for (let i = 1; i < rows.length; i++) {
     const cols = rows[i].map((c: any) => String(c ?? ''));
-    const q = parseRowToQuestion(cols, i);
+    const { question: q, reason } = parseRowToQuestion(cols, i);
     if (q) questions.push(q);
+    else if (reason) skipped.push(`Row ${i + 1}: ${reason}`);
   }
-  return questions;
+  return { questions, skipped };
 }
 
 function downloadSample(format: 'csv' | 'json') {
@@ -197,6 +236,7 @@ function downloadExcelSample() {
 
 export function QuizBulkImport({ onImport }: QuizBulkImportProps) {
   const [preview, setPreview] = useState<ImportedQuestion[] | null>(null);
+  const [skipped, setSkipped] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -208,37 +248,47 @@ export function QuizBulkImport({ onImport }: QuizBulkImportProps) {
 
     setError(null);
     setPreview(null);
+    setSkipped([]);
     setFileName(file.name);
 
     try {
       const ext = file.name.split('.').pop()?.toLowerCase();
 
-      let questions: ImportedQuestion[] = [];
+      let result: ParseResult;
 
       if (ext === 'json') {
         const text = await file.text();
-        questions = parseJSON(text);
+        result = parseJSON(text);
       } else if (ext === 'csv' || ext === 'txt') {
         const text = await file.text();
-        questions = parseCSV(text);
+        result = parseCSV(text);
       } else if (ext === 'xlsx' || ext === 'xls') {
         const buffer = await file.arrayBuffer();
         const wb = XLSX.read(buffer, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        questions = parseExcelRows(rows);
+        result = parseExcelRows(rows);
       } else {
         throw new Error(`Unsupported file format: .${ext}. Use CSV, JSON, or Excel (.xlsx/.xls)`);
       }
 
+      const { questions, skipped: skippedRows } = result;
+
       if (questions.length === 0) {
-        throw new Error('No valid questions found in the file. Check the format and try again.');
+        throw new Error(
+          skippedRows.length > 0
+            ? `No valid questions found. All ${skippedRows.length} row(s) were skipped: ${skippedRows.join('; ')}`
+            : 'No valid questions found in the file. Check the format and try again.',
+        );
       }
 
       setPreview(questions);
+      setSkipped(skippedRows);
       toast({
         title: 'File parsed successfully',
-        description: `Found ${questions.length} question${questions.length !== 1 ? 's' : ''} ready to import`,
+        description: skippedRows.length > 0
+          ? `Imported ${questions.length} question${questions.length !== 1 ? 's' : ''}, skipped ${skippedRows.length} row${skippedRows.length !== 1 ? 's' : ''} — see details below`
+          : `Found ${questions.length} question${questions.length !== 1 ? 's' : ''} ready to import`,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to parse file');
@@ -256,6 +306,7 @@ export function QuizBulkImport({ onImport }: QuizBulkImportProps) {
     if (!preview) return;
     onImport(preview);
     setPreview(null);
+    setSkipped([]);
     setFileName('');
     toast({
       title: 'Questions imported',
@@ -319,6 +370,19 @@ export function QuizBulkImport({ onImport }: QuizBulkImportProps) {
           </div>
         )}
 
+        {/* Skipped rows */}
+        {skipped.length > 0 && (
+          <div className="flex items-start gap-2 p-3 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">{skipped.length} row{skipped.length !== 1 ? 's' : ''} skipped:</p>
+              <ul className="list-disc list-inside">
+                {skipped.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* Preview */}
         {preview && (
           <div className="space-y-3 border-t pt-3">
@@ -327,7 +391,7 @@ export function QuizBulkImport({ onImport }: QuizBulkImportProps) {
                 Preview: {preview.length} question{preview.length !== 1 ? 's' : ''}
               </p>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setFileName(''); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setSkipped([]); setFileName(''); }}>
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleConfirmImport}>

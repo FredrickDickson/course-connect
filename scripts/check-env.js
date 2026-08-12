@@ -20,7 +20,11 @@ const requiredVars = [
 ];
 
 const optionalVars = [
-  'RESEND_API_KEY',
+  'BREVO_API_KEY',
+  'EMAIL_FROM',
+  'EMAIL_FROM_NAME',
+  'INTERNAL_API_KEY',
+  'CRON_SECRET_KEY',
   'GOOGLE_CLOUD_STORAGE_BUCKET'
 ];
 

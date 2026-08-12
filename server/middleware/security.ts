@@ -15,7 +15,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
-import { body, query, param, validationResult } from "express-validator";
+import { validationResult } from "express-validator";
 import type { Request, Response, NextFunction } from "express";
 
 // Startup check: FRONTEND_URL must be set in production
@@ -89,6 +89,45 @@ export const eligibilityLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/**
+ * Payment rate limiter - Applied to order creation / payment verification
+ */
+export const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: {
+    error: "Too many payment requests, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Contact form rate limiter
+ */
+export const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: {
+    error: "Too many contact form submissions, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Quiz submission rate limiter - Prevents rapid-fire brute-forcing of quiz answers
+ */
+export const quizSubmitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: {
+    error: "Too many quiz submissions, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Security middleware
 export const securityMiddleware = [
   helmet({
@@ -110,17 +149,25 @@ export const securityMiddleware = [
           "https://emvibxbcrvritkwkguya.supabase.co",
         ],
         workerSrc: ["'self'", "blob:"],
+        // Certificate preview (CertificatePreviewModal) renders a generated
+        // PDF in an <iframe src="blob:..."> — without an explicit frame-src,
+        // this falls back to default-src 'self' and blob: URLs get blocked.
+        frameSrc: ["'self'", "blob:"],
       },
     },
   }),
   cors({
+    // Auth is bearer-token only (no server-side cookie session — see
+    // server/supabaseAuth.ts), so `credentials: true` and a `Cookie`
+    // allowance aren't needed here; the client's `credentials: "include"`
+    // fetch option (queryClient.ts, ResourceUploader.tsx) is inert without
+    // a matching server-side cookie policy.
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
         : ["http://localhost:3000", "http://localhost:5000", "http://localhost:5173"],
-    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
   compression(),
   generalLimiter,
@@ -141,88 +188,6 @@ export const validateRequest = (
   }
   next();
 };
-
-// Common validation rules
-export const courseValidation = [
-  body("title")
-    .trim()
-    .isLength({ min: 5, max: 200 })
-    .withMessage("Title must be between 5 and 200 characters"),
-  body("description")
-    .optional()
-    .trim()
-    .isLength({ max: 5000 })
-    .withMessage("Description must not exceed 5000 characters"),
-  body("price")
-    .isFloat({ min: 0 })
-    .withMessage("Price must be a valid positive number"),
-  body("level")
-    .isIn(["associate", "member", "fellow"])
-    .withMessage("Level must be associate, member, or fellow"),
-  body("categoryId")
-    .optional()
-    .isUUID()
-    .withMessage("Category ID must be a valid UUID"),
-];
-
-export const enrollmentValidation = [
-  body("courseId").isUUID().withMessage("Course ID must be a valid UUID"),
-];
-
-export const reviewValidation = [
-  body("courseId").isUUID().withMessage("Course ID must be a valid UUID"),
-  body("rating")
-    .isInt({ min: 1, max: 5 })
-    .withMessage("Rating must be between 1 and 5"),
-  body("comment")
-    .optional()
-    .trim()
-    .isLength({ max: 1000 })
-    .withMessage("Comment must not exceed 1000 characters"),
-];
-
-export const progressValidation = [
-  body("lessonId").isUUID().withMessage("Lesson ID must be a valid UUID"),
-  body("watchTime")
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage("Watch time must be a non-negative integer"),
-  body("completed")
-    .optional()
-    .isBoolean()
-    .withMessage("Completed must be a boolean value"),
-];
-
-export const paginationValidation = [
-  query("page")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Page must be a positive integer"),
-  query("limit")
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage("Limit must be between 1 and 100"),
-];
-
-export const searchValidation = [
-  query("search")
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("Search query must not exceed 100 characters"),
-  query("category")
-    .optional()
-    .isAlphanumeric()
-    .withMessage("Category must be alphanumeric"),
-  query("level")
-    .optional()
-    .isIn(["associate", "member", "fellow"])
-    .withMessage("Level must be associate, member, or fellow"),
-];
-
-export const uuidValidation = [
-  param("id").isUUID().withMessage("ID must be a valid UUID"),
-];
 
 // Error handling middleware
 export const errorHandler = (

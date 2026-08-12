@@ -172,10 +172,11 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+# Matches the complexity check already enforced in server/auth-routes.ts registration.
+password_requirements = "lower_upper_letters_digits_symbols"
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
@@ -368,8 +369,15 @@ deno_version = 2
 [edge_runtime.secrets]
 PAYSTACK_SECRET_KEY = "env(PAYSTACK_SECRET_KEY)"
 PAYSTACK_PUBLIC_KEY = "env(PAYSTACK_PUBLIC_KEY)"
+BREVO_API_KEY = "env(BREVO_API_KEY)"
+EMAIL_FROM = "env(EMAIL_FROM)"
+EMAIL_FROM_NAME = "env(EMAIL_FROM_NAME)"
+INTERNAL_API_KEY = "env(INTERNAL_API_KEY)"
 
 [functions.send-email]
+verify_jwt = false
+
+[functions.renewal-reminders]
 verify_jwt = false
 
 [functions.quiz-submit]
@@ -377,6 +385,18 @@ verify_jwt = false
 
 [functions.mux-webhook]
 verify_jwt = false
+
+[functions.paystack-webhook]
+# Paystack calls this from their own servers with only their HMAC signature
+# (x-paystack-signature, verified in-function) — they can never supply a
+# Supabase JWT, so the gateway's default JWT check must be disabled here or
+# every real webhook call from Paystack is rejected before it's even seen.
+verify_jwt = false
+
+# confirm-manual-renewal intentionally has no override here: it keeps the
+# gateway's default verify_jwt = true (reject unauthenticated calls before
+# the function even runs) as a first layer, on top of its own in-function
+# check that the caller is specifically an admin, not just any logged-in user.
 
 [analytics]
 enabled = true

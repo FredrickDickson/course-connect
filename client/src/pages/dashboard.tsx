@@ -21,8 +21,9 @@ import {
   Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isToday, isTomorrow, format } from "date-fns";
 
-export default function DashboardRedesigned() {
+export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -68,7 +69,7 @@ export default function DashboardRedesigned() {
     queryKey: ["user-dashboard-stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [favoritesResult, completionRecordsResult, enrollmentsResult] =
+      const [favoritesResult, completionRecordsResult, enrollmentsResult, progressResult] =
         await Promise.all([
           supabase.from("favorites").select("id").eq("user_id", user!.id),
           supabase
@@ -82,11 +83,23 @@ export default function DashboardRedesigned() {
             .eq("user_id", user!.id)
             .not("completed_at", "is", null)
             .order("completed_at", { ascending: false }),
+          // Total study hours reflects actual accumulated watch time, not a
+          // course's static advertised duration (which is often unset).
+          supabase
+            .from("progress")
+            .select("watch_time_seconds")
+            .eq("user_id", user!.id),
         ]);
 
       if (favoritesResult.error) throw favoritesResult.error;
       if (completionRecordsResult.error) throw completionRecordsResult.error;
       if (enrollmentsResult.error) throw enrollmentsResult.error;
+      if (progressResult.error) throw progressResult.error;
+
+      const totalWatchSeconds = (progressResult.data || []).reduce(
+        (sum: number, p: any) => sum + (p.watch_time_seconds || 0),
+        0,
+      );
 
       const completedEnrollments = enrollmentsResult.data || [];
       const courseIds = completedEnrollments.map((e: any) => e.course_id);
@@ -120,6 +133,7 @@ export default function DashboardRedesigned() {
       return {
         favorites: favoritesResult.data || [],
         certificates: uniqueCertificates,
+        totalStudyHours: totalWatchSeconds / 3600,
       };
     },
     staleTime: 2 * 60 * 1000,
@@ -128,6 +142,84 @@ export default function DashboardRedesigned() {
 
   const favorites = userStats?.favorites || [];
   const certificates = userStats?.certificates || [];
+  const totalStudyHours = userStats?.totalStudyHours || 0;
+
+  const enrolledCourseIds = enrollments.map((e: any) => e.course_id);
+
+  const { data: upcomingAssignments = [] } = useQuery<any[]>({
+    queryKey: ["upcoming-assignments", user?.id, enrolledCourseIds.join(",")],
+    enabled: !!user && enrolledCourseIds.length > 0,
+    queryFn: async () => {
+      const { data: modules, error: modulesError } = await supabase
+        .from("modules")
+        .select("id, title, course_id")
+        .in("course_id", enrolledCourseIds);
+      if (modulesError) throw modulesError;
+      if (!modules || modules.length === 0) return [];
+
+      const moduleIds = modules.map((m: any) => m.id);
+      const { data: lessons, error: lessonsError } = await supabase
+        .from("lessons")
+        .select("id, title, module_id")
+        .in("module_id", moduleIds);
+      if (lessonsError) throw lessonsError;
+      if (!lessons || lessons.length === 0) return [];
+
+      const lessonIds = lessons.map((l: any) => l.id);
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("assignments")
+        .select("id, title, due_date, lesson_id")
+        .in("lesson_id", lessonIds)
+        .gte("due_date", new Date().toISOString())
+        .order("due_date", { ascending: true })
+        .limit(10);
+      if (assignmentsError) throw assignmentsError;
+      if (!assignments || assignments.length === 0) return [];
+
+      const assignmentIds = assignments.map((a: any) => a.id);
+      const { data: submissions, error: submissionsError } = await supabase
+        .from("assignment_submissions")
+        .select("assignment_id")
+        .eq("user_id", user!.id)
+        .in("assignment_id", assignmentIds);
+      if (submissionsError) throw submissionsError;
+
+      const submittedIds = new Set(
+        (submissions || []).map((s: any) => s.assignment_id)
+      );
+
+      const lessonMap = new Map(lessons.map((l: any) => [l.id, l]));
+      const moduleMap = new Map(modules.map((m: any) => [m.id, m]));
+      const courseMap = new Map(
+        enrollments.map((e: any) => [e.course_id, e.course])
+      );
+
+      return assignments
+        .filter((a: any) => !submittedIds.has(a.id))
+        .map((a: any) => {
+          const lesson = lessonMap.get(a.lesson_id);
+          const module = lesson ? moduleMap.get(lesson.module_id) : undefined;
+          const course = module ? courseMap.get(module.course_id) : undefined;
+          return {
+            id: a.id,
+            title: a.title,
+            dueDate: a.due_date,
+            moduleTitle: module?.title,
+            courseTitle: course?.title,
+            courseId: module?.course_id,
+          };
+        })
+        .slice(0, 4);
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const getDueDateLabel = (dueDate: string) => {
+    const date = new Date(dueDate);
+    if (isToday(date)) return "Due Today";
+    if (isTomorrow(date)) return "Due Tomorrow";
+    return `Due ${format(date, "MMM d")}`;
+  };
 
   if (authLoading || enrollmentsLoading || statsLoading) {
     return (
@@ -246,10 +338,9 @@ export default function DashboardRedesigned() {
               },
               {
                 icon: Clock,
-                value: enrollments.reduce(
-                  (sum, e) => sum + (e.course?.duration_hours || 0),
-                  0
-                ),
+                value: totalStudyHours >= 10 || totalStudyHours === 0
+                  ? Math.round(totalStudyHours)
+                  : Math.round(totalStudyHours * 10) / 10,
                 label: "Total Study Hours",
                 color: "from-[#8b6f47] to-[#c5a572]",
               },
@@ -400,24 +491,38 @@ export default function DashboardRedesigned() {
             <Card className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px]">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 bg-[#faf9f6] rounded-[12px]">
-                    <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
-                      <Target className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#2c2015]">
-                        Quiz Due Tomorrow
+                  {upcomingAssignments.map((activity: any) => (
+                    <Link
+                      key={activity.id}
+                      href={activity.courseId ? `/learn/${activity.courseId}` : "#"}
+                    >
+                      <div className="flex items-start gap-3 p-3 bg-[#faf9f6] rounded-[12px] hover:bg-[#f5f3ed] transition-colors cursor-pointer">
+                        <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
+                          <Target className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[#2c2015]">
+                            {activity.title}
+                          </p>
+                          <p className="text-xs text-[#6b5d4f] mt-1 truncate">
+                            {[activity.moduleTitle, activity.courseTitle]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                          <p className="text-xs text-[#8b6f47] font-semibold mt-1">
+                            {getDueDateLabel(activity.dueDate)}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {upcomingAssignments.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-[#6b5d4f]">
+                        No upcoming activities
                       </p>
-                      <p className="text-xs text-[#6b5d4f] mt-1">
-                        Module 3: International Arbitration
-                      </p>
                     </div>
-                  </div>
-                  <div className="text-center py-8">
-                    <p className="text-sm text-[#6b5d4f]">
-                      No upcoming activities
-                    </p>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

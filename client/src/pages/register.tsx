@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import cimaLogo from "/images/logo.jpeg";
+import cimaLogo from "/images/b and w.png";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -30,7 +30,7 @@ export default function Register() {
         } else if (role === "instructor") {
           window.location.href = "/instructor";
         } else {
-          window.location.href = "/dashboard";
+          window.location.href = "/home";
         }
       }
     };
@@ -197,13 +197,23 @@ export default function Register() {
           {/* Auth Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
             <div className="space-y-5">
-              {/* Logo - Mobile Only */}
-              <div className="flex justify-center lg:hidden">
-                <img 
-                  src={cimaLogo} 
-                  alt="CIMA Logo" 
-                  className="h-16 w-16 object-contain rounded-lg"
-                />
+              {/* CIMA Learn Branding */}
+              <div className="flex flex-col items-center space-y-3 pb-4 border-b border-gray-100">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <img 
+                    src={cimaLogo} 
+                    alt="CIMA Logo" 
+                    className="h-12 w-12 sm:h-16 sm:w-16 object-contain rounded-lg"
+                  />
+                  <div className="text-left">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                      CIMA Learn
+                    </h1>
+                    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-medium">
+                      Professional ADR Education
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Header */}

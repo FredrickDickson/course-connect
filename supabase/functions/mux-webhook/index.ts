@@ -12,8 +12,8 @@ const SIGNING_SECRET = Deno.env.get("MUX_WEBHOOK_SIGNING_SECRET");
 
 async function verifyMuxSignature(rawBody: string, header: string | null): Promise<boolean> {
   if (!SIGNING_SECRET) {
-    console.warn("MUX_WEBHOOK_SIGNING_SECRET not configured — skipping verification");
-    return true;
+    console.error("MUX_WEBHOOK_SIGNING_SECRET not configured — rejecting webhook");
+    return false;
   }
   if (!header) return false;
 

@@ -19,7 +19,7 @@ export default function Landing() {
       } else if (user.role === "instructor") {
         setLocation("/instructor");
       } else {
-        setLocation("/dashboard");
+        setLocation("/home");
       }
     }
   }, [isAuthenticated, isLoading, user, setLocation]);
@@ -43,8 +43,8 @@ export default function Landing() {
   return (
     <div className="bg-white text-gray-900 min-h-screen">
       {/* Top Alert Bar */}
-      <div className="bg-[#8b0000] text-white text-center py-2 px-4 text-sm">
-        <span>Advance your career with world-class ADR training and internationally recognized certifications.</span>
+      <div className="bg-[#610000] text-white text-center py-3 px-4">
+        <span className="text-base font-body"></span>
       </div>
 
       {/* Header */}
@@ -55,14 +55,14 @@ export default function Landing() {
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 pl-2">
               <img src={cimaLogo} alt="CIMA Learn" className="h-10 w-auto" />
               <div className="flex flex-col">
-                <p className="text-xs font-bold text-[#8b0000] whitespace-nowrap leading-tight">CIMA Learn</p>
-                <p className="text-[9px] text-gray-600 uppercase tracking-wider whitespace-nowrap leading-tight">Professional ADR</p>
+                <p className="text-sm font-semibold text-[#610000] whitespace-nowrap leading-tight font-display">CIMA Learn</p>
+                <p className="text-[9px] text-gray-600 uppercase tracking-wider whitespace-nowrap leading-tight font-body">Professional ADR</p>
               </div>
             </Link>
 
             {/* Navigation with Search */}
             <nav className="hidden lg:flex items-center gap-6 flex-1 justify-center">
-              <a href="#categories" className="text-sm text-gray-700 hover:text-[#8b0000] transition font-medium whitespace-nowrap">Categories</a>
+              <a href="#categories" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Categories</a>
               
               {/* Search Bar in Navbar */}
               <form onSubmit={handleSearch} className="relative w-96">
@@ -77,21 +77,21 @@ export default function Landing() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearchInput}
                   placeholder="Search for anything"
-                  className="w-full py-1.5 pl-9 pr-3 text-xs text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8b0000] focus:border-transparent focus:bg-white transition-all"
+                  className="w-full py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8b0000] focus:border-transparent focus:bg-white transition-all font-body"
                 />
               </form>
               
-              <Link href="/courses" className="text-sm text-gray-700 hover:text-[#8b0000] transition font-medium whitespace-nowrap">Learning Pathways</Link>
-              <Link href="/community" className="text-sm text-gray-700 hover:text-[#8b0000] transition font-medium whitespace-nowrap">Live Sessions</Link>
-              <Link href="/resources" className="text-sm text-gray-700 hover:text-[#8b0000] transition font-medium whitespace-nowrap">Resources</Link>
+              <Link href="/courses" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Learning Pathways</Link>
+              <Link href="/community" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Live Sessions</Link>
+              <Link href="/resources" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Resources</Link>
             </nav>
 
             {/* CTA Buttons - Far Right */}
             <div className="flex items-center gap-3 flex-shrink-0 pr-2">
-              <Link href="/login" className="text-sm text-gray-700 hover:text-[#8b0000] transition font-medium whitespace-nowrap">
+              <Link href="/login" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">
                 Login
               </Link>
-              <Link href="/register" className="bg-[#8b0000] text-white px-5 py-1.5 rounded-md text-sm font-semibold hover:bg-[#6d0000] transition whitespace-nowrap">
+              <Link href="/register" className="bg-[#610000] text-white px-6 py-2 rounded-md text-base font-semibold hover:bg-[#8b0000] transition whitespace-nowrap font-body shadow-sm hover:shadow-md">
                 Create Account
               </Link>
             </div>
@@ -102,7 +102,6 @@ export default function Landing() {
       <main>
         <HeroSection />
         <StatsBarSection />
-        <TrustBadgesSection />
         <FeaturedCoursesSection />
         <LearningPathwaysSection />
         <WhyLearnWithCIMASection />
@@ -120,82 +119,60 @@ function HeroSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
 
   return (
-    <section ref={ref} className={`relative h-[85vh] flex items-center justify-center overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Large Background Image */}
+    <section ref={ref} className={`relative h-[92vh] flex items-center justify-center overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Ultra-Sharp Background Image - Higher resolution */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2400&auto=format&fit=crop&q=80"
+          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2880&h=1800&auto=format&fit=crop&q=100"
           alt="Professional legal workspace"
           className="w-full h-full object-cover"
+          loading="eager"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
-        {/* Gradient Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
       </div>
 
       {/* Minimalist Text Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-        <div className="max-w-3xl">
-          {/* Small Welcome Badge */}
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 mb-8">
-            <span className="flex h-2 w-2 rounded-full bg-white" />
-            <span className="text-xs font-medium text-white uppercase tracking-wider">Welcome to CIMA Learn</span>
-          </div>
-
-          {/* Large Headline - Scandinavian Typography */}
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-white leading-[0.95] mb-8 tracking-tight">
+      <div className="relative z-10 max-w-7xl mx-auto px-8 sm:px-12 lg:px-16">
+        <div className="max-w-4xl">
+          {/* Large Headline - Microsoft Fluent Typography */}
+          <h1 className="text-7xl sm:text-8xl lg:text-9xl font-light text-white leading-[0.92] mb-10 tracking-tight font-display">
             Master dispute<br />
-            resolution.<br />
-            <span className="text-white/90 font-light italic">Anywhere, anytime.</span>
+            resolution
           </h1>
 
-          {/* Subtle Description */}
-          <p className="text-xl sm:text-2xl text-white/90 font-light leading-relaxed mb-12 max-w-2xl">
-            World-class, self-paced and live learning in Arbitration, Mediation, Negotiation, Litigation, Adjudication and more.
-          </p>
-
           {/* Minimal CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-5">
             <Link href="/courses">
-              <button className="group bg-white text-[#8b0000] px-10 py-4 rounded-full font-semibold text-base hover:bg-gray-100 transition-all shadow-2xl flex items-center justify-center gap-2">
+              <button className="group bg-white text-[#610000] px-12 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition-all shadow-2xl flex items-center justify-center gap-3 font-body">
                 Explore Courses
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-              <button className="group border-2 border-white text-white px-10 py-4 rounded-full font-semibold text-base hover:bg-white hover:text-[#8b0000] transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
-                View Learning Pathways
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <button className="group border-2 border-white/90 text-white px-12 py-5 rounded-md font-semibold text-lg hover:bg-white hover:text-[#610000] transition-all flex items-center justify-center gap-3 backdrop-blur-md font-body">
+                Learning Pathways
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
             </a>
           </div>
         </div>
       </div>
 
-      {/* Floating Stats Card - Minimal Design */}
-      <div className="absolute bottom-8 right-8 bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-gray-100 hidden lg:block">
-        <div className="flex items-center gap-6">
-          <div className="text-center border-r border-gray-200 pr-6">
-            <p className="text-3xl font-bold text-[#8b0000]">4,800+</p>
-            <p className="text-xs text-gray-600 uppercase tracking-wider mt-1">Learners</p>
+      {/* Floating Stats Card - High Contrast */}
+      <div className="absolute bottom-10 right-10 bg-white backdrop-blur-xl rounded-xl p-8 shadow-2xl border border-gray-200 hidden xl:block">
+        <div className="flex items-center gap-8">
+          <div className="text-center border-r border-gray-300 pr-8">
+            <p className="text-4xl font-semibold text-[#610000] font-display">4,800+</p>
+            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Learners</p>
           </div>
-          <div className="text-center border-r border-gray-200 pr-6">
-            <p className="text-3xl font-bold text-[#8b0000]">120+</p>
-            <p className="text-xs text-gray-600 uppercase tracking-wider mt-1">Charities</p>
+          <div className="text-center border-r border-gray-300 pr-8">
+            <p className="text-4xl font-semibold text-[#610000] font-display">120+</p>
+            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Charities</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-[#8b0000]">98%</p>
-            <p className="text-xs text-gray-600 uppercase tracking-wider mt-1">Satisfaction</p>
+            <p className="text-4xl font-semibold text-[#610000] font-display">98%</p>
+            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Satisfaction</p>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 hidden lg:block">
-        <div className="flex flex-col items-center gap-2 text-white/80">
-          <span className="text-xs uppercase tracking-wider">Scroll</span>
-          <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
         </div>
       </div>
     </section>
@@ -205,92 +182,52 @@ function HeroSection() {
 // Stats Bar Section
 function StatsBarSection() {
   return (
-    <section className="bg-white py-16 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#8b0000]/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <Users className="relative w-8 h-8 text-[#8b0000]" />
-              </div>
-            </div>
-            <p className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">4,800+</p>
-            <p className="text-sm text-gray-600 font-medium tracking-wide">Learners</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-pink-500/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <Heart className="relative w-8 h-8 text-pink-600" />
-              </div>
-            </div>
-            <p className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">120+</p>
-            <p className="text-sm text-gray-600 font-medium tracking-wide">Charities</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <BookOpen className="relative w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-            <p className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">200+</p>
-            <p className="text-sm text-gray-600 font-medium tracking-wide">Courses</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <Star className="relative w-8 h-8 text-amber-500 fill-amber-500" />
-              </div>
-            </div>
-            <p className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">98%</p>
-            <p className="text-sm text-gray-600 font-medium tracking-wide">Satisfaction</p>
-          </div>
-        </div>
+    <section className="relative py-20 border-b border-gray-100 overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=2880&h=800&auto=format&fit=crop&q=100"
+          alt="Professional team collaboration"
+          className="w-full h-full object-cover opacity-30"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/60 to-white/80" />
       </div>
-    </section>
-  );
-}
 
-// Trust Badges Section
-function TrustBadgesSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-
-  const badges = [
-    { name: "CIArb", subtitle: "Chartered Institute" },
-    { name: "ICC", subtitle: "International Chamber" },
-    { name: "UNCITRAL", subtitle: "United Nations" },
-    { name: "LCIA", subtitle: "London Court" },
-    { name: "ACICA", subtitle: "Australian Centre" },
-    { name: "IAI", subtitle: "Arbitration Institute" },
-  ];
-
-  return (
-    <section ref={ref} className={`py-20 bg-gradient-to-b from-white to-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-500 font-semibold mb-2">Trusted Worldwide</p>
-          <h2 className="text-2xl font-bold text-gray-900">Recognized by Leading Institutions</h2>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-8">
-          {badges.map((badge, index) => (
-            <div 
-              key={index} 
-              className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-[#8b0000]/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000]/0 to-[#8b0000]/0 group-hover:from-[#8b0000]/5 group-hover:to-transparent rounded-2xl transition-all duration-300"></div>
-              <div className="relative text-center">
-                <p className="text-2xl font-bold text-gray-900 mb-1">{badge.name}</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{badge.subtitle}</p>
-              </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
+          <div className="group text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Users className="w-10 h-10 text-[#610000]" />
             </div>
-          ))}
+            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">4,800+</p>
+            <p className="text-base text-gray-700 font-body font-medium">Learners Worldwide</p>
+          </div>
+          
+          <div className="group text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Heart className="w-10 h-10 text-pink-600" />
+            </div>
+            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">120+</p>
+            <p className="text-base text-gray-700 font-body font-medium">Charitable Partners</p>
+          </div>
+          
+          <div className="group text-center">
+            <div className="flex items-center justify-center mb-4">
+              <BookOpen className="w-10 h-10 text-blue-600" />
+            </div>
+            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">200+</p>
+            <p className="text-base text-gray-700 font-body font-medium">Expert-Led Courses</p>
+          </div>
+          
+          <div className="group text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Star className="w-10 h-10 text-amber-500 fill-amber-500" />
+            </div>
+            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">98%</p>
+            <p className="text-base text-gray-700 font-body font-medium">Satisfaction Rate</p>
+          </div>
         </div>
       </div>
     </section>
@@ -316,68 +253,63 @@ function FeaturedCoursesSection() {
   });
 
   return (
-    <section ref={ref} id="categories" className={`py-20 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-12">
+    <section ref={ref} id="categories" className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Modern library with books"
+          className="w-full h-full object-cover opacity-20"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/70 to-white" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-16">
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">Featured Courses</h2>
-            <p className="text-gray-600">Explore our most popular ADR programs</p>
+            <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Featured Courses</h2>
           </div>
           <Link href="/courses">
-            <button className="text-[#8b0000] font-semibold hover:underline flex items-center gap-1">
-              View all courses
-              <ArrowRight className="w-4 h-4" />
+            <button className="text-[#610000] font-semibold hover:underline flex items-center gap-2 text-lg font-body">
+              View all
+              <ArrowRight className="w-5 h-5" />
             </button>
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {courses.map((course, index: number) => (
             <Link key={course.id} href={`/course/${course.id}`}>
-              <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer h-full">
-                {/* Badge */}
+              <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full relative">
+                {/* Badge - Fixed positioning */}
                 {index === 0 && (
-                  <div className="absolute top-4 left-4 bg-[#8b0000] text-white px-3 py-1 rounded-full text-xs font-semibold z-10">
+                  <div className="absolute top-5 left-5 bg-[#610000] text-white px-4 py-2 rounded-md text-sm font-semibold z-20 font-body">
                     Featured
                   </div>
                 )}
-                {index === 1 && (
-                  <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold z-10">
-                    New
-                  </div>
-                )}
                 
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
+                {/* Large Sharp Image */}
+                <div className="relative h-64 overflow-hidden">
                   <img
-                    src={course.thumbnail_url || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&auto=format&fit=crop&q=80"}
+                    src={course.thumbnail_url || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"}
                     alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    style={{ imageRendering: 'crisp-edges' }}
                   />
                 </div>
 
-                {/* Content */}
-                <div className="p-5">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                    <span className="bg-gray-100 px-2 py-1 rounded">{course.category?.name || "ADR"}</span>
-                  </div>
-                  <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#8b0000] transition">
+                {/* Minimal Content */}
+                <div className="p-6">
+                  <h3 className="font-semibold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-[#610000] transition font-display">
                     {course.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-base text-gray-700 mb-4 font-body font-medium">
                     {course.instructor?.first_name} {course.instructor?.last_name}
                   </p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {course.duration_hours || 0}h
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" />
-                      {course.level || "All Levels"}
-                    </span>
-                  </div>
-                  <button className="mt-4 w-full bg-[#8b0000] text-white py-2 rounded-lg font-semibold hover:bg-[#6d0000] transition">
+                  <button className="mt-4 w-full bg-[#610000] text-white py-3 rounded-md font-semibold hover:bg-[#8b0000] transition text-base font-body">
                     Enroll Now
                   </button>
                 </div>
@@ -394,9 +326,9 @@ function FeaturedCoursesSection() {
 function SearchSection() {
   console.log('SearchSection is rendering!'); // DEBUG
   return (
-    <section className="py-12 bg-white border-y-4 border-red-500">
+    <section className="py-12 bg-white border-y-4 border-[#610000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold text-red-600 mb-4">SEARCH BAR IS HERE</h2>
+        <h2 className="text-center text-2xl font-bold text-[#610000] mb-4">SEARCH BAR IS HERE</h2>
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
@@ -407,7 +339,7 @@ function SearchSection() {
             <input
               type="text"
               placeholder="Search for anything"
-              className="w-full py-5 pl-16 pr-6 text-base text-gray-900 placeholder-gray-400 bg-white border-2 border-gray-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8b0000] focus:border-[#8b0000] transition-all hover:border-gray-300"
+              className="w-full py-5 pl-16 pr-6 text-base text-gray-900 placeholder-gray-400 bg-white border-2 border-gray-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-[#610000] transition-all hover:border-gray-300"
             />
           </div>
         </div>
@@ -424,7 +356,6 @@ function LearningPathwaysSection() {
     {
       icon: Scale,
       title: "Commercial Mediation & Settlement",
-      description: "Master commercial and international arbitration with our comprehensive curriculum.",
       courses: "6 Courses",
       hours: "24 Hours",
       color: "bg-blue-50 text-blue-600"
@@ -432,7 +363,6 @@ function LearningPathwaysSection() {
     {
       icon: Users,
       title: "Employment & Workplace Mediation",
-      description: "Develop expert mediation and conflict resolution skills with hands-on practice.",
       courses: "5 Courses",
       hours: "18 Hours",
       color: "bg-purple-50 text-purple-600"
@@ -440,7 +370,6 @@ function LearningPathwaysSection() {
     {
       icon: GraduationCap,
       title: "Construction Mediation",
-      description: "Build powerful negotiation and business development skills.",
       courses: "4 Courses",
       hours: "16 Hours",
       color: "bg-green-50 text-green-600"
@@ -448,7 +377,6 @@ function LearningPathwaysSection() {
     {
       icon: Globe,
       title: "Mediation Advocacy for Lawyers",
-      description: "Gain practical adjudication skills for construction and infrastructure disputes.",
       courses: "4 Courses",
       hours: "16 Hours",
       color: "bg-orange-50 text-orange-600"
@@ -456,43 +384,45 @@ function LearningPathwaysSection() {
   ];
 
   return (
-    <section ref={ref} className={`py-20 bg-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Learning Pathways</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Structured learning journeys designed to build expertise and advance your ADR career
-          </p>
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Professional business planning"
+          className="w-full h-full object-cover opacity-25"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Learning Pathways</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8">
           {pathways.map((pathway, index) => {
             const Icon = pathway.icon;
             return (
-              <div key={index} className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-xl transition-all duration-300 group cursor-pointer">
-                <div className={`w-14 h-14 ${pathway.color} rounded-lg flex items-center justify-center mb-4`}>
-                  <Icon className="w-8 h-8" />
+              <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
+                <div className={`w-16 h-16 ${pathway.color} rounded-lg flex items-center justify-center mb-5`}>
+                  <Icon className="w-9 h-9" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-[#8b0000] transition">
+                <h3 className="text-3xl font-semibold text-gray-900 mb-4 group-hover:text-[#610000] transition font-display">
                   {pathway.title}
                 </h3>
-                <p className="text-gray-600 mb-4 leading-relaxed">
-                  {pathway.description}
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <BookOpen className="w-4 h-4" />
+                <div className="flex items-center gap-6 text-base text-gray-700 font-body font-medium">
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
                     {pathway.courses}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
                     {pathway.hours}
                   </span>
                 </div>
-                <button className="mt-6 text-[#8b0000] font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
-                  View Pathway
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             );
           })}
@@ -500,7 +430,7 @@ function LearningPathwaysSection() {
 
         <div className="text-center mt-12">
           <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-            <button className="text-[#8b0000] font-semibold hover:underline flex items-center gap-2 mx-auto">
+            <button className="text-[#610000] font-semibold hover:underline flex items-center gap-2 mx-auto text-lg font-body">
               Explore all pathways
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -519,59 +449,59 @@ function WhyLearnWithCIMASection() {
     {
       icon: BadgeCheck,
       title: "International Faculty",
-      description: "Learn from global experts recognized by leading arbitral institutions worldwide."
     },
     {
       icon: Award,
       title: "Accredited Certificates",
-      description: "Earn certifications recognized by ICC, LCIA, CIArb and major arbitration bodies."
     },
     {
       icon: Clock,
       title: "Flexible Learning",
-      description: "Learn at your own pace with 24/7 access to self-paced and live content on any device."
     },
     {
       icon: TrendingUp,
       title: "Hybrid Teaching",
-      description: "Mix of self-paced modules with live webinars and on-demand content."
     },
     {
       icon: Globe,
       title: "Global Community",
-      description: "Connect with over 4,800 professionals from 38 jurisdictions worldwide."
     },
     {
       icon: Sparkles,
       title: "Career Advancement",
-      description: "Proven track record of helping members secure roles at top law firms and tribunals."
     },
   ];
 
   return (
-    <section ref={ref} className={`py-20 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Learn With CIMA?</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Experience world-class ADR education designed for busy professionals
-          </p>
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Students collaborating and learning"
+          className="w-full h-full object-cover opacity-20"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/80 to-white" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-20">
+          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Why Learn With CIMA?</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
             return (
-              <div key={index} className="text-center p-6 rounded-xl hover:bg-gray-50 transition-all duration-300">
-                <div className="w-16 h-16 bg-[#8b0000]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-8 h-8 text-[#8b0000]" />
+              <div key={index} className="text-center p-8 rounded-lg hover:bg-gray-50 transition-all duration-300">
+                <div className="w-20 h-20 bg-[#610000]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Icon className="w-10 h-10 text-[#610000]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-2xl font-semibold text-gray-900 font-display">
                   {benefit.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {benefit.description}
-                </p>
               </div>
             );
           })}
@@ -610,43 +540,48 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section ref={ref} className={`py-20 bg-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">What Our Learners Say</h2>
-            <p className="text-gray-600">Hear from professionals who advanced their careers with CIMA</p>
-          </div>
-          <button className="text-[#8b0000] font-semibold hover:underline flex items-center gap-1">
-            View all testimonials
-            <ArrowRight className="w-4 h-4" />
-          </button>
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Professional team meeting"
+          className="w-full h-full object-cover opacity-25"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-16">
+          <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">What Our Learners Say</h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-all duration-300">
+            <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-8 hover:shadow-2xl transition-all duration-300">
               {/* Stars */}
-              <div className="flex gap-1 mb-4">
+              <div className="flex gap-1 mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  <Star key={i} className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                 ))}
               </div>
 
               {/* Quote */}
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <p className="text-gray-800 mb-8 leading-relaxed text-lg font-body">
                 "{testimonial.quote}"
               </p>
 
               {/* Author */}
-              <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
-                <div className="w-12 h-12 rounded-full bg-[#8b0000] flex items-center justify-center text-white font-bold">
+              <div className="flex items-center gap-4 border-t border-gray-100 pt-6">
+                <div className="w-14 h-14 rounded-full bg-[#610000] flex items-center justify-center text-white font-bold text-lg font-display">
                   {testimonial.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
-                  <p className="text-xs text-gray-500">{testimonial.company}</p>
+                  <p className="font-semibold text-gray-900 font-display">{testimonial.name}</p>
+                  <p className="text-sm text-gray-700 font-body font-medium">{testimonial.role}</p>
+                  <p className="text-sm text-gray-600 font-body">{testimonial.company}</p>
                 </div>
               </div>
             </div>
@@ -708,7 +643,7 @@ function UpcomingLiveProgramsSection() {
             <h2 className="text-4xl font-bold text-gray-900 mb-2">Upcoming Live Programs</h2>
             <p className="text-gray-600">Join our expert-led live sessions and masterclasses</p>
           </div>
-          <button className="text-[#8b0000] font-semibold hover:underline flex items-center gap-1">
+          <button className="text-[#610000] font-semibold hover:underline flex items-center gap-1">
             View all programs
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -718,14 +653,14 @@ function UpcomingLiveProgramsSection() {
           {programs.map((program, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 group">
               {/* Date Badge */}
-              <div className="bg-[#8b0000] text-white text-center py-4">
+              <div className="bg-[#610000] text-white text-center py-4">
                 <p className="text-3xl font-bold">{program.date}</p>
                 <p className="text-sm uppercase tracking-wide">{program.month}</p>
               </div>
 
               {/* Content */}
               <div className="p-5">
-                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#8b0000] transition min-h-[3rem]">
+                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#610000] transition min-h-[3rem]">
                   {program.title}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]">
@@ -741,7 +676,7 @@ function UpcomingLiveProgramsSection() {
                     {program.attendees} attending
                   </div>
                 </div>
-                <button className="w-full bg-[#8b0000] text-white py-2 rounded-lg font-semibold hover:bg-[#6d0000] transition">
+                <button className="w-full bg-[#610000] text-white py-2 rounded-lg font-semibold hover:bg-[#8b0000] transition">
                   {program.status}
                 </button>
               </div>
@@ -758,43 +693,52 @@ function FinalCTASection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
 
   return (
-    <section ref={ref} className={`py-20 bg-[#8b0000] text-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-5xl font-bold mb-6">Ready to advance your career in ADR?</h2>
-        <p className="text-xl mb-12 max-w-3xl mx-auto opacity-90">
-          Join thousands of professionals who are mastering dispute resolution with CIMA Learn
-        </p>
+    <section ref={ref} className={`relative py-32 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Sharp Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=2880&h=1200&auto=format&fit=crop&q=100"
+          alt="Professional workspace"
+          className="w-full h-full object-cover"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#610000]/95 to-[#610000]/85" />
+      </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+        <h2 className="text-6xl font-light mb-8 font-display text-white">Ready to advance your career?</h2>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20">
           <Link href="/register">
-            <button className="bg-white text-[#8b0000] px-12 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition shadow-xl">
+            <button className="bg-white text-[#610000] px-14 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition shadow-2xl font-body">
               Create Your Account
             </button>
           </Link>
           <Link href="/courses">
-            <button className="border-2 border-white text-white px-12 py-4 rounded-lg font-bold text-lg hover:bg-white/10 transition">
+            <button className="border-2 border-white text-white px-14 py-5 rounded-md font-semibold text-lg hover:bg-white/10 transition font-body">
               Browse Courses
             </button>
           </Link>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto border-t border-white/20 pt-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 max-w-5xl mx-auto border-t border-white/20 pt-16">
           <div>
-            <p className="text-5xl font-bold mb-2">4,800+</p>
-            <p className="text-white/80">Learners</p>
+            <p className="text-6xl font-light mb-2 font-display text-white">4,800+</p>
+            <p className="text-white/80 text-lg font-body">Learners</p>
           </div>
           <div>
-            <p className="text-5xl font-bold mb-2">120+</p>
-            <p className="text-white/80">Charities</p>
+            <p className="text-6xl font-light mb-2 font-display text-white">120+</p>
+            <p className="text-white/80 text-lg font-body">Charities</p>
           </div>
           <div>
-            <p className="text-5xl font-bold mb-2">200+</p>
-            <p className="text-white/80">Courses</p>
+            <p className="text-6xl font-light mb-2 font-display text-white">200+</p>
+            <p className="text-white/80 text-lg font-body">Courses</p>
           </div>
           <div>
-            <p className="text-5xl font-bold mb-2">98%</p>
-            <p className="text-white/80">Satisfaction</p>
+            <p className="text-6xl font-light mb-2 font-display text-white">98%</p>
+            <p className="text-white/80 text-lg font-body">Satisfaction</p>
           </div>
         </div>
       </div>
@@ -805,72 +749,70 @@ function FinalCTASection() {
 // Footer
 function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-16">
+    <footer className="bg-white text-black py-20 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           {/* Logo & Description */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <img src={cimaLogo} alt="CIMA Learn" className="h-12 w-auto" />
+            <div className="flex items-center gap-3 mb-6">
+              <img src="/images/b and w.png" alt="CIMA Learn" className="h-14 w-auto" />
               <div>
-                <p className="text-white font-bold">CIMA Learn</p>
-                <p className="text-xs text-gray-500 uppercase">Professional ADR Education</p>
+                <p className="text-black font-semibold text-lg font-display">CIMA Learn</p>
+                <p className="text-xs text-gray-700 uppercase tracking-wider font-body">Professional ADR Education</p>
               </div>
             </div>
-            <p className="text-sm text-gray-400 leading-relaxed mb-4">
-              CIMA Learn delivers world-class arbitration and mediation education with a focus on real-world application, professional advancement, and global accreditation.
+            <p className="text-base text-black leading-relaxed mb-6 font-body max-w-md">
+              World-class arbitration and mediation education with a focus on real-world application and professional advancement.
             </p>
             <div className="flex gap-4">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition">
+                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition">
+                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
               </a>
             </div>
           </div>
 
           {/* Products */}
           <div>
-            <h3 className="text-white font-bold mb-4">Products</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/courses" className="hover:text-white transition">All Courses</Link></li>
-              <li><Link href="/course-catalog" className="hover:text-white transition">Course Bundles</Link></li>
-              <li><a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">All Pathways</a></li>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Products</h3>
+            <ul className="space-y-3 text-base font-body">
+              <li><Link href="/courses" className="text-black hover:text-gray-600 transition">All Courses</Link></li>
+              <li><Link href="/course-catalog" className="text-black hover:text-gray-600 transition">Course Bundles</Link></li>
+              <li><a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-black hover:text-gray-600 transition">All Pathways</a></li>
             </ul>
           </div>
 
           {/* Company */}
           <div>
-            <h3 className="text-white font-bold mb-4">Company</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/contact" className="hover:text-white transition">About CIMA</Link></li>
-              <li><Link href="/become-instructor" className="hover:text-white transition">Become Instructor</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition">Contact Us</Link></li>
-              <li><Link href="/help-center" className="hover:text-white transition">News & Insights</Link></li>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Company</h3>
+            <ul className="space-y-3 text-base font-body">
+              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">About CIMA</Link></li>
+              <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Become Instructor</Link></li>
+              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">Contact Us</Link></li>
             </ul>
           </div>
 
           {/* Support */}
           <div>
-            <h3 className="text-white font-bold mb-4">Support</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/help-center" className="hover:text-white transition">Help Center</Link></li>
-              <li><Link href="/technical-support" className="hover:text-white transition">Technical Support</Link></li>
-              <li><Link href="/academic-advising" className="hover:text-white transition">Academic Advising</Link></li>
-              <li><Link href="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link></li>
-              <li><Link href="/terms-of-service" className="hover:text-white transition">Terms & Conditions</Link></li>
+            <h3 className="text-black font-semibold mb-5 text-lg font-display">Support</h3>
+            <ul className="space-y-3 text-base font-body">
+              <li><Link href="/help-center" className="text-black hover:text-gray-600 transition">Help Center</Link></li>
+              <li><Link href="/technical-support" className="text-black hover:text-gray-600 transition">Technical Support</Link></li>
+              <li><Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy Policy</Link></li>
+              <li><Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms & Conditions</Link></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-500">© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
-          <div className="flex gap-6 text-sm">
-            <Link href="/privacy-policy" className="hover:text-white transition">Privacy</Link>
-            <Link href="/terms-of-service" className="hover:text-white transition">Terms</Link>
-            <Link href="/cookie-policy" className="hover:text-white transition">Cookies</Link>
+        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-base text-black font-body">© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
+          <div className="flex gap-8 text-base font-body">
+            <Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy</Link>
+            <Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms</Link>
+            <Link href="/cookie-policy" className="text-black hover:text-gray-600 transition">Cookies</Link>
           </div>
         </div>
       </div>

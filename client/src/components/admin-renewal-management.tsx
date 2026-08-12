@@ -3,6 +3,7 @@
  * Expiry watchlist, manual renewal confirmation, renewal stats
  */
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -89,39 +90,21 @@ export default function AdminRenewalManagement() {
     setIsProcessing(true);
 
     try {
-      const today = new Date();
-      const newExpiry = new Date(today);
-      newExpiry.setDate(newExpiry.getDate() + 365);
-      const todayStr = today.toISOString().split("T")[0];
-      const expiryStr = newExpiry.toISOString().split("T")[0];
-
-      // Update member
-      const { error: memberErr } = await (supabase as any)
-        .from("members")
-        .update({
-          issue_date: todayStr,
-          expiry_date: expiryStr,
-          status: "active",
-          renewal_count: (renewDialog.renewal_count || 0) + 1,
-        })
-        .eq("id", renewDialog.id);
-
-      if (memberErr) throw memberErr;
-
-      // Insert renewal history
-      const { error: historyErr } = await (supabase as any)
-        .from("renewal_history")
-        .insert({
-          member_id: renewDialog.id,
-          renewal_date: todayStr,
-          new_expiry_date: expiryStr,
-          amount_paid: 0,
-          currency: "GHS",
-          payment_method: "waived",
+      // Routed through the confirm-manual-renewal Edge Function (not direct
+      // table writes) so bank-transfer/waived renewals get the same
+      // certificate regeneration + confirmation email as Paystack-paid
+      // renewals, via the same shared renewal-effects logic — and because
+      // certificate generation needs the server-only CERTIFICATE_API_KEY,
+      // which the browser can never hold.
+      const { data, error } = await supabase.functions.invoke("confirm-manual-renewal", {
+        body: {
+          memberId: renewDialog.member_id,
           notes: renewNotes || "Manual renewal by admin",
-        });
+        },
+      });
 
-      if (historyErr) throw historyErr;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Renewal failed");
 
       toast({ title: `Membership renewed for ${renewDialog.full_name}` });
       setRenewDialog(null);
@@ -141,6 +124,18 @@ export default function AdminRenewalManagement() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Manual Renewals</h2>
+          <p className="text-sm text-muted-foreground">Confirm bank/manual renewals and monitor upcoming expiries.</p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/renewals">
+            <RefreshCw className="h-4 w-4 mr-2" /> Renewal Automation Dashboard
+          </Link>
+        </Button>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[

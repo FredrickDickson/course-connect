@@ -16,7 +16,7 @@ import {
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
-import Header from "@/components/header";
+import AdminLayout from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -196,9 +196,11 @@ export default function AdminExpeditedReviews() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -217,27 +219,23 @@ export default function AdminExpeditedReviews() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <AdminLayout>
+      <div className="space-y-8">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-stone-500">Qualification Engine</p>
-            <h1 className="text-3xl font-semibold text-[#1C1917] mt-1">Professional Profile Reviews</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm uppercase tracking-[0.2em] text-[#8b6f47] font-sf-pro-text">Qualification Engine</p>
+            <h1 className="text-3xl font-bold text-[#2c2015] mt-1 font-sf-pro-display">Professional Profile Reviews</h1>
+            <p className="text-sm text-[#6b5d4f] mt-1">
               Capture experience-rich members early and upgrade them without blocking onboarding.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-end">
-            <Button asChild variant="ghost" size="sm" className="text-sm text-muted-foreground">
+            <Button asChild variant="ghost" size="sm" className="text-sm text-[#6b5d4f] hover:text-[#610000]">
               <Link href="/admin" className="gap-2 flex items-center">
                 ← Back to dashboard
               </Link>
             </Button>
-            <Badge variant="outline" className="bg-[#1C1917] text-white border-0">
-              <ShieldCheck className="w-4 h-4 mr-1" /> Admin
-            </Badge>
-            <Button variant="outline" className="gap-2" onClick={() => profilesQuery.refetch()}>
+            <Button variant="outline" className="gap-2 border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed]" onClick={() => profilesQuery.refetch()}>
               <Loader2 className={cn("w-4 h-4", profilesQuery.isFetching && "animate-spin")} />
               Refresh
             </Button>
@@ -246,7 +244,7 @@ export default function AdminExpeditedReviews() {
 
         <StatsGrid stats={stats} loading={statsLoading} />
 
-        <Card className="border-[#E7E5E4] bg-white/90 shadow-sm">
+        <Card className="border-[#d4c5b0]/20 bg-white shadow-md rounded-[20px]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold text-[#1C1917] flex items-center gap-2">
               <Filter className="w-4 h-4" /> Review Filters
@@ -381,7 +379,7 @@ export default function AdminExpeditedReviews() {
           )}
         </DrawerContent>
       </Drawer>
-    </div>
+    </AdminLayout>
   );
 }
 

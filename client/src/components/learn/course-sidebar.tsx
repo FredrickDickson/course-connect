@@ -1,10 +1,19 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown } from "lucide-react";
+import { X, Check, Play, FileText, HelpCircle, Target, ChevronDown, FileStack, Presentation } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LearnCourse, LearnLesson, LearnModule, ProgressRow, formatDuration } from "./types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Props {
   course: LearnCourse;
@@ -21,6 +30,7 @@ const lessonIcon = (t?: string | null) => {
     case "pdf": case "reading": return FileText;
     case "quiz": case "assessment": return HelpCircle;
     case "assignment": return Target;
+    case "presentation": return Presentation;
     default: return Play;
   }
 };
@@ -39,6 +49,62 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
   const completed = progress.filter(p => p.completed).length;
   const total = allLessons.length;
   const remaining = allLessons.reduce((s, l) => s + (progress.find(p => p.lesson_id === l.id)?.completed ? 0 : (l.duration_seconds || 0)), 0);
+
+  // Fetch resources for all lessons
+  const { data: lessonResources } = useQuery({
+    queryKey: ["lesson-resources", courseId],
+    queryFn: async () => {
+      const lessonIds = allLessons.map(l => l.id);
+      if (lessonIds.length === 0) return {};
+      
+      const { data, error } = await supabase
+        .from("lesson_resources")
+        .select("*")
+        .in("lesson_id", lessonIds);
+      
+      if (error) throw error;
+      
+      // Group by lesson_id
+      const grouped: Record<string, any[]> = {};
+      (data || []).forEach((resource: any) => {
+        if (!grouped[resource.lesson_id]) {
+          grouped[resource.lesson_id] = [];
+        }
+        grouped[resource.lesson_id].push(resource);
+      });
+      
+      return grouped;
+    },
+    enabled: allLessons.length > 0,
+  });
+
+  const handleDownloadResource = async (resource: any) => {
+    try {
+      if (resource.storage_path) {
+        // For files stored in Supabase storage
+        const { data, error } = await supabase.storage
+          .from("lesson-resources")
+          .createSignedUrl(resource.storage_path, 3600);
+        
+        if (error) throw error;
+        if (data?.signedUrl) {
+          // Create a temporary link element to trigger download
+          const link = document.createElement('a');
+          link.href = data.signedUrl;
+          link.download = resource.title || 'resource';
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } else if (resource.external_url) {
+        // For external URLs, open in new tab
+        window.open(resource.external_url, "_blank");
+      }
+    } catch (error) {
+      console.error("Error downloading resource:", error);
+    }
+  };
 
   // Default-open the section containing current lesson
   const currentSectionId = course.modules?.find(m => m.lessons?.some(l => l.id === currentLessonId))?.id;
@@ -81,7 +147,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                 onClick={() => setOpen(o => ({ ...o, [module.id]: !isOpen }))}
               >
                 <div className="min-w-0 pr-2">
-                  <p className="font-medium text-sm truncate">Section {mIdx + 1}: {module.title}</p>
+                  <p className="font-medium text-sm line-clamp-2">Section {mIdx + 1}: {module.title}</p>
                   <p className="text-xs text-white/60 mt-0.5">{sectionDoneCount} / {lessons.length} · {formatDuration(sectionDuration)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -98,46 +164,97 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                     const isActive = lesson.id === currentLessonId;
                     const Icon = lessonIcon(lesson.content_type);
                     const thumbnailUrl = muxThumbnailUrl(lesson);
+                    const resources = lessonResources?.[lesson.id] || [];
+                    const hasResources = resources.length > 0;
+                    
                     return (
                       <li key={lesson.id}>
-                        <Link
-                          href={`/learn/${courseId}/${lesson.id}`}
-                          onClick={() => onLessonClick?.(lesson.id)}
-                          className={cn(
-                            "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] active:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11 touch-none",
-                            isActive && "bg-[#2D2F31] border-l-[3px] border-[#B91C1C] pl-[13px]",
-                            !isActive && "border-l-[3px] border-transparent",
-                          )}
-                        >
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(lesson.id, !done); }}
-                            className={cn(
-                              "mt-0.5 h-5 w-5 sm:h-4 sm:w-4 shrink-0 rounded border flex items-center justify-center touch-none",
-                              done ? "bg-[#22C55E] border-[#22C55E]" : "border-white/40 hover:border-white active:border-white"
-                            )}
-                            aria-label={done ? "Mark as not complete" : "Mark complete"}
+                        <div className={cn(
+                          "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11",
+                          isActive && "bg-[#2D2F31] border-l-[3px] border-[#B91C1C] pl-[13px]",
+                          !isActive && "border-l-[3px] border-transparent",
+                        )}>
+                          <Link
+                            href={`/learn/${courseId}/${lesson.id}`}
+                            onClick={() => onLessonClick?.(lesson.id)}
+                            className="flex items-start gap-3 sm:gap-2 flex-1 min-w-0 touch-none"
                           >
-                            {done && <Check className="h-3 w-3 text-white" />}
-                          </button>
-                          {thumbnailUrl ? (
-                            <div className="relative mt-0.5 h-10 w-[72px] shrink-0 overflow-hidden rounded bg-black/40">
-                              <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <Play className="h-3.5 w-3.5 fill-white text-white" />
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(lesson.id, !done); }}
+                              className={cn(
+                                "mt-0.5 h-5 w-5 sm:h-4 sm:w-4 shrink-0 rounded border flex items-center justify-center touch-none",
+                                done ? "bg-[#22C55E] border-[#22C55E]" : "border-white/40 hover:border-white active:border-white"
+                              )}
+                              aria-label={done ? "Mark as not complete" : "Mark complete"}
+                            >
+                              {done && <Check className="h-3 w-3 text-white" />}
+                            </button>
+                            {thumbnailUrl ? (
+                              <div className="relative mt-0.5 h-10 w-[72px] shrink-0 overflow-hidden rounded bg-black/40">
+                                <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <Play className="h-3.5 w-3.5 fill-white text-white" />
+                                </div>
                               </div>
+                            ) : (
+                              <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className={cn("line-clamp-2", isActive ? "font-semibold text-white" : "text-white/90")}>
+                                {lIdx + 1}. {lesson.title}
+                              </p>
+                              {lesson.duration_seconds ? (
+                                <p className="text-[11px] text-white/50 mt-0.5">{formatDuration(lesson.duration_seconds)}</p>
+                              ) : null}
                             </div>
-                          ) : (
-                            <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
+                          </Link>
+                          
+                          {hasResources && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="shrink-0 h-8 px-3 border-[#8b6f47]/50 bg-[#8b6f47]/10 text-[#8b6f47] hover:text-[#610000] hover:bg-[#8b6f47]/20 hover:border-[#610000]/50 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileStack className="h-3.5 w-3.5 mr-1.5" />
+                                  Resources
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-64 bg-white border-[#d4c5b0]">
+                                <div className="px-3 py-2 border-b border-[#d4c5b0]/30">
+                                  <p className="text-xs font-semibold text-[#610000] uppercase tracking-wider">
+                                    Lesson Resources
+                                  </p>
+                                </div>
+                                {resources.map((resource: any) => (
+                                  <DropdownMenuItem 
+                                    key={resource.id}
+                                    onClick={() => handleDownloadResource(resource)}
+                                    className="cursor-pointer py-3 px-3 hover:bg-[#faf9f6] focus:bg-[#faf9f6] text-[#2c2015]"
+                                  >
+                                    <div className="flex items-center gap-3 w-full">
+                                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#610000]/10 flex items-center justify-center">
+                                        <FileText className="h-4 w-4 text-[#610000]" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-[#2c2015] truncate">
+                                          {resource.title}
+                                        </p>
+                                        {resource.file_size && (
+                                          <p className="text-xs text-[#8b6f47] mt-0.5">
+                                            {(resource.file_size / 1024).toFixed(0)} KB
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className={cn("truncate", isActive ? "font-semibold text-white" : "text-white/90")}>
-                              {lIdx + 1}. {lesson.title}
-                            </p>
-                            {lesson.duration_seconds ? (
-                              <p className="text-[11px] text-white/50 mt-0.5">{formatDuration(lesson.duration_seconds)}</p>
-                            ) : null}
-                          </div>
-                        </Link>
+                        </div>
                       </li>
                     );
                   })}

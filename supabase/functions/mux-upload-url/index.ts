@@ -90,10 +90,18 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const instructorId = (lesson as any).modules?.courses?.instructor_id;
     if (instructorId !== userId) {
-      return new Response(JSON.stringify({ error: "Only the course instructor can upload videos" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const { data: callerRow } = await admin
+        .from("users")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (callerRow?.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Only the course instructor can upload videos" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const origin = req.headers.get("origin") || "*";

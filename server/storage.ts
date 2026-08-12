@@ -60,6 +60,7 @@ import {
   type InsertInstructorApplication,
 } from "@shared/schema";
 import { createClient } from "@supabase/supabase-js";
+import { sanitizePostgrestSearchTerm } from "./utils/postgrest";
 
 // Initialize Supabase Admin client with service role key
 export const supabaseAdmin = createClient(
@@ -303,12 +304,6 @@ export interface IStorage {
     search?: string;
     role?: string;
   }): Promise<User[]>;
-  getCoursesForAdmin(filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    instructor?: string;
-  }): Promise<Course[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -481,7 +476,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.search) {
-      query = query.ilike("title", `%${filters.search}%`);
+      query = query.ilike("title", `%${sanitizePostgrestSearchTerm(filters.search)}%`);
     }
 
     if (filters?.featured !== undefined) {
@@ -567,9 +562,42 @@ export class DatabaseStorage implements IStorage {
     id: string,
     updates: Partial<InsertCourse>,
   ): Promise<Course> {
+    // Same camelCase -> snake_case mapping as createCourse (see comment
+    // there): passing InsertCourse's camelCase keys straight through 500s
+    // on the first mismatched column. JSON.stringify drops the `undefined`
+    // entries below, so only fields actually present in `updates` are sent.
+    const c = updates as any;
+    const updatePayload = {
+      title: c.title,
+      subtitle: c.subtitle,
+      description: c.description,
+      instructor_id: c.instructorId,
+      category_id: c.categoryId,
+      programme_type: c.programmeType,
+      level: c.level,
+      track: c.track,
+      price: c.price,
+      currency: c.currency,
+      associate_price: c.associatePrice,
+      member_price: c.memberPrice,
+      fellow_price: c.fellowPrice,
+      requires_approval: c.requiresApproval,
+      thumbnail_url: c.thumbnailUrl,
+      promo_video_url: c.promoVideoUrl,
+      duration_hours: c.duration,
+      is_published: c.isPublished,
+      is_featured: c.isFeatured,
+      avg_rating: c.avgRating,
+      rating_count: c.ratingCount,
+      enrollment_count: c.enrollmentCount,
+      tags: c.tags,
+      ticket_types: c.ticketTypes,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data, error } = await supabaseAdmin
       .from("courses")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", id)
       .select()
       .single();
@@ -1533,30 +1561,10 @@ export class DatabaseStorage implements IStorage {
       query = query.eq("role", filters.role);
     }
     if (filters?.search) {
+      const search = sanitizePostgrestSearchTerm(filters.search);
       query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`,
       );
-    }
-    query = query.order("created_at", { ascending: false });
-    if (filters?.page && filters?.limit) {
-      const from = (filters.page - 1) * filters.limit;
-      const to = from + filters.limit - 1;
-      query = query.range(from, to);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getCoursesForAdmin(filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    instructor?: string;
-  }): Promise<Course[]> {
-    let query = supabaseAdmin.from("courses").select("*");
-    if (filters?.instructor) {
-      query = query.eq("instructor_id", filters.instructor);
     }
     query = query.order("created_at", { ascending: false });
     if (filters?.page && filters?.limit) {
@@ -1615,6 +1623,16 @@ export class DatabaseStorage implements IStorage {
       .eq("course_id", courseId);
     if (error) throw error;
     return data || [];
+  }
+
+  async getCourseResourceById(id: string): Promise<CourseResource | undefined> {
+    const { data, error } = await supabaseAdmin
+      .from("course_resources")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error || !data) return undefined;
+    return data;
   }
 
   async deleteCourseResource(id: string): Promise<void> {
@@ -2338,6 +2356,23 @@ export class DatabaseStorage implements IStorage {
       title: lesson.title,
       moduleId: lesson.module_id,
       courseId: moduleData?.course_id,
+    };
+  }
+
+  async getModuleById(moduleId: string): Promise<any> {
+    const { data: moduleRow, error } = await supabaseAdmin
+      .from("modules")
+      .select("id, title, course_id")
+      .eq("id", moduleId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!moduleRow) return null;
+
+    return {
+      id: moduleRow.id,
+      title: moduleRow.title,
+      courseId: moduleRow.course_id,
     };
   }
 

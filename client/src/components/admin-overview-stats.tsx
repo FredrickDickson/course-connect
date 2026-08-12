@@ -5,6 +5,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchJoinedEnrollments } from "@/lib/joined-enrollments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,16 +37,20 @@ export default function AdminOverviewStats() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  // Fetch all enrollments (course_enrollments) for stats
+  // Fetch all enrollments (joined against orders for payment/pricing info)
   const { data: allEnrollments = [] } = useQuery({
     queryKey: ["admin-all-enrollments"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("course_enrollments")
-        .select("*, course:courses(title)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const joined = await fetchJoinedEnrollments();
+      // Flatten to the shape this component expects (was course_enrollments,
+      // now split across enrollments + orders).
+      return joined.map((e) => ({
+        created_at: e.order?.created_at || e.enrolled_at,
+        payment_status: e.order?.status === "completed" ? "confirmed" : e.order?.status === "cancelled" ? "cancelled" : "pending_bank",
+        ticket_price: e.order?.amount || 0,
+        ticket_type: e.enrollment_level?.toLowerCase() || "",
+        course: e.course,
+      }));
     },
   });
 
@@ -109,6 +114,9 @@ export default function AdminOverviewStats() {
     const yearWaitlist = waitlist.filter(
       (w: any) => new Date(w.created_at).getFullYear() === selectedYear
     );
+    const uniqueStudents = new Set(
+      confirmed.map((e: any) => e.email).filter(Boolean)
+    ).size;
 
     return {
       totalEnrollments: yearEnrollments.length,
@@ -117,6 +125,7 @@ export default function AdminOverviewStats() {
       revenue,
       totalCourses: yearCourses.length,
       liveCourses: publishedCourses.length,
+      uniqueStudents,
       waitlisted: yearWaitlist.length,
     };
   }, [yearEnrollments, yearCourses, waitlist, selectedYear]);
@@ -261,8 +270,8 @@ export default function AdminOverviewStats() {
           },
           {
             icon: TrendingUp,
-            label: "This Year Total",
-            value: stats.totalCourses,
+            label: "Unique Students",
+            value: stats.uniqueStudents,
             color: "text-purple-600",
           },
           {

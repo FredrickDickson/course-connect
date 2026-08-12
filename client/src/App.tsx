@@ -33,6 +33,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
+import DashboardHome from "@/pages/dashboard-new";
 import Dashboard from "@/pages/dashboard";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
 import Checkout from "@/pages/checkout";
@@ -80,12 +81,16 @@ const AdminSetup = lazy(() => import("@/pages/admin-setup"));
 const BecomeInstructor = lazy(() => import("@/pages/become-instructor"));
 const CreateCourse = lazy(() => import("@/pages/create-course"));
 const CourseCurriculum = lazy(() => import("@/pages/course-curriculum"));
+const AdminInstructorProfile = lazy(() => import("@/pages/admin-instructor-profile"));
+const AdminRenewalManagement = lazy(() => import("@/pages/admin/renewal-management"));
+const AdminAccessTokens = lazy(() => import("@/pages/admin/access-tokens"));
 
 // Lazy loaded heavy pages for performance
 const CourseDetail = lazy(() => import("@/pages/course-detail"));
 const CommunityPost = lazy(() => import("@/pages/community-post"));
 const Onboarding = lazy(() => import("@/pages/onboarding"));
 const Profile = lazy(() => import("@/pages/profile"));
+const NotificationSettings = lazy(() => import("@/pages/notification-settings"));
 const QuizPage = lazy(() => import("@/pages/quiz"));
 
 // Wrapped components with Suspense for ProtectedRoute
@@ -114,6 +119,21 @@ const LazyCourseCurriculum = () => (
     <CourseCurriculum />
   </Suspense>
 );
+const LazyAdminInstructorProfile = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminInstructorProfile />
+  </Suspense>
+);
+const LazyAdminRenewalManagement = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminRenewalManagement />
+  </Suspense>
+);
+const LazyAdminAccessTokens = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminAccessTokens />
+  </Suspense>
+);
 const LazyBecomeInstructor = () => (
   <Suspense fallback={<PageLoader />}>
     <BecomeInstructor />
@@ -137,6 +157,11 @@ const LazyOnboarding = () => (
 const LazyProfile = () => (
   <Suspense fallback={<PageLoader />}>
     <Profile />
+  </Suspense>
+);
+const LazyNotificationSettings = () => (
+  <Suspense fallback={<PageLoader />}>
+    <NotificationSettings />
   </Suspense>
 );
 const LazyQuizPage = () => (
@@ -166,7 +191,7 @@ function Router() {
             return <PageLoader />;
           }
           if (isAuthenticated && user) {
-            // Redirect based on role
+            // Redirect based on role to the home page (not dashboard)
             if (user.role === "admin") {
               window.location.href = "/admin";
               return <PageLoader />;
@@ -174,7 +199,7 @@ function Router() {
               window.location.href = "/instructor";
               return <PageLoader />;
             } else {
-              window.location.href = "/dashboard";
+              window.location.href = "/home";
               return <PageLoader />;
             }
           }
@@ -184,7 +209,7 @@ function Router() {
       
       {/* Authenticated home route */}
       <Route path="/home">
-        {isLoading || !isAuthenticated ? <Landing /> : <Home />}
+        {isLoading || !isAuthenticated ? <Landing /> : <DashboardHome />}
       </Route>
       
       {/* Direct landing page route - always shows landing regardless of auth */}
@@ -232,6 +257,7 @@ function Router() {
 
       {/* Protected routes - using ProtectedRoute for proper redirection and role checking */}
       <ProtectedRoute path="/profile" component={LazyProfile} />
+      <ProtectedRoute path="/notification-settings" component={LazyNotificationSettings} />
       <ProtectedRoute path="/courses" component={Courses} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/programs" component={Programs} />
@@ -261,10 +287,16 @@ function Router() {
       <ProtectedRoute path="/instructor/courses/new" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/edit" requiredRole="instructor" component={LazyCreateCourse} />
       <ProtectedRoute path="/instructor/courses/:courseId/curriculum" requiredRole="instructor" component={LazyCourseCurriculum} />
+      <ProtectedRoute path="/admin/courses/new" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/edit" requiredRole="admin" component={LazyCreateCourse} />
+      <ProtectedRoute path="/admin/courses/:courseId/curriculum" requiredRole="admin" component={LazyCourseCurriculum} />
 
       {/* Admin routes */}
-      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
       <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
+      <ProtectedRoute path="/admin/renewals" requiredRole="admin" component={LazyAdminRenewalManagement} />
+      <ProtectedRoute path="/admin/access-tokens" requiredRole="admin" component={LazyAdminAccessTokens} />
+      <ProtectedRoute path="/admin/instructors/:instructorId/profile" requiredRole="admin" component={LazyAdminInstructorProfile} />
+      <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
 
       {!isLoading && <Route component={NotFound} />}
     </Switch>

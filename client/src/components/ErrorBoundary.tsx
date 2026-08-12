@@ -28,6 +28,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
+    // A stale-deploy chunk-load failure can't be fixed by re-rendering the
+    // same tree - the browser needs a fresh index.html with current chunk
+    // hashes, so reload instead of just clearing the error state.
+    if (/dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(this.state.error?.message || "")) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: undefined });
     this.props.onReset?.();
   };

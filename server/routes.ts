@@ -22,7 +22,7 @@ import express from "express";
 
 import crypto from "crypto";
 
-import { storage } from "./storage";
+import { storage, supabaseAdmin } from "./storage";
 
 import { requireSupabaseAuth } from "./supabaseAuth";
 
@@ -35,6 +35,12 @@ import {
   authLimiter,
 
   uploadLimiter,
+
+  paymentLimiter,
+
+  contactLimiter,
+
+  quizSubmitLimiter,
 
   errorHandler,
 
@@ -56,6 +62,8 @@ import {
 
   handleUploadError,
 
+  verifyFileContent,
+
   getFileUrl,
 
 } from "./middleware/upload";
@@ -72,7 +80,9 @@ import qualificationRouter from "./routes/qualification";
 
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
-import muxRouter from "./routes/mux";
+import renewalAutomationRouter from "./routes/renewal-automation";
+import adminInstructorsRouter from "./routes/admin/instructors";
+import adminAccessTokensRouter from "./routes/admin/access-tokens";
 import {
   insertCourseSchema,
 
@@ -88,7 +98,19 @@ import {
 
   insertInstructorApplicationSchema,
 
+  insertModuleSchema,
+
+  insertLessonSchema,
+
+  insertQuizSchema,
+
+  insertAssignmentSchema,
+
 } from "@shared/schema";
+import { validateAndExtractVideoUrl } from "./utils/videoValidator";
+import { sanitizeRichText } from "./utils/sanitizeHtml";
+import { sendRawEmail } from "./utils/email";
+import { z } from "zod";
 
 
 
@@ -154,6 +176,143 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
 
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
+/**
+ * Ownership-check helpers for instructor-scoped curriculum routes.
+ *
+ * storage.getCourseById() returns the raw Supabase row (snake_case columns,
+ * e.g. instructor_id) rather than a camelCase-mapped object, so callers must
+ * compare against `course.instructor_id`, not `course.instructorId`. Admins
+ * bypass ownership checks, consistent with requireRole()/requireInstructor().
+ */
+async function ensureCourseOwnership(
+  courseId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<boolean> {
+  const course = await storage.getCourseById(courseId);
+  if (
+    !course ||
+    (course.instructor_id !== req.user.claims.sub && req.user.role !== "admin")
+  ) {
+    res.status(403).json({ message: "Access denied" });
+    return false;
+  }
+  return true;
+}
+
+async function ensureModuleOwnership(
+  moduleId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<{ courseId: string } | null> {
+  const moduleRow = await storage.getModuleById(moduleId);
+  if (!moduleRow) {
+    res.status(404).json({ message: "Module not found" });
+    return null;
+  }
+  const ok = await ensureCourseOwnership(moduleRow.courseId, req, res);
+  return ok ? { courseId: moduleRow.courseId } : null;
+}
+
+async function ensureLessonOwnership(
+  lessonId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<{ courseId: string; moduleId: string } | null> {
+  const lesson = await storage.getLessonById(lessonId);
+  if (!lesson) {
+    res.status(404).json({ message: "Lesson not found" });
+    return null;
+  }
+  const ok = await ensureCourseOwnership(lesson.courseId, req, res);
+  return ok ? { courseId: lesson.courseId, moduleId: lesson.moduleId } : null;
+}
+
+/**
+ * Quiz/assignment rows come back from storage as raw Supabase data
+ * (lesson_id, not lessonId) — resolve ownership via the lesson chain.
+ */
+async function ensureQuizOwnership(
+  quizId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<{ lessonId: string; courseId: string } | null> {
+  const quiz = await storage.getQuizById(quizId);
+  const lessonId = (quiz as any)?.lesson_id;
+  if (!quiz || !lessonId) {
+    res.status(404).json({ message: "Quiz not found" });
+    return null;
+  }
+  const ownership = await ensureLessonOwnership(lessonId, req, res);
+  return ownership ? { lessonId, courseId: ownership.courseId } : null;
+}
+
+async function ensureAssignmentOwnership(
+  assignmentId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<{ lessonId: string; courseId: string } | null> {
+  const assignment = await storage.getAssignmentById(assignmentId);
+  const lessonId = (assignment as any)?.lesson_id;
+  if (!assignment || !lessonId) {
+    res.status(404).json({ message: "Assignment not found" });
+    return null;
+  }
+  const ownership = await ensureLessonOwnership(lessonId, req, res);
+  return ownership ? { lessonId, courseId: ownership.courseId } : null;
+}
+
+/**
+ * Ensure the requesting user is enrolled in the course a quiz belongs to.
+ * Mirrors the enrollment check already used by GET /api/courses/:courseId/quizzes.
+ */
+async function ensureQuizEnrollment(
+  quizId: string,
+  req: AuthRequest,
+  res: Response,
+): Promise<{ courseId: string } | null> {
+  const quiz = await storage.getQuizById(quizId);
+  const lessonId = (quiz as any)?.lesson_id;
+  if (!quiz || !lessonId) {
+    res.status(404).json({ message: "Quiz not found" });
+    return null;
+  }
+  const lesson = await storage.getLessonById(lessonId);
+  if (!lesson?.courseId) {
+    res.status(404).json({ message: "Quiz not found" });
+    return null;
+  }
+  const enrollment = await storage.getEnrollment(req.user.claims.sub, lesson.courseId);
+  if (!enrollment) {
+    res.status(403).json({ error: "Access denied to this course" });
+    return null;
+  }
+  return { courseId: lesson.courseId };
+}
+
+/**
+ * Validate a lesson's videoUrl. Internal upload/object-storage paths (set by
+ * the dedicated upload endpoints, not pasted by instructors) are passed
+ * through unchecked; anything else must resolve to a supported external
+ * platform (YouTube/Vimeo/Mux) via validateAndExtractVideoUrl.
+ */
+function assertValidLessonVideoUrl(videoUrl: unknown, res: Response): boolean {
+  if (videoUrl === undefined || videoUrl === null || videoUrl === "") return true;
+  if (typeof videoUrl !== "string") {
+    res.status(400).json({ message: "videoUrl must be a string" });
+    return false;
+  }
+  if (videoUrl.startsWith("/uploads/") || videoUrl.startsWith("/objects/")) {
+    return true;
+  }
+  const result = validateAndExtractVideoUrl(videoUrl);
+  if ("error" in result) {
+    res.status(400).json({ message: result.message });
+    return false;
+  }
+  return true;
+}
+
 
 
 /**
@@ -186,7 +345,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount renewal and certificate routes
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
-  app.use("/api/mux", muxRouter);
+  app.use("/api/renewal-automation", renewalAutomationRouter);
+
+  // Mount admin instructor management routes
+  app.use("/api/admin/instructors", adminInstructorsRouter);
+
+  // Mount admin course access token management routes
+  app.use("/api/admin/access-tokens", adminAccessTokensRouter);
 
 
 
@@ -198,7 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // SECURITY: bootstrap endpoint — disable in production after first admin is created
+  // Admin bootstrap/lookup endpoint — no separate environment gate needed,
+  // it's already restricted to admin-role callers below (requireRole("admin")).
 
   app.post(
 
@@ -256,6 +422,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
 
     "/api/debug/status",
+
+    requireSupabaseAuth,
+
+    requireRole("admin"),
 
     asyncHandler(async (req: Request, res: Response) => {
 
@@ -352,6 +522,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     profileImageUpload.single("image"),
 
     handleUploadError,
+
+    verifyFileContent(),
 
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
@@ -595,6 +767,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     handleUploadError,
 
+    verifyFileContent(),
+
     asyncHandler(async (req: Request, res: Response) => {
 
       if (!req.file) {
@@ -639,6 +813,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     handleUploadError,
 
+    verifyFileContent(),
+
     asyncHandler(async (req: Request, res: Response) => {
 
       if (!req.file) {
@@ -680,6 +856,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     documentUpload.single("document"),
 
     handleUploadError,
+
+    verifyFileContent(),
 
     asyncHandler(async (req: Request, res: Response) => {
 
@@ -724,6 +902,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     courseContentUpload.array("files", 10),
 
     handleUploadError,
+
+    verifyFileContent(),
 
     asyncHandler(async (req: Request, res: Response) => {
 
@@ -1054,6 +1234,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { quizId } = req.params;
 
+      if (!(await ensureQuizEnrollment(quizId, req, res))) return;
+
       const quiz = await storage.getQuizWithQuestions(quizId, true); // hideCorrect=true for students
 
       if (!quiz) {
@@ -1102,6 +1284,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { quizId } = req.params;
 
+      if (!(await ensureQuizEnrollment(quizId, req, res))) return;
+
       const attempts = await storage.getQuizAttempts(userId, quizId);
 
       res.json(attempts);
@@ -1120,11 +1304,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     requireSupabaseAuth,
 
+    quizSubmitLimiter,
+
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const userId = req.user.claims.sub;
 
       const { quizId } = req.params;
+
+      if (!(await ensureQuizEnrollment(quizId, req, res))) return;
 
       const { responses, timeSpent } = req.body;
 
@@ -1227,6 +1415,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
 
       const reviewData = insertReviewSchema.parse({ ...req.body, userId });
+      if (reviewData.comment) {
+        reviewData.comment = sanitizeRichText(reviewData.comment);
+      }
 
       const review = await storage.createReview(reviewData);
 
@@ -1281,6 +1472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
 
       });
+      discussionData.content = sanitizeRichText(discussionData.content);
 
       const discussion = await storage.createDiscussion(discussionData);
 
@@ -1321,6 +1513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
 
       const replyData = insertReplySchema.parse({ ...req.body, userId });
+      replyData.content = sanitizeRichText(replyData.content);
 
       const reply = await storage.createReply(replyData);
 
@@ -1387,6 +1580,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/orders",
 
     requireSupabaseAuth,
+
+    paymentLimiter,
 
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
@@ -1598,7 +1793,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-        if (hash !== signature) {
+        const hashBuffer = Buffer.from(hash, "hex");
+        const signatureBuffer = signature ? Buffer.from(signature, "hex") : null;
+        const signatureValid =
+          !!signatureBuffer &&
+          signatureBuffer.length === hashBuffer.length &&
+          crypto.timingSafeEqual(hashBuffer, signatureBuffer);
+
+        if (!signatureValid) {
 
           console.warn("Invalid Paystack signature received");
 
@@ -1706,6 +1908,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/verify-payment",
 
     requireSupabaseAuth,
+
+    paymentLimiter,
 
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
@@ -1951,17 +2155,234 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // ============================================================================
+  // Shared instructor resolve/sync helpers for admin direct-instructor-input.
+  // MUST be kept in sync with the identical copy in api/instructor/courses.ts
+  // (the Vercel serverless function used for this route in production).
+  // ============================================================================
+
+  interface InstructorInput {
+    userId?: string;
+    name: string;
+    title?: string;
+    bio?: string;
+    email?: string;
+    profileImageUrl?: string;
+    expertise?: string[];
+    linkedinUrl?: string;
+    websiteUrl?: string;
+  }
+
+  interface ResolvedInstructor {
+    userId: string;
+    isAdminManaged: boolean;
+  }
+
+  async function upsertInstructorAvatarProfile(userId: string, profileImageUrl: string | null | undefined) {
+    if (!profileImageUrl) return;
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .upsert(
+        { user_id: userId, avatar_url: profileImageUrl, avatar_updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
+    if (error) console.error('Error upserting instructor avatar profile:', error);
+  }
+
+  async function syncAdminManagedInstructor(userId: string, input: InstructorInput) {
+    const [firstName, ...lastNameParts] = input.name.trim().split(' ');
+    const { error: userErr } = await supabaseAdmin
+      .from('users')
+      .update({
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || '',
+        bio: input.bio || null,
+        profile_image_url: input.profileImageUrl || null,
+      })
+      .eq('id', userId);
+    if (userErr) console.error('Error syncing admin-managed instructor user row:', userErr);
+
+    await upsertInstructorAvatarProfile(userId, input.profileImageUrl);
+
+    const { error: profileErr } = await supabaseAdmin
+      .from('instructor_profiles')
+      .upsert(
+        {
+          user_id: userId,
+          bio: input.bio || null,
+          title: input.title || null,
+          expertise: input.expertise || [],
+          website_url: input.websiteUrl || null,
+          linkedin_url: input.linkedinUrl || null,
+          profile_image_url: input.profileImageUrl || null,
+          is_verified: false,
+        },
+        { onConflict: 'user_id' },
+      );
+    if (profileErr) console.error('Error syncing instructor_profiles:', profileErr);
+  }
+
+  // Resolves one instructor form entry to a real user, per the rules:
+  // - has userId -> reuse it; sync bio/photo only if admin-managed
+  // - no userId but email matches an existing instructor -> reuse it; same sync rule
+  // - otherwise -> create a brand-new admin-managed instructor user
+  async function resolveOrCreateInstructor(
+    input: InstructorInput,
+    adminUserId: string,
+    sortOrder: number,
+  ): Promise<ResolvedInstructor> {
+    if (input.userId) {
+      const { data: existingUser, error } = await supabaseAdmin
+        .from('users')
+        .select('id, created_by_admin_id')
+        .eq('id', input.userId)
+        .single();
+      if (error || !existingUser) throw new Error(`Instructor ${input.userId} not found`);
+
+      const isAdminManaged = !!existingUser.created_by_admin_id;
+      if (isAdminManaged) await syncAdminManagedInstructor(existingUser.id, input);
+      return { userId: existingUser.id, isAdminManaged };
+    }
+
+    if (input.email) {
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id, created_by_admin_id')
+        .eq('email', input.email)
+        .eq('role', 'instructor')
+        .maybeSingle();
+
+      if (existingUser) {
+        const isAdminManaged = !!existingUser.created_by_admin_id;
+        if (isAdminManaged) await syncAdminManagedInstructor(existingUser.id, input);
+        return { userId: existingUser.id, isAdminManaged };
+      }
+    }
+
+    const [firstName, ...lastNameParts] = input.name.trim().split(' ');
+    const { data: newUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        email: input.email || `instructor-${Date.now()}-${sortOrder}@thecima.org`,
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || '',
+        role: 'instructor',
+        profile_image_url: input.profileImageUrl || null,
+        bio: input.bio || null,
+        created_by_admin_id: adminUserId,
+      })
+      .select()
+      .single();
+    if (userError) throw userError;
+
+    await upsertInstructorAvatarProfile(newUser.id, input.profileImageUrl);
+
+    const { error: profileError } = await supabaseAdmin
+      .from('instructor_profiles')
+      .insert({
+        user_id: newUser.id,
+        bio: input.bio || null,
+        title: input.title || null,
+        expertise: input.expertise || [],
+        website_url: input.websiteUrl || null,
+        linkedin_url: input.linkedinUrl || null,
+        profile_image_url: input.profileImageUrl || null,
+        is_verified: false,
+      });
+    if (profileError) console.error('Error creating instructor profile:', profileError);
+
+    return { userId: newUser.id, isAdminManaged: true };
+  }
+
+  async function resolveCourseInstructors(
+    instructors: InstructorInput[],
+    adminUserId: string,
+  ): Promise<ResolvedInstructor[]> {
+    const resolved: ResolvedInstructor[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < instructors.length; i++) {
+      const r = await resolveOrCreateInstructor(instructors[i], adminUserId, i);
+      if (seen.has(r.userId)) continue; // dedupe: same instructor listed twice
+      seen.add(r.userId);
+      resolved.push(r);
+    }
+    return resolved;
+  }
+
+  async function writeCourseInstructors(courseId: string, resolved: ResolvedInstructor[]) {
+    if (resolved.length === 0) return;
+    const rows = resolved.map((r, i) => ({ course_id: courseId, user_id: r.userId, sort_order: i }));
+    const { error } = await supabaseAdmin
+      .from('course_instructors')
+      .upsert(rows, { onConflict: 'course_id,user_id' });
+    if (error) console.error('Error writing course_instructors:', error);
+  }
+
+  // Diffs the resolved instructor list against existing course_instructors
+  // rows instead of delete-and-reinsert, so untouched rows keep their
+  // created_at and are never spuriously re-touched.
+  async function reconcileCourseInstructors(courseId: string, resolved: ResolvedInstructor[]) {
+    const { data: existingRows } = await supabaseAdmin
+      .from('course_instructors')
+      .select('user_id')
+      .eq('course_id', courseId);
+    const existingIds = new Set((existingRows || []).map((r: any) => r.user_id));
+    const newIds = new Set(resolved.map((r) => r.userId));
+
+    const toDelete = Array.from(existingIds).filter((uid) => !newIds.has(uid));
+    if (toDelete.length > 0) {
+      const { error } = await supabaseAdmin
+        .from('course_instructors')
+        .delete()
+        .eq('course_id', courseId)
+        .in('user_id', toDelete); // removes the credit link only, never the users row
+      if (error) console.error('Error removing stale course_instructors rows:', error);
+    }
+
+    await writeCourseInstructors(courseId, resolved);
+  }
+
   app.post(
 
     "/api/instructor/courses",
 
     requireSupabaseAuth,
 
-    requireInstructor(),
-
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
-      const instructorId = req.user.claims.sub;
+      const currentUserId = req.user.claims.sub;
+      const currentUserRole = req.user.role;
+
+      // Admin can create courses on behalf of instructors
+      const onBehalfOf = req.query.onBehalfOf as string | undefined;
+      const instructors = req.body.instructors as InstructorInput[] | undefined;
+
+      let instructorId: string | undefined;
+      let createdByAdminId: string | undefined;
+      let resolvedInstructors: ResolvedInstructor[] = [];
+
+      // If admin is providing instructor details, resolve/create every one
+      if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
+        resolvedInstructors = await resolveCourseInstructors(instructors, currentUserId);
+        instructorId = resolvedInstructors[0].userId; // primary/owner, unchanged semantics
+        createdByAdminId = currentUserId;
+      } else if (currentUserRole === 'admin' && onBehalfOf) {
+        // Admin creating for an existing instructor (legacy behavior)
+        instructorId = onBehalfOf;
+        createdByAdminId = currentUserId;
+        resolvedInstructors = [{ userId: onBehalfOf, isAdminManaged: false }];
+      } else if (currentUserRole === 'instructor' || currentUserRole === 'admin') {
+        // Instructor creating their own course OR admin creating as instructor
+        instructorId = currentUserId;
+        resolvedInstructors = [{ userId: currentUserId, isAdminManaged: false }];
+      } else {
+        return res.status(403).json({ message: "Must be instructor or admin" });
+      }
+
+      // Ensure instructorId is defined
+      if (!instructorId) {
+        return res.status(400).json({ message: "Instructor ID is required" });
+      }
 
       const courseData = insertCourseSchema.parse({
 
@@ -1972,6 +2393,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const course = await storage.createCourse(courseData);
+
+      // Update admin tracking if applicable
+      if (createdByAdminId) {
+        const { error } = await supabaseAdmin
+          .from("courses")
+          .update({ created_by_admin_id: createdByAdminId })
+          .eq("id", course.id);
+        if (error) throw error;
+      }
+
+      // Public crediting for every resolved instructor (including the primary)
+      await writeCourseInstructors(course.id, resolvedInstructors);
 
       res.json(course);
 
@@ -1987,19 +2420,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     requireSupabaseAuth,
 
-    requireInstructor(),
-
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
-      const instructorId = req.user.claims.sub;
+      const currentUserId = req.user.claims.sub;
+      const currentUserRole = req.user.role;
 
       const { id } = req.params;
+      const onBehalfOf = req.query.onBehalfOf as string | undefined;
 
 
 
       const course = await storage.getCourseById(id);
-
-      if (!course || course.instructorId !== instructorId) {
+      
+      // Admin can edit any course, instructor can edit their own
+      const hasAccess = currentUserRole === "admin" || 
+                       (course && course.instructor_id === currentUserId);
+      
+      if (!hasAccess) {
 
         return res.status(403).json({ message: "Access denied" });
 
@@ -2010,6 +2447,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = insertCourseSchema.partial().parse(req.body);
 
       const updatedCourse = await storage.updateCourse(id, updates);
+
+      // Reconcile instructor credits: resolve/sync every entry, keep the
+      // first as primary/owner, diff course_instructors against the new set.
+      const instructors = req.body.instructors as InstructorInput[] | undefined;
+      if (currentUserRole === 'admin' && instructors && instructors.length > 0) {
+        const resolved = await resolveCourseInstructors(instructors, currentUserId);
+
+        const newPrimaryId = resolved[0].userId;
+        if (course && newPrimaryId !== course.instructor_id) {
+          const { error } = await supabaseAdmin
+            .from('courses')
+            .update({ instructor_id: newPrimaryId })
+            .eq('id', id);
+          if (error) throw error;
+        }
+
+        await reconcileCourseInstructors(id, resolved);
+      }
+
+      // Track admin edits
+      if (currentUserRole === 'admin') {
+        const { error } = await supabaseAdmin
+          .from("courses")
+          .update({
+            last_edited_by_admin_id: currentUserId,
+            last_edited_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+        if (error) throw error;
+      }
 
       res.json(updatedCourse);
 
@@ -2037,7 +2504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const course = await storage.getCourseById(id);
 
-      if (!course || course.instructorId !== instructorId) {
+      if (!course || (course.instructor_id !== instructorId && req.user.role !== "admin")) {
 
         return res.status(403).json({ message: "Access denied" });
 
@@ -2083,7 +2550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const course = await storage.getCourseById(courseId);
 
-      if (!course || course.instructorId !== instructorId) {
+      if (!course || (course.instructor_id !== instructorId && req.user.role !== "admin")) {
 
         return res.status(403).json({ message: "Access denied" });
 
@@ -2121,7 +2588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const course = await storage.getCourseById(courseId);
 
-      if (!course || course.instructorId !== instructorId) {
+      if (!course || (course.instructor_id !== instructorId && req.user.role !== "admin")) {
 
         return res.status(403).json({ message: "Access denied" });
 
@@ -2129,15 +2596,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-      const { title, description } = req.body;
+      const parsed = insertModuleSchema
+        .pick({ title: true, description: true })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
 
       const module = await storage.createModule({
 
         courseId,
 
-        title,
+        title: parsed.data.title,
 
-        description,
+        description: parsed.data.description,
 
         order: 0,
 
@@ -2165,19 +2640,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { moduleId } = req.params;
 
-      const { title, description, order } = req.body;
+      if (!(await ensureModuleOwnership(moduleId, req, res))) return;
 
+      const parsed = insertModuleSchema
+        .pick({ title: true, description: true, order: true })
+        .partial()
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
 
-
-      const module = await storage.updateModule(moduleId, {
-
-        title,
-
-        description,
-
-        order,
-
-      });
+      const module = await storage.updateModule(moduleId, parsed.data);
 
       res.json(module);
 
@@ -2200,6 +2676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const { moduleId } = req.params;
+
+      if (!(await ensureModuleOwnership(moduleId, req, res))) return;
 
       await storage.deleteModule(moduleId);
 
@@ -2224,6 +2702,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const { courseId } = req.params;
+
+      if (!(await ensureCourseOwnership(courseId, req, res))) return;
 
       const { moduleOrder } = req.body;
 
@@ -2251,6 +2731,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { moduleId } = req.params;
 
+      if (!(await ensureModuleOwnership(moduleId, req, res))) return;
+
       const { lessonOrder } = req.body;
 
       await storage.reorderLessons(moduleId, lessonOrder);
@@ -2277,27 +2759,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { moduleId } = req.params;
 
-      const { title, description, contentType, videoUrl, duration, content } =
+      if (!(await ensureModuleOwnership(moduleId, req, res))) return;
 
-        req.body;
-
-
+      const parsed = insertLessonSchema
+        .pick({
+          title: true,
+          description: true,
+          contentType: true,
+          videoUrl: true,
+          duration: true,
+          content: true,
+        })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
+      if (!assertValidLessonVideoUrl(parsed.data.videoUrl, res)) return;
 
       const lesson = await storage.createLesson({
 
         moduleId,
 
-        title,
+        title: parsed.data.title,
 
-        description,
+        description: parsed.data.description,
 
-        contentType,
+        contentType: parsed.data.contentType,
 
-        videoUrl,
+        videoUrl: parsed.data.videoUrl,
 
-        duration,
+        duration: parsed.data.duration,
 
-        content,
+        content: parsed.data.content ? sanitizeRichText(parsed.data.content) : parsed.data.content,
 
         order: 0,
 
@@ -2327,11 +2823,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { lessonId } = req.params;
 
-      const updates = req.body;
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
+      const parsed = insertLessonSchema
+        .pick({
+          title: true,
+          description: true,
+          contentType: true,
+          videoUrl: true,
+          duration: true,
+          content: true,
+          order: true,
+          isFree: true,
+        })
+        .partial()
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
+      if (!assertValidLessonVideoUrl(parsed.data.videoUrl, res)) return;
 
-
-      const lesson = await storage.updateLesson(lessonId, updates);
+      if (parsed.data.content) {
+        parsed.data.content = sanitizeRichText(parsed.data.content);
+      }
+      const lesson = await storage.updateLesson(lessonId, parsed.data);
 
       res.json(lesson);
 
@@ -2354,6 +2872,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const { lessonId } = req.params;
+
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
       await storage.deleteLesson(lessonId);
 
@@ -2389,6 +2909,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     handleUploadError,
 
+    verifyFileContent(),
+
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       if (!req.file) {
@@ -2400,6 +2922,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
       const { lessonId } = req.params;
+
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
       const videoUrl = getFileUrl(req, req.file.filename, "video");
 
@@ -2459,6 +2983,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     handleUploadError,
 
+    verifyFileContent(),
+
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       if (!req.file) {
@@ -2470,6 +2996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
       const { lessonId } = req.params;
+
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
       const { title, description } = req.body;
 
@@ -2557,6 +3085,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { resourceId } = req.params;
 
+      const resource = await storage.getCourseResourceById(resourceId);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      const resourceLessonId = (resource as any).lesson_id;
+      if (resourceLessonId) {
+        if (!(await ensureLessonOwnership(resourceLessonId, req, res))) return;
+      } else if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
       await storage.deleteCourseResource(resourceId);
 
       res.json({ success: true });
@@ -2612,6 +3151,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const { lessonId } = req.params;
+
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
       const { videoUrl, duration } = req.body;
 
@@ -2751,11 +3292,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { lessonId } = req.params;
 
-      const quizData = req.body;
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
+      const parsed = insertQuizSchema
+        .omit({ lessonId: true })
+        .partial()
+        .extend({ questions: z.array(z.any()).optional() })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
 
-
-      const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
+      const quiz = await storage.createOrUpdateQuiz(lessonId, parsed.data);
 
       res.status(201).json(quiz);
 
@@ -2801,6 +3352,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { quizId } = req.params;
 
+      if (!(await ensureQuizOwnership(quizId, req, res))) return;
+
       await storage.deleteQuiz(quizId);
 
       res.json({ success: true });
@@ -2833,15 +3386,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { lessonId } = req.params;
 
-      const assignmentData = req.body;
+      if (!(await ensureLessonOwnership(lessonId, req, res))) return;
 
+      const parsed = insertAssignmentSchema
+        .omit({ lessonId: true })
+        .partial()
+        .extend({ maxPoints: z.number().optional() })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: "Validation failed",
+          details: parsed.error.errors,
+        });
+      }
 
+      if (parsed.data.instructions) {
+        parsed.data.instructions = sanitizeRichText(parsed.data.instructions);
+      }
 
       const assignment = await storage.createOrUpdateAssignment(
 
         lessonId,
 
-        assignmentData,
+        parsed.data,
 
       );
 
@@ -2889,6 +3456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { assignmentId } = req.params;
 
+      if (!(await ensureAssignmentOwnership(assignmentId, req, res))) return;
+
       await storage.deleteAssignment(assignmentId);
 
       res.json({ success: true });
@@ -2921,6 +3490,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { courseId } = req.params;
 
+      if (!(await ensureCourseOwnership(courseId, req, res))) return;
+
       const validation = await storage.validateCourseForPublishing(courseId);
 
       res.json(validation);
@@ -2944,6 +3515,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     asyncHandler(async (req: AuthRequest, res: Response) => {
 
       const { courseId } = req.params;
+
+      if (!(await ensureCourseOwnership(courseId, req, res))) return;
 
       const validation = await storage.validateCourseForPublishing(courseId);
 
@@ -2989,71 +3562,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { courseId } = req.params;
 
+      if (!(await ensureCourseOwnership(courseId, req, res))) return;
+
       await storage.unpublishCourse(courseId);
 
       res.json({ success: true, message: "Course unpublished successfully" });
-
-    }),
-
-  );
-
-
-
-  // Create or update quiz for a lesson
-
-  app.post(
-
-    "/api/instructor/lessons/:lessonId/quiz",
-
-    requireSupabaseAuth,
-
-    requireInstructor(),
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const { lessonId } = req.params;
-
-      const quizData = req.body;
-
-
-
-      const quiz = await storage.createOrUpdateQuiz(lessonId, quizData);
-
-      res.json(quiz);
-
-    }),
-
-  );
-
-
-
-  // Create or update assignment for a lesson
-
-  app.post(
-
-    "/api/instructor/lessons/:lessonId/assignment",
-
-    requireSupabaseAuth,
-
-    requireInstructor(),
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const { lessonId } = req.params;
-
-      const assignmentData = req.body;
-
-
-
-      const assignment = await storage.createOrUpdateAssignment(
-
-        lessonId,
-
-        assignmentData,
-
-      );
-
-      res.json(assignment);
 
     }),
 
@@ -3090,30 +3603,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const quizzes = await storage.getCourseQuizzes(courseId);
 
       res.json(quizzes);
-
-    }),
-
-  );
-
-
-
-  app.get(
-
-    "/api/quizzes/:quizId/attempts",
-
-    requireSupabaseAuth,
-
-    asyncHandler(async (req: AuthRequest, res: Response) => {
-
-      const { quizId } = req.params;
-
-      const userId = req.user.claims.sub;
-
-
-
-      const attempts = await storage.getQuizAttempts(userId, quizId);
-
-      res.json(attempts);
 
     }),
 
@@ -3363,38 +3852,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.get(
-
-    "/api/admin/courses",
-
-    requireSupabaseAuth,
-
-    requireRole("admin"),
-
-    asyncHandler(async (req: Request, res: Response) => {
-
-      const { page = "1", limit = "20", status, instructor } = req.query;
-
-      const courses = await storage.getCoursesForAdmin({
-
-        page: parseInt(page as string),
-
-        limit: parseInt(limit as string),
-
-        status: status as string,
-
-        instructor: instructor as string,
-
-      });
-
-      res.json(courses);
-
-    }),
-
-  );
-
-
-
   app.put(
 
     "/api/admin/users/:id/role",
@@ -3427,7 +3884,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   );
 
+  app.post(
+    "/api/admin/users/bulk-reminder",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const bulkReminderSchema = z.object({
+        userIds: z.array(z.string()).min(1).max(500),
+      });
+      const { userIds } = bulkReminderSchema.parse(req.body);
 
+      const { data: recipients, error } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .in("id", userIds);
+      if (error) throw error;
+
+      const emails = (recipients || []).map((r) => r.email).filter(Boolean);
+      if (emails.length === 0) {
+        return res.json({ sent: 0, failed: 0, total: 0 });
+      }
+
+      const html = `<p>Hi,</p><p>Your CIMA Learn profile is incomplete. Please take a moment to finish setting it up so we can personalize your experience.</p><p><a href="${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/profile">Complete your profile</a></p>`;
+
+      let sent = 0;
+      let failed = 0;
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const result = await sendRawEmail({ to: batch, subject: "Complete your CIMA Learn profile", html });
+        if (result.success) sent += batch.length;
+        else failed += batch.length;
+      }
+
+      res.json({ sent, failed, total: emails.length });
+    }),
+  );
+
+  app.post(
+    "/api/admin/courses/:id/issue-certificates",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id: courseId } = req.params;
+
+      const { data: course, error: courseError } = await supabaseAdmin
+        .from("courses")
+        .select("id, title")
+        .eq("id", courseId)
+        .single();
+      if (courseError || !course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const { data: confirmedOrders, error: ordersError } = await supabaseAdmin
+        .from("orders")
+        .select("user_id")
+        .eq("course_id", courseId)
+        .eq("status", "completed");
+      if (ordersError) throw ordersError;
+
+      const userIds = Array.from(
+        new Set((confirmedOrders || []).map((o) => o.user_id).filter(Boolean)),
+      );
+      if (userIds.length === 0) {
+        return res.json({ issued: 0, skipped: 0, total: 0 });
+      }
+
+      const { data: existingCerts, error: certsError } = await supabaseAdmin
+        .from("certifications")
+        .select("id, user_id")
+        .eq("course_id", courseId)
+        .in("user_id", userIds);
+      if (certsError) throw certsError;
+
+      const alreadyIssued = new Set((existingCerts || []).map((c) => c.user_id));
+      const toIssue = userIds.filter((uid) => !alreadyIssued.has(uid));
+
+      let issued = 0;
+      for (const userId of toIssue) {
+        const cert = await storage.createCertification({
+          userId,
+          courseId,
+          certificateUrl: null,
+        });
+        issued += 1;
+
+        const { data: recipient } = await supabaseAdmin
+          .from("users")
+          .select("email, first_name")
+          .eq("id", userId)
+          .single();
+        if (recipient?.email) {
+          const certUrl = `${process.env.VITE_APP_URL || "https://cima-learn.vercel.app"}/certificates/completion/${cert.id}`;
+          await sendRawEmail({
+            to: recipient.email,
+            subject: `Your Certificate is Ready — ${course.title}`,
+            html: `<p>Hi ${recipient.first_name || "there"},</p><p>Your certificate of completion for <strong>${course.title}</strong> is ready.</p><p><a href="${certUrl}">View your certificate</a></p>`,
+          }).catch((err) => console.error("Failed to send certificate email:", err));
+        }
+      }
+
+      res.json({ issued, skipped: alreadyIssued.size, total: userIds.length });
+    }),
+  );
+
+  app.post(
+    "/api/admin/courses/:id/bulk-email",
+    requireSupabaseAuth,
+    requireRole("admin"),
+    asyncHandler(async (req: Request, res: Response) => {
+      const { id: courseId } = req.params;
+      const bulkEmailSchema = z.object({
+        subject: z.string().trim().min(1).max(300),
+        body: z.string().trim().min(1).max(20000),
+        recipientFilter: z.enum(["confirmed", "pending", "all"]).default("confirmed"),
+      });
+      const { subject, body, recipientFilter } = bulkEmailSchema.parse(req.body);
+
+      const { data: course, error: courseError } = await supabaseAdmin
+        .from("courses")
+        .select("id, title")
+        .eq("id", courseId)
+        .single();
+      if (courseError || !course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      let ordersQuery = supabaseAdmin
+        .from("orders")
+        .select("user_id, status")
+        .eq("course_id", courseId);
+      if (recipientFilter === "confirmed") {
+        ordersQuery = ordersQuery.eq("status", "completed");
+      } else if (recipientFilter === "pending") {
+        ordersQuery = ordersQuery.eq("status", "pending");
+      }
+      const { data: orders, error: ordersError } = await ordersQuery;
+      if (ordersError) throw ordersError;
+
+      const userIds = Array.from(
+        new Set((orders || []).map((o) => o.user_id).filter(Boolean)),
+      );
+      if (userIds.length === 0) {
+        return res.json({ sent: 0, failed: 0, total: 0 });
+      }
+
+      const { data: recipients, error: usersError } = await supabaseAdmin
+        .from("users")
+        .select("email, first_name")
+        .in("id", userIds);
+      if (usersError) throw usersError;
+
+      const emails = (recipients || []).map((r) => r.email).filter(Boolean);
+      const html = `<div>${body.replace(/\n/g, "<br/>")}</div>`;
+
+      let sent = 0;
+      let failed = 0;
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const result = await sendRawEmail({ to: batch, subject, html });
+        if (result.success) sent += batch.length;
+        else failed += batch.length;
+      }
+
+      res.json({ sent, failed, total: emails.length });
+    }),
+  );
 
   // ============================================================================
 
@@ -3441,45 +4065,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     "/api/contact",
 
+    contactLimiter,
+
     asyncHandler(async (req: Request, res: Response) => {
 
-      const { name, email, subject, message } = req.body;
+      const contactSchema = z.object({
+        name: z.string().trim().min(1, "Name is required").max(200),
+        email: z.string().trim().email("Invalid email address").max(320),
+        subject: z.string().trim().min(1, "Subject is required").max(200),
+        message: z
+          .string()
+          .trim()
+          .min(10, "Message must be at least 10 characters")
+          .max(5000),
+      });
 
-
-
-      // Validate required fields
-
-      if (!name || !email || !subject || !message) {
-
-        return res.status(400).json({ message: "All fields are required" });
-
+      const parsed = contactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.errors[0]?.message || "Invalid input",
+          details: parsed.error.errors,
+        });
       }
 
-
-
-      // Validate email format
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!emailRegex.test(email)) {
-
-        return res.status(400).json({ message: "Invalid email address" });
-
-      }
-
-
-
-      // Validate message length
-
-      if (message.length < 10) {
-
-        return res
-
-          .status(400)
-
-          .json({ message: "Message must be at least 10 characters" });
-
-      }
+      const { name, email, subject, message } = parsed.data;
 
 
 

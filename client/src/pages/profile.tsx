@@ -47,7 +47,7 @@ import {
   AlertCircle,
   Shield,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearchParams } from "wouter";
 import CertificatePreviewModal from "@/components/dashboard/certificate-preview-modal";
 import type { CertificateData } from "@/lib/certificate-generator";
 import { PATHWAY_TYPES, type PathwayType } from "@shared/pathways";
@@ -125,8 +125,26 @@ export default function Profile() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isEditingBasic, setIsEditingBasic] = useState(false);
   const [isEditingProfessional, setIsEditingProfessional] = useState(false);
+
+  // Active profile tab is driven by the URL's ?tab= param (e.g. the sidebar's
+  // "Certificates" link is /profile?tab=certificates) so deep links actually
+  // land on the right tab instead of always opening "Information".
+  const VALID_TABS = ["info", "courses", "certificates"] as const;
+  type ProfileTab = (typeof VALID_TABS)[number];
+  const tabParam = searchParams.get("tab");
+  const activeTab: ProfileTab = (VALID_TABS as readonly string[]).includes(tabParam || "")
+    ? (tabParam as ProfileTab)
+    : "info";
+  const handleTabChange = (value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", value);
+      return next;
+    });
+  };
 
   // Certificate modal state
   const [certModalOpen, setCertModalOpen] = useState(false);
@@ -183,7 +201,7 @@ export default function Profile() {
       const [completionRecordsResult, enrollmentsResult] = await Promise.all([
         supabase
           .from("course_completion_records")
-          .select("*, courses!inner(title, thumbnail_url, track, level)")
+          .select("*, courses!inner(id, title, thumbnail_url, track, level)")
           .eq("user_id", user!.id)
           .order("completed_at", { ascending: false }),
         supabase
@@ -502,7 +520,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="info" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info"><User className="h-4 w-4 mr-2" />Information</TabsTrigger>
             <TabsTrigger value="courses"><BookOpen className="h-4 w-4 mr-2" />My Courses ({enrollments.length})</TabsTrigger>

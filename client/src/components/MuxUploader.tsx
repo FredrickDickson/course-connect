@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
+import * as UpChunk from "@mux/upchunk";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -10,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface MuxUploaderProps {
   lessonId: string;
-  onUploadComplete: (muxAssetId: string, playbackId: string) => void;
+  onUploadComplete: (muxAssetId: string, playbackId: string, durationSeconds?: number) => void;
   onError: (error: string) => void;
   className?: string;
 }
@@ -24,7 +25,7 @@ interface UploadProgress {
 export function MuxUploader({ lessonId, onUploadComplete, onError, className }: MuxUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const upChunkRef = useRef<ReturnType<typeof UpChunk.createUpload> | null>(null);
 
   const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,11 +44,11 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
     }
 
     // Cancel any existing upload
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (upChunkRef.current) {
+      upChunkRef.current.abort();
+      upChunkRef.current = null;
     }
-    
-    abortControllerRef.current = new AbortController();
+
     setIsUploading(true);
     setUploadProgress({
       progress: 0,
@@ -106,40 +107,27 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
         message: 'Uploading to Mux...'
       });
 
-      // Upload file directly to Mux with progress tracking
+      // Upload file directly to Mux in resumable chunks (retries on network blips
+      // instead of failing the whole multi-GB upload on one dropped connection).
       await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+        const upload = UpChunk.createUpload({
+          endpoint: uploadUrl,
+          file,
+          chunkSize: 30720, // 30MB chunks
+        });
+        upChunkRef.current = upload;
 
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 40) + 10; // 10% -> 50%
-            setUploadProgress({
-              progress: percent,
-              status: 'uploading',
-              message: `Uploading: ${(event.loaded / 1024 / 1024).toFixed(1)} MB / ${(event.total / 1024 / 1024).toFixed(1)} MB`
-            });
-          }
+        upload.on('progress', (event) => {
+          const percent = Math.round(event.detail * 0.4) + 10; // 10% -> 50%
+          setUploadProgress({
+            progress: percent,
+            status: 'uploading',
+            message: `Uploading: ${((event.detail / 100) * (file.size / 1024 / 1024)).toFixed(1)} MB / ${(file.size / 1024 / 1024).toFixed(1)} MB`
+          });
         });
 
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed: ${xhr.statusText}`));
-          }
-        });
-
-        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
-
-        xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('Content-Type', file.type);
-        xhr.send(file);
-
-        // Wire up abort controller
-        if (abortControllerRef.current) {
-          abortControllerRef.current.signal.addEventListener('abort', () => xhr.abort());
-        }
+        upload.on('success', () => resolve());
+        upload.on('error', (event) => reject(new Error(event.detail.message || 'Upload failed')));
       });
 
       setUploadProgress({
@@ -174,7 +162,8 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
             });
             const playbackId = muxAsset?.mux_playback_id || asset?.playback_ids?.[0]?.id || '';
             const finalAssetId = muxAsset?.mux_asset_id || asset?.id || assetId || '';
-            onUploadComplete(finalAssetId, playbackId);
+            const durationSeconds = muxAsset?.duration_seconds ?? asset?.duration ?? undefined;
+            onUploadComplete(finalAssetId, playbackId, durationSeconds);
             setIsUploading(false);
           } else if (dbErrored || apiErrored) {
             clearInterval(pollInterval);
@@ -215,7 +204,7 @@ export function MuxUploader({ lessonId, onUploadComplete, onError, className }: 
       onError(error instanceof Error ? error.message : 'Upload failed');
       setIsUploading(false);
     } finally {
-      abortControllerRef.current = null;
+      upChunkRef.current = null;
     }
   }, [lessonId, onUploadComplete, onError]);
 

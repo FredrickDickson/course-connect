@@ -7,6 +7,8 @@ import { Router, Request, Response } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { getIncomeTier, getCountryInfo } from "../../shared/country-classifications";
 import { calculateRenewalPrice, isRenewalLate, getDefaultCurrency, type IncomeTier, type MembershipLevel, type Currency } from "../../shared/renewal-pricing";
+import { requireSupabaseAuth } from "../supabaseAuth";
+import { eligibilityLimiter } from "../middleware/security";
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -33,14 +35,14 @@ router.get("/health", (req: Request, res: Response) => {
 
 /**
  * GET /api/renewal/pricing
- * Get renewal pricing for a user
+ * Get renewal pricing for the authenticated user
  */
-router.get("/pricing", async (req: AuthRequest, res: Response) => {
+router.get("/pricing", requireSupabaseAuth, eligibilityLimiter, async (req: AuthRequest, res: Response) => {
   try {
-    const { user_id } = req.query;
+    const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(400).json({ error: "Missing user_id parameter" });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     // Get member details with user info
@@ -118,6 +120,36 @@ router.get("/pricing", async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error("Pricing endpoint error:", error);
     res.status(500).json({ error: "Failed to get pricing" });
+  }
+});
+
+/**
+ * GET /api/renewal/status
+ * Poll the current renewal state for the authenticated user's membership.
+ * Used by the client after a Paystack payment to confirm the webhook has
+ * actually applied the renewal, rather than trusting the popup callback.
+ */
+router.get("/status", requireSupabaseAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { data: member, error } = await supabaseAdmin
+      .from("members")
+      .select("status, expiry_date, certificate_url, last_renewal_at, renewal_count")
+      .eq("user_id", user_id)
+      .single();
+
+    if (error || !member) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    res.json({ success: true, data: member });
+  } catch (error) {
+    console.error("Renewal status endpoint error:", error);
+    res.status(500).json({ error: "Failed to get renewal status" });
   }
 });
 

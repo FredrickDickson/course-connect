@@ -96,14 +96,14 @@ export default function CourseCardStatus({
       : "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300";
 
   const levelColors = {
-    associate: "bg-blue-100 text-blue-700",
-    member: "bg-green-100 text-green-700",
-    fellow: "bg-purple-100 text-purple-700"
+    associate: "bg-[#610000]/10 text-[#610000] border-[#610000]/20",
+    member: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
+    fellow: "bg-[#d4c5b0]/30 text-[#4a3828] border-[#8b6f47]/20"
   };
 
   const pathwayColors = {
-    arbitration: "bg-blue-100 text-blue-700",
-    mediation: "bg-green-100 text-green-700"
+    arbitration: "bg-[#610000]/10 text-[#610000] border-[#610000]/20",
+    mediation: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20"
   };
 
   const statusConfig = {
@@ -112,15 +112,15 @@ export default function CourseCardStatus({
       buttonVariant: "default" as const,
       buttonText: "Enroll Now",
       buttonIcon: ShoppingCart,
-      buttonClass: "bg-primary text-primary-foreground hover:bg-primary/90",
+      buttonClass: "bg-[#610000] text-white hover:bg-[#7d0000] shadow-md hover:shadow-lg transition-all",
       overlay: null
     },
     NEXT_STEP: {
-      badge: { text: "Next Step", class: "bg-blue-100 text-blue-700 border-blue-200" },
+      badge: { text: "Next Step", class: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20" },
       buttonVariant: "default" as const,
       buttonText: "Start Level",
       buttonIcon: ArrowRight,
-      buttonClass: "bg-blue-600 text-white hover:bg-blue-700",
+      buttonClass: "bg-[#8b6f47] text-white hover:bg-[#6d5838] shadow-md hover:shadow-lg transition-all",
       overlay: null
     },
     LOCKED: {
@@ -128,15 +128,15 @@ export default function CourseCardStatus({
       buttonVariant: "outline" as const,
       buttonText: "View",
       buttonIcon: Lock,
-      buttonClass: "border-gray-300 text-gray-700 hover:bg-gray-50",
+      buttonClass: "border-[#d4c5b0] text-[#4a3828] hover:bg-[#faf9f6] hover:border-[#8b6f47]",
       overlay: "bg-gray-900/5"
     },
     ENROLLED: {
-      badge: { text: "Enrolled", class: "bg-green-100 text-green-700 border-green-200" },
+      badge: { text: "Enrolled", class: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20" },
       buttonVariant: "outline" as const,
       buttonText: "Continue",
       buttonIcon: CheckCircle,
-      buttonClass: "border-green-500 text-green-700 hover:bg-green-50",
+      buttonClass: "border-[#8b6f47] text-[#8b6f47] hover:bg-[#8b6f47]/10",
       overlay: null
     }
   };
@@ -145,7 +145,7 @@ export default function CourseCardStatus({
 
   return (
     <Card
-      className={`group h-full flex flex-col hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden border border-border/40 hover:border-primary/30 relative bg-card ${
+      className={`group h-full flex flex-col hover:shadow-xl hover:shadow-[#610000]/10 hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden border border-[#d4c5b0]/40 hover:border-[#610000]/30 relative bg-white ${
         status === "LOCKED" ? "opacity-80 cursor-pointer" : ""
       }`}
       data-testid={`course-card-${course.id}`}
@@ -157,7 +157,7 @@ export default function CourseCardStatus({
       )}
 
       {/* Thumbnail Section - Fixed Height */}
-      <div className="relative h-48 flex-shrink-0 overflow-hidden bg-muted">
+      <div className="relative h-36 sm:h-44 md:h-48 flex-shrink-0 overflow-hidden bg-[#faf9f6]">
         <img
           src={course.thumbnail_url || defaultThumbnail}
           alt={course.title}
@@ -166,31 +166,31 @@ export default function CourseCardStatus({
         />
         
         {/* Gradient overlay for better badge visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         
         {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 flex items-start justify-between gap-2">
           {course.is_featured && (
             <Badge
-              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg"
+              className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white border-0 shadow-lg text-[10px] sm:text-xs"
               data-testid="featured-badge"
             >
-              <Crown className="w-3.5 h-3.5 mr-1.5" />
+              <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
               Featured
             </Badge>
           )}
           
-          <div className="ml-auto flex flex-col gap-2">
+          <div className="ml-auto flex flex-col gap-1.5 sm:gap-2">
             {course.programme_type === "ADJUNCT_COURSE" ? (
               <Badge
-                className="bg-white/95 text-slate-700 border-0 shadow-md backdrop-blur-sm"
+                className="bg-white/95 text-[#4a3828] border border-[#d4c5b0] shadow-md backdrop-blur-sm text-[10px] sm:text-xs"
                 data-testid="adjunct-course-badge"
               >
                 Adjunct Course
               </Badge>
             ) : (
               <Badge
-                className={`border-0 shadow-md backdrop-blur-sm ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
+                className={`border shadow-md backdrop-blur-sm bg-white/95 text-[10px] sm:text-xs ${levelColors[course.level as keyof typeof levelColors] || levelColors.associate}`}
                 data-testid="level-badge"
               >
                 {course.level}
@@ -202,7 +202,7 @@ export default function CourseCardStatus({
         {/* Status badge - Bottom Left */}
         {config.badge && (
           <Badge
-            className={`absolute bottom-3 left-3 border shadow-md backdrop-blur-sm ${config.badge.class}`}
+            className={`absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border shadow-md backdrop-blur-sm text-[10px] sm:text-xs ${config.badge.class}`}
             data-testid="status-badge"
           >
             {config.badge.text}
@@ -211,26 +211,26 @@ export default function CourseCardStatus({
       </div>
 
       {/* Content Section - Flexible Height */}
-      <CardContent className="p-5 flex flex-col flex-grow">
+      <CardContent className="p-3 sm:p-4 md:p-5 flex flex-col flex-grow">
         {/* Badges Row */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
           {course.programme_type !== "ADJUNCT_COURSE" && (
             <Badge
-              className={`text-[10px] uppercase tracking-wider font-semibold ${pathwayColors[coursePathway]}`}
+              className={`text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold border ${pathwayColors[coursePathway]}`}
               data-testid="pathway-badge"
             >
               {pathwayConfig.name}
             </Badge>
           )}
           {course.category && (
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-semibold" data-testid="category-badge">
+            <Badge className="text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold border-[#d4c5b0] text-[#4a3828] bg-[#faf9f6]" data-testid="category-badge">
               {course.category.name}
             </Badge>
           )}
         </div>
 
         {/* Title - Fixed 2 lines */}
-        <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-tight min-h-[3.5rem]" data-testid="course-title">
+        <h3 className="text-base sm:text-lg font-bold text-[#2c2015] mb-1.5 sm:mb-2 group-hover:text-[#610000] transition-colors line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3.5rem]" data-testid="course-title">
           {course.title}
         </h3>
 
@@ -257,27 +257,27 @@ export default function CourseCardStatus({
             </Badge>
             {eligibility.status === "upgrade-required" && course.track && (
               <p className="text-xs text-muted-foreground mt-1.5">
-                Complete Associate in {course.track} to unlock
+                Complete {eligibility.label.replace(/^Requires\s+/i, "")} in {course.track} to unlock
               </p>
             )}
           </div>
         )}
 
         {/* Description - Fixed 2 lines */}
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed min-h-[2.5rem]" data-testid="course-description">
+        <p className="text-xs sm:text-sm text-[#6b5d4f] mb-3 sm:mb-4 line-clamp-2 leading-relaxed min-h-[2rem] sm:min-h-[2.5rem]" data-testid="course-description">
           {course.subtitle || course.description || "Master industry-standard ADR skills with our specialized certification track."}
         </p>
 
         {/* Meta Info Row */}
-        <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-[#6b5d4f]">
           {course.duration_hours && (
-            <span className="flex items-center gap-1.5" data-testid="course-duration">
-              <Clock className="w-4 h-4 text-primary/70" />
+            <span className="flex items-center gap-1 sm:gap-1.5" data-testid="course-duration">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8b6f47]" />
               <span className="font-medium">{course.duration_hours}h</span>
             </span>
           )}
-          <span className="flex items-center gap-1.5" data-testid="course-students">
-            <Users className="w-4 h-4 text-primary/70" />
+          <span className="flex items-center gap-1 sm:gap-1.5" data-testid="course-students">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8b6f47]" />
             <span className="font-medium">{course.enrollment_count || 0}</span>
           </span>
         </div>
@@ -308,8 +308,8 @@ export default function CourseCardStatus({
 
         {/* Instructor */}
         {course.instructor && (
-          <div className="text-xs text-muted-foreground mb-4 flex items-center" data-testid="instructor-info">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center mr-2.5 text-primary font-semibold text-xs">
+          <div className="text-xs text-[#6b5d4f] mb-4 flex items-center" data-testid="instructor-info">
+            <div className="w-7 h-7 rounded-full bg-[#610000]/10 flex items-center justify-center mr-2.5 text-[#610000] font-semibold text-xs">
               {course.instructor.first_name?.[0]}
             </div>
             <span className="font-medium">
@@ -322,13 +322,13 @@ export default function CourseCardStatus({
         <div className="flex-grow" />
 
         {/* Footer - Price & CTA */}
-        <div className="flex items-center justify-between pt-4 mt-auto border-t border-border/50">
+        <div className="flex items-center justify-between pt-4 mt-auto border-t border-[#d4c5b0]/30">
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-foreground" data-testid="course-price">
+            <span className="text-2xl font-bold text-[#610000]" data-testid="course-price">
               {parseFloat(course.price) > 0 ? `$${parseFloat(course.price).toFixed(2)}` : 'Free'}
             </span>
             {parseFloat(course.price) > 0 && (
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{course.currency}</span>
+              <span className="text-[10px] uppercase tracking-wider text-[#8b6f47] font-semibold">{course.currency}</span>
             )}
           </div>
           

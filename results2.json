@@ -1,0 +1,588 @@
+[
+  {
+    "version": "20250509100000",
+    "file": "20250509100000_add_mux_support_to_lessons.sql",
+    "total": 12,
+    "found": 12,
+    "missing": []
+  },
+  {
+    "version": "20250609190000",
+    "file": "20250609190000_add_mux_upload_support.sql",
+    "total": 9,
+    "found": 9,
+    "missing": []
+  },
+  {
+    "version": "20260109",
+    "file": "20260109_downloadable_resources.sql",
+    "total": 9,
+    "found": 9,
+    "missing": []
+  },
+  {
+    "version": "20260109",
+    "file": "20260109_downloadable_resources_FIXED.sql",
+    "total": 9,
+    "found": 9,
+    "missing": []
+  },
+  {
+    "version": "20260428000000",
+    "file": "20260428000000_certificate_renewal_system.sql",
+    "total": 14,
+    "found": 11,
+    "missing": [
+      "policy:Service role can manage activity_log",
+      "policy:Users can read own activity_logs",
+      "index:idx_activity_log_action_type"
+    ]
+  },
+  {
+    "version": "20260430122400",
+    "file": "20260430122400_membership_subscription.sql",
+    "total": 10,
+    "found": 0,
+    "missing": [
+      "table:membership_subscriptions",
+      "policy:Users can view own subscriptions",
+      "policy:Users can insert own subscriptions",
+      "policy:Users can update own subscriptions",
+      "policy:Admins can manage all subscriptions",
+      "index:idx_membership_subscriptions_user_id",
+      "index:idx_membership_subscriptions_end_date",
+      "index:idx_membership_subscriptions_status",
+      "index:idx_membership_subscriptions_track_level",
+      "trigger:update_membership_subscriptions_updated_at"
+    ]
+  },
+  {
+    "version": "20260430122500",
+    "file": "20260430122500_review_prompts.sql",
+    "total": 9,
+    "found": 0,
+    "missing": [
+      "table:review_prompts",
+      "policy:Users can view own review prompts",
+      "policy:Users can insert own review prompts",
+      "policy:Users can update own review prompts",
+      "policy:Admins can manage all review prompts",
+      "index:idx_review_prompts_user_id",
+      "index:idx_review_prompts_course_id",
+      "index:idx_review_prompts_type",
+      "trigger:update_review_prompts_updated_at"
+    ]
+  },
+  {
+    "version": "20260430130000",
+    "file": "20260430130000_security_hardening_rls.sql",
+    "total": 7,
+    "found": 7,
+    "missing": []
+  },
+  {
+    "version": "20260430130500",
+    "file": "20260430130500_fix_security_definer_views.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260430131000",
+    "file": "20260430131000_fix_permissive_rls_policies.sql",
+    "total": 5,
+    "found": 4,
+    "missing": [
+      "policy:System can insert course completion records"
+    ]
+  },
+  {
+    "version": "20260430131500",
+    "file": "20260430131500_revoke_anon_security_definer_functions.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260430132000",
+    "file": "20260430132000_fix_storage_bucket_listing_policies.sql",
+    "total": 14,
+    "found": 12,
+    "missing": [
+      "policy:course_thumbnails_public_read",
+      "policy:forum_attachments_public_read"
+    ]
+  },
+  {
+    "version": "20260501000000",
+    "file": "20260501000000_tiered_renewal_system.sql",
+    "total": 27,
+    "found": 27,
+    "missing": []
+  },
+  {
+    "version": "20260502183100",
+    "file": "20260502183100_optimize_eligibility_check_indexes.sql",
+    "total": 5,
+    "found": 5,
+    "missing": []
+  },
+  {
+    "version": "20260502183200",
+    "file": "20260502183200_initialize_track_progress_on_user_signup.sql",
+    "total": 4,
+    "found": 3,
+    "missing": [
+      "trigger:on_auth_user_created"
+    ]
+  },
+  {
+    "version": "20260502190000",
+    "file": "20260502190000_update_track_progress_on_course_completion.sql",
+    "total": 2,
+    "found": 2,
+    "missing": []
+  },
+  {
+    "version": "20260506",
+    "file": "20260506_schedule_renewal_reminders.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507064600",
+    "file": "20260507064600_optimize_quiz_rls_policies.sql",
+    "total": 10,
+    "found": 10,
+    "missing": []
+  },
+  {
+    "version": "20260507094900",
+    "file": "20260507094900_simplify_quiz_save_flow.sql",
+    "total": 2,
+    "found": 0,
+    "missing": [
+      "policy:quiz_questions_instructors_insert",
+      "policy:quiz_answers_instructors_insert"
+    ]
+  },
+  {
+    "version": "20260507104500",
+    "file": "20260507104500_simplify_quiz_insert_policies.sql",
+    "total": 2,
+    "found": 0,
+    "missing": [
+      "policy:quiz_questions_instructors_insert",
+      "policy:quiz_answers_instructors_insert"
+    ]
+  },
+  {
+    "version": "20260507110000",
+    "file": "20260507110000_simplify_quiz_select_policies.sql",
+    "total": 2,
+    "found": 0,
+    "missing": [
+      "policy:quizzes_instructors_view",
+      "policy:quizzes_view_enrolled"
+    ]
+  },
+  {
+    "version": "20260507111500",
+    "file": "20260507111500_disable_quiz_questions_answers_insert_rls.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507112423",
+    "file": "20260507112423_b9479cda-4e3a-41f6-91b3-32439d0e8b76.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507112853",
+    "file": "20260507112853_17a432f3-a3b2-408d-b9a7-f1e5556cc78c.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507113145",
+    "file": "20260507113145_8a7b4e21-5150-4901-823a-ecd6704f28bf.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507120740",
+    "file": "20260507120740_5eeaba7e-e1ee-411c-9280-541d9a739e03.sql",
+    "total": 3,
+    "found": 3,
+    "missing": []
+  },
+  {
+    "version": "20260507123534",
+    "file": "20260507123534_260de548-eb23-4409-97f6-73e53d90b1b2.sql",
+    "total": 16,
+    "found": 16,
+    "missing": []
+  },
+  {
+    "version": "20260507131647",
+    "file": "20260507131647_ccb45ea9-f6b4-40dc-aabc-a534fc922d0c.sql",
+    "total": 2,
+    "found": 2,
+    "missing": []
+  },
+  {
+    "version": "20260507195048",
+    "file": "20260507195048_847b9ebb-9895-4ae2-86bc-0e53c7388342.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507201602",
+    "file": "20260507201602_a72356b1-66c2-4876-a8e5-ea1ff9b41c1f.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507202722",
+    "file": "20260507202722_c6781e8c-5c1b-4e40-83d9-e2502ec49beb.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507204722",
+    "file": "20260507204722_d0c9188f-6b4f-4d2f-800c-5fdd2b491cef.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507210031",
+    "file": "20260507210031_93a84abf-ae38-4385-8ba3-e436d2f33cf0.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260507211436",
+    "file": "20260507211436_9de0a346-5563-4cb0-a7ac-3b78f1994bb8.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507223910",
+    "file": "20260507223910_da89e993-fc41-4f82-854b-1b39479ee64d.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260507232459",
+    "file": "20260507232459_e0bdee75-509a-4ae5-9580-c691ae2c9e87.sql",
+    "total": 2,
+    "found": 1,
+    "missing": [
+      "policy:Public can view instructor profiles"
+    ]
+  },
+  {
+    "version": "20260508000000",
+    "file": "20260508000000_unify_progress_tracking.sql",
+    "total": 4,
+    "found": 4,
+    "missing": []
+  },
+  {
+    "version": "20260508002113",
+    "file": "20260508002113_e2f302d2-f515-4313-8fd6-852763190b1c.sql",
+    "total": 37,
+    "found": 37,
+    "missing": []
+  },
+  {
+    "version": "20260508085134",
+    "file": "20260508085134_bbfca2bb-2da1-4e8c-8bad-1ae308499c0d.sql",
+    "total": 8,
+    "found": 8,
+    "missing": []
+  },
+  {
+    "version": "20260508102010",
+    "file": "20260508102010_9ab7747e-9d73-4bbe-9462-95e10170ee14.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260509080851",
+    "file": "20260509080851_62666219-3b92-4372-8c7c-a6189b917de7.sql",
+    "total": 10,
+    "found": 10,
+    "missing": []
+  },
+  {
+    "version": "20260509083000",
+    "file": "20260509083000_allow_users_to_insert_completion_records.sql",
+    "total": 2,
+    "found": 1,
+    "missing": [
+      "policy:Service role can insert course completion records"
+    ]
+  },
+  {
+    "version": "20260509085952",
+    "file": "20260509085952_allow_users_to_insert_completion_records.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260509105607",
+    "file": "20260509105607_fix_course_completion_records_policies_v2.sql",
+    "total": 3,
+    "found": 2,
+    "missing": [
+      "policy:Service role can view all course completion records"
+    ]
+  },
+  {
+    "version": "20260510000000",
+    "file": "20260510000000_fix_lesson_resources_bucket.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260510185753",
+    "file": "20260510185753_b8de4610-8847-49bd-9e93-9b9082477473.sql",
+    "total": 8,
+    "found": 8,
+    "missing": []
+  },
+  {
+    "version": "20260511084630",
+    "file": "20260511084630_388026b1-8bf1-4009-8ea8-1282a1fc8083.sql",
+    "total": 2,
+    "found": 2,
+    "missing": []
+  },
+  {
+    "version": "20260513093850",
+    "file": "20260513093850_7e4e4434-3484-4603-860f-493f9f3d9780.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260515223140",
+    "file": "20260515223140_0dffa9ba-6461-4083-80e8-6404b91af0e7.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260608120000",
+    "file": "20260608120000_notifications.sql",
+    "total": 18,
+    "found": 12,
+    "missing": [
+      "policy:Users can view own preferences",
+      "policy:Users can update own preferences",
+      "policy:Users can insert own preferences",
+      "policy:Service role can manage notifications",
+      "policy:Service role can manage preferences",
+      "index:idx_notifications_expires_at"
+    ]
+  },
+  {
+    "version": "20260610000000",
+    "file": "20260610000000_fix_course_completion_records_policies.sql",
+    "total": 3,
+    "found": 2,
+    "missing": [
+      "policy:Service role can view all course completion records"
+    ]
+  },
+  {
+    "version": "20260610000001",
+    "file": "20260610000001_update_course_level_values.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260610000002",
+    "file": "20260610000002_add_track_level_to_courses.sql",
+    "total": 4,
+    "found": 4,
+    "missing": []
+  },
+  {
+    "version": "20260610000003",
+    "file": "20260610000003_add_timezone_to_profiles.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260610000004",
+    "file": "20260610000004_enhance_expedited_eligibility.sql",
+    "total": 19,
+    "found": 19,
+    "missing": []
+  },
+  {
+    "version": "20260610000005",
+    "file": "20260610000005_populate_pathway_data.sql",
+    "total": 5,
+    "found": 3,
+    "missing": [
+      "index:idx_course_enrollments_pathway_status",
+      "trigger:update_pathway_progress_trigger"
+    ]
+  },
+  {
+    "version": "20260610000006",
+    "file": "20260610000006_cleanup_legacy_tables.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260610000007",
+    "file": "20260610000007_migrate_course_enrollments_to_unified.sql",
+    "total": 3,
+    "found": 3,
+    "missing": []
+  },
+  {
+    "version": "20260806090000",
+    "file": "20260806090000_restore_public_member_verification_policy.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260806100000",
+    "file": "20260806100000_add_missing_certifications_user_fkey.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260806110000",
+    "file": "20260806110000_fix_award_reputation_points_drift.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260806120000",
+    "file": "20260806120000_fix_forum_posts_replies_author_rls.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260810150000",
+    "file": "20260810150000_add_membership_status_sync.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260810150100",
+    "file": "20260810150100_fix_cron_auth_and_schedule.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260810220000",
+    "file": "20260810220000_enhance_email_logs_for_brevo.sql",
+    "total": 4,
+    "found": 0,
+    "missing": [
+      "column:status",
+      "policy:Admins can read email_logs",
+      "index:idx_email_logs_status",
+      "index:idx_email_logs_provider"
+    ]
+  },
+  {
+    "version": "20260811000000",
+    "file": "20260811000000_fix_admin_curriculum_access.sql",
+    "total": 5,
+    "found": 2,
+    "missing": [
+      "policy:Instructors and admins can manage quizzes",
+      "policy:Instructors and admins can manage assignments",
+      "policy:Instructors and admins can manage lesson resources"
+    ]
+  },
+  {
+    "version": "20260811120000",
+    "file": "20260811120000_add_presentation_lecture_type.sql",
+    "total": 10,
+    "found": 10,
+    "missing": []
+  },
+  {
+    "version": "20260811120000",
+    "file": "20260811120000_fix_instructor_profiles_and_add_course_instructors.sql",
+    "total": 25,
+    "found": 25,
+    "missing": []
+  },
+  {
+    "version": "20260811130000",
+    "file": "20260811130000_restore_anon_execute_on_is_admin.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260811200000",
+    "file": "20260811200000_add_slide_index_to_progress.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260811200100",
+    "file": "20260811200100_resync_lesson_durations_from_mux.sql",
+    "total": 0,
+    "found": 0,
+    "missing": []
+  },
+  {
+    "version": "20260811210000",
+    "file": "20260811210000_add_upsert_quiz_rpc.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260811220000",
+    "file": "20260811220000_add_admin_users_select_policy.sql",
+    "total": 1,
+    "found": 1,
+    "missing": []
+  },
+  {
+    "version": "20260811230000",
+    "file": "20260811230000_add_admin_quiz_results_access.sql",
+    "total": 4,
+    "found": 4,
+    "missing": []
+  }
+]
