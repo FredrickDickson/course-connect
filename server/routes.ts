@@ -82,6 +82,7 @@ import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
 import renewalAutomationRouter from "./routes/renewal-automation";
 import adminInstructorsRouter from "./routes/admin/instructors";
+import adminAccessTokensRouter from "./routes/admin/access-tokens";
 import {
   insertCourseSchema,
 
@@ -348,6 +349,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount admin instructor management routes
   app.use("/api/admin/instructors", adminInstructorsRouter);
+
+  // Mount admin course access token management routes
+  app.use("/api/admin/access-tokens", adminAccessTokensRouter);
 
 
 

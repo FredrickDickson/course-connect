@@ -83,6 +83,7 @@ const CreateCourse = lazy(() => import("@/pages/create-course"));
 const CourseCurriculum = lazy(() => import("@/pages/course-curriculum"));
 const AdminInstructorProfile = lazy(() => import("@/pages/admin-instructor-profile"));
 const AdminRenewalManagement = lazy(() => import("@/pages/admin/renewal-management"));
+const AdminAccessTokens = lazy(() => import("@/pages/admin/access-tokens"));
 
 // Lazy loaded heavy pages for performance
 const CourseDetail = lazy(() => import("@/pages/course-detail"));
@@ -126,6 +127,11 @@ const LazyAdminInstructorProfile = () => (
 const LazyAdminRenewalManagement = () => (
   <Suspense fallback={<PageLoader />}>
     <AdminRenewalManagement />
+  </Suspense>
+);
+const LazyAdminAccessTokens = () => (
+  <Suspense fallback={<PageLoader />}>
+    <AdminAccessTokens />
   </Suspense>
 );
 const LazyBecomeInstructor = () => (
@@ -288,6 +294,7 @@ function Router() {
       {/* Admin routes */}
       <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
       <ProtectedRoute path="/admin/renewals" requiredRole="admin" component={LazyAdminRenewalManagement} />
+      <ProtectedRoute path="/admin/access-tokens" requiredRole="admin" component={LazyAdminAccessTokens} />
       <ProtectedRoute path="/admin/instructors/:instructorId/profile" requiredRole="admin" component={LazyAdminInstructorProfile} />
       <ProtectedRoute path="/admin" requiredRole="admin" component={LazyAdminDashboard} />
 
