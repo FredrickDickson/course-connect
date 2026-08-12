@@ -151,7 +151,7 @@ export default function Checkout() {
   useEffect(() => {
     if (existingEnrollment) {
       toast.info("You're already enrolled in this course!");
-      setLocation(`/learn/${courseId}/1`);
+      setLocation(`/learn/${courseId}`);
     }
   }, [existingEnrollment, courseId, setLocation]);
 
@@ -294,7 +294,7 @@ export default function Checkout() {
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-access-token`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session?.access_token || ""}`,
+          Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -313,7 +313,12 @@ export default function Checkout() {
       // Note: deliberately not invalidating the ["enrollment-check", ...]
       // query here — doing so would trigger the existing "already
       // enrolled" redirect effect above and skip straight past this
-      // confirmation step before the user sees it.
+      // confirmation step before the user sees it. The dashboard's own
+      // enrollment list/stats caches still need invalidating though,
+      // otherwise they keep serving the pre-redemption data for up to
+      // the 5-minute default staleTime.
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["user-dashboard-stats"] });
       setBookingResult({
         reference: data.orderId,
         amount: 0,
@@ -1020,7 +1025,7 @@ export default function Checkout() {
 
             <div className="flex flex-wrap justify-center gap-3 pt-2">
               {bookingResult.paymentMethod !== "bank_transfer" && (
-                <Link href={`/learn/${courseId}/1`}>
+                <Link href={`/learn/${courseId}`}>
                   <Button size="lg">
                     <BookOpen className="w-4 h-4 mr-2" /> Start Learning
                   </Button>

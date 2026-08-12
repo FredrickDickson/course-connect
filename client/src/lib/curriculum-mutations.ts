@@ -213,7 +213,7 @@ export async function upsertPresentation(lessonId: string, input: PresentationIn
     file_name: input.fileName,
     file_type: input.fileType || "pdf",
     page_count: input.pageCount ?? null,
-    allow_download: input.allowDownload ?? false,
+    allow_download: input.allowDownload ?? true,
   };
 
   if (existing) {

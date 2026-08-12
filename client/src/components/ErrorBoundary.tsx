@@ -2,6 +2,9 @@ import { Component, ErrorInfo, ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { attemptChunkReload } from "@/lib/chunk-reload";
+
+const CHUNK_ERROR_RE = /dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i;
 
 interface Props {
   children: ReactNode;
@@ -25,16 +28,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
+    // A stale-deploy chunk-load failure can't be fixed by re-rendering the
+    // same tree - the browser needs a fresh index.html with current chunk
+    // hashes, so recover automatically instead of waiting for the user to
+    // click "Try Again" on a card they didn't cause and can't otherwise fix.
+    if (CHUNK_ERROR_RE.test(error.message || "")) {
+      attemptChunkReload();
+    }
   }
 
   private handleReset = () => {
-    // A stale-deploy chunk-load failure can't be fixed by re-rendering the
-    // same tree - the browser needs a fresh index.html with current chunk
-    // hashes, so reload instead of just clearing the error state.
-    if (/dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(this.state.error?.message || "")) {
-      window.location.reload();
-      return;
-    }
     this.setState({ hasError: false, error: undefined });
     this.props.onReset?.();
   };

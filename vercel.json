@@ -30,7 +30,19 @@
       "destination": "/api/enrollments/check-eligibility.ts"
     },
     {
-      "source": "/:path((?!api).*)",
+      "source": "/api/admin/access-tokens",
+      "destination": "/api/admin/access-tokens.ts"
+    },
+    {
+      "source": "/api/admin/access-tokens/:id/disable",
+      "destination": "/api/admin/access-tokens/[id]/disable.ts"
+    },
+    {
+      "source": "/api/admin/access-tokens/:id",
+      "destination": "/api/admin/access-tokens/[id].ts"
+    },
+    {
+      "source": "/:path((?!api|assets).*)",
       "destination": "/index.html"
     }
   ],
@@ -41,6 +53,15 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
