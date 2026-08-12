@@ -402,14 +402,14 @@ function LearningPathwaysSection() {
           {pathways.map((pathway, index) => {
             const Icon = pathway.icon;
             return (
-              <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
-                <div className="w-16 h-16 bg-[#610000] text-white rounded-lg flex items-center justify-center mb-5">
+              <div key={index} className="bg-[#610000] border border-[#610000] rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
+                <div className="w-16 h-16 bg-white text-[#610000] rounded-lg flex items-center justify-center mb-5">
                   <Icon className="w-9 h-9" />
                 </div>
-                <h3 className="text-3xl font-semibold text-gray-900 mb-4 group-hover:text-[#610000] transition font-display">
+                <h3 className="text-3xl font-semibold text-white mb-4 transition font-display">
                   {pathway.title}
                 </h3>
-                <div className="flex items-center gap-6 text-base text-gray-700 font-body font-medium">
+                <div className="flex items-center gap-6 text-base text-white/80 font-body font-medium">
                   <span className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
                     {pathway.courses}
