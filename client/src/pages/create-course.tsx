@@ -344,7 +344,7 @@ export default function CreateCourse() {
     onSuccess: (course) => {
       queryClient.invalidateQueries({ queryKey: ["/api/instructor/courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
       // Public listings use different query keys than the ones above — without
       // these, a newly published course wouldn't show up on the catalog until
       // React Query's 5-minute staleTime expired.
@@ -687,7 +687,7 @@ export default function CreateCourse() {
                             onValueChange={(v) =>
                               handleCategoryChange(v, field.onChange)
                             }
-                            defaultValue={field.value}
+                            value={field.value}
                             disabled={categoriesLoading}
                           >
                             <FormControl>
@@ -729,7 +729,7 @@ export default function CreateCourse() {
                           <FormLabel>Course Type *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -760,7 +760,7 @@ export default function CreateCourse() {
                               <FormLabel>Difficulty Level *</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -786,7 +786,7 @@ export default function CreateCourse() {
                               <FormLabel>Qualification Track *</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -841,7 +841,7 @@ export default function CreateCourse() {
                             <FormLabel>Currency</FormLabel>
                             <Select
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
