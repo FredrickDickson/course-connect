@@ -357,37 +357,38 @@ function LearningPathwaysSection() {
   const pathways = [
     {
       icon: Scale,
-      title: "Arbitration Expert",
-      courses: "6 Courses",
-      hours: "24 Hours",
-      color: "bg-blue-50 text-blue-600"
+      title: "1. Commercial Mediation & Settlement",
+      description:
+        "Develop advanced skills for resolving contractual, corporate and commercial disputes through structured negotiation, mediation and settlement.",
     },
     {
       icon: Users,
-      title: "Mediation Specialist",
-      courses: "5 Courses",
-      hours: "18 Hours",
-      color: "bg-purple-50 text-purple-600"
+      title: "2. Employment & Workplace Mediation",
+      description:
+        "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes.",
     },
     {
       icon: GraduationCap,
-      title: "Negotiation Professional",
-      courses: "4 Courses",
-      hours: "16 Hours",
-      color: "bg-green-50 text-green-600"
+      title: "3. Construction Mediation",
+      description:
+        "Build specialist competence in resolving payment, delay, variation, property, contractual and project disputes arising from construction and infrastructure projects.",
     },
     {
       icon: Globe,
-      title: "Adjudication Expert",
-      courses: "4 Courses",
-      hours: "16 Hours",
-      color: "bg-orange-50 text-orange-600"
+      title: "4. Mediation Advocacy for Lawyers",
+      description:
+        "Learn to represent clients effectively in mediation through case preparation, opening strategy, negotiation, caucusing, risk assessment and settlement documentation.",
+    },
+    {
+      icon: Sparkles,
+      title: "5. AI, Online Mediation & Digital Dispute Resolution",
+      description:
+        "Develop practical skills in using AI and digital platforms for dispute analysis, case preparation, negotiation support, online mediation and settlement processes.",
     },
   ];
 
   return (
     <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=2880&h=1000&auto=format&fit=crop&q=100"
@@ -400,43 +401,40 @@ function LearningPathwaysSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Learning Pathways</h2>
+        <div className="text-center mb-10">
+          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display tracking-tight">Learning Pathways</h2>
+        </div>
+
+        <div className="text-center mb-10">
+          <h3 className="text-3xl font-light text-gray-900 font-display">CIMA Specialist Certificate Programmes</h3>
+        </div>
+
+        <div className="mb-10 text-center">
+          <p className="text-2xl font-light text-gray-900 font-display">Specialist Courses</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {pathways.map((pathway, index) => {
             const Icon = pathway.icon;
             return (
-              <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
-                <div className={`w-16 h-16 ${pathway.color} rounded-lg flex items-center justify-center mb-5`}>
-                  <Icon className="w-9 h-9" />
+              <div
+                key={index}
+                className="bg-[#610000] rounded-[20px] p-8 md:p-10 shadow-[0_12px_28px_rgba(97,0,0,0.18)] border border-[#7f1d1d] min-h-[360px] flex flex-col items-center justify-center text-center hover:translate-y-[-2px] transition-transform duration-300"
+              >
+                <div className="w-20 h-20 bg-[#f5f1f0] rounded-[18px] flex items-center justify-center mb-7 shadow-inner">
+                  <Icon className="w-9 h-9 text-[#610000]" />
                 </div>
-                <h3 className="text-3xl font-semibold text-gray-900 mb-4 group-hover:text-[#610000] transition font-display">
+
+                <h3 className="text-3xl md:text-[2.1rem] font-semibold text-white leading-tight font-display mb-5">
                   {pathway.title}
                 </h3>
-                <div className="flex items-center gap-6 text-base text-gray-700 font-body font-medium">
-                  <span className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    {pathway.courses}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    {pathway.hours}
-                  </span>
-                </div>
+
+                <p className="text-lg md:text-xl text-white/90 leading-relaxed font-body max-w-[28rem]">
+                  {pathway.description}
+                </p>
               </div>
             );
           })}
-        </div>
-
-        <div className="text-center mt-12">
-          <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-            <button className="text-[#610000] font-semibold hover:underline flex items-center gap-2 mx-auto text-lg font-body">
-              Explore all pathways
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </a>
         </div>
       </div>
     </section>
