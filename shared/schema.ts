@@ -396,7 +396,7 @@ export const presentationSchema = z.object({
   fileName: z.string().min(1),
   fileType: z.enum(["pdf", "pptx"]).default("pdf"),
   pageCount: z.number().nullable().optional(),
-  allowDownload: z.boolean().default(false),
+  allowDownload: z.boolean().default(true),
   createdAt: z.date().optional(),
 });
 

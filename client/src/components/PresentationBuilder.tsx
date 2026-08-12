@@ -32,7 +32,7 @@ export function PresentationBuilder({ lessonId, initialPresentation, onSaved, on
   const [fileUrl, setFileUrl] = useState(initialPresentation?.fileUrl || '');
   const [fileName, setFileName] = useState(initialPresentation?.fileName || '');
   const [pageCount, setPageCount] = useState<number | null>(initialPresentation?.pageCount ?? null);
-  const [allowDownload, setAllowDownload] = useState(initialPresentation?.allowDownload ?? false);
+  const [allowDownload, setAllowDownload] = useState(initialPresentation?.allowDownload ?? true);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [saving, setSaving] = useState(false);
