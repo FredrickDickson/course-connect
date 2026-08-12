@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, GraduationCap, Scale, BadgeCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Landing() {
@@ -354,32 +354,28 @@ function LearningPathwaysSection() {
 
   const pathways = [
     {
-      icon: Scale,
-      title: "Commercial Mediation & Settlement",
+      icon: Users,
+      title: "Commercial Mediation",
       courses: "6 Courses",
       hours: "24 Hours",
-      color: "bg-blue-50 text-blue-600"
     },
     {
       icon: Users,
-      title: "Employment & Workplace Mediation",
+      title: "Employment Mediation",
       courses: "5 Courses",
       hours: "18 Hours",
-      color: "bg-purple-50 text-purple-600"
     },
     {
-      icon: GraduationCap,
+      icon: Users,
       title: "Construction Mediation",
       courses: "4 Courses",
       hours: "16 Hours",
-      color: "bg-green-50 text-green-600"
     },
     {
-      icon: Globe,
+      icon: Users,
       title: "Mediation Advocacy for Lawyers",
       courses: "4 Courses",
       hours: "16 Hours",
-      color: "bg-orange-50 text-orange-600"
     },
   ];
 
@@ -407,7 +403,7 @@ function LearningPathwaysSection() {
             const Icon = pathway.icon;
             return (
               <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-10 hover:shadow-2xl transition-all duration-300 group cursor-pointer">
-                <div className={`w-16 h-16 ${pathway.color} rounded-lg flex items-center justify-center mb-5`}>
+                <div className="w-16 h-16 bg-[#610000] text-white rounded-lg flex items-center justify-center mb-5">
                   <Icon className="w-9 h-9" />
                 </div>
                 <h3 className="text-3xl font-semibold text-gray-900 mb-4 group-hover:text-[#610000] transition font-display">
