@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AvatarUpload from "@/components/avatar-upload";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -774,7 +775,7 @@ export default function Profile() {
                         <Link key={enrollment.id} href={`/learn/${enrollment.course_id}/${enrollment.course.id}`}>
                           <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer">
                             {enrollment.course.thumbnail_url && (
-                              <img src={enrollment.course.thumbnail_url} alt={enrollment.course.title} className="w-24 h-16 object-cover rounded" />
+                              <CourseThumbnail src={enrollment.course.thumbnail_url} alt={enrollment.course.title} className="w-24 h-16 rounded flex-shrink-0" />
                             )}
                             <div className="flex-1">
                               <h4 className="font-semibold">{enrollment.course.title}</h4>
@@ -806,7 +807,7 @@ export default function Profile() {
                       {completedCourses.map((enrollment: any) => (
                         <div key={enrollment.id} className="border rounded-lg p-4">
                           {enrollment.course.thumbnail_url && (
-                            <img src={enrollment.course.thumbnail_url} alt={enrollment.course.title} className="w-full h-32 object-cover rounded mb-3" />
+                            <CourseThumbnail src={enrollment.course.thumbnail_url} alt={enrollment.course.title} className="w-full h-32 rounded mb-3" />
                           )}
                           <h4 className="font-semibold mb-2">{enrollment.course.title}</h4>
                           <div className="flex items-center justify-between text-sm text-muted-foreground">

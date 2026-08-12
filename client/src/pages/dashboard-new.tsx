@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import StudentLayout from "@/components/student-layout";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Link, useLocation } from "wouter";
 import {
   PlayCircle,
@@ -329,10 +330,10 @@ export default function Dashboard() {
                       <Link href={`/learn/${enrollment.course?.id}`}>
                         <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0 cursor-pointer">
                           {enrollment.course?.thumbnail_url ? (
-                            <img
+                            <CourseThumbnail
                               src={enrollment.course.thumbnail_url}
                               alt={enrollment.course.title}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
@@ -542,10 +543,10 @@ export default function Dashboard() {
                   <Card className="group bg-white border-[#d4c5b0]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col">
                     <div className="relative h-48 bg-gradient-to-br from-[#f5f3ed] to-[#e3d5ca] flex-shrink-0">
                       {course.thumbnail_url ? (
-                        <img
+                        <CourseThumbnail
                           src={course.thumbnail_url}
                           alt={course.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000]/5 to-[#8b6f47]/5">

@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
 import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export default function Landing() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -292,12 +293,12 @@ function FeaturedCoursesSection() {
                 
                 {/* Large Sharp Image */}
                 <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={course.thumbnail_url || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"}
+                  <CourseThumbnail
+                    src={course.thumbnail_url}
+                    fallbackSrc="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"
                     alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    style={{ imageRendering: 'crisp-edges' }}
+                    className="w-full h-full"
+                    imgClassName="group-hover:scale-125 transition-transform duration-500"
                   />
                 </div>
 

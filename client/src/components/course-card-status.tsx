@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Star, Users, Clock, Crown, ShoppingCart, Lock, CheckCircle, ArrowRight, Monitor, MapPin } from "lucide-react";
 import { 
   detectCoursePathway, 
@@ -158,11 +159,13 @@ export default function CourseCardStatus({
 
       {/* Thumbnail Section - Fixed Height */}
       <div className="relative h-36 sm:h-44 md:h-48 flex-shrink-0 overflow-hidden bg-[#faf9f6]">
-        <img
-          src={course.thumbnail_url || defaultThumbnail}
+        <CourseThumbnail
+          src={course.thumbnail_url}
+          fallbackSrc={defaultThumbnail}
           alt={course.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-          data-testid="course-thumbnail"
+          className="w-full h-full"
+          imgClassName="group-hover:scale-125 transition-transform duration-500 ease-out"
+          testId="course-thumbnail"
         />
         
         {/* Gradient overlay for better badge visibility */}

@@ -873,6 +873,7 @@ export default function CreateCourse() {
                                 currentImageUrl={field.value}
                                 onUploadComplete={(url) => field.onChange(url)}
                                 onUploadingChange={handleUploadingChange}
+                                variant="thumbnail"
                               />
                               <div className="relative">
                                 <div className="absolute inset-0 flex items-center">

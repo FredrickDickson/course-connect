@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StudentLayout from "@/components/student-layout";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Search, Filter, SortAsc, SortDesc, Grid, List, Heart, BookOpen, Clock, Star, Users, X } from "lucide-react";
 import { Link } from "wouter";
 
@@ -565,10 +566,11 @@ export default function Courses() {
               .map((course: any) => (
                 <Card key={course.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
                   <div className="relative">
-                    <img
+                    <CourseThumbnail
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-48"
+                      imgClassName="group-hover:scale-125 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
                       <Badge className="bg-primary text-primary-foreground">Featured</Badge>
@@ -722,7 +724,7 @@ export default function Courses() {
                       <div className="flex space-x-4">
                         <div className="w-24 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
                           {course.thumbnail_url ? (
-                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                            <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
                               <BookOpen className="w-6 h-6 text-primary" />

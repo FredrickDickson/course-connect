@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -491,7 +492,7 @@ export default function Checkout() {
                     <div className="flex gap-4">
                       <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {course.thumbnail_url ? (
-                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                          <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                             <BookOpen className="w-6 h-6 text-primary" />
@@ -849,7 +850,7 @@ export default function Checkout() {
                     <div className="flex gap-3">
                       <div className="w-12 h-12 bg-muted rounded-lg flex-shrink-0 overflow-hidden">
                         {course.thumbnail_url ? (
-                          <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                          <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                         ) : (
                           <div className="w-full h-full bg-primary/20 flex items-center justify-center">
                             <BookOpen className="w-5 h-5 text-primary" />

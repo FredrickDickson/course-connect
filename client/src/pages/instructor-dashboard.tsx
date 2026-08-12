@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import StudentLayout from "@/components/student-layout";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Link, useLocation } from "wouter";
 import {
   BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, Settings,
@@ -219,7 +220,7 @@ export default function InstructorDashboard() {
                       <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-all border-[#d4c5b0]/30">
                         <div className="aspect-video relative">
                           {course.thumbnail_url ? (
-                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
+                            <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-[#610000]/20 to-[#8b6f47]/5 flex items-center justify-center">
                               <BookOpen className="h-12 w-12 text-[#610000]/40" />

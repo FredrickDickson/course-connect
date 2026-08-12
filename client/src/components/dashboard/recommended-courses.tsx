@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles } from "lucide-react";
 import { Link } from "wouter";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export default function RecommendedCourses({ enrolledCourseIds }: { enrolledCourseIds: string[] }) {
   const { user } = useAuth();
@@ -41,10 +42,11 @@ export default function RecommendedCourses({ enrolledCourseIds }: { enrolledCour
         {courses.slice(0, 3).map((c: any) => (
           <Link key={c.id} href={`/course/${c.id}`}>
             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-              <img
-                src={c.thumbnail_url || "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=80&h=80&fit=crop"}
+              <CourseThumbnail
+                src={c.thumbnail_url}
+                fallbackSrc="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=80&h=80&fit=crop"
                 alt={c.title}
-                className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                className="w-12 h-12 rounded-md flex-shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium line-clamp-1">{c.title}</p>

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isToday, isTomorrow, format } from "date-fns";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -435,10 +436,11 @@ export default function Dashboard() {
                     <Card className="group bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] overflow-hidden hover:border-[#8b6f47]/30 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 cursor-pointer">
                       <div className="relative h-40 bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center">
                         {enrollment.course?.thumbnail_url ? (
-                          <img
+                          <CourseThumbnail
                             src={enrollment.course.thumbnail_url}
                             alt={enrollment.course.title}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            className="absolute inset-0 w-full h-full"
+                            imgClassName="group-hover:scale-125 transition-transform duration-700"
                           />
                         ) : (
                           <BookOpen className="w-16 h-16 text-white/80" />

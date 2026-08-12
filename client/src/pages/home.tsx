@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
+import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
@@ -257,13 +258,12 @@ export default function Home() {
                 >
                   <CardContent className="p-0">
                     <div className="relative h-28 sm:h-32 overflow-hidden">
-                      <img
-                        src={
-                          enrollment.course.thumbnail_url ||
-                          `https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250`
-                        }
+                      <CourseThumbnail
+                        src={enrollment.course.thumbnail_url}
+                        fallbackSrc="https://images.unsplash.com/photo-1521791136064-7986c2920216?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250"
                         alt={enrollment.course.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                        className="w-full h-full"
+                        imgClassName="group-hover:scale-125 transition-transform duration-700 ease-in-out"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
