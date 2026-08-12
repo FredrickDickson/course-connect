@@ -423,7 +423,7 @@ function LearningPathwaysSection() {
   const pathways = [
     {
       icon: Scale,
-      title: "Arbitration Expert Pathway",
+      title: "Commercial Mediation & Settlement",
       description: "Master commercial and international arbitration with our comprehensive curriculum.",
       courses: "6 Courses",
       hours: "24 Hours",
@@ -431,7 +431,7 @@ function LearningPathwaysSection() {
     },
     {
       icon: Users,
-      title: "Mediation Specialist Pathway",
+      title: "Employment & Workplace Mediation",
       description: "Develop expert mediation and conflict resolution skills with hands-on practice.",
       courses: "5 Courses",
       hours: "18 Hours",
@@ -439,7 +439,7 @@ function LearningPathwaysSection() {
     },
     {
       icon: GraduationCap,
-      title: "Negotiation Professional Pathway",
+      title: "Construction Mediation",
       description: "Build powerful negotiation and business development skills.",
       courses: "4 Courses",
       hours: "16 Hours",
@@ -447,7 +447,7 @@ function LearningPathwaysSection() {
     },
     {
       icon: Globe,
-      title: "Adjudication & Dispute Boards Pathway",
+      title: "Mediation Advocacy for Lawyers",
       description: "Gain practical adjudication skills for construction and infrastructure disputes.",
       courses: "4 Courses",
       hours: "16 Hours",
