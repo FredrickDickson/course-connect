@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Maximize, Minimize, Download, LayoutGrid, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize, Minimize, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import pdfjsLib from "@/lib/pdfjs";
@@ -231,7 +231,7 @@ export function PresentationViewer({
 
         <div className="flex-1" />
 
-        <Button
+        {/* <Button
           variant="ghost"
           size="icon"
           onClick={() => setShowThumbnails((v) => !v)}
@@ -239,10 +239,10 @@ export function PresentationViewer({
           data-testid="button-slide-navigator"
         >
           <LayoutGrid className="h-4 w-4" />
-        </Button>
+        </Button> */}
         {allowDownload && (
           <Button variant="ghost" size="icon" asChild aria-label="Download presentation" data-testid="button-download-presentation">
-            <a href={fileUrl} download={fileName || true}>
+            <a href={fileUrl} download={fileName || true} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4" />
             </a>
           </Button>
