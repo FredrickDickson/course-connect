@@ -158,8 +158,8 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
                 </p>
-                <h1 className="text-4xl lg:text-5xl font-bold text-[#2c2015] leading-tight font-display">
-                  Master dispute resolution.
+                <h1 className="text-4xl lg:text-5xl font-bold leading-tight font-display">
+                  <span className="text-[#8b0000]">Master dispute resolution.</span>
                   <br />
                   <span className="text-[#610000]">Anywhere, anytime.</span>
                 </h1>
