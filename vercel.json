@@ -30,6 +30,18 @@
       "destination": "/api/enrollments/check-eligibility.ts"
     },
     {
+      "source": "/api/admin/access-tokens",
+      "destination": "/api/admin/access-tokens.ts"
+    },
+    {
+      "source": "/api/admin/access-tokens/:id/disable",
+      "destination": "/api/admin/access-tokens/[id]/disable.ts"
+    },
+    {
+      "source": "/api/admin/access-tokens/:id",
+      "destination": "/api/admin/access-tokens/[id].ts"
+    },
+    {
       "source": "/:path((?!api).*)",
       "destination": "/index.html"
     }
