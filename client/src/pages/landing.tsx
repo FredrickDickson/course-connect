@@ -7,6 +7,7 @@ import cimaLogo from "/images/logo.jpeg";
 import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 export default function Landing() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -89,6 +90,7 @@ export default function Landing() {
 
             {/* CTA Buttons - Far Right */}
             <div className="flex items-center gap-3 flex-shrink-0 pr-2">
+              <PwaInstallButton className="hidden md:inline-flex" />
               <Link href="/login" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">
                 Login
               </Link>

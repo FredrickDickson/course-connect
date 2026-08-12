@@ -1,0 +1,20 @@
+{
+  "name": "CIMA Learn",
+  "short_name": "CIMA Learn",
+  "description": "Professional ADR education and learning platform for mediation, arbitration, and dispute resolution training.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f1f0",
+  "theme_color": "#610000",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/images/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

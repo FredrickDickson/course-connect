@@ -18,6 +18,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import SearchModal from "@/components/search-modal";
 import ExploreDropdown from "@/components/explore-dropdown";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -162,7 +163,11 @@ export default function Header() {
           </nav>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <PwaInstallButton className="hidden sm:inline-flex" />
+            </div>
+
             {/* Search Button */}
             <Button
               variant="ghost"
@@ -201,6 +206,10 @@ export default function Header() {
                   </Link>
                 </div>
               )}
+            </div>
+
+            <div className="md:hidden flex items-center gap-2">
+              <PwaInstallButton className="inline-flex" />
             </div>
 
             {/* Mobile Menu */}
