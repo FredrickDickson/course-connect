@@ -350,6 +350,15 @@ export default function CreateCourse() {
       // React Query's 5-minute staleTime expired.
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["courses_filtered"] });
+      // These drive the admin course table, instructor dashboard list, and
+      // the instructor-photo fields on this same form — without them a
+      // fresh thumbnail/instructor-photo upload looks like it "didn't stick"
+      // because those views keep serving their pre-save cached data.
+      queryClient.invalidateQueries({ queryKey: ["admin-courses-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["instructor_courses"] });
+      queryClient.invalidateQueries({ queryKey: ["course-instructors", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["instructor-profiles-for-course", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["legacy-course-instructor", courseData?.instructor_id] });
       toast({
         title: "Success",
         description: isEditMode ? "Course updated successfully!" : "Course created successfully. Now add your curriculum!",

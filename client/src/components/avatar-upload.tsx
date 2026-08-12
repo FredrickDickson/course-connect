@@ -71,14 +71,17 @@ export default function AvatarUpload({ currentAvatarUrl, userId, userName, onAva
       setPreviewUrl(publicUrl);
       onAvatarChange(publicUrl);
 
-      // Update profiles table
+      // Upsert profiles table — a plain .update() silently no-ops when the
+      // user has no profiles row yet (e.g. admin-created instructors who
+      // never went through onboarding), so the upload looks successful but
+      // never persists.
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: userId,
           avatar_url: publicUrl,
           avatar_updated_at: new Date().toISOString()
-        })
-        .eq('user_id' as any, userId);
+        } as any, { onConflict: 'user_id' });
 
       if (updateError) {
         console.error('Profile update error:', updateError);
