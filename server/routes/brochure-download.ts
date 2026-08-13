@@ -30,22 +30,16 @@ router.post('/api/brochure-download', async (req, res) => {
       // Continue even if database save fails
     }
 
-    // Read the PDF file
-    const pdfPath = path.join(process.cwd(), 'public', 'brochures', 'cima-learn-brochure.pdf');
-    
-    if (!fs.existsSync(pdfPath)) {
-      console.error('PDF file not found at:', pdfPath);
-      return res.status(500).json({ error: 'Brochure file not found' });
-    }
+    // Build direct download link to the uploaded PDF (served from /uploads)
+    const brochureFilename = "2026 CIMA Summer School-compressed.pdf";
+    const encoded = encodeURIComponent(brochureFilename);
+    const downloadUrl = `${process.env.FRONTEND_URL || "https://cimalearn.thecima.org"}/uploads/${encoded}`;
 
-    const pdfBuffer = fs.readFileSync(pdfPath);
-    const pdfBase64 = pdfBuffer.toString('base64');
-
-    // Send email with PDF attachment using Brevo format
+    // Send email with a download link
     const emailResult = await sendRawEmail({
       to: [email],
       subject: 'Your CIMA Learn Summer School 2026 Brochure',
-      htmlContent: `
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -90,11 +84,8 @@ router.post('/api/brochure-download', async (req, res) => {
           </div>
         </body>
         </html>
-      `,
-      attachment: [{
-        content: pdfBase64,
-        name: 'CIMA-Learn-Summer-School-2026.pdf'
-      }]
+        <p><a href="${downloadUrl}" class="button" style="color: white;">Download Brochure (PDF)</a></p>
+      `
     });
 
     if (!emailResult.success) {

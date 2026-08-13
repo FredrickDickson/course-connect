@@ -539,10 +539,20 @@ function BrochureDownloadSection() {
           organization: organization.trim() || null,
         }),
       });
-
-      const data = await response.json();
+      // Be defensive: the server may return HTML error pages (404/500) —
+      // avoid trying to parse non-JSON as JSON which throws and breaks UX.
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Fallback: read as text so we can show a sensible error message
+        const txt = await response.text();
+        data = { error: txt };
+      }
 
       if (!response.ok) {
+        console.error('Brochure API non-ok response:', response.status, data);
         throw new Error(data.error || 'Failed to send brochure');
       }
 
