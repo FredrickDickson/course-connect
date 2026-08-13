@@ -94,6 +94,32 @@ Deno.serve(async (req: Request) => {
       if (metadata && metadata.type === "renewal" && metadata.member_id) {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+        // If Paystack included authorization details (card token), persist
+        // them to the associated user so auto-renew can charge later.
+        try {
+          const authorization = event.data.authorization;
+          if (authorization && authorization.authorization_code && metadata.member_id) {
+            // Find the member row to get the user_id
+            const { data: memberRow } = await supabase
+              .from("members")
+              .select("user_id")
+              .eq("member_id", metadata.member_id)
+              .single();
+
+            if (memberRow?.user_id) {
+              await supabase.from("users").update({
+                paystack_authorization_code: authorization.authorization_code,
+                paystack_authorization_reusable: !!authorization.reusable,
+                updated_at: new Date().toISOString(),
+              }).eq("id", memberRow.user_id);
+
+              console.log(`Stored Paystack authorization for user ${memberRow.user_id}`);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to persist Paystack authorization:", err);
+        }
+
         const result = await applyMembershipRenewal(supabase, {
           memberId: metadata.member_id,
           paymentMethod: "paystack",

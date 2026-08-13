@@ -89,6 +89,7 @@ export default function RenewMembership() {
   const [isPolling, setIsPolling] = useState(false);
   const paystackLoaded = useRef(false);
   const paymentStartedAtRef = useRef(0);
+  const autostartTriggered = useRef(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -107,6 +108,10 @@ export default function RenewMembership() {
     }
   }, []);
 
+  // Auto-start payment if the email CTA included the autostart query param.
+  // NOTE: auto-start depends on `membership` so this effect is declared
+  // after `membership` is defined (see below where the query runs).
+
   const { data: membership, isLoading } = useQuery({
     queryKey: ["membership", user?.id],
     queryFn: async () => {
@@ -120,6 +125,27 @@ export default function RenewMembership() {
     },
     enabled: !!user,
   });
+
+  // Auto-start payment if the email CTA included the autostart query param.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const auto = params.get("autostart");
+      const targetMember = params.get("member_id");
+      if (auto && !autostartTriggered.current && membership && membership.member_id) {
+        // Only auto-trigger for the intended member
+        if (!targetMember || targetMember === membership.member_id) {
+          autostartTriggered.current = true;
+          // small timeout to let the UI render and Paystack script initialise
+          setTimeout(() => {
+            if (!isProcessing) handlePayment();
+          }, 800);
+        }
+      }
+    } catch (err) {
+      // ignore parse errors
+    }
+  }, [membership]);
 
   const { data: renewalHistory = [] } = useQuery({
     queryKey: ["renewal-history", membership?.id],

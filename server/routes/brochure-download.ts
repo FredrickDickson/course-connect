@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { sendEmail } from '../services/email';
-import { supabase } from '../db';
+import { sendRawEmail } from '../utils/email';
+import { supabaseAdmin } from '../storage';
 import path from 'path';
 import fs from 'fs';
 
@@ -16,7 +16,7 @@ router.post('/api/brochure-download', async (req, res) => {
     }
 
     // Save to database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseAdmin
       .from('brochure_downloads')
       .insert([{
         email: email.trim(),
@@ -41,8 +41,9 @@ router.post('/api/brochure-download', async (req, res) => {
     const pdfBuffer = fs.readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    // Send email with PDF attachment
-    await sendEmail({
+    // Send email with a download link to the PDF
+    const downloadUrl = `${process.env.FRONTEND_URL || "https://your-app.example"}/brochures/cima-learn-brochure.pdf`;
+    await sendRawEmail({
       to: email,
       subject: 'Your CIMA Learn Summer School 2026 Brochure',
       html: `
@@ -68,19 +69,11 @@ router.post('/api/brochure-download', async (req, res) => {
               
               <p>Thank you for your interest in CIMA Learn's Summer School 2026 programme!</p>
               
-              <p>We're delighted to send you our comprehensive brochure, which includes:</p>
-              <ul>
-                <li>Complete course catalog & learning pathways</li>
-                <li>Accreditation details & certification information</li>
-                <li>International faculty profiles & testimonials</li>
-                <li>Career advancement statistics & success stories</li>
-              </ul>
+              <p>We're delighted to share our comprehensive brochure, which includes course catalog, accreditation details, faculty profiles, and more.</p>
               
-              <p><strong>The brochure is attached to this email as a PDF file.</strong></p>
+              <p><a href="${downloadUrl}" class="button" style="color: white;">Download Brochure (PDF)</a></p>
               
               <p>If you have any questions or would like to speak with our admissions team, please don't hesitate to reach out.</p>
-              
-              <a href="https://thecima.org" class="button" style="color: white;">Visit Our Website</a>
               
               <p>Best regards,<br>
               <strong>The CIMA Learn Team</strong></p>
@@ -93,12 +86,6 @@ router.post('/api/brochure-download', async (req, res) => {
         </body>
         </html>
       `,
-      attachments: [{
-        filename: 'CIMA-Learn-Summer-School-2026.pdf',
-        content: pdfBase64,
-        encoding: 'base64',
-        contentType: 'application/pdf'
-      }]
     });
 
     res.json({ 

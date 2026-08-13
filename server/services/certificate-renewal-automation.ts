@@ -496,11 +496,15 @@ export async function processRenewalReminders(
 
       // Generate email content
       const stage = Object.values(RENEWAL_STAGES).find((s) => s.key === stageKey)!;
+      // Build a member-specific autostart link so the email CTA can jump
+      // the user straight into the renewal flow and pre-trigger payment.
+      const memberRenewalUrl = `${renewalUrl}?autostart=1&member_id=${encodeURIComponent(member.member_id)}`;
+
       const emailContent = generateRenewalEmailContent(
         member,
         stage,
         pricingOptions,
-        renewalUrl
+        memberRenewalUrl
       );
 
       const emailResult = await sendRenewalEmail({

@@ -204,12 +204,16 @@ Deno.serve(async (_req: Request) => {
       const renewalUrl = `${appUrl}/renew-membership`;
       const subject = REMINDER_TEMPLATES[daysUntilExpiry]?.subject ||
         "CIMA Membership Renewal Reminder";
+      // Provide member-specific autostart link so the CTA can begin payment
+      // immediately when the recipient clicks the button.
+      const memberRenewalUrl = `${renewalUrl}?autostart=1&member_id=${encodeURIComponent(member.member_id)}`;
+
       const html = buildEmailHtml(
         member.full_name,
         member.member_id,
         daysUntilExpiry,
         expiryDateFormatted,
-        renewalUrl,
+        memberRenewalUrl,
       );
 
       const result = await sendViaSharedEmailFunction(member.email, subject, html);

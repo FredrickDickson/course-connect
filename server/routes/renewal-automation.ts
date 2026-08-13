@@ -15,6 +15,7 @@ import {
   getMembersDueForRenewal,
   getUpcomingRenewals,
 } from "../services/certificate-renewal-automation";
+import { processAutoRenewals } from "../services/auto-renewal";
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -109,6 +110,24 @@ router.post(
         error: "Failed to process reminders",
         message: error instanceof Error ? error.message : "Unknown error",
       });
+    }
+  }
+);
+
+/**
+ * POST /api/renewal-automation/process-auto-renewals
+ * Trigger the server-side auto-renew processor (charges saved authorizations)
+ */
+router.post(
+  "/process-auto-renewals",
+  authenticateRenewalAccess,
+  async (req: Request, res: Response) => {
+    try {
+      const stats = await processAutoRenewals();
+      res.json({ success: true, stats, timestamp: new Date().toISOString() });
+    } catch (err) {
+      console.error("Error processing auto-renewals:", err);
+      res.status(500).json({ success: false, error: "Failed to process auto-renewals" });
     }
   }
 );
