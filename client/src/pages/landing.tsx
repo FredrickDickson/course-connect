@@ -527,28 +527,22 @@ function BrochureDownloadSection() {
     setIsSubmitting(true);
 
     try {
-      // Save download data to Supabase
-      const { error } = await supabase
-        .from('brochure_downloads')
-        .insert([{
+      // Save download data and send email via API
+      const response = await fetch('/api/brochure-download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: email.trim(),
           full_name: fullName.trim(),
           organization: organization.trim() || null,
-          user_agent: navigator.userAgent
-        }]);
+        }),
+      });
 
-      if (error) {
-        console.error('Error saving download:', error);
-        // Continue with download even if saving fails
+      if (!response.ok) {
+        throw new Error('Failed to send brochure');
       }
-
-      // Trigger PDF download
-      const link = document.createElement('a');
-      link.href = '/brochures/cima-learn-brochure.pdf';
-      link.download = 'CIMA-Learn-Summer-School-2026.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
 
       setIsSuccess(true);
 
@@ -561,7 +555,7 @@ function BrochureDownloadSection() {
       }, 3000);
 
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Error:', error);
       alert('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -751,8 +745,8 @@ function BrochureDownloadSection() {
                       <CheckCircle className="w-10 h-10 text-green-600" />
                     </div>
                     <h3 className="text-3xl font-semibold text-gray-900 mb-3 font-display">Success!</h3>
-                    <p className="text-lg text-gray-700 mb-2 font-body">Your download is starting...</p>
-                    <p className="text-base text-gray-600 font-body">Check your email for additional resources</p>
+                    <p className="text-lg text-gray-700 mb-2 font-body">Brochure sent to your email!</p>
+                    <p className="text-base text-gray-600 font-body">Check your inbox for the PDF download link</p>
                   </div>
                 )}
               </div>

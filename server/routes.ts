@@ -81,8 +81,10 @@ import qualificationRouter from "./routes/qualification";
 import renewalRouter from "./routes/renewal";
 import certificatesRouter from "./routes/certificates";
 import renewalAutomationRouter from "./routes/renewal-automation";
+import brochureDownloadRouter from "./routes/brochure-download";
 import adminInstructorsRouter from "./routes/admin/instructors";
 import adminAccessTokensRouter from "./routes/admin/access-tokens";
+import adminMembersRouter from "./routes/admin/members";
 import {
   insertCourseSchema,
 
@@ -346,12 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
   app.use("/api/renewal-automation", renewalAutomationRouter);
+  
+  // Mount brochure download route (public - no auth required)
+  app.use(brochureDownloadRouter);
 
   // Mount admin instructor management routes
   app.use("/api/admin/instructors", adminInstructorsRouter);
 
   // Mount admin course access token management routes
   app.use("/api/admin/access-tokens", adminAccessTokensRouter);
+  app.use("/api/admin/members", adminMembersRouter);
 
 
 
