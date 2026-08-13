@@ -119,11 +119,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify(emailPayload)
     });
 
+    const emailResponseData = await emailResponse.json();
+
     if (!emailResponse.ok) {
-      const errorData = await emailResponse.json();
-      console.error('Brevo API error:', errorData);
-      return res.status(500).json({ error: 'Failed to send email' });
+      console.error('Brevo API error:', emailResponseData);
+      console.error('Response status:', emailResponse.status);
+      console.error('API Key present:', !!BREVO_API_KEY);
+      return res.status(500).json({ 
+        error: 'Failed to send email',
+        details: emailResponseData 
+      });
     }
+
+    console.log('Email sent successfully:', emailResponseData);
 
     return res.status(200).json({ 
       success: true, 
