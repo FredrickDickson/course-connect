@@ -6,7 +6,7 @@ import fs from 'fs';
 
 const router = Router();
 
-router.post('/brochure-download', async (req, res) => {
+router.post('/api/brochure-download', async (req, res) => {
   try {
     const { email, full_name, organization } = req.body;
 
@@ -41,14 +41,11 @@ router.post('/brochure-download', async (req, res) => {
     const pdfBuffer = fs.readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    // Send email with a direct link to the uploaded PDF (hardcoded filename)
-    const brochureFilename = "2026 CIMA Summer School-compressed.pdf";
-    const encoded = encodeURIComponent(brochureFilename);
-    const downloadUrl = `${process.env.FRONTEND_URL || "https://your-app.example"}/uploads/${encoded}`;
-    await sendRawEmail({
-      to: email,
+    // Send email with PDF attachment using Brevo format
+    const emailResult = await sendRawEmail({
+      to: [email],
       subject: 'Your CIMA Learn Summer School 2026 Brochure',
-      html: `
+      htmlContent: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -71,9 +68,15 @@ router.post('/brochure-download', async (req, res) => {
               
               <p>Thank you for your interest in CIMA Learn's Summer School 2026 programme!</p>
               
-              <p>We're delighted to share our comprehensive brochure, which includes course catalog, accreditation details, faculty profiles, and more.</p>
+              <p>We're delighted to send you our comprehensive brochure, which includes:</p>
+              <ul>
+                <li>Complete course catalog & learning pathways</li>
+                <li>Accreditation details & certification information</li>
+                <li>International faculty profiles & testimonials</li>
+                <li>Career advancement statistics & success stories</li>
+              </ul>
               
-              <p><a href="${downloadUrl}" class="button" style="color: white;">Download Brochure (PDF)</a></p>
+              <p><strong>The brochure is attached to this email as a PDF file.</strong></p>
               
               <p>If you have any questions or would like to speak with our admissions team, please don't hesitate to reach out.</p>
               
@@ -82,13 +85,22 @@ router.post('/brochure-download', async (req, res) => {
             </div>
             <div class="footer">
               <p>CIMA Learn - Professional ADR Education<br>
-              This email was sent because you requested our brochure at thecima.org</p>
+              This email was sent because you requested our brochure</p>
             </div>
           </div>
         </body>
         </html>
       `,
+      attachment: [{
+        content: pdfBase64,
+        name: 'CIMA-Learn-Summer-School-2026.pdf'
+      }]
     });
+
+    if (!emailResult.success) {
+      console.error('Email send error:', emailResult.error);
+      return res.status(500).json({ error: 'Failed to send email' });
+    }
 
     res.json({ 
       success: true, 

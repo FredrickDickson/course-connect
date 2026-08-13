@@ -540,8 +540,10 @@ function BrochureDownloadSection() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to send brochure');
+        throw new Error(data.error || 'Failed to send brochure');
       }
 
       setIsSuccess(true);
@@ -556,7 +558,8 @@ function BrochureDownloadSection() {
 
     } catch (error) {
       console.error('Error:', error);
-      alert('Something went wrong. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
