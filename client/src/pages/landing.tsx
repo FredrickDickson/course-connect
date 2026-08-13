@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles, Download, FileText, Mail, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { PwaInstallButton } from "@/components/pwa-install-button";
@@ -108,6 +108,7 @@ export default function Landing() {
         <FeaturedCoursesSection />
         <LearningPathwaysSection />
         <WhyLearnWithCIMASection />
+        <BrochureDownloadSection />
         <TestimonialsSection />
         <UpcomingLiveProgramsSection />
         <FinalCTASection />
@@ -506,6 +507,262 @@ function WhyLearnWithCIMASection() {
               </div>
             );
           })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Brochure Download Section - Enterprise-grade design inspired by Meta, Microsoft, Salesforce
+function BrochureDownloadSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleDownload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Save download data to Supabase
+      const { error } = await supabase
+        .from('brochure_downloads')
+        .insert([{
+          email: email.trim(),
+          full_name: fullName.trim(),
+          organization: organization.trim() || null,
+          user_agent: navigator.userAgent
+        }]);
+
+      if (error) {
+        console.error('Error saving download:', error);
+        // Continue with download even if saving fails
+      }
+
+      // Trigger PDF download
+      const link = document.createElement('a');
+      link.href = '/brochures/cima-learn-brochure.pdf';
+      link.download = 'CIMA-Learn-Summer-School-2026.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setIsSuccess(true);
+
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setIsSuccess(false);
+        setEmail("");
+        setFullName("");
+        setOrganization("");
+      }, 3000);
+
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      {/* Premium Background with Gradient Overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=2880&h=1000&auto=format&fit=crop&q=100"
+          alt="Professional office workspace"
+          className="w-full h-full object-cover opacity-15"
+          loading="lazy"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-50" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Left Column - Content */}
+          <div className="space-y-8">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-[#610000]/10 text-[#610000] px-4 py-2 rounded-full text-sm font-semibold font-body">
+              <FileText className="w-4 h-4" />
+              Professional Resources
+            </div>
+
+            {/* Headline - Microsoft Fluent Style */}
+            <div>
+              <h2 className="text-5xl lg:text-6xl font-light text-gray-900 mb-6 font-display leading-tight">
+                Get our complete
+                <br />
+                <span className="text-[#610000] font-semibold">programme brochure</span>
+              </h2>
+              <p className="text-xl text-gray-700 leading-relaxed font-body">
+                Discover comprehensive details about our certification pathways, course offerings, faculty expertise, and career outcomes in a beautifully designed PDF guide.
+              </p>
+            </div>
+
+            {/* Feature List - Minimal Icons */}
+            <div className="space-y-4">
+              {[
+                { icon: CheckCircle, text: "Complete course catalog & learning pathways" },
+                { icon: Award, text: "Accreditation details & certification information" },
+                { icon: Users, text: "International faculty profiles & testimonials" },
+                { icon: TrendingUp, text: "Career advancement statistics & success stories" }
+              ].map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={index} className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#610000]/10 flex items-center justify-center mt-1">
+                      <Icon className="w-4 h-4 text-[#610000]" />
+                    </div>
+                    <p className="text-lg text-gray-800 font-body font-medium">{feature.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Trust Signals - Meta Style */}
+            <div className="flex flex-wrap items-center gap-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg">
+                  <Download className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold text-gray-900 font-display">2,400+</p>
+                  <p className="text-sm text-gray-600 font-body">Downloads</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
+                  <Star className="w-6 h-6 text-white fill-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold text-gray-900 font-display">4.9/5</p>
+                  <p className="text-sm text-gray-600 font-body">Rated by learners</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Form Card - Salesforce/HubSpot Inspired */}
+          <div className="lg:pl-8">
+            <div className="bg-white rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.08)] border border-gray-100 p-8 lg:p-10 relative overflow-hidden">
+              {/* Decorative Element */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#610000]/5 to-transparent rounded-full blur-3xl" />
+              
+              <div className="relative">
+                {!isSuccess ? (
+                  <>
+                    <div className="text-center mb-8">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <Download className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-semibold text-gray-900 mb-2 font-display">Download Your Copy</h3>
+                      <p className="text-base text-gray-600 font-body">Fill in your details to receive instant access</p>
+                    </div>
+
+                    <form onSubmit={handleDownload} className="space-y-5">
+                      {/* Full Name Input */}
+                      <div>
+                        <label htmlFor="fullName" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="fullName"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required
+                          className="w-full px-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
+                          placeholder="John Doe"
+                        />
+                      </div>
+
+                      {/* Email Input */}
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
+                          Work Email *
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="w-full pl-12 pr-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
+                            placeholder="john@company.com"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Organization Input */}
+                      <div>
+                        <label htmlFor="organization" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
+                          Organization (Optional)
+                        </label>
+                        <div className="relative">
+                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            id="organization"
+                            value={organization}
+                            onChange={(e) => setOrganization(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
+                            placeholder="Your Law Firm or Company"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Submit Button - Premium Design */}
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="group w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-[0_10px_40px_rgba(97,0,0,0.3)] transition-all duration-300 flex items-center justify-center gap-3 font-body disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                            <span>Download Brochure</span>
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </button>
+
+                      {/* Privacy Notice */}
+                      <p className="text-xs text-gray-500 text-center leading-relaxed font-body">
+                        By downloading, you agree to our <Link href="/privacy-policy" className="text-[#610000] hover:underline font-medium">Privacy Policy</Link>. We respect your privacy and will never share your information.
+                      </p>
+                    </form>
+                  </>
+                ) : (
+                  // Success State - Apple Style
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle className="w-10 h-10 text-green-600" />
+                    </div>
+                    <h3 className="text-3xl font-semibold text-gray-900 mb-3 font-display">Success!</h3>
+                    <p className="text-lg text-gray-700 mb-2 font-body">Your download is starting...</p>
+                    <p className="text-base text-gray-600 font-body">Check your email for additional resources</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Below Form CTA */}
+            <p className="text-center text-base text-gray-600 mt-6 font-body">
+              Questions? <Link href="/contact" className="text-[#610000] hover:underline font-semibold">Contact our team</Link>
+            </p>
+          </div>
         </div>
       </div>
     </section>
