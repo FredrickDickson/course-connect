@@ -6,7 +6,7 @@ import fs from 'fs';
 
 const router = Router();
 
-router.post('/api/brochure-download', async (req, res) => {
+router.post('/brochure-download', async (req, res) => {
   try {
     const { email, full_name, organization } = req.body;
 
@@ -41,8 +41,10 @@ router.post('/api/brochure-download', async (req, res) => {
     const pdfBuffer = fs.readFileSync(pdfPath);
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    // Send email with a download link to the PDF
-    const downloadUrl = `${process.env.FRONTEND_URL || "https://your-app.example"}/brochures/cima-learn-brochure.pdf`;
+    // Send email with a direct link to the uploaded PDF (hardcoded filename)
+    const brochureFilename = "2026 CIMA Summer School-compressed.pdf";
+    const encoded = encodeURIComponent(brochureFilename);
+    const downloadUrl = `${process.env.FRONTEND_URL || "https://your-app.example"}/uploads/${encoded}`;
     await sendRawEmail({
       to: email,
       subject: 'Your CIMA Learn Summer School 2026 Brochure',
