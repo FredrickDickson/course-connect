@@ -350,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/renewal-automation", renewalAutomationRouter);
   
   // Mount brochure download route (public - no auth required)
-  app.use('/api', brochureDownloadRouter);
+  app.use(brochureDownloadRouter);
 
   // Mount admin instructor management routes
   app.use("/api/admin/instructors", adminInstructorsRouter);
