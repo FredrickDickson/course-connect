@@ -11,6 +11,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Check if BREVO_API_KEY exists
+  if (!BREVO_API_KEY) {
+    console.error('BREVO_API_KEY is not set in environment variables');
+    return res.status(500).json({ 
+      error: 'Email service not configured',
+      details: 'Missing BREVO_API_KEY environment variable'
+    });
+  }
+
   try {
     const { email, full_name, organization } = req.body;
 
