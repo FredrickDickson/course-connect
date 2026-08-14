@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles, Download, FileText, Mail, Building2 } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles, Download, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { PwaInstallButton } from "@/components/pwa-install-button";
@@ -514,65 +514,18 @@ function WhyLearnWithCIMASection() {
 }
 
 // Brochure Download Section - Enterprise-grade design inspired by Meta, Microsoft, Salesforce
+// Brochure Download Section - Simple direct download
 function BrochureDownloadSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleDownload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Save download data and send email via API
-      const response = await fetch('/api/brochure-download', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          full_name: fullName.trim(),
-          organization: organization.trim() || null,
-        }),
-      });
-      // Be defensive: the server may return HTML error pages (404/500) —
-      // avoid trying to parse non-JSON as JSON which throws and breaks UX.
-      const contentType = response.headers.get('content-type') || '';
-      let data: any = null;
-      if (contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        // Fallback: read as text so we can show a sensible error message
-        const txt = await response.text();
-        data = { error: txt };
-      }
-
-      if (!response.ok) {
-        console.error('Brochure API non-ok response:', response.status, data);
-        throw new Error(data.error || 'Failed to send brochure');
-      }
-
-      setIsSuccess(true);
-
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setIsSuccess(false);
-        setEmail("");
-        setFullName("");
-        setOrganization("");
-      }, 3000);
-
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-      alert(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleDownload = () => {
+    // Direct download of the PDF
+    const link = document.createElement('a');
+    link.href = '/uploads/2026 CIMA Summer School-compressed.pdf';
+    link.download = 'CIMA-Learn-Summer-School-2026.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -654,118 +607,37 @@ function BrochureDownloadSection() {
             </div>
           </div>
 
-          {/* Right Column - Form Card - Salesforce/HubSpot Inspired */}
+          {/* Right Column - Simple Download Button */}
           <div className="lg:pl-8">
-            <div className="bg-white rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.08)] border border-gray-100 p-8 lg:p-10 relative overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.08)] border border-gray-100 p-8 lg:p-12 relative overflow-hidden">
               {/* Decorative Element */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#610000]/5 to-transparent rounded-full blur-3xl" />
               
-              <div className="relative">
-                {!isSuccess ? (
-                  <>
-                    <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <Download className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-semibold text-gray-900 mb-2 font-display">Download Your Copy</h3>
-                      <p className="text-base text-gray-600 font-body">Fill in your details to receive instant access</p>
-                    </div>
+              <div className="relative text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Download className="w-10 h-10 text-white" />
+                </div>
+                
+                <h3 className="text-3xl font-semibold text-gray-900 mb-3 font-display">Download Your Copy</h3>
+                <p className="text-lg text-gray-600 mb-8 font-body">Get instant access to our comprehensive brochure</p>
 
-                    <form onSubmit={handleDownload} className="space-y-5">
-                      {/* Full Name Input */}
-                      <div>
-                        <label htmlFor="fullName" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          id="fullName"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          required
-                          className="w-full px-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
-                          placeholder="John Doe"
-                        />
-                      </div>
+                {/* Download Button - Premium Design */}
+                <button
+                  onClick={handleDownload}
+                  className="group w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white px-8 py-5 rounded-xl text-xl font-semibold hover:shadow-[0_10px_40px_rgba(97,0,0,0.3)] transition-all duration-300 flex items-center justify-center gap-3 font-body"
+                >
+                  <Download className="w-6 h-6 group-hover:translate-y-0.5 transition-transform" />
+                  <span>Download Brochure (PDF)</span>
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </button>
 
-                      {/* Email Input */}
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
-                          Work Email *
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="w-full pl-12 pr-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
-                            placeholder="john@company.com"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Organization Input */}
-                      <div>
-                        <label htmlFor="organization" className="block text-sm font-semibold text-gray-900 mb-2 font-body">
-                          Organization (Optional)
-                        </label>
-                        <div className="relative">
-                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="text"
-                            id="organization"
-                            value={organization}
-                            onChange={(e) => setOrganization(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3.5 text-base text-gray-900 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-transparent focus:bg-white transition-all font-body placeholder:text-gray-400"
-                            placeholder="Your Law Firm or Company"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Submit Button - Premium Design */}
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="group w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-[0_10px_40px_rgba(97,0,0,0.3)] transition-all duration-300 flex items-center justify-center gap-3 font-body disabled:opacity-70 disabled:cursor-not-allowed relative overflow-hidden"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Processing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-                            <span>Download Brochure</span>
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                          </>
-                        )}
-                      </button>
-
-                      {/* Privacy Notice */}
-                      <p className="text-xs text-gray-500 text-center leading-relaxed font-body">
-                        By downloading, you agree to our <Link href="/privacy-policy" className="text-[#610000] hover:underline font-medium">Privacy Policy</Link>. We respect your privacy and will never share your information.
-                      </p>
-                    </form>
-                  </>
-                ) : (
-                  // Success State - Apple Style
-                  <div className="text-center py-12">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <CheckCircle className="w-10 h-10 text-green-600" />
-                    </div>
-                    <h3 className="text-3xl font-semibold text-gray-900 mb-3 font-display">Success!</h3>
-                    <p className="text-lg text-gray-700 mb-2 font-body">Brochure sent to your email!</p>
-                    <p className="text-base text-gray-600 font-body">Check your inbox for the PDF download link</p>
-                  </div>
-                )}
+                <p className="text-sm text-gray-500 mt-6 font-body">
+                  9.66 MB • 2026 Summer School Programme
+                </p>
               </div>
             </div>
 
-            {/* Below Form CTA */}
+            {/* Below Card CTA */}
             <p className="text-center text-base text-gray-600 mt-6 font-body">
               Questions? <Link href="/contact" className="text-[#610000] hover:underline font-semibold">Contact our team</Link>
             </p>
