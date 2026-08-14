@@ -518,14 +518,26 @@ function WhyLearnWithCIMASection() {
 function BrochureDownloadSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
 
-  const handleDownload = () => {
-    // Direct download of the PDF
-    const link = document.createElement('a');
-    link.href = '/uploads/2026 CIMA Summer School-compressed.pdf';
-    link.download = 'CIMA-Learn-Summer-School-2026.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    try {
+      // Fetch the PDF as a blob to ensure proper download
+      const response = await fetch('/uploads/2026 CIMA Summer School-compressed.pdf');
+      if (!response.ok) throw new Error('Failed to fetch PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'CIMA-Learn-Summer-School-2026.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback to direct link
+      window.open('/uploads/2026 CIMA Summer School-compressed.pdf', '_blank');
+    }
   };
 
   return (
