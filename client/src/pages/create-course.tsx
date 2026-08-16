@@ -870,6 +870,7 @@ export default function CreateCourse() {
                           <FormControl>
                             <div className="space-y-4">
                               <ImageUploader
+                                bucket="course-thumbnails"
                                 currentImageUrl={field.value}
                                 onUploadComplete={(url) => field.onChange(url)}
                                 onUploadingChange={handleUploadingChange}
