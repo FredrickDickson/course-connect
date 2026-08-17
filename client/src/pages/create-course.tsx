@@ -395,6 +395,17 @@ export default function CreateCourse() {
       });
       return;
     }
+    
+    // Debug logging to verify thumbnail URL is present
+    console.log("📸 Form submission data:", {
+      thumbnailUrl: data.thumbnailUrl,
+      instructors: instructors.map(i => ({ name: i.name, profileImageUrl: i.profileImageUrl }))
+    });
+    
+    if (!data.thumbnailUrl) {
+      console.warn("⚠️ WARNING: No thumbnail URL in form data!");
+    }
+    
     saveCourse.mutate(data);
   };
 
