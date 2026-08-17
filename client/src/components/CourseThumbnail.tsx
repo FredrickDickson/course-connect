@@ -9,10 +9,9 @@ interface CourseThumbnailProps {
   testId?: string;
 }
 
-// Renders the full, uncropped course thumbnail (object-contain) on top of a
-// blurred, zoomed copy of the same image filling the box behind it — avoids
-// both cropping the source image and showing flat letterbox bars when the
-// image's aspect ratio doesn't match the card.
+// Renders course thumbnails that fill the entire card area using object-cover.
+// The image will be cropped to fit the aspect ratio of the card, ensuring no
+// blank spaces appear regardless of the original image dimensions.
 export function CourseThumbnail({ src, alt, className, imgClassName, fallbackSrc, testId }: CourseThumbnailProps) {
   const url = src || fallbackSrc;
 
@@ -21,15 +20,14 @@ export function CourseThumbnail({ src, alt, className, imgClassName, fallbackSrc
   }
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      <img
-        src={url}
-        alt=""
-        aria-hidden="true"
-        className={cn("absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 saturate-150", imgClassName)}
+    <div className={cn("relative overflow-hidden bg-muted", className)}>
+      <img 
+        src={url} 
+        alt={alt} 
+        loading="lazy" 
+        data-testid={testId} 
+        className={cn("w-full h-full object-cover", imgClassName)} 
       />
-      <div className="absolute inset-0 bg-black/10" />
-      <img src={url} alt={alt} loading="lazy" data-testid={testId} className="relative w-full h-full object-contain" />
     </div>
   );
 }

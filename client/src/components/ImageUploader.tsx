@@ -15,11 +15,6 @@ interface ImageUploaderProps {
   // submitting the form between "file selected" and "upload finished",
   // silently saving a blank URL.
   onUploadingChange?: (uploading: boolean) => void;
-  // 'photo' (default) crops the preview to fill the box, right for an avatar
-  // that will ultimately display as a circular photo. 'thumbnail' shows the
-  // full image uncropped with a blurred backdrop fill, matching how course
-  // thumbnails render everywhere else in the app.
-  variant?: 'photo' | 'thumbnail';
 }
 
 export function ImageUploader({
@@ -29,7 +24,6 @@ export function ImageUploader({
   maxSize = 5 * 1024 * 1024, // 5MB default
   bucket = 'course-thumbnails',
   onUploadingChange,
-  variant = 'photo',
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -229,25 +223,12 @@ export function ImageUploader({
       {previewUrl && (
         <div className="space-y-3">
           <div className="relative aspect-video w-full rounded-lg overflow-hidden border-2 border-gray-200 bg-muted">
-            {variant === 'thumbnail' ? (
-              <>
-                <img src={previewUrl} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60 saturate-150" />
-                <div className="absolute inset-0 bg-black/10" />
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="relative w-full h-full object-contain"
-                  data-testid="image-preview"
-                />
-              </>
-            ) : (
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-full object-cover"
-                data-testid="image-preview"
-              />
-            )}
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full h-full object-cover"
+              data-testid="image-preview"
+            />
           </div>
 
           {uploading && (
