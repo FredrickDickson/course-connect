@@ -9,13 +9,13 @@ export default function Footer() {
           <div className="space-y-4" data-testid="footer-company">
             <div className="flex items-center space-x-3">
               <img 
-                src="/images/b and w.png" 
+                src="/images/logo.jpeg" 
                 alt="CIMA Logo" 
                 className="h-12 w-auto"
               />
               <div>
-                <h3 className="text-lg font-bold text-black">CIMA Learn</h3>
-                <p className="text-xs text-gray-700 -mt-1">Professional ADR Education</p>
+                <h3 className="text-lg font-bold text-[#610000]">CIMA Learn</h3>
+                <p className="text-xs text-[#610000] -mt-1">Professional ADR Education</p>
               </div>
             </div>
             <p className="text-sm text-black">

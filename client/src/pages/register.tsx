@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import cimaLogo from "/images/b and w.png";
+import cimaLogo from "/images/logo.jpeg";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -206,10 +206,10 @@ export default function Register() {
                     className="h-12 w-12 sm:h-16 sm:w-16 object-contain rounded-lg"
                   />
                   <div className="text-left">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#610000] tracking-tight">
                       CIMA Learn
                     </h1>
-                    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-medium">
+                    <p className="text-[10px] sm:text-xs text-[#610000]/90 uppercase tracking-wider font-medium">
                       Professional ADR Education
                     </p>
                   </div>

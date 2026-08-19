@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import cimaLogo from "/images/b and w.png";
+import cimaLogo from "/images/logo.jpeg";
 
 export default function Login() {
   const { t, isRTL } = useLanguage();
@@ -190,10 +190,10 @@ export default function Login() {
                     className="h-16 w-16 object-contain rounded-lg"
                   />
                   <div className="text-left">
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    <h1 className="text-2xl font-bold text-[#610000] tracking-tight">
                       CIMA Learn
                     </h1>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                    <p className="text-xs text-[#610000]/90 uppercase tracking-wider font-medium">
                       Professional ADR Education
                     </p>
                   </div>
@@ -202,7 +202,7 @@ export default function Login() {
 
               {/* Header */}
               <div className="space-y-2 text-center">
-                <h2 className="text-3xl font-bold text-gray-900">
+                <h2 className="text-3xl font-bold text-[#610000]">
                   {t("auth.welcomeBack")}
                 </h2>
                 <p className="text-sm text-gray-600">
