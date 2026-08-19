@@ -4,7 +4,17 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, GraduationCap, BrainCircuit, Sparkles, Download, FileText } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText } from "lucide-react";
+
+// Custom inline icon: Engineer hard hat
+const HelmetIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M2 14c0-1.5 4-4 10-4s10 2.5 10 4v1a1 1 0 0 1-1 1h-18a1 1 0 0 1-1-1v-1z" />
+    <path d="M6 13c1-2 3-3 6-3s5 1 6 3" opacity="0.9" />
+    <path d="M7 11c0-2 2-4 5-4s5 2 5 4" />
+    <path d="M9 20c1 0 1.5-1 3-1s2 .9 3 1" opacity="0.6" />
+  </svg>
+);
 import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { PwaInstallButton } from "@/components/pwa-install-button";
@@ -359,31 +369,31 @@ function LearningPathwaysSection() {
   const pathways = [
     {
       icon: Scale,
-      title: "1. Commercial Mediation & Settlement",
+      title: "Commercial Mediation & Settlement",
       description:
         "Develop advanced skills for resolving contractual, corporate and commercial disputes through structured negotiation, mediation and settlement.",
     },
     {
       icon: Users,
-      title: "2. Employment & Workplace Mediation",
+      title: "Employment & Workplace Mediation",
       description:
         "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes.",
     },
     {
-      icon: GraduationCap,
-      title: "3. Construction Mediation",
+      icon: HelmetIcon,
+      title: "Construction Mediation",
       description:
         "Build specialist competence in resolving payment, delay, variation, property, contractual and project disputes arising from construction and infrastructure projects.",
     },
     {
-      icon: Globe,
-      title: "4. Mediation Advocacy for Lawyers",
+      icon: Gavel,
+      title: "Mediation Advocacy for Lawyers",
       description:
         "Learn to represent clients effectively in mediation through case preparation, opening strategy, negotiation, caucusing, risk assessment and settlement documentation.",
     },
     {
-      icon: BrainCircuit,
-      title: "5. AI, Online Mediation & Digital Dispute Resolution",
+      icon: Sparkles,
+      title: "AI, Online Mediation & Digital Dispute Resolution",
       description:
         "Develop practical skills in using AI and digital platforms for dispute analysis, case preparation, negotiation support, online mediation and settlement processes.",
     },
