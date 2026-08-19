@@ -160,7 +160,7 @@ export default function Dashboard() {
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
                 </p>
                 <h1 className="text-4xl lg:text-5xl font-bold leading-tight font-display">
-                  <span className="text-[#8b0000]">Master dispute resolution.</span>
+                  <span className="text-black">Master dispute resolution.</span>
                   <br />
                   <span className="text-[#610000]">Anywhere, anytime.</span>
                 </h1>
