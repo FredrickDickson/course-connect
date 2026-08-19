@@ -52,6 +52,7 @@ import CookiePolicy from "@/pages/cookie-policy";
 import HelpCenter from "@/pages/help-center";
 import Contact from "@/pages/contact";
 import TechnicalSupport from "@/pages/technical-support";
+import Accreditation from "@/pages/accreditation";
 import AcademicAdvising from "@/pages/academic-advising";
 import CourseCatalog from "@/pages/course-catalog";
 import CourseSearch from "@/pages/course-search";
@@ -228,6 +229,7 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/help-center" component={HelpCenter} />
+      <Route path="/accreditation" component={Accreditation} />
       <Route path="/contact" component={Contact} />
       <Route path="/technical-support" component={TechnicalSupport} />
       <Route path="/academic-advising" component={AcademicAdvising} />

@@ -937,6 +937,7 @@ function Footer() {
             <h3 className="text-black font-semibold mb-5 text-lg font-display">Company</h3>
             <ul className="space-y-3 text-base font-body">
               <li><Link href="/contact" className="text-black hover:text-gray-600 transition">About CIMA</Link></li>
+              <li><Link href="/accreditation" className="text-black hover:text-gray-600 transition">Accreditation</Link></li>
               <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Become Instructor</Link></li>
               <li><Link href="/contact" className="text-black hover:text-gray-600 transition">Contact Us</Link></li>
             </ul>

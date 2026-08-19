@@ -1,10 +1,11 @@
 import { Link } from "wouter";
+import { Download } from "lucide-react";
 
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Company Info */}
           <div className="space-y-4" data-testid="footer-company">
             <div className="flex items-center space-x-3">
@@ -130,6 +131,37 @@ export default function Footer() {
                     Contact Us
                   </span>
                 </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Accreditation */}
+          <div data-testid="footer-accreditation">
+            <h4 className="text-sm font-semibold text-black mb-4 uppercase tracking-wider">Accreditation</h4>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href="/uploads/UK-Standards-V2.0-0423_2023-04-24-143733.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="flex items-center gap-2 text-sm text-black hover:text-[#610000] transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="truncate">UK Standards V2.0 (Apr 2023)</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/uploads/ASIC-UK-Handbook-V2.2.1-0426.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="flex items-center gap-2 text-sm text-black hover:text-[#610000] transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="truncate">ASIC UK Handbook V2.2.1</span>
+                </a>
               </li>
             </ul>
           </div>
