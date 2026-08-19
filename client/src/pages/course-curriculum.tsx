@@ -254,18 +254,10 @@ export default function CourseCurriculum() {
   // Add module
   const addModuleMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
-      const { data: maxOrder } = await supabase
-        .from("modules")
-        .select("order")
-        .eq("course_id", courseId!)
-        .order("order", { ascending: false })
-        .limit(1);
-      const nextOrder = (maxOrder?.[0]?.order ?? 0) + 1;
-      const { error } = await supabase.from("modules").insert({
-        course_id: courseId!,
-        title: data.title,
-        description: data.description || null,
-        order: nextOrder,
+      const { error } = await (supabase as any).rpc("create_module", {
+        _course_id: courseId!,
+        _title: data.title,
+        _description: data.description || null,
       });
       if (error) throw error;
     },
@@ -275,6 +267,13 @@ export default function CourseCurriculum() {
       setIsAddingModule(false);
       setNewModuleTitle("");
       setNewModuleDesc("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add section",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
