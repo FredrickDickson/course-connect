@@ -30,6 +30,7 @@ import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
 import ResourcesManagement from "@/components/admin/resources-management";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
+import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
   Users,
   BookOpen,
@@ -437,7 +438,10 @@ export default function AdminDashboard() {
 
           {/* Overview Tab — Year selector, charts, YoY */}
           <TabsContent value="overview">
-            <AdminOverviewStats />
+            <div className="space-y-6">
+              <UpcomingSessionsCard />
+              <AdminOverviewStats />
+            </div>
           </TabsContent>
 
           {/* Instructors Tab */}

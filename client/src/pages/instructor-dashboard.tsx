@@ -11,6 +11,7 @@ import StudentLayout from "@/components/student-layout";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Link, useLocation } from "wouter";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
+import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
   BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, Settings,
   TrendingUp, BarChart3, Target, MessageSquare, CheckCircle, Shield
@@ -153,6 +154,9 @@ export default function InstructorDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Upcoming Live Sessions */}
+            <UpcomingSessionsCard />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-white border-[#d4c5b0]/30">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
