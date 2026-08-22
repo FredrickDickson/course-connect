@@ -3,7 +3,7 @@
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
-  "framework": "vite",
+  "framework": null,
   "env": {
     "NODE_ENV": "production"
   },
