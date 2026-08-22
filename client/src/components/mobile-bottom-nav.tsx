@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Users, HelpCircle, User, Menu, X, GraduationCap, Search, Target, Award, FileText, Bookmark, Settings, LogOut } from "lucide-react";
+import { Home, BookOpen, Users, HelpCircle, User, Menu, X, GraduationCap, Search, Target, Award, FileText, Bookmark, Settings, LogOut, Video } from "lucide-react";
 import { Link } from "wouter";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +46,7 @@ export default function MobileBottomNav() {
         { name: "Home", href: "/home", icon: Home },
         { name: "My Learning", href: "/dashboard", icon: BookOpen },
         { name: "Discover Courses", href: "/course-catalog", icon: Search },
+        { name: "Live Sessions", href: "/sessions", icon: Video },
         ...(user?.role === "instructor" 
           ? [{ name: "Instructor", href: "/instructor", icon: GraduationCap }] 
           : []),

@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { format, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes, formatDistanceToNow } from "date-fns";
 import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
