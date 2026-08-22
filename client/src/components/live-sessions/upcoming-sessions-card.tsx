@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { format, differenceInMinutes } from "date-fns";
 import { Link } from "wouter";
 import {
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Video,
@@ -20,9 +19,7 @@ import {
   Clock,
   Users,
   ArrowRight,
-  CheckCircle,
   ExternalLink,
-  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,9 +50,6 @@ interface LiveSession {
 }
 
 export default function UpcomingSessionsCard() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
   const { data: sessions = [], isLoading } = useQuery<LiveSession[]>({
     queryKey: ['upcoming_sessions'],
     queryFn: async () => {
@@ -64,53 +58,6 @@ export default function UpcomingSessionsCard() {
       return response.json();
     },
     refetchInterval: 60000,
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await apiRequest('POST', `/api/sessions/${sessionId}/register`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to register');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registered!",
-        description: "You'll receive reminders before the session starts",
-      });
-      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const unregisterMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await apiRequest('DELETE', `/api/sessions/${sessionId}/register`);
-      if (!response.ok) throw new Error('Failed to unregister');
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Unregistered",
-        description: "You've been removed from this session",
-      });
-      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
 
   const getSessionTypeColor = (type: string) => {
@@ -309,47 +256,26 @@ export default function UpcomingSessionsCard() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {session.user_registered ? (
-                    <>
-                      {isJoinable && session.zoom_join_url ? (
-                        <Button
-                          size="sm"
-                          className={cn(
-                            "gap-1",
-                            isInProgress 
-                              ? "bg-red-600 hover:bg-red-700 text-white animate-pulse" 
-                              : ""
-                          )}
-                          onClick={() => window.open(session.zoom_join_url, '_blank')}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          {isInProgress ? "Join Now - In Progress!" : "Join Now"}
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="secondary" className="gap-1" disabled>
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          Registered
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => unregisterMutation.mutate(session.id)}
-                        disabled={unregisterMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
+                  {isJoinable && session.zoom_join_url ? (
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="gap-1"
-                      onClick={() => registerMutation.mutate(session.id)}
-                      disabled={registerMutation.isPending}
+                      className={cn(
+                        "gap-1",
+                        isInProgress 
+                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse" 
+                          : "bg-green-600 hover:bg-green-700 text-white"
+                      )}
+                      onClick={() => window.open(session.zoom_join_url, '_blank')}
                     >
-                      <Bell className="h-3.5 w-3.5" />
-                      Register
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {isInProgress ? "Join Now - In Progress!" : "Join Session"}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="secondary" className="gap-1" disabled>
+                      <Clock className="h-3.5 w-3.5" />
+                      {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
+                        ? `Join in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                        : "Session Starting Soon"}
                     </Button>
                   )}
                   

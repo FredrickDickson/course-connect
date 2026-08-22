@@ -4,8 +4,8 @@
  */
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, formatDistanceToNow, differenceInMinutes, isPast } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { format, differenceInMinutes } from "date-fns";
 import { Link } from "wouter";
 import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -29,9 +28,7 @@ import {
   Clock,
   Users,
   Search,
-  Filter,
   ExternalLink,
-  Bell,
   CheckCircle,
   BookOpen,
 } from "lucide-react";
@@ -66,8 +63,6 @@ interface LiveSession {
 
 export default function SessionsPage() {
   const { user, isInstructor, isAdmin } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("upcoming");
 
@@ -88,46 +83,6 @@ export default function SessionsPage() {
       return response.json();
     },
     refetchInterval: 60000,
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await apiRequest('POST', `/api/sessions/${sessionId}/register`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to register');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registered!",
-        description: "You'll receive reminders before the session starts",
-      });
-      queryClient.invalidateQueries({ queryKey: ['all_sessions'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const unregisterMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await apiRequest('DELETE', `/api/sessions/${sessionId}/register`);
-      if (!response.ok) throw new Error('Failed to unregister');
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Unregistered",
-        description: "You've been removed from this session",
-      });
-      queryClient.invalidateQueries({ queryKey: ['all_sessions'] });
-    },
   });
 
   const filteredSessions = sessions.filter((session) => {
@@ -275,10 +230,6 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
-              onRegister={(id) => registerMutation.mutate(id)}
-              onUnregister={(id) => unregisterMutation.mutate(id)}
-              isRegistering={registerMutation.isPending}
-              isUnregistering={unregisterMutation.isPending}
             />
           </TabsContent>
 
@@ -289,10 +240,6 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
-              onRegister={(id) => registerMutation.mutate(id)}
-              onUnregister={(id) => unregisterMutation.mutate(id)}
-              isRegistering={registerMutation.isPending}
-              isUnregistering={unregisterMutation.isPending}
             />
           </TabsContent>
 
@@ -303,10 +250,6 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
-              onRegister={(id) => registerMutation.mutate(id)}
-              onUnregister={(id) => unregisterMutation.mutate(id)}
-              isRegistering={registerMutation.isPending}
-              isUnregistering={unregisterMutation.isPending}
               showPast
             />
           </TabsContent>
@@ -322,10 +265,6 @@ interface SessionsListProps {
   getSessionTypeColor: (type: string) => string;
   getStatusBadge: (session: LiveSession) => JSX.Element | null;
   canJoinSession: (session: LiveSession) => boolean;
-  onRegister: (id: string) => void;
-  onUnregister: (id: string) => void;
-  isRegistering: boolean;
-  isUnregistering: boolean;
   showPast?: boolean;
 }
 
@@ -335,10 +274,6 @@ function SessionsList({
   getSessionTypeColor,
   getStatusBadge,
   canJoinSession,
-  onRegister,
-  onUnregister,
-  isRegistering,
-  isUnregistering,
   showPast = false,
 }: SessionsListProps) {
   if (isLoading) {
@@ -465,48 +400,27 @@ function SessionsList({
 
                   {/* Actions */}
                   <div className="flex items-center gap-3 pt-2">
-                    {session.user_registered ? (
-                      <>
-                        {isJoinable && session.zoom_join_url && !showPast ? (
-                          <Button
-                            className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000]"
-                            onClick={() => window.open(session.zoom_join_url, '_blank')}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            Join Session
-                          </Button>
-                        ) : showPast ? (
-                          <Button variant="secondary" className="gap-2" disabled>
-                            <CheckCircle className="h-4 w-4" />
-                            Attended
-                          </Button>
-                        ) : (
-                          <Button variant="secondary" className="gap-2" disabled>
-                            <CheckCircle className="h-4 w-4" />
-                            Registered
-                          </Button>
-                        )}
-                        {!showPast && (
-                          <Button
-                            variant="ghost"
-                            onClick={() => onUnregister(session.id)}
-                            disabled={isUnregistering}
-                          >
-                            Cancel Registration
-                          </Button>
-                        )}
-                      </>
-                    ) : !showPast ? (
+                    {isJoinable && session.zoom_join_url && !showPast ? (
                       <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => onRegister(session.id)}
-                        disabled={isRegistering}
+                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000]"
+                        onClick={() => window.open(session.zoom_join_url, '_blank')}
                       >
-                        <Bell className="h-4 w-4" />
-                        Register for Session
+                        <ExternalLink className="h-4 w-4" />
+                        Join Session
                       </Button>
-                    ) : null}
+                    ) : showPast ? (
+                      <Button variant="secondary" className="gap-2" disabled>
+                        <CheckCircle className="h-4 w-4" />
+                        Completed
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" className="gap-2" disabled>
+                        <Clock className="h-4 w-4" />
+                        {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
+                          ? `Join in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                          : "Session Starting Soon"}
+                      </Button>
+                    )}
 
                     <Link href={`/sessions/${session.id}`}>
                       <Button variant="ghost">View Details</Button>

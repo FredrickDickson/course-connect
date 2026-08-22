@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { format, formatDistanceToNow, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes } from "date-fns";
 import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +28,6 @@ import {
   Clock,
   Users,
   ExternalLink,
-  Bell,
-  CheckCircle,
   BookOpen,
   MapPin,
   Info,
@@ -87,50 +85,6 @@ export default function SessionDetailPage() {
       return response.json();
     },
     refetchInterval: 30000,
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/sessions/${id}/register`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to register');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registered!",
-        description: "You'll receive reminders before the session starts",
-      });
-      queryClient.invalidateQueries({ queryKey: ['session', id] });
-      queryClient.invalidateQueries({ queryKey: ['all_sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const unregisterMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('DELETE', `/api/sessions/${id}/register`);
-      if (!response.ok) throw new Error('Failed to unregister');
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Unregistered",
-        description: "You've been removed from this session",
-      });
-      queryClient.invalidateQueries({ queryKey: ['session', id] });
-      queryClient.invalidateQueries({ queryKey: ['all_sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
-    },
   });
 
   const deleteMutation = useMutation({
@@ -241,6 +195,18 @@ export default function SessionDetailPage() {
   const endDate = new Date(session.scheduled_end);
   const participantCount = session.participants?.length || 0;
   const isJoinable = canJoinSession();
+  const minutesUntil = differenceInMinutes(startDate, new Date());
+  
+  const getSessionStatus = () => {
+    const now = new Date();
+    if (session.status === 'live' || (now >= startDate && now <= endDate)) {
+      return 'In Progress';
+    }
+    if (minutesUntil <= 15 && minutesUntil > 0) {
+      return 'Starting Soon';
+    }
+    return 'Scheduled';
+  };
 
   return (
     <StudentLayout>
@@ -494,54 +460,43 @@ export default function SessionDetailPage() {
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  {session.user_registered ? (
-                    <>
-                      {isJoinable && session.zoom_join_url ? (
-                        <Button
-                          className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white"
-                          size="lg"
-                          onClick={() => window.open(session.zoom_join_url, '_blank')}
-                        >
-                          <ExternalLink className="h-5 w-5" />
-                          Join Session Now
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          className="w-full gap-2"
-                          size="lg"
-                          disabled
-                        >
-                          <CheckCircle className="h-5 w-5" />
-                          You're Registered
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => unregisterMutation.mutate()}
-                        disabled={unregisterMutation.isPending}
-                      >
-                        Cancel Registration
-                      </Button>
-                    </>
-                  ) : session.status === 'scheduled' ? (
+                  {isJoinable && session.zoom_join_url ? (
                     <Button
                       className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white"
                       size="lg"
-                      onClick={() => registerMutation.mutate()}
-                      disabled={registerMutation.isPending}
+                      onClick={() => window.open(session.zoom_join_url, '_blank')}
                     >
-                      <Bell className="h-5 w-5" />
-                      Register for Session
+                      <ExternalLink className="h-5 w-5" />
+                      {getSessionStatus() === 'In Progress' ? 'Join Now - In Progress!' : 'Join Session'}
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      className="w-full gap-2"
+                      size="lg"
+                      disabled
+                    >
+                      <Clock className="h-5 w-5" />
+                      {minutesUntil > 0 
+                        ? `Join in ${minutesUntil} minutes`
+                        : "Session Starting Soon"}
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => setLocation('/sessions')}
+                  >
+                    <Video className="h-5 w-5" />
+                    View All Sessions
+                  </Button>
                 </div>
 
-                {session.user_registered && !isJoinable && (
+                {!isJoinable && minutesUntil > 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>You're registered!</strong> You'll receive reminders and can join 15 minutes before the session starts.
+                      <strong>Session starts soon!</strong> You can join 15 minutes before the session starts.
                     </p>
                   </div>
                 )}
