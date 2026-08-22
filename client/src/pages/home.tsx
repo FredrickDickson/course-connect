@@ -5,6 +5,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
@@ -368,6 +369,13 @@ export default function Home() {
           </div>
         </section>
       ) : null}
+
+      {/* Upcoming Live Sessions - Prominent Display */}
+      <section className="py-12 sm:py-16 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <UpcomingSessionsCard />
+        </div>
+      </section>
 
       {/* Featured Courses - Recommended for You */}
       <section className="py-12 sm:py-16 bg-muted/50">

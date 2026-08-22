@@ -79,17 +79,7 @@ router.get(
       query = query.gte('scheduled_end', new Date().toISOString());
     }
 
-    if (userRole === 'student') {
-      const { data: enrollments } = await supabaseAdmin
-        .from('enrollments')
-        .select('course_id')
-        .eq('user_id', userId)
-        .eq('status', 'ACTIVE');
-      
-      const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
-      
-      query = query.or(`is_public.eq.true,course_id.in.(${enrolledCourseIds.join(',')})`);
-    } else if (userRole === 'instructor') {
+    if (userRole === 'instructor') {
       query = query.or(`instructor_id.eq.${userId},is_public.eq.true`);
     }
 

@@ -10,12 +10,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import StudentLayout from "@/components/student-layout";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import { Link, useLocation } from "wouter";
 import {
   PlayCircle,
   ArrowRight,
-  Calendar,
-  Users,
   Heart,
   ChevronRight,
 } from "lucide-react";
@@ -103,21 +102,6 @@ export default function Dashboard() {
     },
   });
 
-  const { data: upcomingEvents = [] } = useQuery<any[]>({
-    queryKey: ["upcoming-events"],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("live_sessions")
-        .select("*")
-        .gte("scheduled_at", new Date().toISOString())
-        .order("scheduled_at", { ascending: true })
-        .limit(3);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-  });
-
   if (authLoading || enrollmentsLoading) {
     return (
       <StudentLayout>
@@ -152,35 +136,35 @@ export default function Dashboard() {
       <div className="space-y-8">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-[#f8f7f5] via-[#faf9f6] to-[#f5f3ed] rounded-[32px] overflow-hidden border border-[#d4c5b0]/20">
-          <div className="grid lg:grid-cols-2 gap-8 p-8 lg:p-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 p-5 sm:p-8 lg:p-12">
             {/* Left Content */}
-            <div className="flex flex-col justify-center space-y-6 relative z-10">
+            <div className="min-w-0 flex flex-col justify-center space-y-5 lg:space-y-6 relative z-10">
               <div className="space-y-3">
-                <p className="text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
+                <p className="text-xs sm:text-sm font-medium text-[#8b6f47] uppercase tracking-wider font-body">
                   WELCOME BACK, {user?.firstName?.toUpperCase() || "DR. DICKSON"}
                 </p>
-                <h1 className="text-4xl lg:text-5xl font-bold leading-tight font-display">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight break-words font-display">
                   <span className="text-black">Master dispute resolution.</span>
                   <br />
                   <span className="text-[#610000]">Anywhere, anytime.</span>
                 </h1>
-                <p className="text-lg text-[#6b5d4f] leading-relaxed font-body">
+                <p className="text-base sm:text-lg text-[#6b5d4f] leading-relaxed font-body break-words">
                   World-class, self-paced learning in Arbitration, Mediation,
                   Litigation, Negotiation, Adjudication and more.
                 </p>
               </div>
 
-              <div className="flex gap-4">
-                <Link href="/courses">
-                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000] px-6 py-6 text-base rounded-xl shadow-md font-semibold font-body">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link href="/courses" className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto bg-[#610000] text-white hover:bg-[#7d0000] px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl shadow-md font-semibold font-body">
                     <PlayCircle className="w-5 h-5 mr-2" />
                     Continue learning
                   </Button>
                 </Link>
-                <Link href="/course-catalog">
+                <Link href="/course-catalog" className="w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-6 py-6 text-base rounded-xl font-semibold font-body"
+                    className="w-full sm:w-auto border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl font-semibold font-body"
                   >
                     Explore courses
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -190,7 +174,7 @@ export default function Dashboard() {
             </div>
 
             {/* Right Content - Learning Path Cards */}
-            <div className="flex flex-col justify-center space-y-4 relative z-10">
+            <div className="min-w-0 flex flex-col justify-center space-y-4 relative z-10">
               {/* Card 1 - Learning Path */}
               {primaryLearningPath ? (
                 <Card className="bg-white border-[#d4c5b0]/30 hover:shadow-lg transition-all">
@@ -252,33 +236,6 @@ export default function Dashboard() {
                 </Card>
               )}
 
-              {/* Upcoming Event Card - if available */}
-              {upcomingEvents.length > 0 && (
-                <Card className="bg-[#610000] text-white border-0 hover:shadow-lg transition-all">
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">📚</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-white/70 font-medium uppercase tracking-wide mb-1">
-                        Upcoming Live Session
-                      </p>
-                      <h3 className="text-base font-bold line-clamp-1">
-                        {(upcomingEvents[0] as any).title}
-                      </h3>
-                      <p className="text-xs text-white/80 mt-1">
-                        {new Date((upcomingEvents[0] as any).scheduled_at).toLocaleDateString('en-US', { 
-                          day: 'numeric', 
-                          month: 'short' 
-                        })} · {new Date((upcomingEvents[0] as any).scheduled_at).toLocaleTimeString('en-US', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
 
@@ -513,6 +470,20 @@ export default function Dashboard() {
 
           </section>
         </div>
+
+        <section aria-labelledby="upcoming-live-sessions" className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 id="upcoming-live-sessions" className="text-2xl font-bold text-[#2c2015] font-display">
+              Live Sessions
+            </h2>
+            <Link href="/sessions">
+              <Button variant="link" className="text-[#610000]">
+                View all <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <UpcomingSessionsCard />
+        </section>
 
         {/* Recommended Section */}
         <section>

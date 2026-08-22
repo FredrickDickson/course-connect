@@ -380,6 +380,11 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* Upcoming Live Sessions - Prominent Display */}
+      <section className="mb-12">
+        <UpcomingSessionsCard />
+      </section>
+
       {/* Main Content Grid */}
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column - 2/3 */}
@@ -485,9 +490,6 @@ export default function Dashboard() {
 
         {/* Right Column - 1/3 */}
         <div className="space-y-8">
-          {/* Upcoming Live Sessions */}
-          <UpcomingSessionsCard />
-          
           {/* Upcoming Activities */}
           <section>
             <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">

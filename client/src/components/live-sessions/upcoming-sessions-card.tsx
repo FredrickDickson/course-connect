@@ -240,7 +240,7 @@ export default function UpcomingSessionsCard() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
                     <span>{format(startDate, "MMM dd, yyyy")}</span>
@@ -255,7 +255,7 @@ export default function UpcomingSessionsCard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {isJoinable && session.zoom_join_url ? (
                     <Button
                       size="sm"
