@@ -337,7 +337,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex gap-2">
             <CreateSessionDialog />
-            <Dialog open={showCreateAdmin} onChangeChange={setShowCreateAdmin}>
+            <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000]/5">
                   <Shield className="h-4 w-4 mr-2" />

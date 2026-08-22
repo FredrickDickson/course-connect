@@ -82,7 +82,7 @@ export default function SessionDetailPage() {
   const { data: session, isLoading } = useQuery<LiveSession>({
     queryKey: ['session', id],
     queryFn: async () => {
-      const response = await apiRequest(`/api/sessions/${id}`);
+      const response = await apiRequest('GET', `/api/sessions/${id}`);
       if (!response.ok) throw new Error('Failed to fetch session');
       return response.json();
     },
@@ -91,9 +91,7 @@ export default function SessionDetailPage() {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/sessions/${id}/register`, {
-        method: 'POST',
-      });
+      const response = await apiRequest('POST', `/api/sessions/${id}/register`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to register');
@@ -120,9 +118,7 @@ export default function SessionDetailPage() {
 
   const unregisterMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/sessions/${id}/register`, {
-        method: 'DELETE',
-      });
+      const response = await apiRequest('DELETE', `/api/sessions/${id}/register`);
       if (!response.ok) throw new Error('Failed to unregister');
       return response.json();
     },
@@ -139,9 +135,7 @@ export default function SessionDetailPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/sessions/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await apiRequest('DELETE', `/api/sessions/${id}`);
       if (!response.ok) throw new Error('Failed to cancel session');
       return response.json();
     },

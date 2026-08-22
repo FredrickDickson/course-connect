@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { requireSupabaseAuth } from "../supabaseAuth";
-import { requireRole } from "../middleware/roleProtection";
+import { requireInstructor } from "../middleware/roleProtection";
 import { asyncHandler } from "../middleware/security";
 import { supabaseAdmin } from "../storage";
 import { getZoomService } from "../services/zoom";
@@ -165,7 +165,7 @@ router.get(
 router.post(
   "/",
   requireSupabaseAuth,
-  requireRole(['instructor', 'admin']),
+  requireInstructor(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
     
@@ -280,7 +280,7 @@ router.post(
 router.patch(
   "/:id",
   requireSupabaseAuth,
-  requireRole(['instructor', 'admin']),
+  requireInstructor(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.claims.sub;
@@ -357,7 +357,7 @@ router.patch(
 router.delete(
   "/:id",
   requireSupabaseAuth,
-  requireRole(['instructor', 'admin']),
+  requireInstructor(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.claims.sub;
@@ -488,7 +488,7 @@ router.delete(
 router.get(
   "/:id/participants",
   requireSupabaseAuth,
-  requireRole(['instructor', 'admin']),
+  requireInstructor(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.claims.sub;
