@@ -26,6 +26,7 @@ import {
   LogOut,
   GraduationCap,
   Users,
+  Video,
 } from "lucide-react";
 
 interface NavItem {
@@ -78,6 +79,7 @@ export default function StudentSidebar({
         { name: "Home", href: "/home", icon: Home },
         { name: "My Learning", href: "/dashboard", icon: BookOpen },
         { name: "Discover Courses", href: "/course-catalog", icon: Search },
+        { name: "Live Sessions", href: "/sessions", icon: Video },
         ...(user?.role === "instructor" 
           ? [{ name: "Instructor", href: "/instructor", icon: GraduationCap }] 
           : []),

@@ -29,6 +29,7 @@ import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
 import ResourcesManagement from "@/components/admin/resources-management";
+import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 import {
   Users,
   BookOpen,
@@ -335,7 +336,8 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+            <CreateSessionDialog />
+            <Dialog open={showCreateAdmin} onChangeChange={setShowCreateAdmin}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000]/5">
                   <Shield className="h-4 w-4 mr-2" />

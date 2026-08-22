@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Zap,
   Mail,
+  Video,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +89,7 @@ export default function AdminSidebar({
         { name: "Enrollments", href: "/admin?tab=enrollments", icon: UserCheck, tab: "enrollments" },
         { name: "Courses", href: "/admin?tab=courses", icon: BookOpen, tab: "courses" },
         { name: "Create Course", href: "/admin?tab=templates", icon: FileText, tab: "templates" },
+        { name: "Live Sessions", href: "/sessions", icon: Video },
       ],
     },
     {

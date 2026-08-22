@@ -85,6 +85,8 @@ import brochureDownloadRouter from "./routes/brochure-download";
 import adminInstructorsRouter from "./routes/admin/instructors";
 import adminAccessTokensRouter from "./routes/admin/access-tokens";
 import adminMembersRouter from "./routes/admin/members";
+import aiTutorRouter from "./routes/ai-tutor";
+import liveSessionsRouter from "./routes/live-sessions";
 import {
   insertCourseSchema,
 
@@ -348,6 +350,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/renewal", renewalRouter);
   app.use("/api/certificates", certificatesRouter);
   app.use("/api/renewal-automation", renewalAutomationRouter);
+  
+  // Mount AI Tutor routes
+  app.use("/api/ai-tutor", aiTutorRouter);
+  
+  // Mount Live Sessions routes
+  app.use("/api/sessions", liveSessionsRouter);
   
   // Mount brochure download route (public - no auth required)
   app.use(brochureDownloadRouter);
