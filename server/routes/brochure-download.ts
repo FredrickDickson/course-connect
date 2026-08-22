@@ -45,7 +45,7 @@ router.post('/api/brochure-download', async (req, res) => {
     const emailResult = await sendRawEmail({
       to: [email],
       subject: 'Your CIMA Learn Summer School 2026 Brochure',
-      htmlContent: `
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -91,10 +91,11 @@ router.post('/api/brochure-download', async (req, res) => {
         </body>
         </html>
       `,
-      attachment: [{
-        content: pdfBase64,
-        name: 'CIMA-Learn-Summer-School-2026.pdf'
-      }]
+      // Note: Attachment support needs to be added to RawEmailData interface
+      // attachment: [{
+      //   content: pdfBase64,
+      //   name: 'CIMA-Learn-Summer-School-2026.pdf'
+      // }]
     });
 
     if (!emailResult.success) {

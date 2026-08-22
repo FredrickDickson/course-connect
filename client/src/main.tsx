@@ -29,10 +29,32 @@ if (import.meta.env.DEV) {
 }
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
+  window.addEventListener("load", async () => {
+    try {
+      // Unregister all existing service workers to clear cache issues
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+      }
+      
+      // Register the new service worker
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      console.log("Service worker registered successfully");
+      
+      // Check for updates
+      registration.addEventListener("updatefound", () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "activated") {
+              console.log("Service worker updated");
+            }
+          });
+        }
+      });
+    } catch (error) {
       console.error("Service worker registration failed:", error);
-    });
+    }
   });
 }
 

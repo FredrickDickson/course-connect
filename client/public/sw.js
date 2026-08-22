@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cima-learn-cache-v1';
+const CACHE_NAME = 'cima-learn-cache-v2';
 const urlsToCache = [
   '/',
   '/dashboard',
@@ -18,18 +18,31 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip caching for large files (PDFs, videos, etc.) and API requests
   const url = new URL(event.request.url);
+  
+  // Skip caching for:
+  // 1. External domains (Supabase, APIs, CDNs)
+  // 2. Large files
+  // 3. API endpoints
+  // 4. Non-GET requests
+  const isExternalDomain = !url.origin.includes(self.location.origin);
+  const isSupabaseRequest = url.hostname.includes('supabase.co');
   const skipCache = 
+    isExternalDomain ||
+    isSupabaseRequest ||
     url.pathname.endsWith('.pdf') || 
     url.pathname.endsWith('.zip') || 
     url.pathname.endsWith('.mp4') ||
     url.pathname.includes('/api/') ||
-    url.pathname.includes('/uploads/');
+    url.pathname.includes('/uploads/') ||
+    event.request.method !== 'GET';
 
   if (skipCache) {
+    // Pass through without caching
     event.respondWith(fetch(event.request));
     return;
   }
 
+  // Only cache same-origin GET requests
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
