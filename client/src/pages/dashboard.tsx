@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import StudentLayout from "@/components/student-layout";
 import { Link, useLocation } from "wouter";
+import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
   BookOpen,
   Trophy,
@@ -484,6 +485,9 @@ export default function Dashboard() {
 
         {/* Right Column - 1/3 */}
         <div className="space-y-8">
+          {/* Upcoming Live Sessions */}
+          <UpcomingSessionsCard />
+          
           {/* Upcoming Activities */}
           <section>
             <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">

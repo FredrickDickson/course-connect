@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StudentLayout from "@/components/student-layout";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { Link, useLocation } from "wouter";
+import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 import {
   BookOpen, Users, DollarSign, Star, Plus, Edit, Eye, Settings,
   TrendingUp, BarChart3, Target, MessageSquare, CheckCircle, Shield
@@ -132,12 +133,15 @@ export default function InstructorDashboard() {
             <h1 className="text-3xl font-bold text-[#2c2015] font-display">Instructor Dashboard</h1>
             <p className="text-[#6b5d4f] mt-2 font-body">Manage your courses and track performance</p>
           </div>
-          <Button asChild className="mt-4 sm:mt-0 bg-[#610000] text-white hover:bg-[#7d0000]">
-            <Link href="/instructor/courses/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Course
-            </Link>
-          </Button>
+          <div className="flex gap-3 mt-4 sm:mt-0">
+            <CreateSessionDialog />
+            <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000]">
+              <Link href="/instructor/courses/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

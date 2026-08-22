@@ -75,6 +75,8 @@ import PaymentSuccess from "@/pages/payment-success";
 import VerifyEmail from "@/pages/verify-email";
 import AuthCallback from "@/pages/auth-callback";
 import EnrollmentStatus from "@/pages/enrollment-status";
+import Sessions from "@/pages/sessions";
+import SessionDetail from "@/pages/session-detail";
 
 // Lazy loaded components - heavy/role-gated pages
 const InstructorDashboard = lazy(() => import("@/pages/instructor-dashboard"));
@@ -263,6 +265,8 @@ function Router() {
       <ProtectedRoute path="/notification-settings" component={LazyNotificationSettings} />
       <ProtectedRoute path="/courses" component={Courses} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/sessions" component={Sessions} />
+      <ProtectedRoute path="/sessions/:id" component={SessionDetail} />
       <ProtectedRoute path="/programs" component={Programs} />
       <ProtectedRoute
         path="/learn/:courseId/:lessonId"
