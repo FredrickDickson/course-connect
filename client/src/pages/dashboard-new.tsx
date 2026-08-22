@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import StudentLayout from "@/components/student-layout";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
+import { apiRequest } from "@/lib/queryClient";
 import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import { Link, useLocation } from "wouter";
 import {
@@ -17,7 +18,15 @@ import {
   ArrowRight,
   Heart,
   ChevronRight,
+  Video,
+  Calendar,
+  Clock,
+  Users,
+  Zap,
+  Radio,
+  ExternalLink,
 } from "lucide-react";
+import { format, differenceInMinutes, isSameDay, addDays } from "date-fns";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -472,12 +481,18 @@ export default function Dashboard() {
         </div>
 
         <section aria-labelledby="upcoming-live-sessions" className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 id="upcoming-live-sessions" className="text-2xl font-bold text-[#2c2015] font-display">
-              Live Sessions
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 id="upcoming-live-sessions" className="text-3xl font-bold text-[#2c2015] font-display flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                  <Video className="w-6 h-6 text-white" />
+                </div>
+                Live Sessions
+              </h2>
+              <p className="text-sm text-[#6b5d4f] mt-2">Join interactive sessions with expert instructors</p>
+            </div>
             <Link href="/sessions">
-              <Button variant="link" className="text-[#610000]">
+              <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white">
                 View all <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
