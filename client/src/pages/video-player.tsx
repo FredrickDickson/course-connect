@@ -23,6 +23,7 @@ import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import type { LearnCourse, LearnLesson, ProgressRow } from "@/components/learn/types";
+import { AITutorButton } from "@/components/ai-tutor";
 
 const VP: any = LazyVideoPlayer;
 
@@ -474,6 +475,23 @@ export default function VideoPlayerPage() {
         courseTitle={course.title}
         courseId={course.id}
       />
+
+      {/* AI Tutor - Only show when enrolled or instructor */}
+      {(enrollment?.isEnrolled || isInstructor()) && currentLesson && (
+        <AITutorButton
+          lessonContext={{
+            courseId: courseId!,
+            courseName: course.title,
+            courseLevel: course.level || 'associate',
+            courseTrack: course.track || 'ARBITRATION',
+            lessonId: currentLesson.id,
+            lessonTitle: currentLesson.title,
+            lessonType: lessonType as any,
+            lessonContent: currentLesson.content || undefined,
+            lessonDescription: currentLesson.description || undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
