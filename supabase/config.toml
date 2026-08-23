@@ -393,6 +393,12 @@ verify_jwt = false
 # every real webhook call from Paystack is rejected before it's even seen.
 verify_jwt = false
 
+[functions.zoom-webhook]
+# Same reasoning as paystack-webhook: Zoom calls this with only its own
+# x-zm-signature (verified in-function against ZOOM_SECRET_TOKEN), never a
+# Supabase JWT.
+verify_jwt = false
+
 # confirm-manual-renewal intentionally has no override here: it keeps the
 # gateway's default verify_jwt = true (reject unauthenticated calls before
 # the function even runs) as a first layer, on top of its own in-function
