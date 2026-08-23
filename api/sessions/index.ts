@@ -71,9 +71,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     console.error('Sessions API error:', error);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({ 
       message: 'Internal server error',
-      error: error.message 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
@@ -160,6 +162,12 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
   if (userRole !== 'instructor' && userRole !== 'admin') {
     return res.status(403).json({ message: 'Only instructors can create sessions' });
   }
+
+  // Check Zoom configuration early
+  console.log('Checking Zoom configuration...');
+  console.log('ZOOM_ACCOUNT_ID:', process.env.ZOOM_ACCOUNT_ID ? 'SET' : 'NOT SET');
+  console.log('ZOOM_CLIENT_ID:', process.env.ZOOM_CLIENT_ID ? 'SET' : 'NOT SET');
+  console.log('ZOOM_CLIENT_SECRET:', process.env.ZOOM_CLIENT_SECRET ? 'SET' : 'NOT SET');
   
   const validation = createSessionSchema.safeParse(req.body);
   if (!validation.success) {
