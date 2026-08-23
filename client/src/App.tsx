@@ -29,7 +29,6 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationToastContainer } from "@/components/ui/NotificationToast";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
@@ -325,7 +324,6 @@ function App() {
         </LanguageProvider>
       </AuthProvider>
       <Analytics />
-      <SpeedInsights />
       <PwaFloatingButton />
     </QueryClientProvider>
   );

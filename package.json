@@ -91,7 +91,6 @@
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "@vimeo/player": "^2.30.4",
     "axios": "^1.19.0",
     "canvas-confetti": "^1.9.4",
