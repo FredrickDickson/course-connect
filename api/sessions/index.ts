@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../server/storage';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getZoomService } from '../../server/services/zoom';
 import { z } from 'zod';
 
@@ -16,7 +16,7 @@ const createSessionSchema = z.object({
   meeting_password: z.string().min(6).max(10).optional(),
 });
 
-async function getUserFromRequest(req: VercelRequest) {
+async function getUserFromRequest(req: VercelRequest, supabaseAdmin: SupabaseClient) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -56,23 +56,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const user = await getUserFromRequest(req);
+  // Initialize client inside handler to avoid module-level env var issues
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing environment variables:', {
+      supabaseUrl: !!supabaseUrl,
+      supabaseServiceKey: !!supabaseServiceKey,
+    });
+    return res.status(500).json({
+      message: 'Server configuration error',
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const user = await getUserFromRequest(req, supabaseAdmin);
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
   try {
     if (req.method === 'GET') {
-      return await handleGetSessions(req, res, user);
+      return await handleGetSessions(req, res, user, supabaseAdmin);
     } else if (req.method === 'POST') {
-      return await handleCreateSession(req, res, user);
+      return await handleCreateSession(req, res, user, supabaseAdmin);
     }
 
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     console.error('Sessions API error:', error);
     console.error('Error stack:', error.stack);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'Internal server error',
       error: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
@@ -80,16 +101,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: any) {
+async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: any, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
-  
-  const { 
-    course_id, 
-    status, 
-    upcoming, 
+
+  const {
+    course_id,
+    status,
+    upcoming,
     include_past,
-    session_type 
+    session_type
   } = req.query;
 
   let query = supabaseAdmin
@@ -126,11 +147,26 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
     query = query.or(`instructor_id.eq.${userId},is_public.eq.true`);
   }
 
-  const { data: sessions, error } = await query;
+  let { data: sessions, error } = await query;
 
   if (error) {
     console.error('Error fetching sessions:', error);
     return res.status(500).json({ message: 'Failed to fetch sessions' });
+  }
+
+  if (sessions && userRole !== 'admin' && userRole !== 'instructor') {
+    const { data: enrollments } = await supabaseAdmin
+      .from('enrollments')
+      .select('course_id')
+      .eq('user_id', userId);
+
+    const enrolledCourseIds = new Set((enrollments || []).map((e: any) => e.course_id));
+
+    sessions = sessions.filter((session: any) =>
+      session.is_public ||
+      session.instructor_id === userId ||
+      (session.course_id && enrolledCourseIds.has(session.course_id))
+    );
   }
 
   if (sessions && sessions.length > 0) {
@@ -154,7 +190,7 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
   return res.json(sessions || []);
 }
 
-async function handleCreateSession(req: VercelRequest, res: VercelResponse, user: any) {
+async function handleCreateSession(req: VercelRequest, res: VercelResponse, user: any, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
 
@@ -168,12 +204,12 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
   console.log('ZOOM_ACCOUNT_ID:', process.env.ZOOM_ACCOUNT_ID ? 'SET' : 'NOT SET');
   console.log('ZOOM_CLIENT_ID:', process.env.ZOOM_CLIENT_ID ? 'SET' : 'NOT SET');
   console.log('ZOOM_CLIENT_SECRET:', process.env.ZOOM_CLIENT_SECRET ? 'SET' : 'NOT SET');
-  
+
   const validation = createSessionSchema.safeParse(req.body);
   if (!validation.success) {
-    return res.status(400).json({ 
-      message: 'Invalid input', 
-      errors: validation.error.errors 
+    return res.status(400).json({
+      message: 'Invalid input',
+      errors: validation.error.errors
     });
   }
 
@@ -181,21 +217,33 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
 
   const start = new Date(sessionData.scheduled_start);
   const end = new Date(sessionData.scheduled_end);
-  
+
   if (end <= start) {
     return res.status(400).json({ message: 'Session end time must be after start time' });
   }
 
   const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
-  
+
   if (durationMinutes > 240) {
     return res.status(400).json({ message: 'Session duration cannot exceed 4 hours' });
   }
 
+  if (sessionData.course_id && userRole !== 'admin') {
+    const { data: course } = await supabaseAdmin
+      .from('courses')
+      .select('instructor_id')
+      .eq('id', sessionData.course_id)
+      .single();
+
+    if (!course || course.instructor_id !== userId) {
+      return res.status(403).json({ message: 'You can only schedule sessions for courses you teach' });
+    }
+  }
+
   const zoomService = getZoomService();
   if (!zoomService) {
-    return res.status(503).json({ 
-      message: 'Live sessions feature is not configured. Please contact administrator.' 
+    return res.status(503).json({
+      message: 'Live sessions feature is not configured. Please contact administrator.'
     });
   }
 
@@ -212,7 +260,7 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
 
     const startDate = new Date(sessionData.scheduled_start);
     const zoomStartTime = startDate.toISOString().slice(0, 19);
-    
+
     const zoomMeeting = await zoomService.createMeeting(instructor.email, {
       topic: sessionData.title,
       type: 2,
@@ -269,9 +317,9 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
     return res.status(201).json(newSession);
   } catch (error: any) {
     console.error('Error creating session:', error);
-    return res.status(500).json({ 
-      message: 'Failed to create Zoom meeting', 
-      error: error.message 
+    return res.status(500).json({
+      message: 'Failed to create Zoom meeting',
+      error: error.message
     });
   }
 }
