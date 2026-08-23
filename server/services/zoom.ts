@@ -147,11 +147,12 @@ export class ZoomService {
         join_before_host: false,
         mute_upon_entry: true,
         watermark: false,
-        approval_type: 0,
+        approval_type: 2, // No approval required - automatic
+        registration_type: 0, // CRITICAL: Disable Zoom registration completely
         audio: 'both',
         auto_recording: 'cloud',
-        waiting_room: true,
-        meeting_authentication: false,
+        waiting_room: false, // No waiting room - direct join
+        meeting_authentication: false, // No authentication required
       };
 
       const meetingData = {
@@ -162,7 +163,16 @@ export class ZoomService {
         },
       };
 
+      console.log('🔧 Creating Zoom meeting with settings:', JSON.stringify(meetingData.settings, null, 2));
+
       const response = await this.client.post(`/users/me/meetings`, meetingData);
+      
+      console.log('✅ Zoom meeting created:', {
+        id: response.data.id,
+        join_url: response.data.join_url,
+        registration_required: response.data.settings?.registration_type || 'none',
+      });
+      
       return response.data;
     } catch (error: any) {
       console.error('Failed to create Zoom meeting:', error.response?.data || error.message);

@@ -253,13 +253,13 @@ router.post(
           participant_video: true,
           join_before_host: false,
           mute_upon_entry: true,
-          waiting_room: true,
-          approval_type: 0,
+          waiting_room: false, // Disable waiting room for direct join
+          approval_type: 2, // No registration required
           audio: 'both',
           auto_recording: 'cloud',
           watermark: false,
           use_pmi: false,
-          registration_type: 1,
+          registration_type: 0, // Disable Zoom registration - we handle it in our app
           meeting_authentication: false,
         },
       });

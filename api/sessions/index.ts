@@ -126,11 +126,29 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
     query = query.or(`instructor_id.eq.${userId},is_public.eq.true`);
   }
 
-  const { data: sessions, error } = await query;
+  let { data: sessions, error } = await query;
 
   if (error) {
     console.error('Error fetching sessions:', error);
     return res.status(500).json({ message: 'Failed to fetch sessions' });
+  }
+
+  // Filter sessions based on course enrollment for students
+  if (sessions && userRole !== 'admin' && userRole !== 'instructor') {
+    // Get user's enrolled courses
+    const { data: enrollments } = await supabaseAdmin
+      .from('enrollments')
+      .select('course_id')
+      .eq('user_id', userId);
+
+    const enrolledCourseIds = new Set((enrollments || []).map((e) => e.course_id));
+
+    // Filter sessions: show only public sessions, or sessions for courses the user is enrolled in
+    sessions = sessions.filter((session: any) =>
+      session.is_public ||
+      session.instructor_id === userId ||
+      (session.course_id && enrolledCourseIds.has(session.course_id))
+    );
   }
 
   if (sessions && sessions.length > 0) {
@@ -226,13 +244,13 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
         participant_video: true,
         join_before_host: false,
         mute_upon_entry: true,
-        waiting_room: true,
-        approval_type: 0,
+        waiting_room: false, // Disable waiting room for direct join
+        approval_type: 2, // No registration required
         audio: 'both',
         auto_recording: 'cloud',
         watermark: false,
         use_pmi: false,
-        registration_type: 1,
+        registration_type: 0, // Disable Zoom registration - we handle it in our app
         meeting_authentication: false,
       },
     });

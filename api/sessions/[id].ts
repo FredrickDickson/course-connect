@@ -86,6 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 async function handleGetSession(req: VercelRequest, res: VercelResponse, user: any, id: string) {
   const userId = user.id;
+  const userRole = user.role;
 
   const { data: session, error } = await supabaseAdmin
     .from('live_sessions')
@@ -103,6 +104,26 @@ async function handleGetSession(req: VercelRequest, res: VercelResponse, user: a
 
   if (error || !session) {
     return res.status(404).json({ message: 'Session not found' });
+  }
+
+  // Check access permissions for course-linked sessions
+  if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
+    if (session.course_id) {
+      // Check if user is enrolled in the course
+      const { data: enrollment } = await supabaseAdmin
+        .from('enrollments')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('course_id', session.course_id)
+        .single();
+
+      if (!enrollment) {
+        return res.status(403).json({ message: 'Access denied. You must be enrolled in the course to view this session.' });
+      }
+    } else {
+      // Not public, not linked to course, and not the instructor
+      return res.status(403).json({ message: 'Access denied to this session' });
+    }
   }
 
   const { data: userRegistration } = await supabaseAdmin

@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, differenceInMinutes } from "date-fns";
 import { Link } from "wouter";
 import StudentLayout from "@/components/student-layout";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -63,6 +64,8 @@ interface LiveSession {
 
 export default function SessionsPage() {
   const { user, isInstructor, isAdmin } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("upcoming");
 
@@ -156,6 +159,8 @@ export default function SessionsPage() {
   };
 
   const canJoinSession = (session: LiveSession) => {
+    if (!session.user_registered) return false; // Must be registered to join
+    
     const now = new Date();
     const start = new Date(session.scheduled_start);
     const end = new Date(session.scheduled_end);
@@ -166,10 +171,33 @@ export default function SessionsPage() {
     // Can join if meeting is in progress (between start and end)
     if (now >= start && now <= end) return true;
     
-    // Can join 15 minutes before start
-    const minutesUntil = differenceInMinutes(start, now);
-    return minutesUntil <= 15 && minutesUntil > 0;
+    return false;
   };
+
+  const registerMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await apiRequest('POST', `/api/sessions/${sessionId}/register`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to register');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all_sessions'] });
+      toast({
+        title: "Registered Successfully",
+        description: "You're now registered for this session!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <StudentLayout>
@@ -230,6 +258,7 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
+              registerMutation={registerMutation}
             />
           </TabsContent>
 
@@ -240,6 +269,7 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
+              registerMutation={registerMutation}
             />
           </TabsContent>
 
@@ -250,6 +280,7 @@ export default function SessionsPage() {
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
               canJoinSession={canJoinSession}
+              registerMutation={registerMutation}
               showPast
             />
           </TabsContent>
@@ -265,6 +296,7 @@ interface SessionsListProps {
   getSessionTypeColor: (type: string) => string;
   getStatusBadge: (session: LiveSession) => JSX.Element | null;
   canJoinSession: (session: LiveSession) => boolean;
+  registerMutation: any;
   showPast?: boolean;
 }
 
@@ -274,6 +306,7 @@ function SessionsList({
   getSessionTypeColor,
   getStatusBadge,
   canJoinSession,
+  registerMutation,
   showPast = false,
 }: SessionsListProps) {
   if (isLoading) {
@@ -399,28 +432,49 @@ function SessionsList({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-3 pt-2">
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    {/* Registered Badge */}
+                    {session.user_registered && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Registered
+                      </Badge>
+                    )}
+
+                    {/* Join Button - Only if registered and session is live */}
                     {isJoinable && session.zoom_join_url && !showPast ? (
                       <Button
-                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000]"
+                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000]"
                         onClick={() => window.open(session.zoom_join_url, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4" />
-                        Join Session
+                        Join Now
                       </Button>
                     ) : showPast ? (
                       <Button variant="secondary" className="gap-2" disabled>
                         <CheckCircle className="h-4 w-4" />
                         Completed
                       </Button>
-                    ) : (
+                    ) : session.user_registered && !showPast ? (
                       <Button variant="secondary" className="gap-2" disabled>
                         <Clock className="h-4 w-4" />
                         {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                          ? `Join in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
-                          : "Session Starting Soon"}
+                          ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                          : "Starting Soon"}
                       </Button>
-                    )}
+                    ) : !showPast ? (
+                      <Button
+                        className="gap-2 bg-[#610000] hover:bg-[#7a0000]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          registerMutation.mutate(session.id);
+                        }}
+                        disabled={registerMutation.isPending}
+                      >
+                        <Users className="h-4 w-4" />
+                        {registerMutation.isPending ? "Registering..." : "Register"}
+                      </Button>
+                    ) : null}
 
                     <Link href={`/sessions/${session.id}`}>
                       <Button variant="ghost">View Details</Button>

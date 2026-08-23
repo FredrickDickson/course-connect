@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, differenceInMinutes } from "date-fns";
 import { Link } from "wouter";
 import {
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Video,
   Calendar,
@@ -20,6 +21,7 @@ import {
   Users,
   ArrowRight,
   ExternalLink,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +52,9 @@ interface LiveSession {
 }
 
 export default function UpcomingSessionsCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: sessions = [], isLoading } = useQuery<LiveSession[]>({
     queryKey: ['upcoming_sessions'],
     queryFn: async () => {
@@ -58,6 +63,31 @@ export default function UpcomingSessionsCard() {
       return response.json();
     },
     refetchInterval: 60000,
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await apiRequest('POST', `/api/sessions/${sessionId}/register`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to register');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
+      toast({
+        title: "Registered Successfully",
+        description: "You're now registered for this session!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const getSessionTypeColor = (type: string) => {
@@ -109,16 +139,16 @@ export default function UpcomingSessionsCard() {
   };
 
   const canJoinSession = (session: LiveSession) => {
+    if (!session.user_registered) return false; // Must be registered to join
+    
     const now = new Date();
     const start = new Date(session.scheduled_start);
     const end = new Date(session.scheduled_end);
 
     if (session.status === 'live') return true;
     
-    if (now >= start && now <= end) return true;
-    
-    const minutesUntil = differenceInMinutes(start, now);
-    return minutesUntil <= 15 && minutesUntil > 0;
+    // Can join if within session time window
+    return now >= start && now <= end;
   };
 
   if (isLoading) {
@@ -256,6 +286,15 @@ export default function UpcomingSessionsCard() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Registered Badge */}
+                  {session.user_registered && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Registered
+                    </Badge>
+                  )}
+
+                  {/* Join Button - Only if registered and session is live */}
                   {isJoinable && session.zoom_join_url ? (
                     <Button
                       size="sm"
@@ -268,14 +307,28 @@ export default function UpcomingSessionsCard() {
                       onClick={() => window.open(session.zoom_join_url, '_blank')}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      {isInProgress ? "Join Now - In Progress!" : "Join Session"}
+                      {isInProgress ? "Join Now - Live!" : "Join Session"}
                     </Button>
-                  ) : (
+                  ) : session.user_registered ? (
                     <Button size="sm" variant="secondary" className="gap-1" disabled>
                       <Clock className="h-3.5 w-3.5" />
                       {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                        ? `Join in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
-                        : "Session Starting Soon"}
+                        ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                        : "Starting Soon"}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="gap-1 bg-[#610000] hover:bg-[#7a0000]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        registerMutation.mutate(session.id);
+                      }}
+                      disabled={registerMutation.isPending}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      {registerMutation.isPending ? "Registering..." : "Register"}
                     </Button>
                   )}
                   

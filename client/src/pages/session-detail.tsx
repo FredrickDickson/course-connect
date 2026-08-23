@@ -87,6 +87,55 @@ export default function SessionDetailPage() {
     refetchInterval: 30000,
   });
 
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/sessions/${id}/register`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to register');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', id] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
+      toast({
+        title: "Registration Successful",
+        description: "You're now registered for this session. We'll send you a reminder before it starts!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unregisterMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', `/api/sessions/${id}/register`);
+      if (!response.ok) throw new Error('Failed to unregister');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session', id] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming_sessions'] });
+      toast({
+        title: "Unregistered Successfully",
+        description: "You've been removed from this session",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest('DELETE', `/api/sessions/${id}`);
@@ -157,10 +206,31 @@ export default function SessionDetailPage() {
 
   const canJoinSession = () => {
     if (!session) return false;
-    if (session.status === 'live') return true;
+    if (!session.user_registered) return false; // Must be registered
+    if (session.status === 'cancelled') return false;
+    
+    const now = new Date();
     const start = new Date(session.scheduled_start);
-    const minutesUntil = differenceInMinutes(start, new Date());
-    return minutesUntil <= 15 && minutesUntil > -10;
+    const end = new Date(session.scheduled_end);
+    
+    // Can join if session is live or within the scheduled time window
+    if (session.status === 'live') return true;
+    return now >= start && now <= end;
+  };
+
+  const canRegisterForSession = () => {
+    if (!session || !user) return false;
+    if (session.status === 'cancelled' || session.status === 'completed') return false;
+    if (session.user_registered) return false;
+    
+    // Check if session is full
+    if (session.max_participants && participantCount >= session.max_participants) {
+      return false;
+    }
+    
+    // Can register until session ends
+    const endDate = new Date(session.scheduled_end);
+    return new Date() < endDate;
   };
 
   const canManageSession = () => {
@@ -195,12 +265,20 @@ export default function SessionDetailPage() {
   const endDate = new Date(session.scheduled_end);
   const participantCount = session.participants?.length || 0;
   const isJoinable = canJoinSession();
+  const canRegister = canRegisterForSession();
   const minutesUntil = differenceInMinutes(startDate, new Date());
+  const now = new Date();
+  const isSessionLive = session.status === 'live' || (now >= startDate && now <= endDate);
   
   const getSessionStatus = () => {
-    const now = new Date();
-    if (session.status === 'live' || (now >= startDate && now <= endDate)) {
-      return 'In Progress';
+    if (session.status === 'live' || isSessionLive) {
+      return 'Live Now';
+    }
+    if (session.status === 'cancelled') {
+      return 'Cancelled';
+    }
+    if (session.status === 'completed') {
+      return 'Completed';
     }
     if (minutesUntil <= 15 && minutesUntil > 0) {
       return 'Starting Soon';
@@ -460,16 +538,60 @@ export default function SessionDetailPage() {
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  {isJoinable && session.zoom_join_url ? (
+                  {/* Registration Status */}
+                  {session.user_registered && !isSessionLive && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 text-green-800 mb-1">
+                        <Users className="h-4 w-4" />
+                        <p className="text-sm font-semibold">You're Registered!</p>
+                      </div>
+                      <p className="text-xs text-green-700">
+                        {minutesUntil > 0 
+                          ? `Session starts in ${minutesUntil} minutes. You'll be able to join then.`
+                          : 'Session is starting soon. You can join now!'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Join Button - Only show if registered and session is live */}
+                  {isJoinable && session.zoom_join_url && (
                     <Button
-                      className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white"
+                      className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
                       size="lg"
                       onClick={() => window.open(session.zoom_join_url, '_blank')}
                     >
                       <ExternalLink className="h-5 w-5" />
-                      {getSessionStatus() === 'In Progress' ? 'Join Now - In Progress!' : 'Join Session'}
+                      Join Live Session Now
                     </Button>
-                  ) : (
+                  )}
+
+                  {/* Register Button - Show if not registered and can register */}
+                  {!session.user_registered && canRegister && !isInstructor() && (
+                    <Button
+                      className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white"
+                      size="lg"
+                      onClick={() => registerMutation.mutate()}
+                      disabled={registerMutation.isPending}
+                    >
+                      <Users className="h-5 w-5" />
+                      {registerMutation.isPending ? 'Registering...' : 'Register for Session'}
+                    </Button>
+                  )}
+
+                  {/* Unregister Button - Show if registered and session hasn't started */}
+                  {session.user_registered && !isSessionLive && !isInstructor() && (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                      onClick={() => unregisterMutation.mutate()}
+                      disabled={unregisterMutation.isPending}
+                    >
+                      {unregisterMutation.isPending ? 'Unregistering...' : 'Cancel Registration'}
+                    </Button>
+                  )}
+
+                  {/* Waiting Message - Show if registered but can't join yet */}
+                  {session.user_registered && !isJoinable && minutesUntil > 0 && (
                     <Button
                       variant="secondary"
                       className="w-full gap-2"
@@ -477,10 +599,18 @@ export default function SessionDetailPage() {
                       disabled
                     >
                       <Clock className="h-5 w-5" />
-                      {minutesUntil > 0 
-                        ? `Join in ${minutesUntil} minutes`
-                        : "Session Starting Soon"}
+                      Session starts in {minutesUntil} minutes
                     </Button>
+                  )}
+
+                  {/* Session Full Message */}
+                  {!session.user_registered && session.max_participants && participantCount >= session.max_participants && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-sm text-amber-800 font-medium">Session is full</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        This session has reached maximum capacity ({session.max_participants} participants)
+                      </p>
+                    </div>
                   )}
                   
                   <Button
@@ -493,10 +623,19 @@ export default function SessionDetailPage() {
                   </Button>
                 </div>
 
-                {!isJoinable && minutesUntil > 0 && (
+                {/* Info Messages */}
+                {!session.user_registered && !isInstructor() && canRegister && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      <strong>Session starts soon!</strong> You can join 15 minutes before the session starts.
+                      <strong>Register now</strong> to receive reminders and join the session when it starts!
+                    </p>
+                  </div>
+                )}
+
+                {session.user_registered && !isSessionLive && minutesUntil > 15 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>You're all set!</strong> Come back {format(startDate, "MMM d 'at' h:mm a")} to join the session.
                     </p>
                   </div>
                 )}
