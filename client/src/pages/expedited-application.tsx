@@ -28,6 +28,7 @@ interface ExistingDocument {
   id: string;
   documentType: ServerDocumentType;
   fileUrl: string;
+  storagePath?: string | null;
   originalName?: string | null;
   fileSize?: number | null;
 }
@@ -239,6 +240,22 @@ export default function ExpeditedApplication() {
     }
   };
 
+  const handleViewDocument = async (doc: ExistingDocument) => {
+    setErrorMessage("");
+    if (!doc.storagePath) {
+      setErrorMessage("No file is on record for this document.");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(doc.storagePath, 3600);
+    if (error || !data?.signedUrl) {
+      setErrorMessage(error?.message || "Failed to open document.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -354,16 +371,13 @@ export default function ExpeditedApplication() {
         if (uploadErr) {
           throw new Error(`Failed to upload ${doc.file.name}: ${uploadErr.message}`);
         }
-        const { data: publicUrlData } = supabase.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(path);
 
         const docResp = await fetch(`/api/qualification/professional-profile/documents`, {
           method: "POST",
           headers,
           body: JSON.stringify({
             documentType: DOCUMENT_TYPE_MAP[doc.type] ?? "OTHER",
-            fileUrl: publicUrlData?.publicUrl || path,
+            fileUrl: path,
             storagePath: path,
             originalName: doc.file.name,
             fileSize: doc.file.size,
@@ -431,10 +445,14 @@ export default function ExpeditedApplication() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="outline" size="sm" asChild>
-                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
-                    View <ExternalLink className="w-3 h-3" />
-                  </a>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="inline-flex items-center gap-1"
+                  onClick={() => handleViewDocument(doc)}
+                >
+                  View <ExternalLink className="w-3 h-3" />
                 </Button>
                 <Button
                   type="button"

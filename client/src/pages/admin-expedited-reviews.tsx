@@ -38,6 +38,7 @@ import { useRoleProtection } from "@/hooks/useRoleProtection";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type ReviewStatus = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "MORE_INFO_REQUIRED";
 type Level = "ASSOCIATE" | "MEMBER" | "FELLOW" | "NONE";
@@ -68,6 +69,7 @@ interface ProfessionalProfileDetail extends ProfessionalProfileSummary {
     id: string;
     type: string;
     fileUrl: string;
+    storagePath?: string | null;
     fileName: string;
     fileSize?: number;
   }>;
@@ -513,7 +515,23 @@ function ProfileDrawerView({
   const [note, setNote] = useState("");
   useEffect(() => setNote(""), [profile.id]);
 
+  const { toast } = useToast();
   const statusConfig = statusBadges[profile.reviewStatus];
+
+  const handleViewDocument = async (doc: ProfessionalProfileDetail["documents"][number]) => {
+    if (!doc.storagePath) {
+      toast({ title: "Document unavailable", description: "No file is on record for this document.", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("expedited-documents")
+      .createSignedUrl(doc.storagePath, 3600);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Failed to open document", description: error?.message, variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -542,12 +560,11 @@ function ProfileDrawerView({
           <ScrollArea className="h-40 rounded-xl border border-[#E7E5E4]">
             <div className="divide-y">
               {profile.documents.map((doc) => (
-                <a
+                <button
                   key={doc.id}
-                  href={doc.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 text-sm"
+                  type="button"
+                  onClick={() => handleViewDocument(doc)}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 text-sm text-left"
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="w-4 h-4 text-muted-foreground" />
@@ -557,7 +574,7 @@ function ProfileDrawerView({
                     </div>
                   </div>
                   <Badge variant="outline">Download</Badge>
-                </a>
+                </button>
               ))}
             </div>
           </ScrollArea>
