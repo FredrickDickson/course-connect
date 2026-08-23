@@ -1,7 +1,48 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getZoomService } from '../../server/services/zoom';
+import axios from 'axios';
 import { z } from 'zod';
+
+// Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
+// because Vercel's serverless function bundler doesn't reliably trace relative imports
+// that cross from api/ out into server/ — confirmed via live OPTIONS requests crashing
+// at module load for every api/*.ts file that imported from server/services/*.
+async function getZoomAccessToken(): Promise<string | null> {
+  const accountId = process.env.ZOOM_ACCOUNT_ID;
+  const clientId = process.env.ZOOM_CLIENT_ID;
+  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
+
+  if (!accountId || !clientId || !clientSecret) {
+    return null;
+  }
+
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const response = await axios.post(
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    null,
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  return response.data.access_token;
+}
+
+async function updateZoomMeeting(token: string, meetingId: string, params: Record<string, any>) {
+  await axios.patch(`https://api.zoom.us/v2/meetings/${meetingId}`, params, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+async function deleteZoomMeeting(token: string, meetingId: string) {
+  await axios.delete(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+    params: { schedule_for_reminder: true },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
 
 const updateSessionSchema = z.object({
   title: z.string().min(3).max(200),
@@ -196,24 +237,26 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
   const updateData = validation.data;
 
   if (updateData.scheduled_start || updateData.scheduled_end || updateData.title || updateData.description) {
-    const zoomService = getZoomService();
-    if (zoomService && existingSession.zoom_meeting_id) {
+    if (existingSession.zoom_meeting_id) {
       try {
-        const zoomUpdateData: any = {};
+        const zoomToken = await getZoomAccessToken();
+        if (zoomToken) {
+          const zoomUpdateData: any = {};
 
-        if (updateData.title) zoomUpdateData.topic = updateData.title;
-        if (updateData.description) zoomUpdateData.agenda = updateData.description;
-        if (updateData.scheduled_start) {
-          const startDate = new Date(updateData.scheduled_start);
-          zoomUpdateData.start_time = startDate.toISOString().slice(0, 19);
-        }
-        if (updateData.scheduled_start || updateData.scheduled_end) {
-          const start = new Date(updateData.scheduled_start || existingSession.scheduled_start);
-          const end = new Date(updateData.scheduled_end || existingSession.scheduled_end);
-          zoomUpdateData.duration = Math.floor((end.getTime() - start.getTime()) / 60000);
-        }
+          if (updateData.title) zoomUpdateData.topic = updateData.title;
+          if (updateData.description) zoomUpdateData.agenda = updateData.description;
+          if (updateData.scheduled_start) {
+            const startDate = new Date(updateData.scheduled_start);
+            zoomUpdateData.start_time = startDate.toISOString().slice(0, 19);
+          }
+          if (updateData.scheduled_start || updateData.scheduled_end) {
+            const start = new Date(updateData.scheduled_start || existingSession.scheduled_start);
+            const end = new Date(updateData.scheduled_end || existingSession.scheduled_end);
+            zoomUpdateData.duration = Math.floor((end.getTime() - start.getTime()) / 60000);
+          }
 
-        await zoomService.updateMeeting(existingSession.zoom_meeting_id, zoomUpdateData);
+          await updateZoomMeeting(zoomToken, existingSession.zoom_meeting_id, zoomUpdateData);
+        }
       } catch (error) {
         console.error('Failed to update Zoom meeting:', error);
       }
@@ -258,13 +301,13 @@ async function handleDeleteSession(req: VercelRequest, res: VercelResponse, user
   }
 
   if (session.zoom_meeting_id) {
-    const zoomService = getZoomService();
-    if (zoomService) {
-      try {
-        await zoomService.deleteMeeting(session.zoom_meeting_id, true);
-      } catch (error) {
-        console.error('Failed to delete Zoom meeting:', error);
+    try {
+      const zoomToken = await getZoomAccessToken();
+      if (zoomToken) {
+        await deleteZoomMeeting(zoomToken, session.zoom_meeting_id);
       }
+    } catch (error) {
+      console.error('Failed to delete Zoom meeting:', error);
     }
   }
 

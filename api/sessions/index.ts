@@ -1,7 +1,51 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getZoomService } from '../../server/services/zoom';
+import axios from 'axios';
 import { z } from 'zod';
+
+// Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
+// because Vercel's serverless function bundler doesn't reliably trace relative imports
+// that cross from api/ out into server/ — confirmed via live OPTIONS requests crashing
+// at module load for every api/*.ts file that imported from server/services/*.
+async function getZoomAccessToken(): Promise<string | null> {
+  const accountId = process.env.ZOOM_ACCOUNT_ID;
+  const clientId = process.env.ZOOM_CLIENT_ID;
+  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
+
+  if (!accountId || !clientId || !clientSecret) {
+    return null;
+  }
+
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const response = await axios.post(
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    null,
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  return response.data.access_token;
+}
+
+async function createZoomMeeting(token: string, hostEmail: string, params: Record<string, any>) {
+  const response = await axios.post(
+    `https://api.zoom.us/v2/users/${hostEmail}/meetings`,
+    params,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+}
+
+async function deleteZoomMeeting(token: string, meetingId: string) {
+  await axios.delete(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+    params: { schedule_for_reminder: false },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
 
 const createSessionSchema = z.object({
   title: z.string().min(3).max(200),
@@ -240,8 +284,17 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
     }
   }
 
-  const zoomService = getZoomService();
-  if (!zoomService) {
+  let zoomToken: string | null;
+  try {
+    zoomToken = await getZoomAccessToken();
+  } catch (error: any) {
+    console.error('Failed to authenticate with Zoom:', error.response?.data || error.message);
+    return res.status(503).json({
+      message: 'Live sessions feature is not configured. Please contact administrator.'
+    });
+  }
+
+  if (!zoomToken) {
     return res.status(503).json({
       message: 'Live sessions feature is not configured. Please contact administrator.'
     });
@@ -261,7 +314,7 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
     const startDate = new Date(sessionData.scheduled_start);
     const zoomStartTime = startDate.toISOString().slice(0, 19);
 
-    const zoomMeeting = await zoomService.createMeeting(instructor.email, {
+    const zoomMeeting = await createZoomMeeting(zoomToken, instructor.email, {
       topic: sessionData.title,
       type: 2,
       start_time: zoomStartTime,
@@ -310,13 +363,13 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
 
     if (insertError) {
       console.error('Database insert error:', insertError);
-      await zoomService.deleteMeeting(zoomMeeting.id, false);
+      await deleteZoomMeeting(zoomToken, zoomMeeting.id);
       return res.status(500).json({ message: 'Failed to create session' });
     }
 
     return res.status(201).json(newSession);
   } catch (error: any) {
-    console.error('Error creating session:', error);
+    console.error('Error creating session:', error.response?.data || error.message);
     return res.status(500).json({
       message: 'Failed to create Zoom meeting',
       error: error.message
