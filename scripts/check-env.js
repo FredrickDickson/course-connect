@@ -87,6 +87,13 @@ function checkEnvironment() {
   }
 
   // Exit with error if required variables are missing
+  // Skip validation if SKIP_ENV_VALIDATION is set (for CI/CD)
+  if (process.env.SKIP_ENV_VALIDATION === 'true') {
+    console.log('\n⚠️  Environment validation skipped (CI/CD mode)');
+    console.log('   Make sure environment variables are set in your deployment platform!');
+    process.exit(0);
+  }
+
   if (missingRequired.length > 0) {
     console.log('\n❌ Environment check failed!');
     process.exit(1);

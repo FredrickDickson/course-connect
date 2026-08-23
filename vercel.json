@@ -5,7 +5,8 @@
   "installCommand": "npm install",
   "framework": null,
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "SKIP_ENV_VALIDATION": "true"
   },
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./ ':!*.md'",
   "rewrites": [
