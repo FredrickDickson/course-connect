@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../../server/storage';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-async function getUserFromRequest(req: VercelRequest) {
+async function getUserFromRequest(req: VercelRequest, supabaseAdmin: SupabaseClient) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -30,6 +30,16 @@ async function getUserFromRequest(req: VercelRequest) {
   }
 }
 
+async function isEnrolled(supabaseAdmin: SupabaseClient, userId: string, courseId: string) {
+  const { data } = await supabaseAdmin
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle();
+  return !!data;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -41,7 +51,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const user = await getUserFromRequest(req);
+  // Initialize client inside handler to avoid module-level env var issues
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing environment variables:', {
+      supabaseUrl: !!supabaseUrl,
+      supabaseServiceKey: !!supabaseServiceKey,
+    });
+    return res.status(500).json({
+      message: 'Server configuration error',
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const user = await getUserFromRequest(req, supabaseAdmin);
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
@@ -53,22 +84,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'POST') {
-      return await handleRegister(req, res, user, id);
+      return await handleRegister(req, res, user, id, supabaseAdmin);
     } else if (req.method === 'DELETE') {
-      return await handleUnregister(req, res, user, id);
+      return await handleUnregister(req, res, user, id, supabaseAdmin);
     }
 
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     console.error('Registration API error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'Internal server error',
-      error: error.message 
+      error: error.message
     });
   }
 }
 
-async function handleRegister(req: VercelRequest, res: VercelResponse, user: any, id: string) {
+async function handleRegister(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
 
@@ -84,20 +115,8 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
 
   // Check access permissions for course-linked sessions
   if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
-    if (session.course_id) {
-      // Check if user is enrolled in the course
-      const { data: enrollment } = await supabaseAdmin
-        .from('enrollments')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('course_id', session.course_id)
-        .single();
-
-      if (!enrollment) {
-        return res.status(403).json({ message: 'You must be enrolled in the course to register for this session' });
-      }
-    } else {
-      // Not public, not linked to course, and not the instructor
+    const enrolled = session.course_id ? await isEnrolled(supabaseAdmin, userId, session.course_id) : false;
+    if (!enrolled) {
       return res.status(403).json({ message: 'Access denied to this session' });
     }
   }
@@ -147,7 +166,7 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
   return res.status(201).json(registration);
 }
 
-async function handleUnregister(req: VercelRequest, res: VercelResponse, user: any, id: string) {
+async function handleUnregister(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
 
   const { error } = await supabaseAdmin

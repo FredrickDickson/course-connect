@@ -438,7 +438,7 @@ router.delete(
 router.get(
   "/professional-profiles/stats",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (_req: AuthRequest, res: Response) => {
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
@@ -472,7 +472,7 @@ router.get(
 router.get(
   "/professional-profiles",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { reviewStatus, level, track, q, limit, offset } = req.query;
 
@@ -492,7 +492,7 @@ router.get(
 router.get(
   "/professional-profiles/:id",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const profile = await fetchProfessionalProfileById(id);
@@ -516,6 +516,7 @@ router.get(
         id: doc.id,
         type: doc.documentType,
         fileUrl: doc.fileUrl,
+        storagePath: doc.storagePath ?? null,
         fileName: doc.originalName ?? doc.fileUrl,
         fileSize: doc.fileSize ?? undefined,
       })),
@@ -527,7 +528,7 @@ router.get(
 router.post(
   "/professional-profiles/:id/decision",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { action, note } = req.body ?? {};
@@ -904,7 +905,7 @@ router.post(
 router.get(
   "/admin/expedited/applications",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { status, targetLevel } = req.query;
 
@@ -924,7 +925,7 @@ router.get(
 router.post(
   "/admin/expedited/applications/:id/approve",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reviewComments, assessmentScore } = req.body;
@@ -1004,7 +1005,7 @@ router.post(
 router.post(
   "/admin/expedited/applications/:id/reject",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reviewComments } = req.body;
@@ -1041,7 +1042,7 @@ router.post(
 router.post(
   "/admin/expedited/applications/:id/review",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reviewComments } = req.body;
@@ -1235,7 +1236,7 @@ router.get(
 router.post(
   "/certificates/:id/revoke",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reason } = req.body;
@@ -1261,7 +1262,7 @@ router.post(
 router.post(
   "/certificates/:id/url",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { certificateUrl } = req.body;
@@ -1379,7 +1380,7 @@ router.get(
 router.get(
   "/admin/fellowship/applications",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { status, track } = req.query;
 
@@ -1399,7 +1400,7 @@ router.get(
 router.post(
   "/admin/fellowship/applications/:id/approve",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reviewComments } = req.body;
@@ -1449,7 +1450,7 @@ router.post(
 router.post(
   "/admin/fellowship/applications/:id/reject",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { reviewComments } = req.body;
@@ -1574,7 +1575,7 @@ router.get(
 router.post(
   "/admin/student/applications/:id/verify",
   requireSupabaseAuth,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { approved } = req.body;

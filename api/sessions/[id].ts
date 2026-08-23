@@ -1,7 +1,48 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../server/storage';
-import { getZoomService } from '../../server/services/zoom';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import axios from 'axios';
 import { z } from 'zod';
+
+// Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
+// because Vercel's serverless function bundler doesn't reliably trace relative imports
+// that cross from api/ out into server/ — confirmed via live OPTIONS requests crashing
+// at module load for every api/*.ts file that imported from server/services/*.
+async function getZoomAccessToken(): Promise<string | null> {
+  const accountId = process.env.ZOOM_ACCOUNT_ID;
+  const clientId = process.env.ZOOM_CLIENT_ID;
+  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
+
+  if (!accountId || !clientId || !clientSecret) {
+    return null;
+  }
+
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const response = await axios.post(
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    null,
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  return response.data.access_token;
+}
+
+async function updateZoomMeeting(token: string, meetingId: string, params: Record<string, any>) {
+  await axios.patch(`https://api.zoom.us/v2/meetings/${meetingId}`, params, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+async function deleteZoomMeeting(token: string, meetingId: string) {
+  await axios.delete(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+    params: { schedule_for_reminder: true },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
 
 const updateSessionSchema = z.object({
   title: z.string().min(3).max(200),
@@ -15,7 +56,7 @@ const updateSessionSchema = z.object({
   max_participants: z.number().int().positive().max(1000).optional(),
 }).partial();
 
-async function getUserFromRequest(req: VercelRequest) {
+async function getUserFromRequest(req: VercelRequest, supabaseAdmin: SupabaseClient) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -44,6 +85,16 @@ async function getUserFromRequest(req: VercelRequest) {
   }
 }
 
+async function isEnrolled(supabaseAdmin: SupabaseClient, userId: string, courseId: string) {
+  const { data } = await supabaseAdmin
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle();
+  return !!data;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -55,7 +106,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const user = await getUserFromRequest(req);
+  // Initialize client inside handler to avoid module-level env var issues
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing environment variables:', {
+      supabaseUrl: !!supabaseUrl,
+      supabaseServiceKey: !!supabaseServiceKey,
+    });
+    return res.status(500).json({
+      message: 'Server configuration error',
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const user = await getUserFromRequest(req, supabaseAdmin);
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
@@ -67,24 +139,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      return await handleGetSession(req, res, user, id);
+      return await handleGetSession(req, res, user, id, supabaseAdmin);
     } else if (req.method === 'PATCH') {
-      return await handleUpdateSession(req, res, user, id);
+      return await handleUpdateSession(req, res, user, id, supabaseAdmin);
     } else if (req.method === 'DELETE') {
-      return await handleDeleteSession(req, res, user, id);
+      return await handleDeleteSession(req, res, user, id, supabaseAdmin);
     }
 
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     console.error('Session API error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: 'Internal server error',
-      error: error.message 
+      error: error.message
     });
   }
 }
 
-async function handleGetSession(req: VercelRequest, res: VercelResponse, user: any, id: string) {
+async function handleGetSession(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
 
@@ -108,20 +180,8 @@ async function handleGetSession(req: VercelRequest, res: VercelResponse, user: a
 
   // Check access permissions for course-linked sessions
   if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
-    if (session.course_id) {
-      // Check if user is enrolled in the course
-      const { data: enrollment } = await supabaseAdmin
-        .from('enrollments')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('course_id', session.course_id)
-        .single();
-
-      if (!enrollment) {
-        return res.status(403).json({ message: 'Access denied. You must be enrolled in the course to view this session.' });
-      }
-    } else {
-      // Not public, not linked to course, and not the instructor
+    const enrolled = session.course_id ? await isEnrolled(supabaseAdmin, userId, session.course_id) : false;
+    if (!enrolled) {
       return res.status(403).json({ message: 'Access denied to this session' });
     }
   }
@@ -140,7 +200,7 @@ async function handleGetSession(req: VercelRequest, res: VercelResponse, user: a
   });
 }
 
-async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user: any, id: string) {
+async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
 
@@ -151,9 +211,9 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
 
   const validation = updateSessionSchema.safeParse(req.body);
   if (!validation.success) {
-    return res.status(400).json({ 
-      message: 'Invalid input', 
-      errors: validation.error.errors 
+    return res.status(400).json({
+      message: 'Invalid input',
+      errors: validation.error.errors
     });
   }
 
@@ -178,24 +238,26 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
   const updateData = validation.data;
 
   if (updateData.scheduled_start || updateData.scheduled_end || updateData.title || updateData.description) {
-    const zoomService = getZoomService();
-    if (zoomService && existingSession.zoom_meeting_id) {
+    if (existingSession.zoom_meeting_id) {
       try {
-        const zoomUpdateData: any = {};
-        
-        if (updateData.title) zoomUpdateData.topic = updateData.title;
-        if (updateData.description) zoomUpdateData.agenda = updateData.description;
-        if (updateData.scheduled_start) {
-          const startDate = new Date(updateData.scheduled_start);
-          zoomUpdateData.start_time = startDate.toISOString().slice(0, 19);
-        }
-        if (updateData.scheduled_start || updateData.scheduled_end) {
-          const start = new Date(updateData.scheduled_start || existingSession.scheduled_start);
-          const end = new Date(updateData.scheduled_end || existingSession.scheduled_end);
-          zoomUpdateData.duration = Math.floor((end.getTime() - start.getTime()) / 60000);
-        }
+        const zoomToken = await getZoomAccessToken();
+        if (zoomToken) {
+          const zoomUpdateData: any = {};
 
-        await zoomService.updateMeeting(existingSession.zoom_meeting_id, zoomUpdateData);
+          if (updateData.title) zoomUpdateData.topic = updateData.title;
+          if (updateData.description) zoomUpdateData.agenda = updateData.description;
+          if (updateData.scheduled_start) {
+            const startDate = new Date(updateData.scheduled_start);
+            zoomUpdateData.start_time = startDate.toISOString().slice(0, 19);
+          }
+          if (updateData.scheduled_start || updateData.scheduled_end) {
+            const start = new Date(updateData.scheduled_start || existingSession.scheduled_start);
+            const end = new Date(updateData.scheduled_end || existingSession.scheduled_end);
+            zoomUpdateData.duration = Math.floor((end.getTime() - start.getTime()) / 60000);
+          }
+
+          await updateZoomMeeting(zoomToken, existingSession.zoom_meeting_id, zoomUpdateData);
+        }
       } catch (error) {
         console.error('Failed to update Zoom meeting:', error);
       }
@@ -216,7 +278,7 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
   return res.json(updatedSession);
 }
 
-async function handleDeleteSession(req: VercelRequest, res: VercelResponse, user: any, id: string) {
+async function handleDeleteSession(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
   const userId = user.id;
   const userRole = user.role;
 
@@ -240,13 +302,13 @@ async function handleDeleteSession(req: VercelRequest, res: VercelResponse, user
   }
 
   if (session.zoom_meeting_id) {
-    const zoomService = getZoomService();
-    if (zoomService) {
-      try {
-        await zoomService.deleteMeeting(session.zoom_meeting_id, true);
-      } catch (error) {
-        console.error('Failed to delete Zoom meeting:', error);
+    try {
+      const zoomToken = await getZoomAccessToken();
+      if (zoomToken) {
+        await deleteZoomMeeting(zoomToken, session.zoom_meeting_id);
       }
+    } catch (error) {
+      console.error('Failed to delete Zoom meeting:', error);
     }
   }
 
