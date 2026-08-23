@@ -113,6 +113,7 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
     return res.status(404).json({ message: 'Session not found' });
   }
 
+  // Check access permissions for course-linked sessions
   if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
     const enrolled = session.course_id ? await isEnrolled(supabaseAdmin, userId, session.course_id) : false;
     if (!enrolled) {

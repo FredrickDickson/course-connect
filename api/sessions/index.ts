@@ -198,6 +198,7 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
     return res.status(500).json({ message: 'Failed to fetch sessions' });
   }
 
+  // Filter sessions based on course enrollment for students
   if (sessions && userRole !== 'admin' && userRole !== 'instructor') {
     const { data: enrollments } = await supabaseAdmin
       .from('enrollments')
@@ -206,6 +207,7 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
 
     const enrolledCourseIds = new Set((enrollments || []).map((e: any) => e.course_id));
 
+    // Filter sessions: show only public sessions, or sessions for courses the user is enrolled in
     sessions = sessions.filter((session: any) =>
       session.is_public ||
       session.instructor_id === userId ||
@@ -327,13 +329,13 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
         participant_video: true,
         join_before_host: false,
         mute_upon_entry: true,
-        waiting_room: true,
-        approval_type: 0,
+        waiting_room: false, // Disable waiting room for direct join
+        approval_type: 2, // No registration required
         audio: 'both',
         auto_recording: 'cloud',
         watermark: false,
         use_pmi: false,
-        registration_type: 1,
+        registration_type: 0, // Disable Zoom registration - we handle it in our app
         meeting_authentication: false,
       },
     });
