@@ -108,9 +108,10 @@ export class ZoomService {
 
   private async refreshAccessToken(): Promise<void> {
     try {
-      const credentials = Buffer.from(
-        `${this.config.clientId}:${this.config.clientSecret}`
-      ).toString('base64');
+      // Use btoa for base64 encoding (works in both Node and edge environments)
+      const credentials = typeof Buffer !== 'undefined' 
+        ? Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64')
+        : btoa(`${this.config.clientId}:${this.config.clientSecret}`);
 
       const response = await axios.post(
         `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${this.config.accountId}`,
@@ -125,9 +126,16 @@ export class ZoomService {
 
       this.accessToken = response.data.access_token;
       this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
-    } catch (error) {
-      console.error('Failed to refresh Zoom access token:', error);
-      throw new Error('Failed to authenticate with Zoom API');
+      
+      console.log('✅ Zoom token refreshed successfully');
+    } catch (error: any) {
+      console.error('Failed to refresh Zoom access token:', error.response?.data || error.message);
+      console.error('Zoom config check:', {
+        accountId: this.config.accountId ? 'SET' : 'NOT SET',
+        clientId: this.config.clientId ? 'SET' : 'NOT SET',
+        clientSecret: this.config.clientSecret ? 'SET' : 'NOT SET',
+      });
+      throw new Error(`Failed to authenticate with Zoom API: ${error.response?.data?.message || error.message}`);
     }
   }
 
@@ -243,8 +251,19 @@ export function initializeZoomService(): ZoomService | null {
   const clientId = process.env.ZOOM_CLIENT_ID;
   const clientSecret = process.env.ZOOM_CLIENT_SECRET;
 
+  console.log('🔍 Initializing Zoom Service...');
+  console.log('Environment check:', {
+    accountId: accountId ? `${accountId.substring(0, 5)}...` : 'NOT SET',
+    clientId: clientId ? `${clientId.substring(0, 5)}...` : 'NOT SET',
+    clientSecret: clientSecret ? 'SET' : 'NOT SET',
+  });
+
   if (!accountId || !clientId || !clientSecret) {
-    console.warn('Zoom credentials not configured.');
+    console.error('❌ Zoom credentials not configured. Missing:', {
+      accountId: !accountId,
+      clientId: !clientId,
+      clientSecret: !clientSecret,
+    });
     return null;
   }
 
@@ -254,6 +273,7 @@ export function initializeZoomService(): ZoomService | null {
       clientId,
       clientSecret,
     });
+    console.log('✅ Zoom Service initialized successfully');
   }
 
   return zoomService;
