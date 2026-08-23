@@ -164,6 +164,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   const muxPlayerRef = useRef<any>(null);
   const pollRef = useRef<number | null>(null);
   const seekedRef = useRef(false);
+  const hasEndedRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
   const lastEmittedTimeRef = useRef(0);
 
@@ -255,7 +256,13 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
     setSpeedState(r);
   };
 
-  const togglePlay = () => { isPlaying ? adapterPause() : adapterPlay(); };
+  const togglePlay = () => {
+    if (!isPlaying && hasEndedRef.current) {
+      hasEndedRef.current = false;
+      adapterSeek(0);
+    }
+    isPlaying ? adapterPause() : adapterPlay();
+  };
   const skip = (delta: number) => adapterSeek(Math.min(Math.max(currentTime + delta, 0), duration || 0));
 
   const toggleFullscreen = () => {
@@ -370,6 +377,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
     let cancelled = false;
     setIsLoading(true);
     seekedRef.current = false;
+    hasEndedRef.current = false;
 
     (async () => {
       if (videoPlatform === "youtube") {
@@ -418,9 +426,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
               },
               onStateChange: (e: any) => {
                 const s = e.data;
-                if (s === YT.PlayerState.PLAYING) { setIsPlaying(true); onPlay?.(); scheduleHide(); }
+                if (s === YT.PlayerState.PLAYING) { hasEndedRef.current = false; setIsPlaying(true); onPlay?.(); scheduleHide(); }
                 else if (s === YT.PlayerState.PAUSED) { setIsPlaying(false); onPause?.(); setShowControls(true); }
-                else if (s === YT.PlayerState.ENDED) { setIsPlaying(false); onEnded?.(); setShowControls(true); }
+                else if (s === YT.PlayerState.ENDED) { hasEndedRef.current = true; setIsPlaying(false); onEnded?.(); setShowControls(true); }
               },
               onError: () => { setError("Failed to load YouTube video"); onError?.(); setIsLoading(false); },
             },
@@ -474,9 +482,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             setCurrentTime(d.seconds);
             emitTime(d.seconds, duration);
           });
-          vimeoPlayerRef.current.on("play", () => { setIsPlaying(true); onPlay?.(); scheduleHide(); });
+          vimeoPlayerRef.current.on("play", () => { hasEndedRef.current = false; setIsPlaying(true); onPlay?.(); scheduleHide(); });
           vimeoPlayerRef.current.on("pause", () => { setIsPlaying(false); onPause?.(); setShowControls(true); });
-          vimeoPlayerRef.current.on("ended", () => { setIsPlaying(false); onEnded?.(); setShowControls(true); });
+          vimeoPlayerRef.current.on("ended", () => { hasEndedRef.current = true; setIsPlaying(false); onEnded?.(); setShowControls(true); });
         } catch {
           setError("Could not load Vimeo player");
           setIsLoading(false);
@@ -516,6 +524,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
   useEffect(() => {
     if (isExternal) return;
     seekedRef.current = false;
+    hasEndedRef.current = false;
     lastEmittedTimeRef.current = 0;
   }, [isExternal, actualSrc]);
 
@@ -645,9 +654,9 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             }
             onLoadedMetadata?.();
           }}
-          onPlay={() => { setIsPlaying(true); scheduleHide(); onPlay?.(); }}
+          onPlay={() => { hasEndedRef.current = false; setIsPlaying(true); scheduleHide(); onPlay?.(); }}
           onPause={() => { setIsPlaying(false); setShowControls(true); onPause?.(); }}
-          onEnded={() => { setIsPlaying(false); setShowControls(true); onEnded?.(); }}
+          onEnded={() => { hasEndedRef.current = true; setIsPlaying(false); setShowControls(true); onEnded?.(); }}
           onVolumeChange={() => {
             const v = videoRef.current; if (!v) return;
             setVolume(v.volume); setIsMuted(v.muted);
@@ -658,9 +667,18 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
         />
       )}
 
-      {/* Click-capture overlay for external players (so click toggles play) */}
+      {/* Click-capture overlay for external players (so click toggles play). Opaque
+          whenever not actively playing, so the raw YouTube/Vimeo iframe (its own
+          paused frame, branding, or end-of-video suggestion grid) is never visible
+          behind the app's own play button/controls. */}
       {isExternal && !error && (
-        <div className="absolute inset-0 z-10 cursor-pointer" onClick={togglePlay} />
+        <div
+          className={cn(
+            "absolute inset-0 z-10 cursor-pointer",
+            !isPlaying && !isLoading && "bg-black",
+          )}
+          onClick={togglePlay}
+        />
       )}
 
       {/* Title (top-left) */}

@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { requireSupabaseAuth } from "../supabaseAuth";
 import { requireInstructor } from "../middleware/roleProtection";
 import { asyncHandler } from "../middleware/security";
-import { supabaseAdmin } from "../storage";
+import { storage, supabaseAdmin } from "../storage";
 import { getZoomService } from "../services/zoom";
 import { z } from "zod";
 
@@ -83,11 +83,26 @@ router.get(
       query = query.or(`instructor_id.eq.${userId},is_public.eq.true`);
     }
 
-    const { data: sessions, error } = await query;
+    let { data: sessions, error } = await query;
 
     if (error) {
       console.error('Error fetching sessions:', error);
       return res.status(500).json({ message: 'Failed to fetch sessions' });
+    }
+
+    if (sessions && userRole !== 'admin' && userRole !== 'instructor') {
+      const { data: enrollments } = await supabaseAdmin
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', userId);
+
+      const enrolledCourseIds = new Set((enrollments || []).map((e) => e.course_id));
+
+      sessions = sessions.filter((session: any) =>
+        session.is_public ||
+        session.instructor_id === userId ||
+        (session.course_id && enrolledCourseIds.has(session.course_id))
+      );
     }
 
     if (sessions && sessions.length > 0) {
@@ -118,6 +133,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.claims.sub;
+    const userRole = req.user.role;
 
     const { data: session, error } = await supabaseAdmin
       .from('live_sessions')
@@ -135,6 +151,15 @@ router.get(
 
     if (error || !session) {
       return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
+      const enrollment = session.course_id
+        ? await storage.getEnrollment(userId, session.course_id)
+        : undefined;
+      if (!enrollment) {
+        return res.status(403).json({ message: 'Access denied to this session' });
+      }
     }
 
     const { data: userRegistration } = await supabaseAdmin
@@ -177,9 +202,21 @@ router.post(
     }
 
     const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
-    
+
     if (durationMinutes > 240) {
       return res.status(400).json({ message: 'Session duration cannot exceed 4 hours' });
+    }
+
+    if (sessionData.course_id && req.user.role !== 'admin') {
+      const { data: course } = await supabaseAdmin
+        .from('courses')
+        .select('instructor_id')
+        .eq('id', sessionData.course_id)
+        .single();
+
+      if (!course || course.instructor_id !== userId) {
+        return res.status(403).json({ message: 'You can only schedule sessions for courses you teach' });
+      }
     }
 
     const zoomService = getZoomService();
@@ -397,6 +434,7 @@ router.post(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const userId = req.user.claims.sub;
+    const userRole = req.user.role;
 
     const { data: session } = await supabaseAdmin
       .from('live_sessions')
@@ -406,6 +444,15 @@ router.post(
 
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (userRole !== 'admin' && session.instructor_id !== userId && !session.is_public) {
+      const enrollment = session.course_id
+        ? await storage.getEnrollment(userId, session.course_id)
+        : undefined;
+      if (!enrollment) {
+        return res.status(403).json({ message: 'Access denied to this session' });
+      }
     }
 
     if (session.status === 'cancelled' || session.status === 'completed') {
