@@ -202,7 +202,7 @@ function Router() {
               window.location.href = "/instructor";
               return <PageLoader />;
             } else {
-              window.location.href = "/home";
+              window.location.href = "/sessions";
               return <PageLoader />;
             }
           }

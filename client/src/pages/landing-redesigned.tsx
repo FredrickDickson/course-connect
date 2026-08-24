@@ -18,7 +18,7 @@ export default function Landing() {
       } else if (user.role === "instructor") {
         setLocation("/instructor");
       } else {
-        setLocation("/home");
+        setLocation("/sessions");
       }
     }
   }, [isAuthenticated, isLoading, user, setLocation]);
