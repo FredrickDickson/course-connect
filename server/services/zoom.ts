@@ -141,18 +141,27 @@ export class ZoomService {
 
   async createMeeting(userId: string, params: CreateMeetingParams): Promise<ZoomMeeting> {
     try {
+      console.log('🔧 [Zoom] Starting meeting creation for user:', userId);
+      console.log('🔧 [Zoom] Meeting parameters:', {
+        topic: params.topic,
+        type: params.type,
+        start_time: params.start_time,
+        duration: params.duration,
+        timezone: params.timezone,
+      });
+      
       const defaultSettings: Partial<ZoomMeetingSettings> = {
         host_video: true,
         participant_video: true,
         join_before_host: false,
         mute_upon_entry: true,
         watermark: false,
-        approval_type: 2, // No approval required - automatic
-        registration_type: 0, // CRITICAL: Disable Zoom registration completely
+        approval_type: 2,
+        registration_type: 0,
         audio: 'both',
         auto_recording: 'cloud',
-        waiting_room: false, // No waiting room - direct join
-        meeting_authentication: false, // No authentication required
+        waiting_room: false,
+        meeting_authentication: false,
       };
 
       const meetingData = {
@@ -163,20 +172,25 @@ export class ZoomService {
         },
       };
 
-      console.log('🔧 Creating Zoom meeting with settings:', JSON.stringify(meetingData.settings, null, 2));
+      console.log('🔧 [Zoom] Full meeting data:', JSON.stringify(meetingData, null, 2));
+      console.log('🔧 [Zoom] Making API call to /users/me/meetings...');
 
       const response = await this.client.post(`/users/me/meetings`, meetingData);
       
-      console.log('✅ Zoom meeting created:', {
+      console.log('✅ [Zoom] Meeting created successfully:', {
         id: response.data.id,
-        join_url: response.data.join_url,
-        registration_required: response.data.settings?.registration_type || 'none',
+        join_url: response.data.join_url?.substring(0, 50) + '...',
+        registration_type: response.data.settings?.registration_type,
       });
       
       return response.data;
     } catch (error: any) {
-      console.error('Failed to create Zoom meeting:', error.response?.data || error.message);
-      throw new Error('Failed to create Zoom meeting');
+      console.error('❌ [Zoom] Failed to create meeting');
+      console.error('❌ [Zoom] Error status:', error.response?.status);
+      console.error('❌ [Zoom] Error data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('❌ [Zoom] Error message:', error.message);
+      
+      throw new Error(`Zoom API error: ${error.response?.data?.message || error.message}`);
     }
   }
 

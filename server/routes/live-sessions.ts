@@ -25,6 +25,7 @@ const createSessionSchema = z.object({
   scheduled_start: z.string().datetime(),
   scheduled_end: z.string().datetime(),
   timezone: z.string().default('UTC'),
+  instructor_id: z.string().uuid().optional(), // Allow admin to specify instructor
   course_id: z.string().uuid().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().int().positive().max(1000).optional(),
@@ -183,9 +184,15 @@ router.post(
   requireInstructor(),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user.claims.sub;
+    const userRole = req.user.role;
+    
+    console.log('🚀 === SESSION CREATE REQUEST STARTED ===');
+    console.log('👤 User:', { id: userId, role: userRole });
+    console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
     
     const validation = createSessionSchema.safeParse(req.body);
     if (!validation.success) {
+      console.error('❌ Validation failed:', validation.error.errors);
       return res.status(400).json({ 
         message: 'Invalid input', 
         errors: validation.error.errors 
@@ -193,21 +200,24 @@ router.post(
     }
 
     const sessionData = validation.data;
+    console.log('✅ Validation passed:', sessionData);
 
     const start = new Date(sessionData.scheduled_start);
     const end = new Date(sessionData.scheduled_end);
     
     if (end <= start) {
+      console.error('❌ End time before start time');
       return res.status(400).json({ message: 'Session end time must be after start time' });
     }
 
     const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
+    console.log(`⏱️ Session duration: ${durationMinutes} minutes (${(durationMinutes / 60).toFixed(2)} hours)`);
 
-    if (durationMinutes > 240) {
-      return res.status(400).json({ message: 'Session duration cannot exceed 4 hours' });
-    }
+    // Use provided instructor_id if admin specified one, otherwise use current user
+    const instructorId = sessionData.instructor_id || userId;
+    console.log('👨‍🏫 Instructor ID:', instructorId, sessionData.instructor_id ? '(specified by admin)' : '(current user)');
 
-    if (sessionData.course_id && req.user.role !== 'admin') {
+    if (sessionData.course_id && userRole !== 'admin') {
       const { data: course } = await supabaseAdmin
         .from('courses')
         .select('instructor_id')
@@ -219,28 +229,48 @@ router.post(
       }
     }
 
+    console.log('📍 Step 1: Getting Zoom service...');
     const zoomService = getZoomService();
     if (!zoomService) {
+      console.error('❌ Zoom service not initialized');
       return res.status(503).json({ 
         message: 'Live sessions feature is not configured. Please contact administrator.' 
       });
     }
+    console.log('✅ Step 1: Zoom service obtained');
 
     try {
-      const { data: instructor } = await supabaseAdmin
+      console.log('📍 Step 2: Fetching instructor data for userId:', userId);
+      const { data: instructor, error: instructorError } = await supabaseAdmin
         .from('users')
         .select('email, first_name, last_name')
         .eq('id', userId)
         .single();
 
-      if (!instructor) {
-        return res.status(404).json({ message: 'Instructor not found' });
+      if (instructorError) {
+        console.error('❌ Step 2 failed - Instructor query error:', instructorError);
+        return res.status(500).json({ message: 'Failed to fetch instructor data', error: instructorError.message });
       }
 
+      if (!instructor) {
+        console.error('❌ Step 2 failed - Instructor not found');
+        return res.status(404).json({ message: 'Instructor not found' });
+      }
+      console.log('✅ Step 2: Instructor data fetched:', instructor.email);
+
+      console.log('📍 Step 3: Preparing Zoom meeting data...');
       const startDate = new Date(sessionData.scheduled_start);
       const zoomStartTime = startDate.toISOString().slice(0, 19);
       
-      const zoomMeeting = await zoomService.createMeeting(instructor.email, {
+      console.log('Zoom meeting parameters:', {
+        topic: sessionData.title,
+        start_time: zoomStartTime,
+        duration_minutes: durationMinutes,
+        timezone: sessionData.timezone,
+      });
+      
+      console.log('📍 Step 4: Creating Zoom meeting...');
+      const zoomMeeting = await zoomService.createMeeting('me', {
         topic: sessionData.title,
         type: 2,
         start_time: zoomStartTime,
@@ -253,17 +283,19 @@ router.post(
           participant_video: true,
           join_before_host: false,
           mute_upon_entry: true,
-          waiting_room: false, // Disable waiting room for direct join
-          approval_type: 2, // No registration required
+          waiting_room: false,
+          approval_type: 2,
           audio: 'both',
           auto_recording: 'cloud',
           watermark: false,
           use_pmi: false,
-          registration_type: 0, // Disable Zoom registration - we handle it in our app
+          registration_type: 0,
           meeting_authentication: false,
         },
       });
+      console.log('✅ Step 4: Zoom meeting created:', zoomMeeting.id);
 
+      console.log('📍 Step 5: Inserting session into database...');
       const { data: newSession, error: insertError } = await supabaseAdmin
         .from('live_sessions')
         .insert({
@@ -273,7 +305,7 @@ router.post(
           scheduled_start: sessionData.scheduled_start,
           scheduled_end: sessionData.scheduled_end,
           timezone: sessionData.timezone,
-          instructor_id: userId,
+          instructor_id: instructorId, // Use the determined instructor ID
           course_id: sessionData.course_id,
           is_public: sessionData.is_public,
           max_participants: sessionData.max_participants,
@@ -288,17 +320,27 @@ router.post(
         .single();
 
       if (insertError) {
-        console.error('Database insert error:', insertError);
-        await zoomService.deleteMeeting(zoomMeeting.id, false);
-        return res.status(500).json({ message: 'Failed to create session' });
+        console.error('❌ Step 5 failed - Database insert error:', insertError);
+        console.log('Attempting to cleanup Zoom meeting...');
+        try {
+          await zoomService.deleteMeeting(zoomMeeting.id, false);
+          console.log('✅ Zoom meeting cleaned up');
+        } catch (cleanupError) {
+          console.error('Failed to cleanup Zoom meeting:', cleanupError);
+        }
+        return res.status(500).json({ message: 'Failed to create session', error: insertError.message });
       }
 
+      console.log('✅ Step 5: Session created successfully:', newSession.id);
+      console.log('🎉 All steps completed successfully!');
       res.status(201).json(newSession);
     } catch (error: any) {
-      console.error('Error creating session:', error);
+      console.error('❌ FATAL ERROR in session creation:', error);
+      console.error('Error stack:', error.stack);
       res.status(500).json({ 
-        message: 'Failed to create Zoom meeting', 
-        error: error.message 
+        message: 'Failed to create live session', 
+        error: error.message,
+        details: error.response?.data || 'No additional details'
       });
     }
   })

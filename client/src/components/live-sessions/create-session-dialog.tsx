@@ -188,7 +188,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
 
       const payload = {
         title: data.title,
-        description: data.description,
+        ...(data.description ? { description: data.description } : {}),
         session_type: data.session_type,
         scheduled_start: scheduled_start.toISOString(),
         scheduled_end: scheduled_end.toISOString(),
@@ -196,7 +196,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
         ...(data.instructor_id ? { instructor_id: data.instructor_id } : {}),
         ...(data.course_id ? { course_id: data.course_id } : {}),
         is_public: data.is_public,
-        max_participants: data.max_participants,
+        ...(data.max_participants ? { max_participants: data.max_participants } : {}),
       };
 
       const response = await apiRequest('POST', '/api/sessions', payload);
