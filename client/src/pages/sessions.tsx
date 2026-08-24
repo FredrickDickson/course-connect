@@ -34,6 +34,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getViewerZoneAbbreviation } from "@shared/timezone";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 
 interface LiveSession {
@@ -46,6 +47,7 @@ interface LiveSession {
   duration_minutes: number;
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
   zoom_join_url: string;
+  zoom_start_url?: string;
   instructor: {
     id: string;
     first_name: string;
@@ -309,6 +311,14 @@ function SessionsList({
   registerMutation,
   showPast = false,
 }: SessionsListProps) {
+  const { user, isAdmin } = useAuth();
+
+  const canStartSession = (session: LiveSession) => {
+    if (!user) return false;
+    if (session.status === 'cancelled' || session.status === 'completed') return false;
+    return isAdmin() || session.instructor.id === user.id;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-16">
@@ -342,6 +352,7 @@ function SessionsList({
       {sessions.map((session) => {
         const startDate = new Date(session.scheduled_start);
         const isJoinable = canJoinSession(session);
+        const isStartable = canStartSession(session);
         const participantCount = session.participant_count?.[0]?.count || 0;
 
         return (
@@ -417,7 +428,7 @@ function SessionsList({
 
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4" />
-                      <span>{format(startDate, "h:mm a")}</span>
+                      <span>{format(startDate, "h:mm a")} {getViewerZoneAbbreviation(startDate)}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -441,8 +452,17 @@ function SessionsList({
                       </Badge>
                     )}
 
-                    {/* Join Button - Only if registered and session is live */}
-                    {isJoinable && session.zoom_join_url && !showPast ? (
+                    {/* Start Meeting Button - Instructor/admin host control */}
+                    {isStartable && session.zoom_start_url && !showPast ? (
+                      <Button
+                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000]"
+                        onClick={() => window.open(session.zoom_start_url, '_blank')}
+                      >
+                        <Video className="h-4 w-4" />
+                        Start Meeting
+                      </Button>
+                    ) : /* Join Button - Only if registered and session is live */
+                    isJoinable && session.zoom_join_url && !showPast ? (
                       <Button
                         className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000]"
                         onClick={() => window.open(session.zoom_join_url, '_blank')}

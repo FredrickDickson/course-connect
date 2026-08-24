@@ -5,6 +5,7 @@ import { requireInstructor } from "../middleware/roleProtection";
 import { asyncHandler } from "../middleware/security";
 import { storage, supabaseAdmin } from "../storage";
 import { getZoomService } from "../services/zoom";
+import { formatInTimeZone } from "@shared/timezone";
 import { z } from "zod";
 
 interface AuthRequest extends Request {
@@ -123,6 +124,12 @@ router.get(
       });
     }
 
+    (sessions || []).forEach((session: any) => {
+      if (userRole !== 'admin' && session.instructor_id !== userId) {
+        delete session.zoom_start_url;
+      }
+    });
+
     res.json(sessions || []);
   })
 );
@@ -168,6 +175,10 @@ router.get(
       .eq('session_id', id)
       .eq('user_id', userId)
       .single();
+
+    if (userRole !== 'admin' && session.instructor_id !== userId) {
+      delete (session as any).zoom_start_url;
+    }
 
     res.json({
       ...session,
@@ -238,8 +249,12 @@ router.post(
       }
 
       const startDate = new Date(sessionData.scheduled_start);
-      const zoomStartTime = startDate.toISOString().slice(0, 19);
-      
+      // Zoom requires start_time to be the LOCAL wall-clock time in the
+      // meeting's `timezone` field, not UTC — format it in that zone rather
+      // than stripping the "Z" off a UTC ISO string (which mislabels UTC
+      // clock digits as zone-local whenever the zone isn't UTC itself).
+      const zoomStartTime = formatInTimeZone(startDate, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
+
       const zoomMeeting = await zoomService.createMeeting(instructor.email, {
         topic: sessionData.title,
         type: 2,
@@ -351,7 +366,11 @@ router.patch(
           if (updateData.description) zoomUpdateData.agenda = updateData.description;
           if (updateData.scheduled_start) {
             const startDate = new Date(updateData.scheduled_start);
-            zoomUpdateData.start_time = startDate.toISOString().slice(0, 19);
+            const zone = updateData.timezone || existingSession.timezone || 'UTC';
+            zoomUpdateData.start_time = formatInTimeZone(startDate, zone, "yyyy-MM-dd'T'HH:mm:ss");
+          }
+          if (updateData.timezone) {
+            zoomUpdateData.timezone = updateData.timezone;
           }
           if (updateData.scheduled_start || updateData.scheduled_end) {
             const start = new Date(updateData.scheduled_start || existingSession.scheduled_start);

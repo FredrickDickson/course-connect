@@ -44,6 +44,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarIcon, Video, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { COMMON_TIMEZONES, zonedWallTimeToUtc } from "@shared/timezone";
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -53,6 +54,7 @@ const formSchema = z.object({
     required_error: "Please select a date",
   }),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
+  timezone: z.string().min(1, "Please select a time zone"),
   duration_minutes: z.number().min(15).max(240),
   course_id: z.string().optional(),
   is_public: z.boolean().default(false),
@@ -130,6 +132,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
       description: "",
       session_type: "lecture",
       scheduled_time: "10:00",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       duration_minutes: 60,
       course_id: courseId || undefined,
       is_public: false,
@@ -138,13 +141,10 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Combine date and time into ISO string
-      const [hours, minutes] = data.scheduled_time.split(':').map(Number);
-      const scheduled_start = new Date(data.scheduled_date);
-      scheduled_start.setHours(hours, minutes, 0, 0);
-      
-      const scheduled_end = new Date(scheduled_start);
-      scheduled_end.setMinutes(scheduled_end.getMinutes() + data.duration_minutes);
+      // Combine date and time as wall-clock time in the *selected* time zone
+      // (not the browser's own zone) into the correct UTC instant.
+      const scheduled_start = zonedWallTimeToUtc(data.scheduled_date, data.scheduled_time, data.timezone);
+      const scheduled_end = new Date(scheduled_start.getTime() + data.duration_minutes * 60000);
 
       const payload = {
         title: data.title,
@@ -152,7 +152,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
         session_type: data.session_type,
         scheduled_start: scheduled_start.toISOString(),
         scheduled_end: scheduled_end.toISOString(),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone: data.timezone,
         ...(data.course_id ? { course_id: data.course_id } : {}),
         is_public: data.is_public,
         max_participants: data.max_participants,
@@ -407,6 +407,34 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[#2c2015]">Time Zone *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-11 border-[#d4c5b0]">
+                          <SelectValue placeholder="Select time zone" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {COMMON_TIMEZONES.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-xs text-[#6b5d4f]">
+                      The date and time above are in this time zone — students will see the session automatically converted to their own local time.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="space-y-4 border-t border-[#d4c5b0] pt-6">

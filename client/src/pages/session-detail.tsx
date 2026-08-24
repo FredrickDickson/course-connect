@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { getViewerZoneAbbreviation } from "@shared/timezone";
 
 interface LiveSession {
   id: string;
@@ -238,6 +239,12 @@ export default function SessionDetailPage() {
     return isAdmin() || session.instructor.id === user.id;
   };
 
+  const canStartSession = () => {
+    if (!session) return false;
+    if (session.status === 'cancelled' || session.status === 'completed') return false;
+    return canManageSession();
+  };
+
   if (isLoading) {
     return (
       <StudentLayout>
@@ -265,6 +272,7 @@ export default function SessionDetailPage() {
   const endDate = new Date(session.scheduled_end);
   const participantCount = session.participants?.length || 0;
   const isJoinable = canJoinSession();
+  const isStartable = canStartSession();
   const canRegister = canRegisterForSession();
   const minutesUntil = differenceInMinutes(startDate, new Date());
   const now = new Date();
@@ -499,7 +507,7 @@ export default function SessionDetailPage() {
                         {format(startDate, "EEEE, MMMM d, yyyy")}
                       </p>
                       <p className="text-xs text-[#6b5d4f]">
-                        {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")}
+                        {format(startDate, "h:mm a")} - {format(endDate, "h:mm a")} {getViewerZoneAbbreviation(startDate)}
                       </p>
                     </div>
                   </div>
@@ -553,16 +561,28 @@ export default function SessionDetailPage() {
                     </div>
                   )}
 
-                  {/* Join Button - Only show if registered and session is live */}
-                  {isJoinable && session.zoom_join_url && (
+                  {/* Start Meeting Button - Instructor/admin host control, opens the Zoom host link */}
+                  {isStartable && session.zoom_start_url ? (
                     <Button
                       className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
                       size="lg"
-                      onClick={() => window.open(session.zoom_join_url, '_blank')}
+                      onClick={() => window.open(session.zoom_start_url, '_blank')}
                     >
-                      <ExternalLink className="h-5 w-5" />
-                      Join Live Session Now
+                      <Video className="h-5 w-5" />
+                      Start Meeting
                     </Button>
+                  ) : (
+                    /* Join Button - Only show if registered and session is live */
+                    isJoinable && session.zoom_join_url && (
+                      <Button
+                        className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
+                        size="lg"
+                        onClick={() => window.open(session.zoom_join_url, '_blank')}
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                        Join Live Session Now
+                      </Button>
+                    )
                   )}
 
                   {/* Register Button - Show if not registered and can register */}

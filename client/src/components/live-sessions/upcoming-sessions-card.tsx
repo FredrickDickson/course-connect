@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Video,
   Calendar,
@@ -24,6 +25,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getViewerZoneAbbreviation } from "@shared/timezone";
 
 interface LiveSession {
   id: string;
@@ -35,6 +37,7 @@ interface LiveSession {
   duration_minutes: number;
   status: 'scheduled' | 'live' | 'completed' | 'cancelled';
   zoom_join_url: string;
+  zoom_start_url?: string;
   instructor: {
     id: string;
     first_name: string;
@@ -54,6 +57,7 @@ interface LiveSession {
 export default function UpcomingSessionsCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isAdmin } = useAuth();
   
   const { data: sessions = [], isLoading } = useQuery<LiveSession[]>({
     queryKey: ['upcoming_sessions'],
@@ -140,15 +144,21 @@ export default function UpcomingSessionsCard() {
 
   const canJoinSession = (session: LiveSession) => {
     if (!session.user_registered) return false; // Must be registered to join
-    
+
     const now = new Date();
     const start = new Date(session.scheduled_start);
     const end = new Date(session.scheduled_end);
 
     if (session.status === 'live') return true;
-    
+
     // Can join if within session time window
     return now >= start && now <= end;
+  };
+
+  const canStartSession = (session: LiveSession) => {
+    if (!user) return false;
+    if (session.status === 'cancelled' || session.status === 'completed') return false;
+    return isAdmin() || session.instructor.id === user.id;
   };
 
   if (isLoading) {
@@ -219,6 +229,7 @@ export default function UpcomingSessionsCard() {
         {sessions.slice(0, 3).map((session, index) => {
           const startDate = new Date(session.scheduled_start);
           const isJoinable = canJoinSession(session);
+          const isStartable = canStartSession(session);
           const participantCount = session.participant_count?.[0]?.count || 0;
           
           const now = new Date();
@@ -277,7 +288,7 @@ export default function UpcomingSessionsCard() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    <span>{format(startDate, "h:mm a")}</span>
+                    <span>{format(startDate, "h:mm a")} {getViewerZoneAbbreviation(startDate)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
@@ -294,14 +305,28 @@ export default function UpcomingSessionsCard() {
                     </Badge>
                   )}
 
-                  {/* Join Button - Only if registered and session is live */}
-                  {isJoinable && session.zoom_join_url ? (
+                  {/* Start Meeting Button - Instructor/admin host control */}
+                  {isStartable && session.zoom_start_url ? (
                     <Button
                       size="sm"
                       className={cn(
                         "gap-1",
-                        isInProgress 
-                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse" 
+                        isInProgress
+                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                          : "bg-green-600 hover:bg-green-700 text-white"
+                      )}
+                      onClick={() => window.open(session.zoom_start_url, '_blank')}
+                    >
+                      <Video className="h-3.5 w-3.5" />
+                      {isInProgress ? "Start Meeting - Live!" : "Start Meeting"}
+                    </Button>
+                  ) : isJoinable && session.zoom_join_url ? (
+                    <Button
+                      size="sm"
+                      className={cn(
+                        "gap-1",
+                        isInProgress
+                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
                           : "bg-green-600 hover:bg-green-700 text-white"
                       )}
                       onClick={() => window.open(session.zoom_join_url, '_blank')}

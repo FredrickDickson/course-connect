@@ -2,6 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import { z } from 'zod';
+// Imported directly from the npm package (not @shared/timezone) for the same
+// reason the Zoom helpers above are inlined: Vercel's bundler doesn't reliably
+// trace aliased/relative imports that cross out of api/ into local source dirs.
+import { formatInTimeZone } from 'date-fns-tz';
 
 // Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
 // because Vercel's serverless function bundler doesn't reliably trace relative imports
@@ -233,6 +237,12 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
     });
   }
 
+  (sessions || []).forEach((session: any) => {
+    if (userRole !== 'admin' && session.instructor_id !== userId) {
+      delete session.zoom_start_url;
+    }
+  });
+
   return res.json(sessions || []);
 }
 
@@ -314,7 +324,9 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
     }
 
     const startDate = new Date(sessionData.scheduled_start);
-    const zoomStartTime = startDate.toISOString().slice(0, 19);
+    // Zoom requires start_time to be LOCAL wall-clock time in the meeting's
+    // `timezone` field, not UTC — format it in that zone.
+    const zoomStartTime = formatInTimeZone(startDate, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
 
     const zoomMeeting = await createZoomMeeting(zoomToken, instructor.email, {
       topic: sessionData.title,
