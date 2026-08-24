@@ -86,26 +86,52 @@ export default function SessionsPage() {
   });
 
   // Get today's and upcoming sessions for the notice banner
-  const todaysSessions = sessions.filter(session => {
-    const sessionDate = new Date(session.scheduled_start);
-    const today = new Date();
-    return (
-      sessionDate.toDateString() === today.toDateString() &&
-      (session.status === 'scheduled' || session.status === 'live')
-    );
-  });
+  // Priority: Live > Starting Soon (within 30 min) > Today's sessions (sorted by start time)
+  const todaysSessions = sessions
+    .filter(session => {
+      const sessionDate = new Date(session.scheduled_start);
+      const today = new Date();
+      return (
+        sessionDate.toDateString() === today.toDateString() &&
+        (session.status === 'scheduled' || session.status === 'live')
+      );
+    })
+    .sort((a, b) => {
+      // Prioritize: 1. Live sessions, 2. Starting soon (< 30 min), 3. Earliest start time
+      const now = new Date();
+      const aStart = new Date(a.scheduled_start);
+      const bStart = new Date(b.scheduled_start);
+      const aMinutesUntil = differenceInMinutes(aStart, now);
+      const bMinutesUntil = differenceInMinutes(bStart, now);
+      
+      // Live sessions first
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (b.status === 'live' && a.status !== 'live') return 1;
+      
+      // Then starting soon (within 30 minutes)
+      const aStartingSoon = aMinutesUntil >= 0 && aMinutesUntil <= 30;
+      const bStartingSoon = bMinutesUntil >= 0 && bMinutesUntil <= 30;
+      if (aStartingSoon && !bStartingSoon) return -1;
+      if (bStartingSoon && !aStartingSoon) return 1;
+      
+      // Finally sort by start time (earliest first)
+      return aStart.getTime() - bStart.getTime();
+    });
 
-  const upcomingThisWeek = sessions.filter(session => {
-    const sessionDate = new Date(session.scheduled_start);
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return (
-      sessionDate >= today &&
-      sessionDate <= nextWeek &&
-      sessionDate.toDateString() !== today.toDateString() &&
-      (session.status === 'scheduled' || session.status === 'live')
-    );
-  });
+  // Get upcoming sessions this week (excluding today), sorted by start time
+  const upcomingThisWeek = sessions
+    .filter(session => {
+      const sessionDate = new Date(session.scheduled_start);
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return (
+        sessionDate >= today &&
+        sessionDate <= nextWeek &&
+        sessionDate.toDateString() !== today.toDateString() &&
+        (session.status === 'scheduled' || session.status === 'live')
+      );
+    })
+    .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
 
   const getSessionTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -240,39 +266,54 @@ export default function SessionsPage() {
                     <span className="animate-pulse">🔴</span>
                     {todaysSessions.length === 1 ? 'Live Session Today!' : `${todaysSessions.length} Live Sessions Today!`}
                   </h3>
-                  {todaysSessions.map((session, index) => (
-                    <div key={session.id} className={cn("space-y-2", index > 0 && "pt-3 border-t border-white/20")}>
-                      <p className="text-white text-sm sm:text-base font-semibold">
-                        {session.title}
-                      </p>
-                      {session.course && (
-                        <p className="text-white/80 text-xs sm:text-sm">
-                          📚 {session.course.title}
-                        </p>
-                      )}
-                      <div className="flex flex-col xs:flex-row xs:items-center gap-2 text-xs sm:text-sm">
-                        <span className="text-white/90">
-                          📅 {format(new Date(session.scheduled_start), "h:mm a")}
-                        </span>
-                        {session.user_registered ? (
-                          <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-1 rounded text-xs w-fit">
-                            <CheckCircle className="h-3 w-3" />
-                            You're registered
-                          </span>
-                        ) : (
-                          <Link href={`/sessions/${session.id}`}>
-                            <Button 
-                              variant="secondary" 
-                              size="sm" 
-                              className="h-8 text-xs sm:text-sm bg-white text-[#610000] hover:bg-white/90 w-full xs:w-auto"
-                            >
-                              Register Now →
-                            </Button>
-                          </Link>
+                  {todaysSessions.map((session, index) => {
+                    const now = new Date();
+                    const sessionStart = new Date(session.scheduled_start);
+                    const minutesUntil = differenceInMinutes(sessionStart, now);
+                    const isLive = session.status === 'live' || (now >= sessionStart && now <= new Date(session.scheduled_end));
+                    const isStartingSoon = minutesUntil >= 0 && minutesUntil <= 30;
+                    
+                    return (
+                      <div key={session.id} className={cn("space-y-2", index > 0 && "pt-3 border-t border-white/20")}>
+                        {/* Priority Badge */}
+                        {index === 0 && (isLive || isStartingSoon) && (
+                          <div className="inline-flex items-center gap-1 bg-white/30 px-2 py-1 rounded text-xs font-bold">
+                            {isLive ? '🔴 LIVE NOW' : `⏰ Starting in ${minutesUntil} min`}
+                          </div>
                         )}
+                        
+                        <p className="text-white text-sm sm:text-base font-semibold">
+                          {session.title}
+                        </p>
+                        {session.course && (
+                          <p className="text-white/80 text-xs sm:text-sm">
+                            📚 {session.course.title}
+                          </p>
+                        )}
+                        <div className="flex flex-col xs:flex-row xs:items-center gap-2 text-xs sm:text-sm">
+                          <span className="text-white/90">
+                            📅 {format(sessionStart, "h:mm a")}
+                          </span>
+                          {session.user_registered ? (
+                            <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-1 rounded text-xs w-fit">
+                              <CheckCircle className="h-3 w-3" />
+                              You're registered
+                            </span>
+                          ) : (
+                            <Link href={`/sessions/${session.id}`}>
+                              <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                className="h-8 text-xs sm:text-sm bg-white text-[#610000] hover:bg-white/90 w-full xs:w-auto font-semibold"
+                              >
+                                Register Now →
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
