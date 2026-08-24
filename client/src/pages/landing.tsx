@@ -265,57 +265,35 @@ function HeroSection() {
       {/* Ultra-Sharp Background Image - Higher resolution */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2880&h=1800&auto=format&fit=crop&q=100"
-          alt="Professional legal workspace"
+          src="/cl 2.jpg"
+          alt="CIMA Learn Professional Training"
           className="w-full h-full object-cover"
           loading="eager"
           style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
       </div>
 
-      {/* Minimalist Text Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 sm:px-12 lg:px-16">
-        <div className="max-w-4xl">
-          {/* Large Headline - Microsoft Fluent Typography */}
-          <h1 className="text-7xl sm:text-8xl lg:text-9xl font-light text-white leading-[0.92] mb-10 tracking-tight font-display">
-            Master dispute<br />
-            resolution
-          </h1>
-
-          {/* Minimal CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-5">
-            <Link href="/courses">
-              <button className="group bg-white text-[#610000] px-12 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition-all shadow-2xl flex items-center justify-center gap-3 font-body">
-                Explore Courses
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-            <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-              <button className="group border-2 border-white/90 text-white px-12 py-5 rounded-md font-semibold text-lg hover:bg-white hover:text-[#610000] transition-all flex items-center justify-center gap-3 backdrop-blur-md font-body">
-                Learning Pathways
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </a>
-          </div>
-        </div>
+      {/* CTA Buttons - Bottom Left Corner with Enhanced Visibility */}
+      <div className="absolute bottom-10 left-10 z-10 flex flex-col sm:flex-row gap-5">
+        <Link href="/courses">
+          <button className="group bg-[#F5F1E8] text-[#2C2C2C] px-12 py-5 rounded-md font-bold text-lg hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            Explore Courses
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </Link>
+        <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
+          <button className="group bg-[#2C2C2C]/80 backdrop-blur-md border-2 border-[#F5F1E8] text-[#F5F1E8] px-12 py-5 rounded-md font-bold text-lg hover:bg-[#2C2C2C] transition-all shadow-2xl flex items-center justify-center gap-3" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            Learning Pathways
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </a>
       </div>
 
-      {/* Floating Stats Card - High Contrast */}
-      <div className="absolute bottom-10 right-10 bg-white backdrop-blur-xl rounded-xl p-8 shadow-2xl border border-gray-200 hidden xl:block">
-        <div className="flex items-center gap-8">
-          <div className="text-center border-r border-gray-300 pr-8">
-            <p className="text-4xl font-semibold text-[#610000] font-display">4,800+</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Learners</p>
-          </div>
-          <div className="text-center border-r border-gray-300 pr-8">
-            <p className="text-4xl font-semibold text-[#610000] font-display">120+</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Charities</p>
-          </div>
-          <div className="text-center">
-            <p className="text-4xl font-semibold text-[#610000] font-display">98%</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Satisfaction</p>
-          </div>
-        </div>
+      {/* Floating Text Card - Montserrat Font with Enhanced Visibility */}
+      <div className="absolute bottom-10 right-10 bg-[#F5F1E8]/95 backdrop-blur-xl rounded-xl p-8 shadow-2xl border-2 border-[#2C2C2C]/20 hidden xl:block">
+        <h3 className="text-4xl font-bold text-[#2C2C2C] tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          Master Dispute<br />Resolution
+        </h3>
       </div>
     </section>
   );
