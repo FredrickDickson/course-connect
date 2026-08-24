@@ -29,6 +29,7 @@ import AdminCourseTemplates from "@/components/admin-course-templates";
 import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
 import ResourcesManagement from "@/components/admin/resources-management";
+import AdminLiveSessions from "@/components/admin/admin-live-sessions";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
@@ -413,6 +414,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
               <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Overview</TabsTrigger>
+              <TabsTrigger value="sessions" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Live Sessions</TabsTrigger>
               <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
@@ -442,6 +444,11 @@ export default function AdminDashboard() {
               <UpcomingSessionsCard />
               <AdminOverviewStats />
             </div>
+          </TabsContent>
+
+          {/* Live Sessions Tab */}
+          <TabsContent value="sessions">
+            <AdminLiveSessions />
           </TabsContent>
 
           {/* Instructors Tab */}
