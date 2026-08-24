@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Handshake, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText, GraduationCap } from "lucide-react";
 
 // Custom inline icon: Engineer hard hat
 const HelmetIcon = (props: any) => (
@@ -327,7 +327,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Heart className="w-10 h-10 text-pink-600" />
+              <Handshake className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">120+</p>
             <p className="text-base text-gray-700 font-body font-medium">Charitable Partners</p>
@@ -335,7 +335,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <BookOpen className="w-10 h-10 text-blue-600" />
+              <GraduationCap className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">200+</p>
             <p className="text-base text-gray-700 font-body font-medium">Expert-Led Courses</p>
@@ -343,7 +343,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Star className="w-10 h-10 text-amber-500 fill-amber-500" />
+              <Award className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">98%</p>
             <p className="text-base text-gray-700 font-body font-medium">Satisfaction Rate</p>
