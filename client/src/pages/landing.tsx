@@ -30,7 +30,7 @@ function LiveSessionBanner() {
       const now = new Date().toISOString();
       const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("live_sessions")
         .select(`
           *,
@@ -63,7 +63,7 @@ function LiveSessionBanner() {
     return null;
   }
 
-  const session = upcomingSessions[0];
+  const session = upcomingSessions[0] as any;
   const startDate = new Date(session.scheduled_start);
   const formattedDate = startDate.toLocaleDateString("en-US", {
     weekday: "short",
@@ -86,85 +86,62 @@ function LiveSessionBanner() {
         onClick={() => setIsDismissed(true)}
       />
 
-      {/* Pop-up Modal - Flying in from top with mobile optimization */}
+      {/* Pop-up Modal - Compact Nordic Burgundy Design */}
       <div 
-        className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 z-50 w-[95%] sm:w-full max-w-2xl transition-all duration-700 ${
+        className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 z-50 w-[90%] sm:w-full max-w-md transition-all duration-700 ${
           isVisible 
             ? '-translate-y-1/2 opacity-100 scale-100' 
             : '-translate-y-full opacity-0 scale-95'
         }`}
       >
-        <div className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-2xl shadow-2xl overflow-hidden border-4 border-white animate-pulse-slow">
+        <div className="relative bg-gradient-to-br from-[#800020] via-[#6b0019] to-[#5a0015] rounded-2xl shadow-2xl overflow-hidden border-2 border-[#d4af37]">
           {/* Close Button */}
           <button
             onClick={() => setIsDismissed(true)}
-            className="absolute top-3 right-3 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all z-10"
+            className="absolute top-2 right-2 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all z-10 backdrop-blur-sm"
           >
-            <span className="text-white text-2xl font-bold leading-none">×</span>
+            <span className="text-white text-xl font-bold leading-none">×</span>
           </button>
 
-          {/* Animated Corner Decoration */}
-          <div className="absolute top-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -translate-x-12 -translate-y-12 sm:-translate-x-16 sm:-translate-y-16 animate-ping"></div>
-          <div className="absolute bottom-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full translate-x-12 translate-y-12 sm:translate-x-16 sm:translate-y-16 animate-ping animation-delay-1000"></div>
+          {/* Subtle Corner Glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#d4af37]/10 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
 
-          <div className="relative p-6 sm:p-12">
-            {/* Alert Icon with Pulse Animation */}
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white rounded-full animate-ping"></div>
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
-                  <span className="text-red-600 text-3xl sm:text-4xl font-bold animate-bounce">!</span>
-                </div>
+          <div className="relative p-6">
+            {/* Alert Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="relative w-14 h-14 bg-[#d4af37] rounded-full flex items-center justify-center shadow-xl">
+                <Calendar className="w-7 h-7 text-[#800020]" />
               </div>
             </div>
 
             {/* Alert Text */}
-            <div className="text-center mb-6 sm:mb-8">
-              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 font-display uppercase tracking-wide animate-pulse px-2">
-                🔴 LIVE SESSION ALERT!
+            <div className="text-center mb-5">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 font-display">
+                Live Session Alert
               </h2>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-                <p className="text-lg sm:text-2xl font-bold text-white mb-2 leading-tight">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 mb-3 border border-white/20">
+                <p className="text-base sm:text-lg font-semibold text-white mb-1 leading-snug">
                   {session.course?.title || session.title}
                 </p>
-                <p className="text-base sm:text-xl text-white/90 font-semibold">
-                  📅 {formattedDate} at {formattedTime}
+                <p className="text-sm text-[#d4af37] font-medium">
+                  {formattedDate} • {formattedTime}
                 </p>
               </div>
-              <p className="text-sm sm:text-lg text-white/90 font-body animate-pulse px-2">
-                Don't miss this exclusive live session! Register now to secure your spot.
+              <p className="text-sm text-white/80 font-body">
+                Register now to secure your spot
               </p>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <Link href="/login" className="w-full">
-                <button className="w-full bg-white text-red-600 px-6 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 animate-bounce">
-                  <span>Login to Join Now</span>
-                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-              </Link>
-            </div>
+            {/* CTA Button */}
+            <Link href="/login" className="block">
+              <button className="w-full bg-[#d4af37] text-[#800020] px-6 py-3.5 rounded-lg font-bold text-base hover:bg-[#e5c158] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                <span>Join Session</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </Link>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes pulse-slow {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
-          }
-          50% {
-            box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
-          }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 2s infinite;
-        }
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
     </>
   );
 }
