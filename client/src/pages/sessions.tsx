@@ -19,7 +19,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
@@ -28,7 +27,6 @@ import {
   Calendar,
   Clock,
   Users,
-  Search,
   ExternalLink,
   CheckCircle,
   BookOpen,
@@ -66,7 +64,6 @@ export default function SessionsPage() {
   const { user, isInstructor, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("upcoming");
 
   const { data: sessions = [], isLoading } = useQuery<LiveSession[]>({
@@ -88,15 +85,25 @@ export default function SessionsPage() {
     refetchInterval: 60000,
   });
 
-  const filteredSessions = sessions.filter((session) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+  // Get today's and upcoming sessions for the notice banner
+  const todaysSessions = sessions.filter(session => {
+    const sessionDate = new Date(session.scheduled_start);
+    const today = new Date();
     return (
-      session.title.toLowerCase().includes(query) ||
-      session.description?.toLowerCase().includes(query) ||
-      session.instructor.first_name.toLowerCase().includes(query) ||
-      session.instructor.last_name.toLowerCase().includes(query) ||
-      session.course?.title.toLowerCase().includes(query)
+      sessionDate.toDateString() === today.toDateString() &&
+      (session.status === 'scheduled' || session.status === 'live')
+    );
+  });
+
+  const upcomingThisWeek = sessions.filter(session => {
+    const sessionDate = new Date(session.scheduled_start);
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return (
+      sessionDate >= today &&
+      sessionDate <= nextWeek &&
+      sessionDate.toDateString() !== today.toDateString() &&
+      (session.status === 'scheduled' || session.status === 'live')
     );
   });
 
@@ -218,40 +225,115 @@ export default function SessionsPage() {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <Card className="border-[#d4c5b0]/30">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search sessions by title, instructor, or course..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Notice Banner for Today's Sessions */}
+        {todaysSessions.length > 0 && (
+          <Card className="border-[#610000] bg-gradient-to-r from-[#610000] to-[#8b0000] text-white shadow-lg">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 flex items-center justify-center">
+                    <Video className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-3">
+                  <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                    <span className="animate-pulse">🔴</span>
+                    {todaysSessions.length === 1 ? 'Live Session Today!' : `${todaysSessions.length} Live Sessions Today!`}
+                  </h3>
+                  {todaysSessions.map((session, index) => (
+                    <div key={session.id} className={cn("space-y-2", index > 0 && "pt-3 border-t border-white/20")}>
+                      <p className="text-white text-sm sm:text-base font-semibold">
+                        {session.title}
+                      </p>
+                      {session.course && (
+                        <p className="text-white/80 text-xs sm:text-sm">
+                          📚 {session.course.title}
+                        </p>
+                      )}
+                      <div className="flex flex-col xs:flex-row xs:items-center gap-2 text-xs sm:text-sm">
+                        <span className="text-white/90">
+                          📅 {format(new Date(session.scheduled_start), "h:mm a")}
+                        </span>
+                        {session.user_registered ? (
+                          <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-1 rounded text-xs w-fit">
+                            <CheckCircle className="h-3 w-3" />
+                            You're registered
+                          </span>
+                        ) : (
+                          <Link href={`/sessions/${session.id}`}>
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              className="h-8 text-xs sm:text-sm bg-white text-[#610000] hover:bg-white/90 w-full xs:w-auto"
+                            >
+                              Register Now →
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Upcoming This Week Banner */}
+        {upcomingThisWeek.length > 0 && todaysSessions.length === 0 && (
+          <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-blue-700" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <h3 className="text-base sm:text-lg font-bold text-blue-900">
+                    {upcomingThisWeek.length === 1 
+                      ? 'Upcoming Session This Week' 
+                      : `${upcomingThisWeek.length} Upcoming Sessions This Week`}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-blue-700 leading-relaxed">
+                    <span className="font-semibold">{upcomingThisWeek[0].title}</span>
+                    <br className="sm:hidden" />
+                    <span className="block sm:inline sm:ml-1">
+                      on {format(new Date(upcomingThisWeek[0].scheduled_start), "EEE, MMM d 'at' h:mm a")}
+                    </span>
+                    {upcomingThisWeek.length > 1 && (
+                      <span className="block mt-1 text-blue-600">
+                        + {upcomingThisWeek.length - 1} more session{upcomingThisWeek.length > 2 ? 's' : ''}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-[#f5f3ed]">
-            <TabsTrigger value="upcoming">
-              Upcoming ({sessions.filter(s => s.status === 'scheduled' || s.status === 'live').length})
+          <TabsList className="grid w-full grid-cols-3 bg-[#f5f3ed] h-auto">
+            <TabsTrigger value="upcoming" className="text-xs sm:text-sm py-2 sm:py-2.5">
+              <span className="hidden sm:inline">Upcoming</span>
+              <span className="sm:hidden">Up</span>
+              <span className="ml-1">({sessions.filter(s => s.status === 'scheduled' || s.status === 'live').length})</span>
             </TabsTrigger>
-            <TabsTrigger value="registered">
-              Registered ({sessions.filter(s => s.user_registered).length})
+            <TabsTrigger value="registered" className="text-xs sm:text-sm py-2 sm:py-2.5">
+              <span className="hidden sm:inline">Registered</span>
+              <span className="sm:hidden">Reg</span>
+              <span className="ml-1">({sessions.filter(s => s.user_registered).length})</span>
             </TabsTrigger>
-            <TabsTrigger value="past">
+            <TabsTrigger value="past" className="text-xs sm:text-sm py-2 sm:py-2.5">
               Past
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="mt-6">
             <SessionsList
-              sessions={filteredSessions.filter(
+              sessions={sessions.filter(
                 s => s.status === 'scheduled' || s.status === 'live'
               )}
               isLoading={isLoading}
@@ -264,7 +346,7 @@ export default function SessionsPage() {
 
           <TabsContent value="registered" className="mt-6">
             <SessionsList
-              sessions={filteredSessions.filter(s => s.user_registered)}
+              sessions={sessions.filter(s => s.user_registered)}
               isLoading={isLoading}
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
@@ -275,7 +357,7 @@ export default function SessionsPage() {
 
           <TabsContent value="past" className="mt-6">
             <SessionsList
-              sessions={filteredSessions.filter(s => s.status === 'completed')}
+              sessions={sessions.filter(s => s.status === 'completed')}
               isLoading={isLoading}
               getSessionTypeColor={getSessionTypeColor}
               getStatusBadge={getStatusBadge}
@@ -349,93 +431,93 @@ function SessionsList({
             key={session.id}
             className="border-[#d4c5b0]/30 hover:border-[#8b6f47]/40 hover:shadow-lg transition-all duration-300"
           >
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 {/* Date Badge */}
-                <div className="flex-shrink-0">
-                  <div className="w-20 h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
-                    <span className="text-2xl font-bold">
+                <div className="flex-shrink-0 self-start">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
+                    <span className="text-xl sm:text-2xl font-bold">
                       {format(startDate, 'd')}
                     </span>
-                    <span className="text-xs uppercase tracking-wider">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-wider">
                       {format(startDate, 'MMM')}
                     </span>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-3 sm:space-y-4">
                   {/* Header */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h3 className="text-xl font-bold text-[#2c2015]">
-                          {session.title}
-                        </h3>
-                        {getStatusBadge(session)}
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 flex-wrap">
+                      <h3 className="text-lg sm:text-xl font-bold text-[#2c2015] flex-1">
+                        {session.title}
+                      </h3>
+                      {getStatusBadge(session)}
+                    </div>
 
-                      <div className="flex items-center gap-2 text-sm text-[#6b5d4f] flex-wrap">
-                        <Badge
-                          variant="outline"
-                          className={cn("text-xs border", getSessionTypeColor(session.session_type))}
-                        >
-                          {session.session_type.replace('_', ' ')}
-                        </Badge>
-                        {session.course && (
-                          <>
-                            <span>•</span>
-                            <BookOpen className="h-3.5 w-3.5" />
-                            <span className="truncate">{session.course.title}</span>
-                          </>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-[#6b5d4f] flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className={cn("text-xs border", getSessionTypeColor(session.session_type))}
+                      >
+                        {session.session_type.replace('_', ' ')}
+                      </Badge>
+                      {session.course && (
+                        <>
+                          <span className="hidden sm:inline">•</span>
+                          <div className="flex items-center gap-1 w-full sm:w-auto">
+                            <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate text-xs">{session.course.title}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   {/* Description */}
                   {session.description && (
-                    <p className="text-sm text-[#6b5d4f] line-clamp-2">
+                    <p className="text-xs sm:text-sm text-[#6b5d4f] line-clamp-2 leading-relaxed">
                       {session.description}
                     </p>
                   )}
 
                   {/* Instructor & Info */}
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[#6b5d4f]">
+                  <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-3 text-xs sm:text-sm text-[#6b5d4f]">
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
+                      <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
                         <AvatarImage src={session.instructor.profile_image_url} />
-                        <AvatarFallback className="text-xs bg-[#610000] text-white">
+                        <AvatarFallback className="text-[10px] sm:text-xs bg-[#610000] text-white">
                           {session.instructor.first_name[0]}
                           {session.instructor.last_name[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">
+                      <span className="font-medium text-xs sm:text-sm">
                         {session.instructor.first_name} {session.instructor.last_name}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span>{format(startDate, "h:mm a")}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4" />
-                      <span>{session.duration_minutes} minutes</span>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span>{session.duration_minutes} min</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4" />
-                      <span>{participantCount} registered</span>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span>{participantCount}</span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <div className="flex flex-col xs:flex-row xs:flex-wrap items-stretch xs:items-center gap-2 sm:gap-3 pt-2">
                     {/* Registered Badge */}
                     {session.user_registered && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1 w-fit">
                         <CheckCircle className="h-3 w-3" />
                         Registered
                       </Badge>
@@ -444,27 +526,36 @@ function SessionsList({
                     {/* Join Button - Only if registered and session is live */}
                     {isJoinable && session.zoom_join_url && !showPast ? (
                       <Button
-                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000]"
+                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000] w-full xs:w-auto text-sm"
+                        size="default"
                         onClick={() => window.open(session.zoom_join_url, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4" />
                         Join Now
                       </Button>
                     ) : showPast ? (
-                      <Button variant="secondary" className="gap-2" disabled>
+                      <Button variant="secondary" className="gap-2 w-full xs:w-auto text-sm" disabled>
                         <CheckCircle className="h-4 w-4" />
                         Completed
                       </Button>
                     ) : session.user_registered && !showPast ? (
-                      <Button variant="secondary" className="gap-2" disabled>
+                      <Button variant="secondary" className="gap-2 w-full xs:w-auto text-xs sm:text-sm" disabled>
                         <Clock className="h-4 w-4" />
-                        {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                          ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
-                          : "Starting Soon"}
+                        <span className="hidden xs:inline">
+                          {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
+                            ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                            : "Starting Soon"}
+                        </span>
+                        <span className="xs:hidden">
+                          {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
+                            ? `${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                            : "Soon"}
+                        </span>
                       </Button>
                     ) : !showPast ? (
                       <Button
-                        className="gap-2 bg-[#610000] hover:bg-[#7a0000]"
+                        className="gap-2 bg-[#610000] hover:bg-[#7a0000] w-full xs:w-auto text-sm"
+                        size="default"
                         onClick={(e) => {
                           e.stopPropagation();
                           registerMutation.mutate(session.id);
@@ -477,7 +568,7 @@ function SessionsList({
                     ) : null}
 
                     <Link href={`/sessions/${session.id}`}>
-                      <Button variant="ghost">View Details</Button>
+                      <Button variant="ghost" className="w-full xs:w-auto text-sm">View Details</Button>
                     </Link>
                   </div>
                 </div>
