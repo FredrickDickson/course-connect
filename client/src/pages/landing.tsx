@@ -94,7 +94,7 @@ function LiveSessionBanner() {
             : '-translate-y-full opacity-0 scale-95'
         }`}
       >
-        <div className="relative bg-gradient-to-br from-[#800020] via-[#6b0019] to-[#5a0015] rounded-2xl shadow-2xl overflow-hidden border-2 border-[#d4af37]">
+        <div className="relative bg-gradient-to-br from-[#800020] via-[#6b0019] to-[#5a0015] rounded-2xl shadow-2xl overflow-hidden border-2 border-[#F5F1E8]">
           {/* Close Button */}
           <button
             onClick={() => setIsDismissed(true)}
@@ -104,12 +104,12 @@ function LiveSessionBanner() {
           </button>
 
           {/* Subtle Corner Glow */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#d4af37]/10 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5F1E8]/10 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
 
           <div className="relative p-6">
             {/* Alert Icon */}
             <div className="flex justify-center mb-4">
-              <div className="relative w-14 h-14 bg-[#d4af37] rounded-full flex items-center justify-center shadow-xl">
+              <div className="relative w-14 h-14 bg-[#F5F1E8] rounded-full flex items-center justify-center shadow-xl">
                 <Calendar className="w-7 h-7 text-[#800020]" />
               </div>
             </div>
@@ -123,7 +123,7 @@ function LiveSessionBanner() {
                 <p className="text-base sm:text-lg font-semibold text-white mb-1 leading-snug">
                   {session.course?.title || session.title}
                 </p>
-                <p className="text-sm text-[#d4af37] font-medium">
+                <p className="text-sm text-[#F5F1E8] font-medium">
                   {formattedDate} • {formattedTime}
                 </p>
               </div>
@@ -134,7 +134,7 @@ function LiveSessionBanner() {
 
             {/* CTA Button */}
             <Link href="/login" className="block">
-              <button className="w-full bg-[#d4af37] text-[#800020] px-6 py-3.5 rounded-lg font-bold text-base hover:bg-[#e5c158] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+              <button className="w-full bg-[#F5F1E8] text-[#800020] px-6 py-3.5 rounded-lg font-bold text-base hover:bg-[#fffdf7] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                 <span>Join Session</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
