@@ -53,7 +53,7 @@ const formSchema = z.object({
     required_error: "Please select a date",
   }),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
-  duration_minutes: z.number().min(15).max(240),
+  scheduled_end_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
   course_id: z.string().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().optional(),
@@ -68,15 +68,6 @@ const SESSION_TYPES = [
   { value: 'q_a', label: 'Q&A Session' },
   { value: 'webinar', label: 'Webinar' },
   { value: 'group_study', label: 'Group Study' },
-];
-
-const DURATION_OPTIONS = [
-  { value: 30, label: '30 minutes' },
-  { value: 45, label: '45 minutes' },
-  { value: 60, label: '1 hour' },
-  { value: 90, label: '1.5 hours' },
-  { value: 120, label: '2 hours' },
-  { value: 180, label: '3 hours' },
 ];
 
 interface CreateSessionDialogProps {
@@ -130,7 +121,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
       description: "",
       session_type: "lecture",
       scheduled_time: "10:00",
-      duration_minutes: 60,
+      scheduled_end_time: "12:00",
       course_id: courseId || undefined,
       is_public: false,
     },
@@ -138,13 +129,20 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Combine date and time into ISO string
-      const [hours, minutes] = data.scheduled_time.split(':').map(Number);
+      // Combine date and time into ISO string for start
+      const [startHours, startMinutes] = data.scheduled_time.split(':').map(Number);
       const scheduled_start = new Date(data.scheduled_date);
-      scheduled_start.setHours(hours, minutes, 0, 0);
+      scheduled_start.setHours(startHours, startMinutes, 0, 0);
       
-      const scheduled_end = new Date(scheduled_start);
-      scheduled_end.setMinutes(scheduled_end.getMinutes() + data.duration_minutes);
+      // Combine date and time into ISO string for end
+      const [endHours, endMinutes] = data.scheduled_end_time.split(':').map(Number);
+      const scheduled_end = new Date(data.scheduled_date);
+      scheduled_end.setHours(endHours, endMinutes, 0, 0);
+
+      // If end time is before start time, add one day (crosses midnight)
+      if (scheduled_end <= scheduled_start) {
+        scheduled_end.setDate(scheduled_end.getDate() + 1);
+      }
 
       const payload = {
         title: data.title,
@@ -366,7 +364,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
                   name="scheduled_time"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#2c2015]">Time *</FormLabel>
+                      <FormLabel className="text-[#2c2015]">Start Time *</FormLabel>
                       <FormControl>
                         <Input 
                           type="time" 
@@ -381,27 +379,20 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
 
                 <FormField
                   control={form.control}
-                  name="duration_minutes"
+                  name="scheduled_end_time"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#2c2015]">Duration *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        defaultValue={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-11 border-[#d4c5b0]">
-                            <SelectValue placeholder="Select duration" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DURATION_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value.toString()}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-[#2c2015]">End Time *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="time" 
+                          className="h-11 border-[#d4c5b0]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs text-[#6b5d4f]">
+                        Duration calculated automatically
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

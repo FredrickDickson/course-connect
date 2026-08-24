@@ -31,9 +31,9 @@ async function getZoomAccessToken(): Promise<string | null> {
   return response.data.access_token;
 }
 
-async function createZoomMeeting(token: string, hostEmail: string, params: Record<string, any>) {
+async function createZoomMeeting(token: string, params: Record<string, any>) {
   const response = await axios.post(
-    `https://api.zoom.us/v2/users/${hostEmail}/meetings`,
+    `https://api.zoom.us/v2/users/me/meetings`,
     params,
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -303,20 +303,10 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
   }
 
   try {
-    const { data: instructor } = await supabaseAdmin
-      .from('users')
-      .select('email, first_name, last_name')
-      .eq('id', userId)
-      .single();
-
-    if (!instructor) {
-      return res.status(404).json({ message: 'Instructor not found' });
-    }
-
     const startDate = new Date(sessionData.scheduled_start);
     const zoomStartTime = startDate.toISOString().slice(0, 19);
 
-    const zoomMeeting = await createZoomMeeting(zoomToken, instructor.email, {
+    const zoomMeeting = await createZoomMeeting(zoomToken, {
       topic: sessionData.title,
       type: 2,
       start_time: zoomStartTime,
