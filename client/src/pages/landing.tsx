@@ -274,16 +274,16 @@ function HeroSection() {
       </div>
 
       {/* CTA Buttons - Bottom Left Corner with Enhanced Visibility */}
-      <div className="absolute bottom-10 left-10 z-10 flex flex-col sm:flex-row gap-5">
+      <div className="absolute bottom-10 left-10 z-10 flex flex-col gap-5">
         <Link href="/courses">
-          <button className="group bg-[#F5F1E8] text-[#2C2C2C] px-12 py-5 rounded-md font-bold text-lg hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          <button className="group bg-[#F5F1E8] text-[#2C2C2C] px-12 py-5 rounded-md font-bold text-lg hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             Explore Courses
             <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </button>
         </Link>
         <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-          <button className="group bg-[#2C2C2C]/80 backdrop-blur-md border-2 border-[#F5F1E8] text-[#F5F1E8] px-12 py-5 rounded-md font-bold text-lg hover:bg-[#2C2C2C] transition-all shadow-2xl flex items-center justify-center gap-3" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            Learning Pathways
+          <button className="group bg-[#2C2C2C]/80 backdrop-blur-md border-2 border-[#F5F1E8] text-[#F5F1E8] px-12 py-5 rounded-md font-bold text-lg hover:bg-[#2C2C2C] transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            View Pathways
             <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </button>
         </a>
