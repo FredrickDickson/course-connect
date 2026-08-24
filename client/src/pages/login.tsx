@@ -96,7 +96,7 @@ export default function Login() {
         const destination =
           role === "instructor"
             ? "/instructor"
-            : "/home";
+            : "/sessions";
         window.location.href = destination;
       }
     } catch (err) {
