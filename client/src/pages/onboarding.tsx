@@ -684,7 +684,7 @@ export default function Onboarding() {
 
         sessionStorage.removeItem("redirectAfterLogin");
 
-        setLocation(redirect || "/course-catalog");
+        setLocation(redirect || "/sessions");
 
         return;
 
@@ -812,7 +812,7 @@ export default function Onboarding() {
 
       sessionStorage.removeItem("redirectAfterLogin");
 
-      setLocation(redirect || "/course-catalog");
+      setLocation(redirect || "/sessions");
 
     } catch (err: any) {
 
