@@ -19,6 +19,156 @@ import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { PwaInstallButton } from "@/components/pwa-install-button";
 
+// Live Session Pop-up Component - Flying in animation with auto-show
+function LiveSessionBanner() {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  const { data: upcomingSessions } = useQuery({
+    queryKey: ["upcoming-sessions-landing"],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from("live_sessions")
+        .select(`
+          *,
+          instructor:users!live_sessions_instructor_id_fkey(first_name, last_name),
+          course:courses(title)
+        `)
+        .eq("status", "scheduled")
+        .gte("scheduled_start", now)
+        .lte("scheduled_start", oneWeekFromNow)
+        .order("scheduled_start", { ascending: true })
+        .limit(1);
+
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Auto-show popup after 2 seconds
+  useEffect(() => {
+    if (upcomingSessions && upcomingSessions.length > 0 && !isDismissed) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [upcomingSessions, isDismissed]);
+
+  if (!upcomingSessions || upcomingSessions.length === 0 || isDismissed) {
+    return null;
+  }
+
+  const session = upcomingSessions[0];
+  const startDate = new Date(session.scheduled_start);
+  const formattedDate = startDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const formattedTime = startDate.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-500 ${
+          isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsDismissed(true)}
+      />
+
+      {/* Pop-up Modal - Flying in from top with mobile optimization */}
+      <div 
+        className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 z-50 w-[95%] sm:w-full max-w-2xl transition-all duration-700 ${
+          isVisible 
+            ? '-translate-y-1/2 opacity-100 scale-100' 
+            : '-translate-y-full opacity-0 scale-95'
+        }`}
+      >
+        <div className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-2xl shadow-2xl overflow-hidden border-4 border-white animate-pulse-slow">
+          {/* Close Button */}
+          <button
+            onClick={() => setIsDismissed(true)}
+            className="absolute top-3 right-3 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all z-10"
+          >
+            <span className="text-white text-2xl font-bold leading-none">×</span>
+          </button>
+
+          {/* Animated Corner Decoration */}
+          <div className="absolute top-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -translate-x-12 -translate-y-12 sm:-translate-x-16 sm:-translate-y-16 animate-ping"></div>
+          <div className="absolute bottom-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full translate-x-12 translate-y-12 sm:translate-x-16 sm:translate-y-16 animate-ping animation-delay-1000"></div>
+
+          <div className="relative p-6 sm:p-12">
+            {/* Alert Icon with Pulse Animation */}
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-white rounded-full animate-ping"></div>
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                  <span className="text-red-600 text-3xl sm:text-4xl font-bold animate-bounce">!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Alert Text */}
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 font-display uppercase tracking-wide animate-pulse px-2">
+                🔴 LIVE SESSION ALERT!
+              </h2>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                <p className="text-lg sm:text-2xl font-bold text-white mb-2 leading-tight">
+                  {session.course?.title || session.title}
+                </p>
+                <p className="text-base sm:text-xl text-white/90 font-semibold">
+                  📅 {formattedDate} at {formattedTime}
+                </p>
+              </div>
+              <p className="text-sm sm:text-lg text-white/90 font-body animate-pulse px-2">
+                Don't miss this exclusive live session! Register now to secure your spot.
+              </p>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <Link href="/login" className="w-full">
+                <button className="w-full bg-white text-red-600 px-6 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl hover:bg-gray-100 transition-all shadow-2xl hover:shadow-3xl hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 animate-bounce">
+                  <span>Login to Join Now</span>
+                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes pulse-slow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+          }
+          50% {
+            box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+          }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 2s infinite;
+        }
+        .animation-delay-1000 {
+          animation-delay: 1s;
+        }
+      `}</style>
+    </>
+  );
+}
+
 export default function Landing() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
@@ -113,6 +263,7 @@ export default function Landing() {
       </header>
 
       <main>
+        <LiveSessionBanner />
         <HeroSection />
         <StatsBarSection />
         <FeaturedCoursesSection />
