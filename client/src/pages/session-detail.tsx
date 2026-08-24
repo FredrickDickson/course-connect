@@ -296,7 +296,7 @@ export default function SessionDetailPage() {
 
   return (
     <StudentLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8 pb-8 md:pb-0">
         {/* Back Button */}
         <Link href="/sessions">
           <Button variant="ghost" className="gap-2">
@@ -307,10 +307,10 @@ export default function SessionDetailPage() {
 
         {/* Header */}
         <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap mb-3">
-                <h1 className="text-4xl font-bold text-[#2c2015] font-sf-pro-display">
+                <h1 className="text-3xl md:text-4xl font-bold text-[#2c2015] font-sf-pro-display">
                   {session.title}
                 </h1>
                 {getStatusBadge()}
@@ -332,16 +332,16 @@ export default function SessionDetailPage() {
             </div>
 
             {canManageSession() && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" className="gap-2">
                   <Edit className="h-4 w-4" />
-                  Edit
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
                       <Trash2 className="h-4 w-4" />
-                      Cancel
+                      <span className="hidden sm:inline">Cancel</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -367,7 +367,7 @@ export default function SessionDetailPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-8 pb-4">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
@@ -474,7 +474,7 @@ export default function SessionDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Action Card */}
-            <Card className="border-[#d4c5b0]/30 bg-gradient-to-br from-[#faf9f6] to-white sticky top-24">
+            <Card className="border-[#d4c5b0]/30 bg-gradient-to-br from-[#faf9f6] to-white lg:sticky lg:top-24">
               <CardContent className="p-6 space-y-6">
                 {/* Instructor */}
                 <div>
@@ -491,7 +491,6 @@ export default function SessionDetailPage() {
                       <p className="font-semibold text-[#2c2015]">
                         {session.instructor.first_name} {session.instructor.last_name}
                       </p>
-                      <p className="text-xs text-[#6b5d4f]">{session.instructor.email}</p>
                     </div>
                   </div>
                 </div>

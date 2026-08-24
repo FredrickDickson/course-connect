@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/images/logo.jpeg";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Heart, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Handshake, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText, GraduationCap } from "lucide-react";
 
 // Custom inline icon: Engineer hard hat
 const HelmetIcon = (props: any) => (
@@ -19,6 +19,133 @@ import { supabase } from "@/integrations/supabase/client";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import { PwaInstallButton } from "@/components/pwa-install-button";
 
+// Live Session Pop-up Component - Flying in animation with auto-show
+function LiveSessionBanner() {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  const { data: upcomingSessions } = useQuery({
+    queryKey: ["upcoming-sessions-landing"],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await (supabase as any)
+        .from("live_sessions")
+        .select(`
+          *,
+          instructor:users!live_sessions_instructor_id_fkey(first_name, last_name),
+          course:courses(title)
+        `)
+        .eq("status", "scheduled")
+        .gte("scheduled_start", now)
+        .lte("scheduled_start", oneWeekFromNow)
+        .order("scheduled_start", { ascending: true })
+        .limit(1);
+
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Auto-show popup after 2 seconds
+  useEffect(() => {
+    if (upcomingSessions && upcomingSessions.length > 0 && !isDismissed) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [upcomingSessions, isDismissed]);
+
+  if (!upcomingSessions || upcomingSessions.length === 0 || isDismissed) {
+    return null;
+  }
+
+  const session = upcomingSessions[0] as any;
+  const startDate = new Date(session.scheduled_start);
+  const formattedDate = startDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const formattedTime = startDate.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-500 ${
+          isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsDismissed(true)}
+      />
+
+      {/* Pop-up Modal - Compact Nordic Burgundy Design */}
+      <div 
+        className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 z-50 w-[90%] sm:w-full max-w-md transition-all duration-700 ${
+          isVisible 
+            ? '-translate-y-1/2 opacity-100 scale-100' 
+            : '-translate-y-full opacity-0 scale-95'
+        }`}
+      >
+        <div className="relative bg-gradient-to-br from-[#800020] via-[#6b0019] to-[#5a0015] rounded-2xl shadow-2xl overflow-hidden border-2 border-[#F5F1E8]">
+          {/* Close Button */}
+          <button
+            onClick={() => setIsDismissed(true)}
+            className="absolute top-2 right-2 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all z-10 backdrop-blur-sm"
+          >
+            <span className="text-white text-xl font-bold leading-none">×</span>
+          </button>
+
+          {/* Subtle Corner Glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5F1E8]/10 rounded-full -translate-y-16 translate-x-16 blur-3xl"></div>
+
+          <div className="relative p-6">
+            {/* Alert Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="relative w-14 h-14 bg-[#F5F1E8] rounded-full flex items-center justify-center shadow-xl">
+                <Calendar className="w-7 h-7 text-[#800020]" />
+              </div>
+            </div>
+
+            {/* Alert Text */}
+            <div className="text-center mb-5">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 font-display">
+                Live Session Alert
+              </h2>
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 mb-3 border border-white/20">
+                <p className="text-base sm:text-lg font-semibold text-white mb-1 leading-snug">
+                  {session.course?.title || session.title}
+                </p>
+                <p className="text-sm text-[#F5F1E8] font-medium">
+                  {formattedDate} • {formattedTime}
+                </p>
+              </div>
+              <p className="text-sm text-white/80 font-body">
+                Register now to secure your spot
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <Link href="/login" className="block">
+              <button className="w-full bg-[#F5F1E8] text-[#800020] px-6 py-3.5 rounded-lg font-bold text-base hover:bg-[#fffdf7] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                <span>Join Session</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Landing() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
@@ -31,7 +158,7 @@ export default function Landing() {
       } else if (user.role === "instructor") {
         setLocation("/instructor");
       } else {
-        setLocation("/home");
+        setLocation("/sessions");
       }
     }
   }, [isAuthenticated, isLoading, user, setLocation]);
@@ -113,6 +240,7 @@ export default function Landing() {
       </header>
 
       <main>
+        <LiveSessionBanner />
         <HeroSection />
         <StatsBarSection />
         <FeaturedCoursesSection />
@@ -137,57 +265,35 @@ function HeroSection() {
       {/* Ultra-Sharp Background Image - Higher resolution */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=2880&h=1800&auto=format&fit=crop&q=100"
-          alt="Professional legal workspace"
+          src="/cl 2.jpg"
+          alt="CIMA Learn Professional Training"
           className="w-full h-full object-cover"
           loading="eager"
           style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
       </div>
 
-      {/* Minimalist Text Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 sm:px-12 lg:px-16">
-        <div className="max-w-4xl">
-          {/* Large Headline - Microsoft Fluent Typography */}
-          <h1 className="text-7xl sm:text-8xl lg:text-9xl font-light text-white leading-[0.92] mb-10 tracking-tight font-display">
-            Master dispute<br />
-            resolution
-          </h1>
-
-          {/* Minimal CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-5">
-            <Link href="/courses">
-              <button className="group bg-white text-[#610000] px-12 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition-all shadow-2xl flex items-center justify-center gap-3 font-body">
-                Explore Courses
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-            <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-              <button className="group border-2 border-white/90 text-white px-12 py-5 rounded-md font-semibold text-lg hover:bg-white hover:text-[#610000] transition-all flex items-center justify-center gap-3 backdrop-blur-md font-body">
-                Learning Pathways
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </a>
-          </div>
-        </div>
+      {/* CTA Buttons - Bottom Left Corner with Enhanced Visibility */}
+      <div className="absolute bottom-10 left-10 z-10 flex flex-col gap-5">
+        <Link href="/courses">
+          <button className="group bg-[#F5F1E8] text-[#2C2C2C] px-12 py-5 rounded-md font-bold text-lg hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            Explore Courses
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </Link>
+        <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
+          <button className="group bg-[#2C2C2C]/80 backdrop-blur-md border-2 border-[#F5F1E8] text-[#F5F1E8] px-12 py-5 rounded-md font-bold text-lg hover:bg-[#2C2C2C] transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            View Pathways
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </a>
       </div>
 
-      {/* Floating Stats Card - High Contrast */}
-      <div className="absolute bottom-10 right-10 bg-white backdrop-blur-xl rounded-xl p-8 shadow-2xl border border-gray-200 hidden xl:block">
-        <div className="flex items-center gap-8">
-          <div className="text-center border-r border-gray-300 pr-8">
-            <p className="text-4xl font-semibold text-[#610000] font-display">4,800+</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Learners</p>
-          </div>
-          <div className="text-center border-r border-gray-300 pr-8">
-            <p className="text-4xl font-semibold text-[#610000] font-display">120+</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Charities</p>
-          </div>
-          <div className="text-center">
-            <p className="text-4xl font-semibold text-[#610000] font-display">98%</p>
-            <p className="text-sm text-gray-900 mt-1 font-body font-medium">Satisfaction</p>
-          </div>
-        </div>
+      {/* Floating Text Card - Montserrat Font with Enhanced Visibility */}
+      <div className="absolute bottom-10 right-10 bg-[#F5F1E8]/95 backdrop-blur-xl rounded-xl p-8 shadow-2xl border-2 border-[#2C2C2C]/20 hidden xl:block">
+        <h3 className="text-4xl font-bold text-[#2C2C2C] tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          Master Dispute<br />Resolution
+        </h3>
       </div>
     </section>
   );
@@ -221,7 +327,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Heart className="w-10 h-10 text-pink-600" />
+              <Handshake className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">120+</p>
             <p className="text-base text-gray-700 font-body font-medium">Charitable Partners</p>
@@ -229,7 +335,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <BookOpen className="w-10 h-10 text-blue-600" />
+              <GraduationCap className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">200+</p>
             <p className="text-base text-gray-700 font-body font-medium">Expert-Led Courses</p>
@@ -237,7 +343,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Star className="w-10 h-10 text-amber-500 fill-amber-500" />
+              <Award className="w-10 h-10 text-[#610000]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">98%</p>
             <p className="text-base text-gray-700 font-body font-medium">Satisfaction Rate</p>

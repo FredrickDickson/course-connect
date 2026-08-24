@@ -292,18 +292,31 @@ export default function CourseDetail() {
     // can access course resources/announcements without going through checkout.
     if (course && user.id === course.instructor_id) {
       try {
-        const { error } = await (supabase as any)
+        // Check if already enrolled
+        const { data: existingEnrollment } = await supabase
           .from("enrollments")
-          .upsert(
-            {
-              user_id: user.id,
-              course_id: course.id,
-              status: "ACTIVE",
-              enrollment_type: "INSTRUCTOR",
-              enrolled_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,course_id" },
-          );
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("course_id", course.id)
+          .single();
+
+        if (existingEnrollment) {
+          toast.success("You're already enrolled!");
+          setLocation(`/learn/${course.id}`);
+          return;
+        }
+
+        // Create new enrollment
+        const { error } = await supabase
+          .from("enrollments")
+          .insert({
+            user_id: user.id,
+            course_id: course.id,
+            status: "ACTIVE",
+            enrollment_type: "INSTRUCTOR",
+            enrolled_at: new Date().toISOString(),
+          });
+        
         if (error) throw error;
         toast.success("You're enrolled as the instructor");
         queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
@@ -323,18 +336,31 @@ export default function CourseDetail() {
     const priceNum = Number(course?.price ?? 0);
     if (course && (course.price == null || priceNum === 0)) {
       try {
-        const { error } = await (supabase as any)
+        // Check if already enrolled
+        const { data: existingEnrollment } = await supabase
           .from("enrollments")
-          .upsert(
-            {
-              user_id: user.id,
-              course_id: course.id,
-              status: "ACTIVE",
-              enrollment_type: "COURSE",
-              enrolled_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,course_id" },
-          );
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("course_id", course.id)
+          .single();
+
+        if (existingEnrollment) {
+          toast.success("You're already enrolled!");
+          setLocation(`/learn/${course.id}`);
+          return;
+        }
+
+        // Create new enrollment
+        const { error } = await supabase
+          .from("enrollments")
+          .insert({
+            user_id: user.id,
+            course_id: course.id,
+            status: "ACTIVE",
+            enrollment_type: "COURSE",
+            enrolled_at: new Date().toISOString(),
+          });
+        
         if (error) throw error;
         toast.success("You're enrolled — enjoy the course!");
         queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });

@@ -33,7 +33,7 @@ export default function Login() {
         } else if (role === "instructor") {
           window.location.href = "/instructor";
         } else {
-          window.location.href = "/home";
+          window.location.href = "/sessions";
         }
       }
     };
@@ -96,7 +96,7 @@ export default function Login() {
         const destination =
           role === "instructor"
             ? "/instructor"
-            : "/home";
+            : "/sessions";
         window.location.href = destination;
       }
     } catch (err) {

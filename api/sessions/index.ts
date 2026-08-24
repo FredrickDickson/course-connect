@@ -35,9 +35,9 @@ async function getZoomAccessToken(): Promise<string | null> {
   return response.data.access_token;
 }
 
-async function createZoomMeeting(token: string, hostEmail: string, params: Record<string, any>) {
+async function createZoomMeeting(token: string, params: Record<string, any>) {
   const response = await axios.post(
-    `https://api.zoom.us/v2/users/${hostEmail}/meetings`,
+    `https://api.zoom.us/v2/users/me/meetings`,
     params,
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -58,6 +58,7 @@ const createSessionSchema = z.object({
   scheduled_start: z.string().datetime(),
   scheduled_end: z.string().datetime(),
   timezone: z.string().default('UTC'),
+  instructor_id: z.string().uuid().optional(),
   course_id: z.string().uuid().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().int().positive().max(1000).optional(),
@@ -280,10 +281,6 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
 
   const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
 
-  if (durationMinutes > 240) {
-    return res.status(400).json({ message: 'Session duration cannot exceed 4 hours' });
-  }
-
   if (sessionData.course_id && userRole !== 'admin') {
     const { data: course } = await supabaseAdmin
       .from('courses')
@@ -313,22 +310,12 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
   }
 
   try {
-    const { data: instructor } = await supabaseAdmin
-      .from('users')
-      .select('email, first_name, last_name')
-      .eq('id', userId)
-      .single();
-
-    if (!instructor) {
-      return res.status(404).json({ message: 'Instructor not found' });
-    }
-
     const startDate = new Date(sessionData.scheduled_start);
     // Zoom requires start_time to be LOCAL wall-clock time in the meeting's
     // `timezone` field, not UTC — format it in that zone.
     const zoomStartTime = formatInTimeZone(startDate, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
 
-    const zoomMeeting = await createZoomMeeting(zoomToken, instructor.email, {
+    const zoomMeeting = await createZoomMeeting(zoomToken, {
       topic: sessionData.title,
       type: 2,
       start_time: zoomStartTime,
@@ -352,6 +339,9 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
       },
     });
 
+    // Use provided instructor_id if admin specified one, otherwise use current user
+    const instructorId = sessionData.instructor_id || userId;
+
     const { data: newSession, error: insertError } = await supabaseAdmin
       .from('live_sessions')
       .insert({
@@ -361,7 +351,7 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
         scheduled_start: sessionData.scheduled_start,
         scheduled_end: sessionData.scheduled_end,
         timezone: sessionData.timezone,
-        instructor_id: userId,
+        instructor_id: instructorId,
         course_id: sessionData.course_id,
         is_public: sessionData.is_public,
         max_participants: sessionData.max_participants,
