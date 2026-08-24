@@ -271,10 +271,6 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
 
   const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
 
-  if (durationMinutes > 240) {
-    return res.status(400).json({ message: 'Session duration cannot exceed 4 hours' });
-  }
-
   if (sessionData.course_id && userRole !== 'admin') {
     const { data: course } = await supabaseAdmin
       .from('courses')
