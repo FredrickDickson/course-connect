@@ -320,30 +320,30 @@ export default function SessionsPage() {
           </Card>
         )}
 
-        {/* Upcoming This Week Banner */}
+        {/* Upcoming This Week Banner - Minimal Warm Ivory & Charcoal Design */}
         {upcomingThisWeek.length > 0 && todaysSessions.length === 0 && (
-          <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <Card className="border-[#2C2C2C]/10 bg-[#F5F1E8] shadow-sm">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-blue-700" />
+                  <div className="h-10 w-10 rounded-lg bg-[#2C2C2C] flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-[#F5F1E8]" />
                   </div>
                 </div>
                 <div className="flex-1 space-y-2">
-                  <h3 className="text-base sm:text-lg font-bold text-blue-900">
+                  <h3 className="text-base sm:text-lg font-bold text-[#2C2C2C]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                     {upcomingThisWeek.length === 1 
                       ? 'Upcoming Session This Week' 
                       : `${upcomingThisWeek.length} Upcoming Sessions This Week`}
                   </h3>
-                  <p className="text-xs sm:text-sm text-blue-700 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#2C2C2C]/80 leading-relaxed" style={{ fontFamily: 'Montserrat, sans-serif' }}>
                     <span className="font-semibold">{upcomingThisWeek[0].title}</span>
                     <br className="sm:hidden" />
                     <span className="block sm:inline sm:ml-1">
                       on {format(new Date(upcomingThisWeek[0].scheduled_start), "EEE, MMM d 'at' h:mm a")}
                     </span>
                     {upcomingThisWeek.length > 1 && (
-                      <span className="block mt-1 text-blue-600">
+                      <span className="block mt-1 text-[#2C2C2C]/60">
                         + {upcomingThisWeek.length - 1} more session{upcomingThisWeek.length > 2 ? 's' : ''}
                       </span>
                     )}
