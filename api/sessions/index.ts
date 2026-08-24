@@ -54,6 +54,7 @@ const createSessionSchema = z.object({
   scheduled_start: z.string().datetime(),
   scheduled_end: z.string().datetime(),
   timezone: z.string().default('UTC'),
+  instructor_id: z.string().uuid().optional(),
   course_id: z.string().uuid().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().int().positive().max(1000).optional(),
@@ -330,6 +331,9 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
       },
     });
 
+    // Use provided instructor_id if admin specified one, otherwise use current user
+    const instructorId = sessionData.instructor_id || userId;
+
     const { data: newSession, error: insertError } = await supabaseAdmin
       .from('live_sessions')
       .insert({
@@ -339,7 +343,7 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
         scheduled_start: sessionData.scheduled_start,
         scheduled_end: sessionData.scheduled_end,
         timezone: sessionData.timezone,
-        instructor_id: userId,
+        instructor_id: instructorId,
         course_id: sessionData.course_id,
         is_public: sessionData.is_public,
         max_participants: sessionData.max_participants,

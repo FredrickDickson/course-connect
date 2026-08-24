@@ -201,7 +201,7 @@ export default function SessionsPage() {
 
   return (
     <StudentLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pb-8 md:pb-0">
         {/* Header */}
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

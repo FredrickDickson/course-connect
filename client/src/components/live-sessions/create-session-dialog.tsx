@@ -54,6 +54,7 @@ const formSchema = z.object({
   }),
   scheduled_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
   scheduled_end_time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
+  instructor_id: z.string().uuid().optional(),
   course_id: z.string().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().optional(),
@@ -79,6 +80,46 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get current user role
+  const { data: currentUser } = useQuery({
+    queryKey: ['current_user_role'],
+    queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return null;
+      
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userData.user.id)
+        .single();
+      
+      return { role: userProfile?.role || 'student' };
+    },
+  });
+
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Fetch instructors (only for admins)
+  const { data: instructors = [], isLoading: instructorsLoading } = useQuery<any[]>({
+    queryKey: ['instructors_list'],
+    queryFn: async () => {
+      if (!isAdmin) return [];
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email, profile_image_url')
+        .eq('role', 'instructor')
+        .order('first_name');
+      
+      if (error) {
+        console.error('Error fetching instructors:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
 
   // Fetch ALL courses from platform (admin sees all, instructor sees their own)
   const { data: courses = [], isLoading: coursesLoading } = useQuery<any[]>({
@@ -122,6 +163,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
       session_type: "lecture",
       scheduled_time: "10:00",
       scheduled_end_time: "12:00",
+      instructor_id: undefined,
       course_id: courseId || undefined,
       is_public: false,
     },
@@ -151,6 +193,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
         scheduled_start: scheduled_start.toISOString(),
         scheduled_end: scheduled_end.toISOString(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ...(data.instructor_id ? { instructor_id: data.instructor_id } : {}),
         ...(data.course_id ? { course_id: data.course_id } : {}),
         is_public: data.is_public,
         max_participants: data.max_participants,
@@ -249,7 +292,7 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
               )}
             />
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className={cn("grid gap-6", isAdmin ? "md:grid-cols-3" : "md:grid-cols-2")}>
               <FormField
                 control={form.control}
                 name="session_type"
@@ -274,6 +317,48 @@ export default function CreateSessionDialog({ courseId, onSuccess }: CreateSessi
                   </FormItem>
                 )}
               />
+
+              {isAdmin && (
+                <FormField
+                  control={form.control}
+                  name="instructor_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#2c2015] font-semibold">Instructor (Optional)</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} 
+                        value={field.value || "none"}
+                        disabled={instructorsLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-11 border-[#d4c5b0]">
+                            <SelectValue placeholder={instructorsLoading ? "Loading instructors..." : "Select instructor"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            <span className="text-[#6b5d4f]">You (Admin)</span>
+                          </SelectItem>
+                          {instructors.map((instructor) => (
+                            <SelectItem key={instructor.id} value={instructor.id}>
+                              {instructor.first_name} {instructor.last_name}
+                            </SelectItem>
+                          ))}
+                          {instructors.length === 0 && !instructorsLoading && (
+                            <SelectItem value="empty" disabled>
+                              No instructors available
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-xs text-[#6b5d4f]">
+                        Choose which instructor will be shown as the session host
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
