@@ -483,7 +483,6 @@ export default function SessionDetailPage() {
                       <p className="font-semibold text-[#2c2015]">
                         {session.instructor.first_name} {session.instructor.last_name}
                       </p>
-                      <p className="text-xs text-[#6b5d4f]">{session.instructor.email}</p>
                     </div>
                   </div>
                 </div>
