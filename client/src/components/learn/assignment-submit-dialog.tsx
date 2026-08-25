@@ -26,13 +26,47 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  const isGroupMode = assignment?.group_mode === "group";
+
+  const { data: membership } = useQuery({
+    queryKey: ["assignment-group-membership", assignment?.id, user?.id],
+    enabled: isGroupMode && !!assignment?.id && !!user?.id && open,
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from("assignment_group_members")
+        .select("group_id, group:assignment_groups(id, name)")
+        .eq("assignment_id", assignment.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: teammates } = useQuery({
+    queryKey: ["assignment-group-teammates", membership?.group_id],
+    enabled: isGroupMode && !!membership?.group_id && open,
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from("assignment_group_members")
+        .select("user:users(id, first_name, last_name)")
+        .eq("group_id", membership!.group_id);
+      if (error) throw error;
+      return (data || []).map((m: any) => m.user);
+    },
+  });
+
+  const groupId: string | null = isGroupMode ? membership?.group_id ?? null : null;
+  const submissionOwnerKey = isGroupMode ? groupId : user?.id;
 
   const { data: existing, isLoading } = useQuery({
-    queryKey: ["assignment-submission", assignment?.id, user?.id],
-    enabled: !!assignment?.id && !!user?.id && open,
+    queryKey: ["assignment-submission", assignment?.id, submissionOwnerKey],
+    enabled: !!assignment?.id && !!user?.id && open && (!isGroupMode || !!groupId),
     queryFn: async () => {
-      const { data, error } = await sb.from("assignment_submissions")
-        .select("*").eq("assignment_id", assignment.id).eq("user_id", user!.id).maybeSingle();
+      const query = sb.from("assignment_submissions").select("*").eq("assignment_id", assignment.id);
+      const { data, error } = isGroupMode
+        ? await query.eq("group_id", groupId).maybeSingle()
+        : await query.eq("user_id", user!.id).is("group_id", null).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -47,11 +81,15 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
     if (!content.trim() && files.length === 0) {
       toast({ title: "Add a response or file", variant: "destructive" }); return;
     }
+    if (isGroupMode && !groupId) {
+      toast({ title: "You haven't been placed into a group yet", variant: "destructive" }); return;
+    }
     setBusy(true);
     try {
       const paths: string[] = existing?.attachment_urls || [];
+      const folder = isGroupMode ? groupId! : user!.id;
       for (const f of files) {
-        const path = `${user!.id}/${assignment.id}/${crypto.randomUUID()}-${f.name}`;
+        const path = `${folder}/${assignment.id}/${crypto.randomUUID()}-${f.name}`;
         const { error } = await sb.storage.from("assignment-submissions").upload(path, f);
         if (error) throw error;
         paths.push(path);
@@ -65,7 +103,9 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
         if (error) throw error;
       } else {
         const { error } = await sb.from("assignment_submissions").insert({
-          assignment_id: assignment.id, user_id: user!.id,
+          assignment_id: assignment.id,
+          user_id: user!.id,
+          group_id: groupId,
           content: content.trim(), attachment_urls: paths,
           submitted_at: new Date().toISOString(), is_late_submission: isLate,
         });
@@ -117,6 +157,21 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
             </div>
           )}
 
+          {isGroupMode && !groupId && (
+            <div className="bg-muted p-3 rounded-md text-sm text-muted-foreground">
+              Your instructor hasn't placed you into a group for this assignment yet. Check back once groups are assigned.
+            </div>
+          )}
+
+          {isGroupMode && groupId && (
+            <div className="text-xs text-muted-foreground">
+              Submitting as <span className="font-medium">{membership?.group?.name}</span>
+              {teammates && teammates.length > 0 && (
+                <> · Teammates: {teammates.map((t: any) => `${t.first_name} ${t.last_name}`).join(", ")}</>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-sm font-medium">Your response</label>
             <Textarea value={content} onChange={e => setContent(e.target.value)} className="min-h-[140px] mt-1"
@@ -143,7 +198,7 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
           )}
         </div>
         )}
-        {!graded && (
+        {!graded && (!isGroupMode || groupId) && (
           <DialogFooter>
             <Button onClick={submit} disabled={busy} className="bg-[#B91C1C] hover:bg-[#A01818]">
               {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}

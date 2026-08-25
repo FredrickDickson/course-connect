@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { format, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes, formatDistanceToNow } from "date-fns";
 import StudentLayout from "@/components/student-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,9 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
+  ClipboardList,
 } from "lucide-react";
+import { CourseworkSection } from "@/components/assignments/coursework-section";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -383,6 +385,19 @@ export default function SessionDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Assignments & Quizzes for this session */}
+            <Card className="border-[#d4c5b0]/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Assignments &amp; Quizzes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CourseworkSection anchor={{ type: "session", id: id! }} canManage={canManageSession()} />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CourseworkSection } from "@/components/assignments/coursework-section";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -35,7 +36,7 @@ import { formatDuration } from "@/components/learn/types";
 
 export default function CourseDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [showConfetti, setShowConfetti] = useState(false);
@@ -390,6 +391,7 @@ export default function CourseDetail() {
 
   const isEnrolled = !!enrollment;
   const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
+  const canManageCoursework = isInstructorOfCourse || (typeof isAdmin === "function" && isAdmin());
   const isFreeCourse = !!course && (course.price == null || Number(course.price) === 0);
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
@@ -590,9 +592,10 @@ export default function CourseDetail() {
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className={`grid w-full ${isEnrolled || canManageCoursework ? "grid-cols-3" : "grid-cols-2"}`}>
                       <TabsTrigger value="overview">Overview</TabsTrigger>
                       <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                      {(isEnrolled || canManageCoursework) && <TabsTrigger value="coursework">Assignments &amp; Quizzes</TabsTrigger>}
                     </TabsList>
 
                     <TabsContent value="overview" className="mt-6">
@@ -666,6 +669,12 @@ export default function CourseDetail() {
                         )}
                       </div>
                     </TabsContent>
+
+                    {(isEnrolled || canManageCoursework) && (
+                      <TabsContent value="coursework" className="mt-6">
+                        <CourseworkSection anchor={{ type: "course", id: id! }} canManage={canManageCoursework} />
+                      </TabsContent>
+                    )}
 
                     {/* <TabsContent value="reviews" className="mt-6">
                       <div className="space-y-6">

@@ -6,10 +6,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, GripVertical, CheckCircle2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, CheckCircle2, Loader2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QuizBulkImport } from '@/components/QuizBulkImport';
-import { upsertQuiz, deleteQuizByLesson } from '@/lib/curriculum-mutations';
+import {
+  upsertQuiz,
+  deleteQuizByLesson,
+  createAnchoredQuiz,
+  updateQuizById,
+  postQuiz,
+  type CourseworkAnchor,
+} from '@/lib/curriculum-mutations';
+import { apiRequest } from '@/lib/queryClient';
 
 // Clamps a raw text-input value to an integer range, falling back when empty/invalid.
 // Used on blur so the field can be freely cleared while typing without snapping back
@@ -38,7 +46,10 @@ interface QuizAnswer {
 }
 
 interface QuizBuilderProps {
-  lessonId: string;
+  /** Required for the lesson-anchored (curriculum builder) path; unused when `anchor` is set. */
+  lessonId?: string;
+  /** Course/session-anchored path (in-lecture or standalone coursework). Defaults to the lesson path. */
+  anchor?: CourseworkAnchor;
   initialQuiz?: {
     id: string;
     title: string;
@@ -47,17 +58,20 @@ interface QuizBuilderProps {
     passingScore: number;
     maxAttempts: number;
     questions: QuizQuestion[];
+    postedAt?: string | null;
   };
   onSaved?: () => void;
   onDeleted?: () => void;
 }
 
-export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizBuilderProps) {
+export function QuizBuilder({ lessonId, anchor, initialQuiz, onSaved, onDeleted }: QuizBuilderProps) {
   const [title, setTitle] = useState(initialQuiz?.title || '');
   const [description, setDescription] = useState(initialQuiz?.description || '');
   const [timeLimit, setTimeLimit] = useState(initialQuiz?.timeLimit?.toString() || '');
   const [passingScore, setPassingScore] = useState(String(initialQuiz?.passingScore ?? 80));
   const [maxAttempts, setMaxAttempts] = useState(String(initialQuiz?.maxAttempts ?? 3));
+  const [posting, setPosting] = useState(false);
+  const [postedAt, setPostedAt] = useState(initialQuiz?.postedAt ?? null);
   const [questions, setQuestions] = useState<QuizQuestion[]>(initialQuiz?.questions || []);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -237,7 +251,7 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
 
     setSaving(true);
     try {
-      await upsertQuiz(lessonId, {
+      const quizInput = {
         title,
         description,
         timeLimit: timeLimit ? parseInt(timeLimit) : null,
@@ -251,7 +265,16 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
           correctAnswer: q.correctAnswer,
           answers: q.answers,
         })),
-      });
+      };
+      if (anchor) {
+        if (initialQuiz?.id) {
+          await updateQuizById(initialQuiz.id, quizInput);
+        } else {
+          await createAnchoredQuiz(anchor, quizInput);
+        }
+      } else {
+        await upsertQuiz(lessonId!, quizInput);
+      }
       toast({ title: 'Quiz saved', description: 'Your quiz has been saved successfully.' });
       onSaved?.();
     } catch (e: any) {
@@ -265,11 +288,30 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
     }
   };
 
+  const handlePost = async () => {
+    if (!initialQuiz?.id) return;
+    setPosting(true);
+    try {
+      const updated = await postQuiz(initialQuiz.id);
+      setPostedAt(updated.posted_at);
+      toast({ title: 'Quiz posted', description: `${updated.notified_count ?? 0} student(s) notified.` });
+      onSaved?.();
+    } catch (e: any) {
+      toast({ title: 'Error posting quiz', description: e?.message || 'Failed to post', variant: 'destructive' });
+    } finally {
+      setPosting(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm('Delete this quiz? This cannot be undone.')) return;
     setDeleting(true);
     try {
-      await deleteQuizByLesson(lessonId);
+      if (anchor && initialQuiz?.id) {
+        await apiRequest('DELETE', `/api/assignments-ext/quizzes/${initialQuiz.id}`);
+      } else {
+        await deleteQuizByLesson(lessonId!);
+      }
       setTitle('');
       setDescription('');
       setQuestions([]);
@@ -514,7 +556,12 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
       </div>
 
       {/* Save Button - Validates quiz and prepares it for saving */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex justify-end items-center gap-3 pt-4 border-t">
+        {anchor && initialQuiz?.id && (
+          <span className="text-sm text-muted-foreground mr-auto">
+            {postedAt ? `Posted ${new Date(postedAt).toLocaleString()}` : 'Draft — not visible to students yet'}
+          </span>
+        )}
         {initialQuiz?.id && (
           <Button
             variant="destructive"
@@ -525,6 +572,12 @@ export function QuizBuilder({ lessonId, initialQuiz, onSaved, onDeleted }: QuizB
           >
             <Trash2 className="w-4 h-4 mr-2" />
             {deleting ? 'Deleting...' : 'Delete Quiz'}
+          </Button>
+        )}
+        {anchor && initialQuiz?.id && !postedAt && (
+          <Button variant="outline" size="lg" onClick={handlePost} disabled={posting || saving} data-testid="button-post-quiz">
+            {posting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+            {posting ? 'Posting...' : 'Post now'}
           </Button>
         )}
         <Button onClick={handleSave} size="lg" disabled={saving} data-testid="button-save-quiz">

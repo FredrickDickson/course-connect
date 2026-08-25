@@ -87,6 +87,7 @@ import adminAccessTokensRouter from "./routes/admin/access-tokens";
 import adminMembersRouter from "./routes/admin/members";
 import aiTutorRouter from "./routes/ai-tutor";
 import liveSessionsRouter from "./routes/live-sessions";
+import assignmentsExtendedRouter from "./routes/assignments-extended";
 import {
   insertCourseSchema,
 
@@ -356,7 +357,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount Live Sessions routes
   app.use("/api/sessions", liveSessionsRouter);
-  
+
+  // Mount course/session-anchored assignments & quizzes (draft/post, groups, grading)
+  app.use("/api/assignments-ext", assignmentsExtendedRouter);
+
   // Mount brochure download route (public - no auth required)
   app.use(brochureDownloadRouter);
 
