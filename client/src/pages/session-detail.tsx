@@ -35,7 +35,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMinutesDuration } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getViewerZoneAbbreviation } from "@shared/timezone";
 
@@ -515,7 +515,7 @@ export default function SessionDetailPage() {
                     <Clock className="h-5 w-5 text-[#8b6f47] mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-[#2c2015]">
-                        {session.duration_minutes} minutes
+                        {formatMinutesDuration(session.duration_minutes)}
                       </p>
                       <p className="text-xs text-[#6b5d4f]">Duration</p>
                     </div>
@@ -553,8 +553,8 @@ export default function SessionDetailPage() {
                         <p className="text-sm font-semibold">You're Registered!</p>
                       </div>
                       <p className="text-xs text-green-700">
-                        {minutesUntil > 0 
-                          ? `Session starts in ${minutesUntil} minutes. You'll be able to join then.`
+                        {minutesUntil > 0
+                          ? `Session starts in ${formatMinutesDuration(minutesUntil)}. You'll be able to join then.`
                           : 'Session is starting soon. You can join now!'}
                       </p>
                     </div>
@@ -618,7 +618,7 @@ export default function SessionDetailPage() {
                       disabled
                     >
                       <Clock className="h-5 w-5" />
-                      Session starts in {minutesUntil} minutes
+                      Session starts in {formatMinutesDuration(minutesUntil)}
                     </Button>
                   )}
 
