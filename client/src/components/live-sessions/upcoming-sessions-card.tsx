@@ -24,7 +24,7 @@ import {
   ExternalLink,
   CheckCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMinutesDuration } from "@/lib/utils";
 import { getViewerZoneAbbreviation } from "@shared/timezone";
 
 interface LiveSession {
@@ -236,6 +236,7 @@ export default function UpcomingSessionsCard() {
           const start = new Date(session.scheduled_start);
           const end = new Date(session.scheduled_end);
           const isInProgress = (now >= start && now <= end) || session.status === 'live';
+          const minsUntilStart = differenceInMinutes(start, now);
 
           return (
             <div key={session.id}>
@@ -337,8 +338,8 @@ export default function UpcomingSessionsCard() {
                   ) : session.user_registered ? (
                     <Button size="sm" variant="secondary" className="gap-1" disabled>
                       <Clock className="h-3.5 w-3.5" />
-                      {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                        ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                      {minsUntilStart > 0
+                        ? `Starts in ${formatMinutesDuration(minsUntilStart)}`
                         : "Starting Soon"}
                     </Button>
                   ) : (
