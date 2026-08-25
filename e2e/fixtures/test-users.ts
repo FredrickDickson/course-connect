@@ -57,6 +57,17 @@ export const TEST_USERS = {
     role: "admin",
     assignedLevel: null,
   },
+  // Dedicated, non-shared fixture for the admin expedited-review decision
+  // test — deliberately separate from `student` so an admin approving this
+  // profile (which mutates assigned_level/track_progress/level_waivers)
+  // never touches the shared student fixture other specs depend on.
+  expeditedApplicant: {
+    email: "e2e.expedited-applicant@cimalearn.test",
+    firstName: "E2E",
+    lastName: "ExpeditedApplicant",
+    role: "student",
+    assignedLevel: null,
+  },
 } as const satisfies Record<string, TestUser>;
 
 export const TEST_USER_PASSWORD = requirePassword;
