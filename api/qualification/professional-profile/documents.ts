@@ -56,18 +56,18 @@ async function getUserProfile(userId: string) {
 /**
  * Add document to professional profile
  */
-async function addDocument(profileId: string, documentData: any) {
+async function addDocument(profileId: string, uploadedBy: string, documentData: any) {
   const { data, error } = await supabaseAdmin
     .from("professional_documents")
     .insert({
       profile_id: profileId,
+      uploaded_by: uploadedBy,
       document_type: documentData.documentType,
       file_url: documentData.fileUrl,
       storage_path: documentData.storagePath,
       original_name: documentData.fileName,
       file_size: documentData.fileSize,
       mime_type: documentData.mimeType,
-      description: documentData.description,
     })
     .select("*")
     .single();
@@ -110,7 +110,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         storagePath,
         fileSize,
         mimeType,
-        description,
       } = req.body ?? {};
 
       // Support both fileName and originalName (frontend sends originalName)
@@ -124,14 +123,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      const document = await addDocument(profile.id, {
+      const document = await addDocument(profile.id, userId, {
         documentType,
         fileName: finalFileName,
         fileUrl,
         storagePath: finalStoragePath,
         fileSize,
         mimeType,
-        description,
       });
 
       return res.status(200).json(document);
