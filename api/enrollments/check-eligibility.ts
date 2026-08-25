@@ -251,6 +251,34 @@ async function verifyAuth(authHeader: string): Promise<{ userId: string; email: 
   }
 }
 
+/**
+ * Backfill the public.users row from auth.users if it's missing — handles
+ * users created before the DB trigger existed. Not required for eligibility
+ * itself, so callers should fire this without awaiting it.
+ */
+async function ensureUserProfile(userId: string): Promise<void> {
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (existing) return;
+
+  const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
+  const authUser = authData?.user;
+  const meta: any = authUser?.user_metadata || {};
+  const { error: createErr } = await supabaseAdmin.from("users").insert({
+    id: userId,
+    email: authUser?.email || "",
+    first_name: meta.first_name || meta.name || (authUser?.email?.split("@")[0] ?? ""),
+    last_name: meta.last_name || "",
+    role: "student",
+  });
+  if (createErr) throw createErr;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -268,67 +296,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Verify authentication
-    const authHeader = req.headers.authorization || '';
-    const { userId } = await verifyAuth(authHeader);
-
     const { courseId, enrollmentLevel } = req.body || {};
 
     if (!courseId) {
       return res.status(400).json({ message: "courseId is required" });
     }
 
-    // Get course details (only needed columns)
-    const { data: course, error: courseError } = await supabaseAdmin
-      .from("courses")
-      .select("id, title, level, track")
-      .eq("id", courseId)
-      .single();
+    // Verify authentication and fetch the course concurrently — the course
+    // lookup has no dependency on the auth result.
+    const authHeader = req.headers.authorization || '';
+    const [{ userId }, courseResult] = await Promise.all([
+      verifyAuth(authHeader),
+      supabaseAdmin
+        .from("courses")
+        .select("id, title, level, track")
+        .eq("id", courseId)
+        .single(),
+    ]);
 
+    const { data: course, error: courseError } = courseResult;
     if (courseError || !course) {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    // Get user details (auto-create if missing — handles users created before trigger)
-    let { data: user, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id, email, first_name, last_name, role")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (userError) {
-      console.error("User fetch error:", userError);
-      return res.status(500).json({ message: "Failed to load user", error: userError.message });
-    }
-
-    if (!user) {
-      // Backfill the public.users row from auth.users
-      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const authUser = authData?.user;
-      const meta: any = authUser?.user_metadata || {};
-      const { data: created, error: createErr } = await supabaseAdmin
-        .from("users")
-        .insert({
-          id: userId,
-          email: authUser?.email || "",
-          first_name: meta.first_name || meta.name || (authUser?.email?.split("@")[0] ?? ""),
-          last_name: meta.last_name || "",
-          role: "student",
-        })
-        .select()
-        .single();
-      if (createErr || !created) {
-        console.error("User backfill failed:", createErr);
-        return res.status(500).json({ message: "Could not initialize user profile", error: createErr?.message });
-      }
-      user = created;
-    }
+    // checkEligibility only ever reads user.id, so we don't need to fetch
+    // the users row on the critical path. Self-heal a missing profile row
+    // in the background without blocking the response.
+    ensureUserProfile(userId).catch((err) => {
+      console.error("User profile backfill failed:", err);
+    });
 
     const targetLevel =
       normalizeEnrollmentLevel(enrollmentLevel || course.level?.toUpperCase?.()) || "ASSOCIATE";
 
     const evaluation = await checkEligibility(
-      user,
+      { id: userId },
       course,
       targetLevel as "ASSOCIATE" | "MEMBER" | "FELLOW",
     );

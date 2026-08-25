@@ -316,10 +316,10 @@ export async function createFellowshipApplication(
 export async function getEnrollment(
   userId: string,
   courseId: string
-): Promise<Enrollment | null> {
+): Promise<Pick<Enrollment, "id" | "status"> | null> {
   const { data, error } = await supabaseAdmin
     .from("enrollments")
-    .select("*")
+    .select("id, status")
     .eq("user_id", userId)
     .eq("course_id", courseId)
     .maybeSingle();

@@ -64,17 +64,18 @@ router.post(
       return send400Error(res, validation.error.message, validation.error);
     }
 
-    const course = await storage.getCourseById(courseId);
+    const [course, user] = await Promise.all([
+      storage.getCourseById(courseId),
+      storage.getUser(userId),
+    ]);
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
-
-    const user = await storage.getUser(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level, course.programme_type);
+    const resolvedLevel = resolveEnrollmentLevel(user, enrollmentLevel, course.level, course.programme_type);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
     res.json(eligibility);
   }),
@@ -94,18 +95,19 @@ router.post(
       return send400Error(res, validation.error.message, validation.error);
     }
 
-    const course = await storage.getCourseById(courseId);
+    const [course, user] = await Promise.all([
+      storage.getCourseById(courseId),
+      storage.getUser(userId),
+    ]);
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
-
-    const user = await storage.getUser(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Check eligibility
-    const resolvedLevel = await resolveEnrollmentLevel(userId, enrollmentLevel, course.level, course.programme_type);
+    const resolvedLevel = resolveEnrollmentLevel(user, enrollmentLevel, course.level, course.programme_type);
     const eligibility = await checkEligibility(user, course, resolvedLevel);
 
     if (eligibility.status === "BLOCKED") {
@@ -124,20 +126,19 @@ router.post(
   }),
 );
 
-async function resolveEnrollmentLevel(
-  userId: string,
+function resolveEnrollmentLevel(
+  user: { assigned_level?: string | null } | undefined,
   requestedLevel: string | undefined,
   courseLevel: string | undefined,
   programmeType?: string | null,
-): Promise<EnrollmentLevel | null> {
+): EnrollmentLevel | null {
   // Adjunct Courses have no qualification level - they're standalone and
   // independent of the professional Associate/Member/Fellow pathway.
   if (programmeType === "ADJUNCT_COURSE") {
     return null;
   }
 
-  // Fetch user's actual assigned level from the users table
-  const user = await storage.getUser(userId);
+  // Use the already-fetched user's assigned level from the users table
   const userLevel = user?.assigned_level?.toUpperCase() as EnrollmentLevel | undefined;
 
   // If user has a valid assigned level (from admin review or course completion), use it
