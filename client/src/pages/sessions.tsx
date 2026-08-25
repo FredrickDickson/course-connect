@@ -31,7 +31,7 @@ import {
   CheckCircle,
   BookOpen,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMinutesDuration } from "@/lib/utils";
 import { getViewerZoneAbbreviation } from "@shared/timezone";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 
@@ -477,6 +477,7 @@ function SessionsList({
         const isJoinable = canJoinSession(session);
         const isStartable = canStartSession(session);
         const participantCount = session.participant_count?.[0]?.count || 0;
+        const minsUntilStart = differenceInMinutes(startDate, new Date());
 
         return (
           <Card
@@ -556,7 +557,7 @@ function SessionsList({
 
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span>{session.duration_minutes} min</span>
+                      <span>{formatMinutesDuration(session.duration_minutes)}</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -603,13 +604,13 @@ function SessionsList({
                       <Button variant="secondary" className="gap-2 w-full xs:w-auto text-xs sm:text-sm" disabled>
                         <Clock className="h-4 w-4" />
                         <span className="hidden xs:inline">
-                          {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                            ? `Starts in ${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                          {minsUntilStart > 0
+                            ? `Starts in ${formatMinutesDuration(minsUntilStart)}`
                             : "Starting Soon"}
                         </span>
                         <span className="xs:hidden">
-                          {differenceInMinutes(new Date(session.scheduled_start), new Date()) > 0 
-                            ? `${differenceInMinutes(new Date(session.scheduled_start), new Date())} min`
+                          {minsUntilStart > 0
+                            ? formatMinutesDuration(minsUntilStart)
                             : "Soon"}
                         </span>
                       </Button>
