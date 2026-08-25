@@ -4,7 +4,7 @@
  */
 
 // Exchange rate for USD to GHS conversion (should match server)
-const USD_TO_GHS_RATE = parseFloat(import.meta.env.VITE_USD_TO_GHS_RATE || "15.50");
+const USD_TO_GHS_RATE = parseFloat(import.meta.env.VITE_USD_TO_GHS_RATE || "14.75");
 
 /**
  * Convert USD amount to GHS
@@ -41,26 +41,42 @@ export function getCurrencySymbol(currency: 'USD' | 'GHS'): string {
  * Payment conversion result
  */
 export interface PaymentConversion {
-  amountUSD: number;
+  amountUSD: number | null; // null when sourceCurrency is GHS - there is no USD leg
   amountGHS: number;
   exchangeRate: number;
+  sourceCurrency: 'USD' | 'GHS';
   formattedUSD: string;
   formattedGHS: string;
 }
 
 /**
- * Convert payment amount with full details
- * @param usdAmount - Amount in USD
+ * Convert payment amount with full details. GHS-priced courses are charged
+ * as-is (no conversion); USD-priced courses are converted to GHS via the
+ * fixed exchange rate for Paystack.
+ * @param amount - Amount in the given sourceCurrency
+ * @param sourceCurrency - Currency the amount is already denominated in
  * @returns Complete conversion details
  */
-export function convertPayment(usdAmount: number): PaymentConversion {
-  const amountGHS = convertUSDtoGHS(usdAmount);
-  
+export function convertPayment(amount: number, sourceCurrency: 'USD' | 'GHS' = 'USD'): PaymentConversion {
+  if (sourceCurrency === 'GHS') {
+    return {
+      amountUSD: null,
+      amountGHS: amount,
+      exchangeRate: 1,
+      sourceCurrency: 'GHS',
+      formattedUSD: formatCurrency(amount, 'GHS'),
+      formattedGHS: formatCurrency(amount, 'GHS'),
+    };
+  }
+
+  const amountGHS = convertUSDtoGHS(amount);
+
   return {
-    amountUSD: usdAmount,
+    amountUSD: amount,
     amountGHS,
     exchangeRate: USD_TO_GHS_RATE,
-    formattedUSD: formatCurrency(usdAmount, 'USD'),
+    sourceCurrency: 'USD',
+    formattedUSD: formatCurrency(amount, 'USD'),
     formattedGHS: formatCurrency(amountGHS, 'GHS'),
   };
 }

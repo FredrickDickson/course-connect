@@ -174,7 +174,7 @@ export default function Checkout() {
   }, [courseId]);
 
   const coursePrice = parseFloat(course?.price?.toString() || "0");
-  const currency = course?.currency || "USD";
+  const currency: "USD" | "GHS" = course?.currency === "GHS" ? "GHS" : "USD";
   const avgRating = course?.avg_rating ? parseFloat(course.avg_rating.toString()) : 0;
 
   // Effective price after any applied access/coupon code. This is purely
@@ -183,9 +183,14 @@ export default function Checkout() {
   const effectivePrice = appliedToken ? appliedToken.discountedAmount : coursePrice;
   const isFreeViaToken = !!appliedToken && appliedToken.discountedAmount === 0;
 
-  // Convert USD to GHS for display
-  const paymentConversion = convertPayment(effectivePrice);
+  // Convert to GHS for display/charging. No-op when the course is already
+  // priced in GHS; converts via the fixed rate when priced in USD.
+  const paymentConversion = convertPayment(effectivePrice, currency);
   const amountGHS = paymentConversion.amountGHS;
+  // Only show "you'll be charged in a different currency" messaging when a
+  // real conversion happened — a GHS-priced course is charged exactly what
+  // is displayed, there's nothing to disclose.
+  const isConverted = currency === "USD";
 
   const CODE_ERROR_MESSAGES: Record<string, string> = {
     course_not_found: "Course not found.",
@@ -659,7 +664,7 @@ export default function Checkout() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Course Price</span>
                         <span className={appliedToken ? "line-through text-muted-foreground" : ""}>
-                          {formatCurrency(coursePrice, 'USD')}
+                          {formatCurrency(coursePrice, currency)}
                         </span>
                       </div>
                       {appliedToken && (
@@ -667,10 +672,10 @@ export default function Checkout() {
                           <span>
                             {appliedToken.discountValue === 100 ? "Access Code Discount" : "Coupon Discount"}
                           </span>
-                          <span>-{formatCurrency(coursePrice - effectivePrice, 'USD')}</span>
+                          <span>-{formatCurrency(coursePrice - effectivePrice, currency)}</span>
                         </div>
                       )}
-                      {!isFreeViaToken && (
+                      {!isFreeViaToken && isConverted && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">You'll be charged</span>
                           <span className="font-semibold text-primary">{formatCurrency(amountGHS, 'GHS')}</span>
@@ -723,15 +728,15 @@ export default function Checkout() {
                       <div className="flex justify-between text-lg font-bold">
                         <span>Total</span>
                         <div className="text-right">
-                          <div className="text-primary">{formatCurrency(effectivePrice, 'USD')}</div>
-                          {!isFreeViaToken && (
+                          <div className="text-primary">{formatCurrency(effectivePrice, currency)}</div>
+                          {!isFreeViaToken && isConverted && (
                             <div className="text-sm font-normal text-muted-foreground">
                               (~{formatCurrency(amountGHS, 'GHS')} will be charged)
                             </div>
                           )}
                         </div>
                       </div>
-                      {!isFreeViaToken && (
+                      {!isFreeViaToken && isConverted && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
                           <div className="flex items-center gap-2">
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -871,8 +876,8 @@ export default function Checkout() {
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
                       <div className="text-right">
-                        <div className="text-primary">{formatCurrency(effectivePrice, 'USD')}</div>
-                        {!isFreeViaToken && (
+                        <div className="text-primary">{formatCurrency(effectivePrice, currency)}</div>
+                        {!isFreeViaToken && isConverted && (
                           <div className="text-sm font-normal text-muted-foreground">
                             ({formatCurrency(amountGHS, 'GHS')} charged)
                           </div>

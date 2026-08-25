@@ -1,38 +1,44 @@
-The exchange rate can be updated in two files:
+# Course currency & USD→GHS conversion
 
-Server-side
-server/utils/currency.ts - Line 8
+Course pricing supports exactly two currencies: **USD** and **GHS**.
 
-typescript
-export const EXCHANGE_RATE = 15.50; // 1 USD = 15.50 GHS
-Client-side
-c:\Users\Administrator\Documents\projects\course-connect/client/src/utils/currency.ts - Line 8
+- **USD**: entered/displayed in USD. At checkout, the price is converted to
+  GHS using the fixed exchange rate below and charged via Paystack.
+- **GHS**: entered/displayed in GHS. At checkout, the price is charged
+  **as-is** — no conversion is applied.
 
-typescript
-export const EXCHANGE_RATE = 15.50; // 1 USD = 15.50 GHS
-Update Process
-Edit both files with the new rate
-Redeploy Edge Functions if needed:
-bash
-supabase functions deploy paystack-course-initialize
-supabase functions deploy paystack-webhook
-The rate is hardcoded for simplicity but could be moved to environment variables or a database table for dynamic updates.
+The instructor/admin picks the currency when creating a course
+(`client/src/pages/create-course.tsx`). Nothing else (EUR, GBP, etc.) is
+supported — a course's `currency` column only ever holds `USD` or `GHS`.
 
-Feedback submitted
+## Exchange rate
 
+The rate is **not hardcoded** — it's read from an environment variable at
+runtime, with a `14.75` fallback if the variable is unset. It must be kept in
+sync across three places:
 
+| Location | Variable | Used by |
+|---|---|---|
+| Vercel env vars (server) | `USD_TO_GHS_RATE` | `server/utils/currency.ts`, `server/routes.ts` |
+| Vercel env vars (client/browser) | `VITE_USD_TO_GHS_RATE` | `client/src/utils/currency.ts` |
+| Supabase Edge Function secret | `USD_TO_GHS_RATE` | `supabase/functions/paystack-course-initialize/index.ts` |
 
-You need to update in both:
+To update the rate, set the new value in all three places:
 
-Vercel Environment Variables (for server and client):
+```bash
+# Vercel: set via dashboard or `vercel env add`
+# Supabase Edge Function secret:
+supabase secrets set USD_TO_GHS_RATE=14.75
+```
 
-USD_TO_GHS_RATE=11 - Used by server/routes.ts and server/utils/currency.ts
-VITE_USD_TO_GHS_RATE=11 - Used by client/src/utils/currency.ts (browser)
-Supabase Edge Function Secrets (for the Edge Function):
+No redeploy of the Edge Function code is needed for a rate-only change —
+Supabase secrets are read at request time via `Deno.env.get(...)`.
 
-USD_TO_GHS_RATE=11 - Used by supabase/functions/paystack-course-initialize/index.ts
-To set Supabase Edge Function secrets, run:
+## Charging logic
 
-bash
-supabase secrets set USD_TO_GHS_RATE=11
-Or via Supabase dashboard: Project Settings → Edge Functions → Secrets.
+The conversion/charging decision is centralized in a `convertPayment(amount,
+sourceCurrency)` helper (mirrored in `client/src/utils/currency.ts` and
+`server/utils/currency.ts`) and a matching `resolveChargeAmount(price,
+courseCurrency)` in the Supabase edge function — all three branch on the
+course's own `currency` column (not any client-supplied value) so a
+GHS-priced course is never mistakenly multiplied by the exchange rate.

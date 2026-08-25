@@ -8,7 +8,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("VITE_APP_URL") || "http://localhost:5173";
 
 // Exchange rate for USD to GHS conversion
-const USD_TO_GHS_RATE = parseFloat(Deno.env.get("USD_TO_GHS_RATE") || "15.50");
+const USD_TO_GHS_RATE = parseFloat(Deno.env.get("USD_TO_GHS_RATE") || "14.75");
 
 /**
  * Convert USD amount to GHS
@@ -19,6 +19,30 @@ function convertUSDtoGHS(usdAmount: number): number {
   if (usdAmount <= 0) return 0;
   const ghsAmount = usdAmount * USD_TO_GHS_RATE;
   return Math.round(ghsAmount * 100) / 100;
+}
+
+/**
+ * Resolve the amount to actually charge via Paystack (always GHS) given the
+ * course's native currency (trusted DB value, not client-supplied). GHS-
+ * priced courses are charged as-is; anything else (USD, or a legacy/missing
+ * currency value) is treated as USD and converted via the fixed rate.
+ */
+function resolveChargeAmount(price: number, courseCurrency: string | null | undefined) {
+  const normalized = (courseCurrency || "USD").toUpperCase();
+  if (normalized === "GHS") {
+    return {
+      amountGHS: price,
+      amountUSD: null as number | null,
+      exchangeRate: 1,
+      originalCurrency: "GHS",
+    };
+  }
+  return {
+    amountGHS: convertUSDtoGHS(price),
+    amountUSD: price,
+    exchangeRate: USD_TO_GHS_RATE,
+    originalCurrency: "USD",
+  };
 }
 
 interface CoursePaymentRequest {
@@ -188,11 +212,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Convert USD to GHS for Paystack (always charge in GHS for Ghana merchant)
-    const amountUSD = body.amount;
-    const amountGHS = convertUSDtoGHS(amountUSD);
-    
-    console.log(`Currency conversion: $${amountUSD} USD -> ¢${amountGHS} GHS (Rate: ${USD_TO_GHS_RATE})`);
+    // Charge in GHS for Paystack (Ghana merchant). expectedAmount is already
+    // in the course's native currency: GHS-priced courses are charged as-is,
+    // USD-priced ones are converted via the fixed exchange rate.
+    const { amountGHS, amountUSD, exchangeRate, originalCurrency } = resolveChargeAmount(
+      expectedAmount,
+      course.currency,
+    );
+
+    console.log(
+      amountUSD !== null
+        ? `Currency conversion: $${amountUSD} USD -> ¢${amountGHS} GHS (Rate: ${exchangeRate})`
+        : `Charging GHS as-is: ¢${amountGHS} GHS (no conversion, course.currency=GHS)`,
+    );
 
     // Initialize Paystack transaction
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -217,8 +249,8 @@ Deno.serve(async (req: Request) => {
           // Currency conversion details
           amountUSD: amountUSD,
           amountGHS: amountGHS,
-          exchangeRate: USD_TO_GHS_RATE,
-          originalCurrency: body.currency || "USD",
+          exchangeRate: exchangeRate,
+          originalCurrency: originalCurrency,
           chargedCurrency: "GHS",
           ...(accessTokenId && { accessTokenId, accessCode: body.accessCode }),
           ...(body.paymentType === "company_invoice" && {
@@ -238,9 +270,9 @@ Deno.serve(async (req: Request) => {
               value: body.enrollmentLevel || "N/A",
             },
             {
-              display_name: "Original Amount (USD)",
-              variable_name: "original_amount_usd",
-              value: amountUSD.toString(),
+              display_name: `Original Amount (${originalCurrency})`,
+              variable_name: "original_amount",
+              value: (amountUSD ?? amountGHS).toString(),
             },
             {
               display_name: "Charged Amount (GHS)",
@@ -250,7 +282,7 @@ Deno.serve(async (req: Request) => {
             {
               display_name: "Exchange Rate",
               variable_name: "exchange_rate",
-              value: USD_TO_GHS_RATE.toString(),
+              value: exchangeRate.toString(),
             },
           ],
         },

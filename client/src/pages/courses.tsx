@@ -595,7 +595,7 @@ export default function Courses() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="text-2xl font-bold text-foreground">{formatCoursePrice(course.price, "$")}</div>
+                          <div className="text-2xl font-bold text-foreground">{formatCoursePrice(course.price, course.currency || "USD")}</div>
                           <div className="text-sm text-muted-foreground">
                             {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>
@@ -781,9 +781,7 @@ export default function Courses() {
                             </div>
                             <div className="flex flex-col items-end space-y-2 ml-4">
                               <div className="text-lg font-bold text-primary">
-                                {course.price && parseFloat(course.price.toString()) > 0
-                                  ? `$${parseFloat(course.price.toString()).toFixed(2)}`
-                                  : "Free"}
+                                {formatCoursePrice(course.price, course.currency || "USD")}
                               </div>
                               <Button size="sm" asChild>
                                 <a href={`/course/${course.id}`}>View Course</a>

@@ -114,6 +114,7 @@ import {
 import { validateAndExtractVideoUrl } from "./utils/videoValidator";
 import { sanitizeRichText } from "./utils/sanitizeHtml";
 import { sendRawEmail } from "./utils/email";
+import { convertPayment } from "./utils/currency";
 import { z } from "zod";
 
 
@@ -1657,10 +1658,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-      // Convert USD to GHS for Paystack (Ghana merchant requires GHS)
-      const USD_TO_GHS_RATE = parseFloat(process.env.USD_TO_GHS_RATE || "15.50");
-      const amountUSD = parseFloat(course.price);
-      const amountGHS = Math.round(amountUSD * USD_TO_GHS_RATE * 100); // Convert to pesewas
+      // Convert to GHS for Paystack (Ghana merchant requires GHS). GHS-priced
+      // courses are charged as-is; USD-priced (or legacy/undefined-currency)
+      // courses are converted via the fixed exchange rate.
+      const courseCurrency = course.currency === "GHS" ? "GHS" : "USD";
+      const conversion = convertPayment(parseFloat(course.price), courseCurrency);
+      const amountGHS = Math.round(conversion.amountGHS * 100); // Convert to pesewas
 
       const reference = `course_${courseId}_${userId}_${Date.now()}`;
 
@@ -1736,6 +1739,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending",
 
         paystackReference: reference,
+
+        amountUsd: conversion.amountUSD !== null ? conversion.amountUSD.toString() : null,
+
+        amountGhs: conversion.amountGHS.toString(),
+
+        exchangeRate: conversion.exchangeRate.toString(),
+
+        originalCurrency: conversion.sourceCurrency,
+
+        chargedCurrency: "GHS",
 
       });
 

@@ -165,7 +165,10 @@ Deno.serve(async (req: Request) => {
           currency: event.data.currency, // GHS
           status: "completed",
           paystack_reference: event.data.reference,
-          // Currency conversion details from metadata
+          // Currency conversion details from metadata. amount_usd is null
+          // when the course was priced natively in GHS — there is no real
+          // USD leg for that transaction (see paystack-course-initialize's
+          // resolveChargeAmount()).
           amount_usd: metadata.amountUSD?.toString() || null,
           amount_ghs: metadata.amountGhs?.toString() || (event.data.amount / 100).toString(),
           exchange_rate: metadata.exchangeRate?.toString() || null,

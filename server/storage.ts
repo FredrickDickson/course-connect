@@ -973,6 +973,11 @@ export class DatabaseStorage implements IStorage {
       currency: order.currency,
       status: order.status,
       paystack_reference: order.paystackReference,
+      amount_usd: order.amountUsd ?? null,
+      amount_ghs: order.amountGhs ?? null,
+      exchange_rate: order.exchangeRate ?? null,
+      original_currency: order.originalCurrency ?? null,
+      charged_currency: order.chargedCurrency ?? null,
     };
     const { data, error } = await supabaseAdmin
       .from("orders")

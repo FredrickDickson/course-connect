@@ -38,6 +38,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const CUSTOM_CATEGORY_VALUE = "__custom__";
 
+// Course pricing currently supports exactly these two currencies: USD is
+// entered/displayed as-is and converted to GHS at checkout via a fixed
+// exchange rate; GHS is charged as-is with no conversion. Do not add EUR/
+// GBP here without also adding real conversion + charging logic downstream
+// (checkout.tsx, paystack-course-initialize, server/routes.ts /api/orders).
+const courseCurrencyEnum = z.enum(["USD", "GHS"]);
+
 // Instructor schema for admin course creation
 const instructorSchema = z.object({
   // Set when this entry represents an instructor already linked to the
@@ -65,7 +72,7 @@ const courseSchema = z
     level: z.enum(["associate", "member", "fellow"]).optional(),
     track: z.enum(["ARBITRATION", "MEDIATION"]).optional(),
     price: z.number().min(0, "Price must be non-negative"),
-    currency: z.string().default("USD"),
+    currency: courseCurrencyEnum.default("USD"),
     thumbnailUrl: z.string().url().optional().or(z.literal("")),
     isPublished: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
@@ -202,7 +209,7 @@ export default function CreateCourse() {
         level: (courseData.level as "associate" | "member" | "fellow") || "associate",
         track: (courseData.track as "ARBITRATION" | "MEDIATION") || "ARBITRATION",
         price: Number(courseData.price) || 0,
-        currency: courseData.currency || "USD",
+        currency: courseData.currency === "GHS" ? "GHS" : "USD",
         thumbnailUrl: courseData.thumbnail_url || "",
         isPublished: courseData.is_published || false,
         isFeatured: courseData.is_featured || false,
@@ -861,8 +868,6 @@ export default function CreateCourse() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
                                 <SelectItem value="GHS">GHS</SelectItem>
                               </SelectContent>
                             </Select>
