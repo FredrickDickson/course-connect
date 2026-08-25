@@ -332,46 +332,8 @@ export default function CourseDetail() {
       return;
     }
 
-    // Free courses skip Paystack entirely — directly create an ACTIVE enrollment.
-    const priceNum = Number(course?.price ?? 0);
-    if (course && (course.price == null || priceNum === 0)) {
-      try {
-        // Check if already enrolled
-        const { data: existingEnrollment } = await supabase
-          .from("enrollments")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("course_id", course.id)
-          .single();
-
-        if (existingEnrollment) {
-          toast.success("You're already enrolled!");
-          setLocation(`/learn/${course.id}`);
-          return;
-        }
-
-        // Create new enrollment
-        const { error } = await supabase
-          .from("enrollments")
-          .insert({
-            user_id: user.id,
-            course_id: course.id,
-            status: "ACTIVE",
-            enrollment_type: "COURSE",
-            enrolled_at: new Date().toISOString(),
-          });
-        
-        if (error) throw error;
-        toast.success("You're enrolled — enjoy the course!");
-        queryClient.invalidateQueries({ queryKey: ["enrollment-check", id, user.id] });
-        setLocation(`/learn/${course.id}`);
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to enroll");
-      }
-      return;
-    }
-
-    // Proceed to checkout
+    // All courses now require payment through Paystack checkout
+    // Free course bypass has been disabled to enforce payment processing
     setLocation(`/checkout/${id}`);
   };
 
@@ -416,7 +378,8 @@ export default function CourseDetail() {
 
   const isEnrolled = !!enrollment;
   const isInstructorOfCourse = !!user && !!course && user.id === course.instructor_id;
-  const isFreeCourse = !!course && (course.price == null || Number(course.price) === 0);
+  // Free course bypass disabled - all courses now require payment
+  const isFreeCourse = false;
   const totalLessons = course.modules?.reduce(
     (total: number, module: any) => total + (module.lessons?.length || 0), 0,
   ) || 0;
