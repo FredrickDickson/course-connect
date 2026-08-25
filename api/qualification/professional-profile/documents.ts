@@ -62,8 +62,9 @@ async function addDocument(profileId: string, documentData: any) {
     .insert({
       profile_id: profileId,
       document_type: documentData.documentType,
-      file_name: documentData.fileName,
       file_url: documentData.fileUrl,
+      storage_path: documentData.storagePath,
+      original_name: documentData.fileName,
       file_size: documentData.fileSize,
       mime_type: documentData.mimeType,
       description: documentData.description,
@@ -104,23 +105,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const {
         documentType,
         fileName,
+        originalName,
         fileUrl,
+        storagePath,
         fileSize,
         mimeType,
         description,
       } = req.body ?? {};
 
-      if (!documentType || !fileName || !fileUrl) {
+      // Support both fileName and originalName (frontend sends originalName)
+      const finalFileName = originalName || fileName;
+      const finalStoragePath = storagePath || fileUrl;
+
+      if (!documentType || !finalFileName || !fileUrl) {
         return res.status(400).json({ 
           error: 'Missing required fields',
-          message: 'documentType, fileName, and fileUrl are required'
+          message: 'documentType, fileName/originalName, and fileUrl are required'
         });
       }
 
       const document = await addDocument(profile.id, {
         documentType,
-        fileName,
+        fileName: finalFileName,
         fileUrl,
+        storagePath: finalStoragePath,
         fileSize,
         mimeType,
         description,
