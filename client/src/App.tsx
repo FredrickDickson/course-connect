@@ -36,6 +36,7 @@ import Courses from "@/pages/courses";
 import DashboardHome from "@/pages/dashboard-new";
 import Dashboard from "@/pages/dashboard";
 import AdminExpeditedReviews from "@/pages/admin-expedited-reviews";
+import AdminAssignments from "@/pages/admin-assignments";
 import Checkout from "@/pages/checkout";
 import Programs from "@/pages/programs";
 import VideoPlayer from "@/pages/video-player";
@@ -299,6 +300,7 @@ function Router() {
 
       {/* Admin routes */}
       <ProtectedRoute path="/admin/expedited" requiredRole="admin" component={AdminExpeditedReviews} />
+      <ProtectedRoute path="/admin/assignments" requiredRole="admin" component={AdminAssignments} />
       <ProtectedRoute path="/admin/renewals" requiredRole="admin" component={LazyAdminRenewalManagement} />
       <ProtectedRoute path="/admin/access-tokens" requiredRole="admin" component={LazyAdminAccessTokens} />
       <ProtectedRoute path="/admin/instructors/:instructorId/profile" requiredRole="admin" component={LazyAdminInstructorProfile} />

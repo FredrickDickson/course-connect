@@ -23,6 +23,14 @@
       "destination": "/api/sessions/[id]/register.ts"
     },
     {
+      "source": "/api/sessions/:id/assignments",
+      "destination": "/api/sessions/[id]/assignments.ts"
+    },
+    {
+      "source": "/api/sessions/:id/resources",
+      "destination": "/api/sessions/[id]/resources.ts"
+    },
+    {
       "source": "/api/instructor/courses",
       "destination": "/api/instructor/courses.ts"
     },

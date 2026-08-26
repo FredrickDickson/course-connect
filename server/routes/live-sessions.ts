@@ -7,6 +7,7 @@ import { storage, supabaseAdmin } from "../storage";
 import { getZoomService } from "../services/zoom";
 import { formatInTimeZone } from "@shared/timezone";
 import { z } from "zod";
+import multer from "multer";
 
 interface AuthRequest extends Request {
   user: {
@@ -18,6 +19,10 @@ interface AuthRequest extends Request {
 }
 
 const router = Router();
+const sessionResourceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+});
 
 const createSessionSchema = z.object({
   title: z.string().min(3).max(200),
@@ -46,6 +51,7 @@ router.get(
       course_id, 
       status, 
       upcoming, 
+      past,
       include_past,
       session_type 
     } = req.query;
@@ -75,9 +81,10 @@ router.get(
     if (upcoming === 'true') {
       // Show sessions that haven't ended yet (includes scheduled AND in-progress sessions)
       query = query.gte('scheduled_end', new Date().toISOString());
-    }
-
-    if (!include_past || include_past === 'false') {
+    } else if (past === 'true') {
+      // Keep every ended session in history until it is explicitly deleted.
+      query = query.lt('scheduled_end', new Date().toISOString());
+    } else if (!include_past || include_past === 'false') {
       query = query.gte('scheduled_end', new Date().toISOString());
     }
 
@@ -486,6 +493,112 @@ router.delete(
     }
 
     res.json({ message: 'Session cancelled successfully' });
+  })
+);
+
+router.get(
+  "/:id/assignments",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { data, error } = await supabaseAdmin
+      .from('assignments')
+      .select('*')
+      .eq('session_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data || []);
+  })
+);
+
+router.post(
+  "/:id/assignments",
+  requireSupabaseAuth,
+  requireInstructor(),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { data, error } = await supabaseAdmin
+      .from('assignments')
+      .insert({
+        session_id: req.params.id,
+        title: req.body.title,
+        description: req.body.description || '',
+        instructions: req.body.instructions,
+        due_date: req.body.due_date || null,
+        max_score: req.body.max_score || 100,
+        allow_late_submission: req.body.allow_late_submission ?? true,
+        is_required: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Session assignment insert failed:', error);
+      return res.status(500).json({ message: `Assignment save failed: ${error.message}` });
+    }
+    res.status(201).json(data);
+  })
+);
+
+router.get(
+  "/:id/resources",
+  requireSupabaseAuth,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { data, error } = await supabaseAdmin
+      .from('course_resources')
+      .select('*')
+      .eq('session_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(data || []);
+  })
+);
+
+router.post(
+  "/:id/resources",
+  requireSupabaseAuth,
+  requireInstructor(),
+  sessionResourceUpload.single('resource'),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const fileName = `${req.params.id}/${Date.now()}-${req.file.originalname}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('session-resources')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype || 'application/octet-stream',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Session resource storage upload failed:', uploadError);
+      return res.status(500).json({ message: `Storage upload failed: ${uploadError.message}` });
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+      .from('session-resources')
+      .getPublicUrl(fileName);
+    const { data, error } = await supabaseAdmin
+      .from('course_resources')
+      .insert({
+        session_id: req.params.id,
+        title: req.body.title || req.file.originalname,
+        file_name: req.file.originalname,
+        file_url: urlData.publicUrl,
+        file_type: req.file.mimetype || 'application/octet-stream',
+        file_size: req.file.size,
+        download_count: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Session resource metadata insert failed:', error);
+      await supabaseAdmin.storage.from('session-resources').remove([fileName]);
+      return res.status(500).json({ message: `Resource metadata save failed: ${error.message}` });
+    }
+
+    res.status(201).json(data);
   })
 );
 

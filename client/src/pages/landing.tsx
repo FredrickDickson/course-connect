@@ -30,7 +30,8 @@ function LiveSessionBanner() {
       const now = new Date().toISOString();
       const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // First, try to get a live session (in progress)
+      // Check the active time window as well as status because scheduled status
+      // can remain unchanged when no background status job is running.
       const { data: liveData, error: liveError } = await (supabase as any)
         .from("live_sessions")
         .select(`
@@ -38,7 +39,10 @@ function LiveSessionBanner() {
           instructor:users!live_sessions_instructor_id_fkey(first_name, last_name),
           course:courses(title)
         `)
-        .eq("status", "live")
+        .in("status", ["live", "scheduled"])
+        .lte("scheduled_start", now)
+        .gte("scheduled_end", now)
+        .eq("is_public", true)
         .order("scheduled_start", { ascending: true })
         .limit(1);
 
@@ -58,6 +62,7 @@ function LiveSessionBanner() {
           course:courses(title)
         `)
         .eq("status", "scheduled")
+        .eq("is_public", true)
         .gte("scheduled_start", now)
         .lte("scheduled_start", oneWeekFromNow)
         .order("scheduled_start", { ascending: true })

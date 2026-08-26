@@ -158,6 +158,7 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
     course_id,
     status,
     upcoming,
+    past,
     include_past,
     session_type
   } = req.query;
@@ -186,9 +187,9 @@ async function handleGetSessions(req: VercelRequest, res: VercelResponse, user: 
 
   if (upcoming === 'true') {
     query = query.gte('scheduled_end', new Date().toISOString());
-  }
-
-  if (!include_past || include_past === 'false') {
+  } else if (past === 'true') {
+    query = query.lt('scheduled_end', new Date().toISOString());
+  } else if (!include_past || include_past === 'false') {
     query = query.gte('scheduled_end', new Date().toISOString());
   }
 

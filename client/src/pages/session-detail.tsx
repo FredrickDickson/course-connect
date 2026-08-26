@@ -38,6 +38,8 @@ import {
 import { cn, formatMinutesDuration } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getViewerZoneAbbreviation } from "@shared/timezone";
+import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
+import SessionMaterials from "@/components/live-sessions/session-materials";
 
 interface LiveSession {
   id: string;
@@ -77,6 +79,7 @@ export default function SessionDetailPage() {
   const queryClient = useQueryClient();
   const { user, isInstructor, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: session, isLoading } = useQuery<LiveSession>({
     queryKey: ['session', id],
@@ -333,10 +336,21 @@ export default function SessionDetailPage() {
 
             {canManageSession() && (
               <div className="flex gap-2 flex-shrink-0">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Edit className="h-4 w-4" />
-                  <span className="hidden sm:inline">Edit</span>
-                </Button>
+                <CreateSessionDialog
+                  existingSession={session}
+                  open={editDialogOpen}
+                  onOpenChange={setEditDialogOpen}
+                  onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['session', id] });
+                    setEditDialogOpen(false);
+                  }}
+                  triggerButton={
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </Button>
+                  }
+                />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
@@ -469,6 +483,13 @@ export default function SessionDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Session Materials (Assignments & Resources) */}
+            <SessionMaterials
+              sessionId={id!}
+              userRegistered={session.user_registered}
+              isInstructor={canManageSession()}
+            />
           </div>
 
           {/* Sidebar */}

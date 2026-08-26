@@ -76,8 +76,7 @@ export default function SessionsPage() {
       if (activeTab === 'upcoming') {
         params.append('upcoming', 'true');
       } else if (activeTab === 'past') {
-        params.append('include_past', 'true');
-        params.append('status', 'completed');
+        params.append('past', 'true');
       }
 
       const response = await apiRequest('GET', `/api/sessions?${params.toString()}`);
