@@ -30,20 +30,41 @@ function LiveSessionBanner() {
       const now = new Date().toISOString();
       const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data, error } = await (supabase as any)
+      // First, try to get a live session (in progress)
+      const { data: liveData, error: liveError } = await (supabase as any)
         .from("live_sessions")
         .select(`
           *,
           instructor:users!live_sessions_instructor_id_fkey(first_name, last_name),
           course:courses(title)
         `)
-        .in("status", ["scheduled", "live"]) // Show both scheduled AND live sessions
-        .lte("scheduled_start", oneWeekFromNow) // Sessions starting within next week
+        .eq("status", "live")
         .order("scheduled_start", { ascending: true })
         .limit(1);
 
-      if (error) throw error;
-      return data || [];
+      if (liveError) throw liveError;
+      
+      // If there's a live session, show it first
+      if (liveData && liveData.length > 0) {
+        return liveData;
+      }
+
+      // Otherwise, get the next scheduled session
+      const { data: scheduledData, error: scheduledError } = await (supabase as any)
+        .from("live_sessions")
+        .select(`
+          *,
+          instructor:users!live_sessions_instructor_id_fkey(first_name, last_name),
+          course:courses(title)
+        `)
+        .eq("status", "scheduled")
+        .gte("scheduled_start", now)
+        .lte("scheduled_start", oneWeekFromNow)
+        .order("scheduled_start", { ascending: true })
+        .limit(1);
+
+      if (scheduledError) throw scheduledError;
+      return scheduledData || [];
     },
     refetchInterval: 60000, // Refresh every minute
   });
