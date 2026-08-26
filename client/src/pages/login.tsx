@@ -178,6 +178,12 @@ export default function Login() {
       {/* Right Side - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-4 lg:p-8 bg-gray-50">
         <div className="w-full max-w-md">
+          {/* Mobile Back Button */}
+          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#610000] hover:text-[#8b0000] transition-colors">
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span className="text-sm font-medium">Back to Home</span>
+          </Link>
+          
           {/* Auth Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
             <div className="space-y-6">

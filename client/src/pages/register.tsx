@@ -194,6 +194,12 @@ export default function Register() {
       {/* Right Side - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto bg-gray-50">
         <div className="w-full max-w-md my-auto">
+          {/* Mobile Back Button */}
+          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#610000] hover:text-[#8b0000] transition-colors">
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            <span className="text-sm font-medium">Back to Home</span>
+          </Link>
+          
           {/* Auth Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
             <div className="space-y-5">
@@ -273,6 +279,25 @@ export default function Register() {
                         className="h-9 pl-8 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-xs transition-all"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Middle Name Field */}
+                <div className="space-y-1">
+                  <Label htmlFor="middleName" className="font-sf-pro-text text-xs font-medium text-neutral-700">
+                    Middle Name <span className="text-neutral-400">(Optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <Input
+                      id="middleName"
+                      name="middleName"
+                      placeholder="Middle name"
+                      value={formData.middleName}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      className="h-10 pl-10 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-sm transition-all"
+                    />
                   </div>
                 </div>
 
