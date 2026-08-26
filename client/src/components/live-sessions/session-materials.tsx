@@ -297,19 +297,19 @@ export default function SessionMaterials({
               {resources.map((resource) => (
                 <div
                   key={resource.id}
-                  className="flex items-center justify-between p-4 border border-[#d4c5b0]/30 rounded-lg hover:bg-[#faf9f6] transition-colors"
+                    className="flex min-w-0 flex-col items-stretch gap-3 p-4 border border-[#d4c5b0]/30 rounded-lg hover:bg-[#faf9f6] transition-colors sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex min-w-0 items-center gap-3">
                     <div className="flex-shrink-0">
                       <File className="h-10 w-10 text-[#610000]" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-medium text-[#2c2015] truncate">
+                    <div className="min-w-0 flex-1">
+                      <h5 className="break-words font-medium text-[#2c2015]">
                         {resource.title}
                       </h5>
-                      <p className="text-xs text-[#6b5d4f] flex items-center gap-2 mt-1">
-                        <span className="truncate">{resource.file_name}</span>
-                        <span>•</span>
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6b5d4f]">
+                        <span className="break-all">{resource.file_name}</span>
+                        <span aria-hidden="true">•</span>
                         <span>{formatFileSize(resource.file_size)}</span>
                       </p>
                     </div>
@@ -317,7 +317,7 @@ export default function SessionMaterials({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-shrink-0 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white"
+                    className="w-full border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white sm:w-auto sm:flex-shrink-0"
                     onClick={() => downloadResource(resource)}
                   >
                     <Download className="h-4 w-4 mr-2" />

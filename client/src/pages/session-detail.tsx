@@ -299,7 +299,7 @@ export default function SessionDetailPage() {
 
   return (
     <StudentLayout>
-      <div className="max-w-5xl mx-auto space-y-8 pb-8 md:pb-0">
+      <div className="w-full max-w-5xl min-w-0 mx-auto space-y-8 pb-24 lg:pb-0">
         {/* Back Button */}
         <Link href="/sessions">
           <Button variant="ghost" className="gap-2">
@@ -381,9 +381,9 @@ export default function SessionDetailPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 pb-4">
+        <div className="grid min-w-0 lg:grid-cols-3 gap-6 lg:gap-8 pb-4">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="min-w-0 lg:col-span-2 space-y-6">
             {/* Description */}
             {session.description && (
               <Card className="border-[#d4c5b0]/30">
@@ -394,7 +394,7 @@ export default function SessionDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[#6b5d4f] whitespace-pre-wrap">{session.description}</p>
+                  <p className="text-[#6b5d4f] whitespace-pre-wrap break-words">{session.description}</p>
                 </CardContent>
               </Card>
             )}
@@ -493,9 +493,9 @@ export default function SessionDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Action Card */}
-            <Card className="border-[#d4c5b0]/30 bg-gradient-to-br from-[#faf9f6] to-white lg:sticky lg:top-24">
+            <Card className="min-w-0 border-[#d4c5b0]/30 bg-gradient-to-br from-[#faf9f6] to-white lg:sticky lg:top-24">
               <CardContent className="p-6 space-y-6">
                 {/* Instructor */}
                 <div>
