@@ -416,6 +416,119 @@ async function findOrCreatePendingInstructorApplication() {
   return data.id;
 }
 
+/**
+ * Provisions the `expeditedApplicant` fixture user's professional_profiles
+ * row (+ one CV document) in a known UNDER_REVIEW state, and resets every
+ * table the admin decision test's own action mutates (users level fields,
+ * track_progress, level_waivers) back to baseline. Unlike the rest of this
+ * file, this is a reset-on-every-run, not a pure find-or-create — the
+ * fixture's whole purpose is to be approved by the admin spec, so it must be
+ * put back before each run rather than left in whatever state the last run
+ * left it in.
+ */
+async function resetExpeditedApplicantFixture(userId: string): Promise<string> {
+  const { data: existing, error: selectError } = await supabaseAdmin
+    .from("professional_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("is_current", true)
+    .maybeSingle();
+  if (selectError) throw selectError;
+
+  const profilePayload = {
+    user_id: userId,
+    track: "ARBITRATION",
+    self_assessed_level: "MEMBER",
+    narrative_summary: "Seeded E2E applicant: 8 years of arbitration and mediation practice.",
+    qualifications: ["LLB", "Called to the Bar 2016"],
+    review_status: "UNDER_REVIEW",
+    assigned_level: "NONE",
+    level_source: "DEFAULT",
+    assigned_level_notes: null,
+    reviewer_id: null,
+    review_notes: null,
+    decision_at: null,
+    submitted_at: new Date().toISOString(),
+    is_current: true,
+    is_archived: false,
+  };
+
+  let profileId: string;
+  if (existing) {
+    const { data, error } = await supabaseAdmin
+      .from("professional_profiles")
+      .update(profilePayload)
+      .eq("id", existing.id)
+      .select("id")
+      .single();
+    if (error || !data) throw error ?? new Error("Failed to reset expedited applicant profile");
+    profileId = data.id;
+  } else {
+    const { data, error } = await supabaseAdmin
+      .from("professional_profiles")
+      .insert(profilePayload)
+      .select("id")
+      .single();
+    if (error || !data) throw error ?? new Error("Failed to seed expedited applicant profile");
+    profileId = data.id;
+  }
+
+  const { data: existingDoc, error: docSelectError } = await supabaseAdmin
+    .from("professional_documents")
+    .select("id")
+    .eq("profile_id", profileId)
+    .eq("document_type", "CV")
+    .maybeSingle();
+  if (docSelectError) throw docSelectError;
+  if (!existingDoc) {
+    const { error } = await supabaseAdmin.from("professional_documents").insert({
+      profile_id: profileId,
+      uploaded_by: userId,
+      document_type: "CV",
+      file_url: `${userId}/seed-cv.pdf`,
+      storage_path: `${userId}/seed-cv.pdf`,
+      original_name: "seed-cv.pdf",
+    });
+    if (error) throw error;
+  }
+
+  const { error: userResetError } = await supabaseAdmin
+    .from("users")
+    .update({
+      assigned_level: null,
+      current_level: null,
+      level_source: "DEFAULT",
+      pathway_type: null,
+      level_updated_at: null,
+    })
+    .eq("id", userId);
+  if (userResetError) throw userResetError;
+
+  const { error: trackResetError } = await supabaseAdmin.from("track_progress").upsert(
+    {
+      user_id: userId,
+      track: "ARBITRATION",
+      level: "NONE",
+      pathway: "STANDARD",
+      waived_levels: [],
+      waiver_metadata: {},
+      waiver_last_granted_at: null,
+    },
+    { onConflict: "user_id,track" },
+  );
+  if (trackResetError) throw trackResetError;
+
+  // Fixture-owned exception to this file's "never destructive delete" idiom:
+  // these level_waivers rows are only ever created by this same fixture's own
+  // admin-decision test, scoped precisely to this dedicated user_id, so
+  // clearing them here is safe — and necessary to keep that test idempotent
+  // across repeated runs.
+  const { error: waiverDeleteError } = await supabaseAdmin.from("level_waivers").delete().eq("user_id", userId);
+  if (waiverDeleteError) throw waiverDeleteError;
+
+  return profileId;
+}
+
 async function findOrCreateForumCategory(): Promise<string> {
   const { data: existing, error: selectError } = await supabaseAdmin
     .from("forum_categories")
@@ -504,6 +617,10 @@ export async function seedAll() {
   const unenrolledStudentId = await seedUser(TEST_USERS.unenrolledStudent);
   const instructorId = await seedUser(TEST_USERS.instructor);
   const adminId = await seedUser(TEST_USERS.admin);
+  const expeditedApplicantId = await seedUser(TEST_USERS.expeditedApplicant);
+
+  console.log("[e2e-seed] Resetting expedited-applicant review fixture...");
+  await resetExpeditedApplicantFixture(expeditedApplicantId);
 
   console.log("[e2e-seed] Seeding category + course + curriculum...");
   const categoryId = await findOrCreateCategory();
@@ -551,7 +668,16 @@ export async function seedAll() {
   await findOrCreateForumPost(forumBoardId, studentId);
 
   console.log("[e2e-seed] Done.");
-  return { studentId, unenrolledStudentId, instructorId, adminId, courseId, forumCategoryId, forumBoardId };
+  return {
+    studentId,
+    unenrolledStudentId,
+    instructorId,
+    adminId,
+    expeditedApplicantId,
+    courseId,
+    forumCategoryId,
+    forumBoardId,
+  };
 }
 
 // Allow `tsx e2e/setup/seed-test-data.ts` to run this standalone (ESM entrypoint check).

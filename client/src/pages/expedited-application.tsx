@@ -20,8 +20,11 @@ type ServerDocumentType = "CV" | "CERTIFICATE" | "LICENSE" | "PORTFOLIO" | "REFE
 type DocumentUploadType = ServerDocumentType | "DEGREE" | "TRANSCRIPT";
 
 interface DocumentUpload {
+  id: string;
   file: File;
   type: DocumentUploadType;
+  status: "pending" | "uploading" | "error";
+  error?: string;
 }
 
 interface ExistingDocument {
@@ -148,14 +151,14 @@ export default function ExpeditedApplication() {
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setDocuments((prev) => [...prev, { file, type }]);
+      setDocuments((prev) => [...prev, { id: crypto.randomUUID(), file, type, status: "pending" }]);
     }
     // Reset the input so the same filename can be re-selected if removed
     e.target.value = "";
   };
 
-  const removeDocument = (index: number) => {
-    setDocuments(documents.filter((_, i) => i !== index));
+  const removeDocument = (id: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
   const hasCvOnFile =
@@ -256,6 +259,63 @@ export default function ExpeditedApplication() {
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
+  const uploadOneDocument = async (
+    doc: DocumentUpload,
+    userId: string,
+    headers: Record<string, string>,
+  ) => {
+    const safeName = doc.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${userId}/${Date.now()}_${safeName}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, doc.file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: doc.file.type || undefined,
+      });
+    if (uploadErr) {
+      throw new Error(`Failed to upload ${doc.file.name}: ${uploadErr.message}`);
+    }
+
+    const docResp = await fetch(`/api/qualification/professional-profile/documents`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        documentType: DOCUMENT_TYPE_MAP[doc.type] ?? "OTHER",
+        fileUrl: path,
+        storagePath: path,
+        originalName: doc.file.name,
+        fileSize: doc.file.size,
+      }),
+    });
+    const docJson = await docResp.json().catch(() => ({}));
+    if (!docResp.ok) {
+      throw new Error(docJson.error || docJson.message || `Failed to register ${doc.file.name}`);
+    }
+  };
+
+  const retryOneDocument = async (doc: DocumentUpload) => {
+    setErrorMessage("");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+    if (!userId) {
+      setErrorMessage("You must be signed in to apply.");
+      return;
+    }
+    const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+
+    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: "uploading", error: undefined } : d)));
+    try {
+      await uploadOneDocument(doc, userId, headers);
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+      await loadProfile();
+    } catch (err: any) {
+      const message = err?.message || `Failed to upload ${doc.file.name}`;
+      setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: "error", error: message } : d)));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -352,49 +412,41 @@ export default function ExpeditedApplication() {
         throw new Error(profileJson.reason || profileJson.error || profileJson.message || "Failed to save profile");
       }
 
-      // Upload new documents (existing ones stay on file)
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i];
+      // Upload new documents (existing ones stay on file). Each file is uploaded
+      // independently so one failure doesn't discard files that already succeeded.
+      const toUpload = documents;
+      let uploadedCount = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < toUpload.length; i++) {
+        const doc = toUpload[i];
         setProgressMessage(
-          `Uploading document ${i + 1} of ${documents.length}: ${doc.file.name}`,
+          `Uploading document ${i + 1} of ${toUpload.length}: ${doc.file.name}`,
         );
-        const safeName = doc.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `${userId}/${Date.now()}_${safeName}`;
+        setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: "uploading", error: undefined } : d)));
 
-        const { error: uploadErr } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(path, doc.file, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: doc.file.type || undefined,
-          });
-        if (uploadErr) {
-          throw new Error(`Failed to upload ${doc.file.name}: ${uploadErr.message}`);
-        }
-
-        const docResp = await fetch(`/api/qualification/professional-profile/documents`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            documentType: DOCUMENT_TYPE_MAP[doc.type] ?? "OTHER",
-            fileUrl: path,
-            storagePath: path,
-            originalName: doc.file.name,
-            fileSize: doc.file.size,
-          }),
-        });
-        const docJson = await docResp.json().catch(() => ({}));
-        if (!docResp.ok) {
-          throw new Error(docJson.error || docJson.message || `Failed to register ${doc.file.name}`);
+        try {
+          await uploadOneDocument(doc, userId, headers);
+          uploadedCount++;
+          setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+        } catch (err: any) {
+          failedCount++;
+          const message = err?.message || `Failed to upload ${doc.file.name}`;
+          setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: "error", error: message } : d)));
         }
       }
 
-      setSuccessMessage(
-        "Profile submitted successfully! Our admissions team will review your experience and contact you shortly.",
-      );
-      setDocuments([]);
-      setProgressMessage("");
       await loadProfile();
+
+      if (failedCount > 0) {
+        setErrorMessage(
+          `${uploadedCount} of ${toUpload.length} document${toUpload.length === 1 ? "" : "s"} uploaded. Fix the issue below and click Submit again to retry the rest.`,
+        );
+      } else {
+        setSuccessMessage(
+          "Profile submitted successfully! Our admissions team will review your experience and contact you shortly.",
+        );
+      }
     } catch (err: any) {
       console.error("Expedited submission failed:", err);
       setErrorMessage(err?.message || "Failed to submit application. Please try again.");
@@ -897,10 +949,13 @@ export default function ExpeditedApplication() {
                       <div className="space-y-2">
                         <Label>Documents to upload ({documents.length})</Label>
                         <div className="space-y-2">
-                          {documents.map((doc, index) => (
+                          {documents.map((doc) => (
                             <div
-                              key={index}
-                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted rounded-lg"
+                              key={doc.id}
+                              className={cn(
+                                "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg",
+                                doc.status === "error" ? "bg-red-50 border border-red-200" : "bg-muted",
+                              )}
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -909,18 +964,32 @@ export default function ExpeditedApplication() {
                                   <p className="text-xs text-muted-foreground">
                                     {(doc.file.size / 1024).toFixed(2)} KB
                                   </p>
+                                  {doc.status === "error" && doc.error && (
+                                    <p className="text-xs text-red-600 mt-1">{doc.error}</p>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="outline" className="text-xs">
                                   {DOCUMENT_LABELS[doc.type]}
                                 </Badge>
+                                {doc.status === "error" && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => retryOneDocument(doc)}
+                                    disabled={isSubmitting}
+                                  >
+                                    Retry
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeDocument(index)}
-                                  disabled={isSubmitting}
+                                  onClick={() => removeDocument(doc.id)}
+                                  disabled={isSubmitting || doc.status === "uploading"}
                                 >
                                   Remove
                                 </Button>

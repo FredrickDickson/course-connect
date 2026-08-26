@@ -3,11 +3,11 @@ import { LoginPage } from "../../pom/LoginPage";
 import { TEST_USERS, TEST_USER_PASSWORD } from "../../fixtures/test-users";
 
 test.describe("Login", () => {
-  test("student logs in and lands on the dashboard", async ({ page }) => {
+  test("student logs in and lands on /sessions", async ({ page }) => {
     const login = new LoginPage(page);
     await login.goto();
     await login.loginAndWaitForRedirect(TEST_USERS.student.email, TEST_USER_PASSWORD());
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/\/sessions/);
   });
 
   test("instructor logs in and lands on the instructor dashboard", async ({ page }) => {
