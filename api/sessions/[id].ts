@@ -6,6 +6,8 @@ import { z } from 'zod';
 // reason the Zoom helpers below are inlined: Vercel's bundler doesn't reliably
 // trace aliased/relative imports that cross out of api/ into local source dirs.
 import { formatInTimeZone } from 'date-fns-tz';
+import { randomUUID } from 'node:crypto';
+import { addDays } from 'date-fns';
 
 // Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
 // because Vercel's serverless function bundler doesn't reliably trace relative imports
@@ -41,6 +43,13 @@ async function updateZoomMeeting(token: string, meetingId: string, params: Recor
   });
 }
 
+async function createZoomMeeting(token: string, params: Record<string, any>) {
+  const response = await axios.post('https://api.zoom.us/v2/users/me/meetings', params, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+}
+
 async function deleteZoomMeeting(token: string, meetingId: string) {
   await axios.delete(`https://api.zoom.us/v2/meetings/${meetingId}`, {
     params: { schedule_for_reminder: true },
@@ -58,6 +67,7 @@ const updateSessionSchema = z.object({
   course_id: z.string().uuid().optional(),
   is_public: z.boolean(),
   max_participants: z.number().int().positive().max(1000).optional(),
+  recurrence_count: z.number().int().min(1).max(365),
 }).partial();
 
 async function getUserFromRequest(req: VercelRequest, supabaseAdmin: SupabaseClient) {
@@ -243,7 +253,7 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
     return res.status(400).json({ message: 'Cannot update completed or cancelled sessions' });
   }
 
-  const updateData = validation.data;
+  const { recurrence_count: requestedRecurrenceCount, ...updateData } = validation.data;
 
   if (updateData.scheduled_start || updateData.scheduled_end || updateData.title || updateData.description) {
     if (existingSession.zoom_meeting_id) {
@@ -276,9 +286,19 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
     }
   }
 
+  const recurrenceCount = requestedRecurrenceCount || 1;
+  const sessionUpdateData: Record<string, any> = { ...updateData };
+  let recurrenceGroupId = existingSession.recurrence_group_id || null;
+  if (recurrenceCount > 1 && !recurrenceGroupId) {
+    recurrenceGroupId = randomUUID();
+    sessionUpdateData.recurrence_group_id = recurrenceGroupId;
+    sessionUpdateData.recurrence_day_number = 1;
+    sessionUpdateData.recurrence_total_days = recurrenceCount;
+  }
+
   const { data: updatedSession, error: updateError } = await supabaseAdmin
     .from('live_sessions')
-    .update(updateData)
+    .update(sessionUpdateData)
     .eq('id', id)
     .select()
     .single();
@@ -287,7 +307,58 @@ async function handleUpdateSession(req: VercelRequest, res: VercelResponse, user
     return res.status(500).json({ message: 'Failed to update session' });
   }
 
-  return res.json(updatedSession);
+  if (recurrenceCount > 1 && !existingSession.recurrence_group_id) {
+    const startDate = new Date(updateData.scheduled_start || existingSession.scheduled_start);
+    const endDate = new Date(updateData.scheduled_end || existingSession.scheduled_end);
+    const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
+    const recurringSessionIds = [updatedSession.id];
+
+    for (let day = 1; day < recurrenceCount; day++) {
+      const occurrenceStart = addDays(startDate, day);
+      const occurrenceEnd = addDays(endDate, day);
+      const zoomMeeting = await getZoomAccessToken().then((token) => {
+        if (!token) throw new Error('Zoom service is unavailable for recurring sessions');
+        return createZoomMeeting(token, {
+          topic: `${updatedSession.title} (${day + 1}/${recurrenceCount})`,
+          type: 2,
+          start_time: formatInTimeZone(occurrenceStart, updatedSession.timezone, "yyyy-MM-dd'T'HH:mm:ss"),
+          duration: durationMinutes,
+          timezone: updatedSession.timezone,
+          agenda: updatedSession.description,
+          settings: { host_video: true, participant_video: true, join_before_host: false, mute_upon_entry: true, waiting_room: false, approval_type: 2, audio: 'both', auto_recording: 'cloud', watermark: false, use_pmi: false, registration_type: 0, meeting_authentication: false },
+        });
+      });
+
+      const { data: occurrence, error: occurrenceError } = await supabaseAdmin.from('live_sessions').insert({
+        title: updatedSession.title,
+        description: updatedSession.description,
+        session_type: updatedSession.session_type,
+        scheduled_start: occurrenceStart.toISOString(),
+        scheduled_end: occurrenceEnd.toISOString(),
+        timezone: updatedSession.timezone,
+        instructor_id: updatedSession.instructor_id,
+        course_id: updatedSession.course_id,
+        is_public: updatedSession.is_public,
+        max_participants: updatedSession.max_participants,
+        zoom_meeting_id: zoomMeeting.id,
+        zoom_meeting_password: zoomMeeting.password,
+        zoom_join_url: zoomMeeting.join_url,
+        zoom_start_url: zoomMeeting.start_url,
+        status: 'scheduled',
+        created_by: updatedSession.created_by,
+        recurrence_group_id: recurrenceGroupId,
+        recurrence_day_number: day + 1,
+        recurrence_total_days: recurrenceCount,
+      }).select().single();
+
+      if (occurrenceError) throw new Error(occurrenceError.message);
+      recurringSessionIds.push(occurrence.id);
+    }
+
+    return res.json({ ...updatedSession, recurring_session_ids: recurringSessionIds });
+  }
+
+  return res.json({ ...updatedSession, recurring_session_ids: [updatedSession.id] });
 }
 
 async function handleDeleteSession(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {

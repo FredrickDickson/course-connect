@@ -6,6 +6,8 @@ import { z } from 'zod';
 // reason the Zoom helpers above are inlined: Vercel's bundler doesn't reliably
 // trace aliased/relative imports that cross out of api/ into local source dirs.
 import { formatInTimeZone } from 'date-fns-tz';
+import { randomUUID } from 'node:crypto';
+import { addDays } from 'date-fns';
 
 // Zoom REST helpers are inlined here (rather than imported from server/services/zoom)
 // because Vercel's serverless function bundler doesn't reliably trace relative imports
@@ -63,6 +65,7 @@ const createSessionSchema = z.object({
   is_public: z.boolean().default(false),
   max_participants: z.number().int().positive().max(1000).optional(),
   meeting_password: z.string().min(6).max(10).optional(),
+  recurrence_count: z.number().int().min(1).max(365).default(1),
 });
 
 async function getUserFromRequest(req: VercelRequest, supabaseAdmin: SupabaseClient) {
@@ -272,23 +275,15 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
   }
 
   const sessionData = validation.data;
-
-  const start = new Date(sessionData.scheduled_start);
-  const end = new Date(sessionData.scheduled_end);
-
-  if (end <= start) {
-    return res.status(400).json({ message: 'Session end time must be after start time' });
+  const startDate = new Date(sessionData.scheduled_start);
+  const endDate = new Date(sessionData.scheduled_end);
+  if (endDate <= startDate) {
+    return res.status(400).json({ message: 'Session end time must be after session start time' });
   }
 
-  const durationMinutes = Math.floor((end.getTime() - start.getTime()) / 60000);
-
+  const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
   if (sessionData.course_id && userRole !== 'admin') {
-    const { data: course } = await supabaseAdmin
-      .from('courses')
-      .select('instructor_id')
-      .eq('id', sessionData.course_id)
-      .single();
-
+    const { data: course } = await supabaseAdmin.from('courses').select('instructor_id').eq('id', sessionData.course_id).single();
     if (!course || course.instructor_id !== userId) {
       return res.status(403).json({ message: 'You can only schedule sessions for courses you teach' });
     }
@@ -299,60 +294,39 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
     zoomToken = await getZoomAccessToken();
   } catch (error: any) {
     console.error('Failed to authenticate with Zoom:', error.response?.data || error.message);
-    return res.status(503).json({
-      message: 'Live sessions feature is not configured. Please contact administrator.'
-    });
+    return res.status(503).json({ message: 'Live sessions feature is not configured. Please contact administrator.' });
+  }
+  if (!zoomToken) {
+    return res.status(503).json({ message: 'Live sessions feature is not configured. Please contact administrator.' });
   }
 
-  if (!zoomToken) {
-    return res.status(503).json({
-      message: 'Live sessions feature is not configured. Please contact administrator.'
-    });
-  }
+  const recurrenceCount = sessionData.recurrence_count;
+  const recurrenceGroupId = recurrenceCount > 1 ? randomUUID() : null;
+  const createdSessions: any[] = [];
 
   try {
-    const startDate = new Date(sessionData.scheduled_start);
-    // Zoom requires start_time to be LOCAL wall-clock time in the meeting's
-    // `timezone` field, not UTC — format it in that zone.
-    const zoomStartTime = formatInTimeZone(startDate, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
+    for (let day = 0; day < recurrenceCount; day++) {
+      const occurrenceStart = addDays(startDate, day);
+      const occurrenceEnd = addDays(endDate, day);
+      const zoomMeeting = await createZoomMeeting(zoomToken, {
+        topic: recurrenceCount > 1 ? `${sessionData.title} (${day + 1}/${recurrenceCount})` : sessionData.title,
+        type: 2,
+        start_time: formatInTimeZone(occurrenceStart, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss"),
+        duration: durationMinutes,
+        timezone: sessionData.timezone,
+        password: sessionData.meeting_password,
+        agenda: sessionData.description,
+        settings: { host_video: true, participant_video: true, join_before_host: false, mute_upon_entry: true, waiting_room: false, approval_type: 2, audio: 'both', auto_recording: 'cloud', watermark: false, use_pmi: false, registration_type: 0, meeting_authentication: false },
+      });
 
-    const zoomMeeting = await createZoomMeeting(zoomToken, {
-      topic: sessionData.title,
-      type: 2,
-      start_time: zoomStartTime,
-      duration: durationMinutes,
-      timezone: sessionData.timezone,
-      password: sessionData.meeting_password,
-      agenda: sessionData.description,
-      settings: {
-        host_video: true,
-        participant_video: true,
-        join_before_host: false,
-        mute_upon_entry: true,
-        waiting_room: false, // Disable waiting room for direct join
-        approval_type: 2, // No registration required
-        audio: 'both',
-        auto_recording: 'cloud',
-        watermark: false,
-        use_pmi: false,
-        registration_type: 0, // Disable Zoom registration - we handle it in our app
-        meeting_authentication: false,
-      },
-    });
-
-    // Use provided instructor_id if admin specified one, otherwise use current user
-    const instructorId = sessionData.instructor_id || userId;
-
-    const { data: newSession, error: insertError } = await supabaseAdmin
-      .from('live_sessions')
-      .insert({
+      const { data: newSession, error: insertError } = await supabaseAdmin.from('live_sessions').insert({
         title: sessionData.title,
         description: sessionData.description,
         session_type: sessionData.session_type,
-        scheduled_start: sessionData.scheduled_start,
-        scheduled_end: sessionData.scheduled_end,
+        scheduled_start: occurrenceStart.toISOString(),
+        scheduled_end: occurrenceEnd.toISOString(),
         timezone: sessionData.timezone,
-        instructor_id: instructorId,
+        instructor_id: sessionData.instructor_id || userId,
         course_id: sessionData.course_id,
         is_public: sessionData.is_public,
         max_participants: sessionData.max_participants,
@@ -362,17 +336,19 @@ async function handleCreateSession(req: VercelRequest, res: VercelResponse, user
         zoom_start_url: zoomMeeting.start_url,
         status: 'scheduled',
         created_by: userId,
-      })
-      .select()
-      .single();
+        recurrence_group_id: recurrenceGroupId,
+        recurrence_day_number: recurrenceGroupId ? day + 1 : null,
+        recurrence_total_days: recurrenceGroupId ? recurrenceCount : null,
+      }).select().single();
 
-    if (insertError) {
-      console.error('Database insert error:', insertError);
-      await deleteZoomMeeting(zoomToken, zoomMeeting.id);
-      return res.status(500).json({ message: 'Failed to create session' });
+      if (insertError) {
+        await deleteZoomMeeting(zoomToken, zoomMeeting.id);
+        return res.status(500).json({ message: `Failed to create session: ${insertError.message}` });
+      }
+      createdSessions.push(newSession);
     }
 
-    return res.status(201).json(newSession);
+    return res.status(201).json({ ...createdSessions[0], recurring_session_ids: createdSessions.map((createdSession) => createdSession.id) });
   } catch (error: any) {
     console.error('Error creating session:', error.response?.data || error.message);
     return res.status(500).json({

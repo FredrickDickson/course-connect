@@ -65,6 +65,7 @@ const formSchema = z.object({
   course_id: z.string().optional(),
   is_public: z.boolean().default(false),
   max_participants: z.number().optional(),
+  recurrence_count: z.number().int().min(1).max(365).default(1),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -202,6 +203,7 @@ export default function CreateSessionDialog({
       course_id: existingSession.course_id || undefined,
       is_public: existingSession.is_public || false,
       max_participants: existingSession.max_participants || undefined,
+      recurrence_count: 1,
     } : {
       title: "",
       description: "",
@@ -212,6 +214,7 @@ export default function CreateSessionDialog({
       instructor_id: undefined,
       course_id: courseId || undefined,
       is_public: false,
+      recurrence_count: 1,
     },
   });
 
@@ -332,6 +335,7 @@ export default function CreateSessionDialog({
         ...(data.course_id ? { course_id: data.course_id } : {}),
         is_public: data.is_public,
         ...(data.max_participants ? { max_participants: data.max_participants } : {}),
+        recurrence_count: data.recurrence_count,
       };
 
       const method = isEditMode ? 'PATCH' : 'POST';
@@ -347,17 +351,21 @@ export default function CreateSessionDialog({
       const session = await response.json();
 
       // Now save assignments and resources
+      const sessionIds = session.recurring_session_ids || [session.id];
+
       if (assignments.length > 0) {
         for (const assignment of assignments) {
           if (assignment.title && assignment.instructions) {
-            await apiRequest('POST', `/api/sessions/${session.id}/assignments`, {
-              title: assignment.title,
-              description: assignment.description || '',
-              instructions: assignment.instructions,
-              due_date: assignment.due_date || null,
-              max_score: assignment.max_score,
-              allow_late_submission: assignment.allow_late_submission,
-            });
+            for (const sessionId of sessionIds) {
+              await apiRequest('POST', `/api/sessions/${sessionId}/assignments`, {
+                title: assignment.title,
+                description: assignment.description || '',
+                instructions: assignment.instructions,
+                due_date: assignment.due_date || null,
+                max_score: assignment.max_score,
+                allow_late_submission: assignment.allow_late_submission,
+              });
+            }
           }
         }
       }
@@ -365,13 +373,14 @@ export default function CreateSessionDialog({
       // Upload resources
       if (resources.length > 0) {
         for (const resource of resources) {
-          if (resource.file) { // Only upload if it's a new file
+          if (resource.file) {
+            for (const sessionId of sessionIds) {
             const formData = new FormData();
             formData.append('resource', resource.file);
             formData.append('title', resource.title);
 
             const token = (await supabase.auth.getSession()).data.session?.access_token;
-            const resourceResponse = await fetch(`/api/sessions/${session.id}/resources`, {
+            const resourceResponse = await fetch(`/api/sessions/${sessionId}/resources`, {
               method: 'POST',
               body: formData,
               headers: {
@@ -383,6 +392,7 @@ export default function CreateSessionDialog({
               const errorBody = await resourceResponse.json().catch(() => null);
               throw new Error(errorBody?.message || 'Failed to upload resource');
             }
+            }
           }
         }
       }
@@ -392,7 +402,11 @@ export default function CreateSessionDialog({
     onSuccess: (session: any) => {
       toast({
         title: "Success!",
-        description: `Live session ${isEditMode ? 'updated' : 'scheduled'} successfully`,
+        description: isEditMode
+          ? "Live session updated successfully"
+          : session.recurring_session_ids?.length > 1
+            ? `${session.recurring_session_ids.length} daily live sessions scheduled successfully`
+            : "Live session scheduled successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['live_sessions'] });
       queryClient.invalidateQueries({ queryKey: ['instructor_sessions'] });
@@ -574,6 +588,33 @@ export default function CreateSessionDialog({
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="recurrence_count"
+                  render={({ field }) => (
+                    <FormItem className="max-w-sm rounded-xl border border-[#d8cabb] bg-[#fffdf9] p-4">
+                      <FormLabel>{isEditMode ? "Recurring session series" : "Repeat for how many days?"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={field.value}
+                          onChange={(event) => field.onChange(Number(event.target.value) || 1)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {isEditMode
+                          ? existingSession.recurrence_total_days
+                            ? `This is day ${existingSession.recurrence_day_number} of a ${existingSession.recurrence_total_days}-day series. You can edit this occurrence while it is scheduled or live.`
+                            : "Set this above 1 to keep this session as day 1 and add daily occurrences. Students register once for the full series."
+                          : "One session is scheduled each day. Students register once for the full series."}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <FormField

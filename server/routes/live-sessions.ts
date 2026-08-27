@@ -8,6 +8,8 @@ import { getZoomService } from "../services/zoom";
 import { formatInTimeZone } from "@shared/timezone";
 import { z } from "zod";
 import multer from "multer";
+import { randomUUID } from "node:crypto";
+import { addDays } from "date-fns";
 
 interface AuthRequest extends Request {
   user: {
@@ -36,6 +38,7 @@ const createSessionSchema = z.object({
   is_public: z.boolean().default(false),
   max_participants: z.number().int().positive().max(1000).optional(),
   meeting_password: z.string().min(6).max(10).optional(),
+  recurrence_count: z.number().int().min(1).max(365).default(1),
 });
 
 const updateSessionSchema = createSessionSchema.partial();
@@ -291,16 +294,25 @@ router.post(
         timezone: sessionData.timezone,
       });
 
-      console.log('📍 Step 4: Creating Zoom meeting...');
-      const zoomMeeting = await zoomService.createMeeting('me', {
-        topic: sessionData.title,
-        type: 2,
-        start_time: zoomStartTime,
-        duration: durationMinutes,
-        timezone: sessionData.timezone,
-        password: sessionData.meeting_password,
-        agenda: sessionData.description,
-        settings: {
+      const recurrenceCount = sessionData.recurrence_count;
+      const recurrenceGroupId = recurrenceCount > 1 ? randomUUID() : null;
+      const createdSessions = [];
+
+      for (let day = 0; day < recurrenceCount; day++) {
+        const occurrenceStart = addDays(startDate, day);
+        const occurrenceEnd = addDays(end, day);
+        const occurrenceStartTime = formatInTimeZone(occurrenceStart, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
+
+        console.log(`📍 Step 4: Creating Zoom meeting ${day + 1}/${recurrenceCount}...`);
+        const zoomMeeting = await zoomService.createMeeting('me', {
+          topic: recurrenceCount > 1 ? `${sessionData.title} (${day + 1}/${recurrenceCount})` : sessionData.title,
+          type: 2,
+          start_time: occurrenceStartTime,
+          duration: durationMinutes,
+          timezone: sessionData.timezone,
+          password: sessionData.meeting_password,
+          agenda: sessionData.description,
+          settings: {
           host_video: true,
           participant_video: true,
           join_before_host: false,
@@ -313,19 +325,17 @@ router.post(
           use_pmi: false,
           registration_type: 0,
           meeting_authentication: false,
-        },
-      });
-      console.log('✅ Step 4: Zoom meeting created:', zoomMeeting.id);
+          },
+        });
 
-      console.log('📍 Step 5: Inserting session into database...');
-      const { data: newSession, error: insertError } = await supabaseAdmin
-        .from('live_sessions')
-        .insert({
+        const { data: newSession, error: insertError } = await supabaseAdmin
+          .from('live_sessions')
+          .insert({
           title: sessionData.title,
           description: sessionData.description,
           session_type: sessionData.session_type,
-          scheduled_start: sessionData.scheduled_start,
-          scheduled_end: sessionData.scheduled_end,
+          scheduled_start: occurrenceStart.toISOString(),
+          scheduled_end: occurrenceEnd.toISOString(),
           timezone: sessionData.timezone,
           instructor_id: instructorId, // Use the determined instructor ID
           course_id: sessionData.course_id,
@@ -337,25 +347,24 @@ router.post(
           zoom_start_url: zoomMeeting.start_url,
           status: 'scheduled',
           created_by: userId,
+          recurrence_group_id: recurrenceGroupId,
+          recurrence_day_number: recurrenceGroupId ? day + 1 : null,
+          recurrence_total_days: recurrenceGroupId ? recurrenceCount : null,
         })
         .select()
         .single();
 
-      if (insertError) {
-        console.error('❌ Step 5 failed - Database insert error:', insertError);
-        console.log('Attempting to cleanup Zoom meeting...');
-        try {
-          await zoomService.deleteMeeting(zoomMeeting.id, false);
-          console.log('✅ Zoom meeting cleaned up');
-        } catch (cleanupError) {
-          console.error('Failed to cleanup Zoom meeting:', cleanupError);
-        }
-        return res.status(500).json({ message: 'Failed to create session', error: insertError.message });
-      }
+      if (insertError) throw new Error(insertError.message);
+      createdSessions.push(newSession);
+    }
 
-      console.log('✅ Step 5: Session created successfully:', newSession.id);
+      const firstSession = createdSessions[0];
+      console.log('✅ Sessions created successfully:', createdSessions.length);
       console.log('🎉 All steps completed successfully!');
-      res.status(201).json(newSession);
+      res.status(201).json({
+        ...firstSession,
+        recurring_session_ids: createdSessions.map((createdSession: any) => createdSession.id),
+      });
     } catch (error: any) {
       console.error('❌ FATAL ERROR in session creation:', error);
       console.error('Error stack:', error.stack);
@@ -403,7 +412,7 @@ router.patch(
       return res.status(400).json({ message: 'Cannot update completed or cancelled sessions' });
     }
 
-    const updateData = validation.data;
+    const { recurrence_count: requestedRecurrenceCount, ...updateData } = validation.data;
 
     if (updateData.scheduled_start || updateData.scheduled_end || updateData.title || updateData.description) {
       const zoomService = getZoomService();
@@ -434,9 +443,19 @@ router.patch(
       }
     }
 
+    const recurrenceCount = requestedRecurrenceCount || 1;
+    const sessionUpdateData: Record<string, any> = { ...updateData };
+    let recurrenceGroupId = existingSession.recurrence_group_id || null;
+    if (recurrenceCount > 1 && !recurrenceGroupId) {
+      recurrenceGroupId = randomUUID();
+      sessionUpdateData.recurrence_group_id = recurrenceGroupId;
+      sessionUpdateData.recurrence_day_number = 1;
+      sessionUpdateData.recurrence_total_days = recurrenceCount;
+    }
+
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('live_sessions')
-      .update(updateData)
+      .update(sessionUpdateData)
       .eq('id', id)
       .select()
       .single();
@@ -445,7 +464,60 @@ router.patch(
       return res.status(500).json({ message: 'Failed to update session' });
     }
 
-    res.json(updatedSession);
+    if (recurrenceCount > 1 && !existingSession.recurrence_group_id) {
+      const startDate = new Date(updateData.scheduled_start || existingSession.scheduled_start);
+      const endDate = new Date(updateData.scheduled_end || existingSession.scheduled_end);
+      const durationMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
+      const zoomService = getZoomService();
+      const recurringSessionIds = [updatedSession.id];
+
+      if (!zoomService) {
+        return res.status(503).json({ message: 'Zoom service is unavailable for recurring sessions' });
+      }
+
+      for (let day = 1; day < recurrenceCount; day++) {
+        const occurrenceStart = addDays(startDate, day);
+        const occurrenceEnd = addDays(endDate, day);
+        const zoomMeeting = await zoomService.createMeeting('me', {
+          topic: `${updatedSession.title} (${day + 1}/${recurrenceCount})`,
+          type: 2,
+          start_time: formatInTimeZone(occurrenceStart, updatedSession.timezone, "yyyy-MM-dd'T'HH:mm:ss"),
+          duration: durationMinutes,
+          timezone: updatedSession.timezone,
+          agenda: updatedSession.description,
+          settings: { host_video: true, participant_video: true, join_before_host: false, mute_upon_entry: true, waiting_room: false, approval_type: 2, audio: 'both', auto_recording: 'cloud', watermark: false, use_pmi: false, registration_type: 0, meeting_authentication: false },
+        });
+
+        const { data: occurrence, error: occurrenceError } = await supabaseAdmin.from('live_sessions').insert({
+          title: updatedSession.title,
+          description: updatedSession.description,
+          session_type: updatedSession.session_type,
+          scheduled_start: occurrenceStart.toISOString(),
+          scheduled_end: occurrenceEnd.toISOString(),
+          timezone: updatedSession.timezone,
+          instructor_id: updatedSession.instructor_id,
+          course_id: updatedSession.course_id,
+          is_public: updatedSession.is_public,
+          max_participants: updatedSession.max_participants,
+          zoom_meeting_id: zoomMeeting.id,
+          zoom_meeting_password: zoomMeeting.password,
+          zoom_join_url: zoomMeeting.join_url,
+          zoom_start_url: zoomMeeting.start_url,
+          status: 'scheduled',
+          created_by: updatedSession.created_by,
+          recurrence_group_id: recurrenceGroupId,
+          recurrence_day_number: day + 1,
+          recurrence_total_days: recurrenceCount,
+        }).select().single();
+
+        if (occurrenceError) throw new Error(occurrenceError.message);
+        recurringSessionIds.push(occurrence.id);
+      }
+
+      return res.json({ ...updatedSession, recurring_session_ids: recurringSessionIds });
+    }
+
+    res.json({ ...updatedSession, recurring_session_ids: [updatedSession.id] });
   })
 );
 
@@ -656,22 +728,28 @@ router.post(
       }
     }
 
-    const { data: registration, error } = await supabaseAdmin
+    const sessionIds = session.recurrence_group_id
+      ? (await supabaseAdmin
+          .from('live_sessions')
+          .select('id')
+          .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item) => item.id) || [id]
+      : [id];
+
+    const { data: registrations, error } = await supabaseAdmin
       .from('session_participants')
-      .insert({
-        session_id: id,
+      .insert(sessionIds.map((sessionId) => ({
+        session_id: sessionId,
         user_id: userId,
         registration_status: 'registered',
-      })
-      .select()
-      .single();
+      })))
+      .select();
 
     if (error) {
       console.error('Registration error:', error);
       return res.status(500).json({ message: 'Failed to register for session' });
     }
 
-    res.status(201).json(registration);
+    res.status(201).json(registrations?.[0] || null);
   })
 );
 

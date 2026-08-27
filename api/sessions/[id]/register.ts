@@ -148,22 +148,28 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
     }
   }
 
-  const { data: registration, error } = await supabaseAdmin
+  const sessionIds = session.recurrence_group_id
+    ? (await supabaseAdmin
+        .from('live_sessions')
+        .select('id')
+        .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item: any) => item.id) || [id]
+    : [id];
+
+  const { data: registrations, error } = await supabaseAdmin
     .from('session_participants')
-    .insert({
-      session_id: id,
+    .insert(sessionIds.map((sessionId: string) => ({
+      session_id: sessionId,
       user_id: userId,
       registration_status: 'registered',
-    })
-    .select()
-    .single();
+    })))
+    .select();
 
   if (error) {
     console.error('Registration error:', error);
     return res.status(500).json({ message: 'Failed to register for session' });
   }
 
-  return res.status(201).json(registration);
+  return res.status(201).json(registrations?.[0] || null);
 }
 
 async function handleUnregister(req: VercelRequest, res: VercelResponse, user: any, id: string, supabaseAdmin: SupabaseClient) {
