@@ -125,15 +125,25 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
     return res.status(400).json({ message: 'Cannot register for this session' });
   }
 
-  const { data: existing } = await supabaseAdmin
-    .from('session_participants')
-    .select('*')
-    .eq('session_id', id)
-    .eq('user_id', userId)
-    .single();
+  const sessionIds = session.recurrence_group_id
+    ? (await supabaseAdmin
+        .from('live_sessions')
+        .select('id')
+        .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item: any) => item.id) || [id]
+    : [id];
 
-  if (existing) {
-    return res.status(400).json({ message: 'Already registered for this session' });
+  const { data: existingRegistrations } = await supabaseAdmin
+    .from('session_participants')
+    .select('session_id, registration_status')
+    .in('session_id', sessionIds)
+    .eq('user_id', userId)
+    .in('registration_status', ['registered', 'attended']);
+
+  const registeredSessionIds = new Set(existingRegistrations?.map((registration) => registration.session_id));
+  const missingSessionIds = sessionIds.filter((sessionId: string) => !registeredSessionIds.has(sessionId));
+
+  if (missingSessionIds.length === 0) {
+    return res.status(200).json(existingRegistrations?.[0] || null);
   }
 
   if (session.max_participants) {
@@ -148,16 +158,9 @@ async function handleRegister(req: VercelRequest, res: VercelResponse, user: any
     }
   }
 
-  const sessionIds = session.recurrence_group_id
-    ? (await supabaseAdmin
-        .from('live_sessions')
-        .select('id')
-        .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item: any) => item.id) || [id]
-    : [id];
-
   const { data: registrations, error } = await supabaseAdmin
     .from('session_participants')
-    .insert(sessionIds.map((sessionId: string) => ({
+    .insert(missingSessionIds.map((sessionId: string) => ({
       session_id: sessionId,
       user_id: userId,
       registration_status: 'registered',

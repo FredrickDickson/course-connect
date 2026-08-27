@@ -180,12 +180,22 @@ router.get(
       }
     }
 
-    const { data: userRegistration } = await supabaseAdmin
+    const registrationSessionIds = session.recurrence_group_id
+      ? (await supabaseAdmin
+          .from('live_sessions')
+          .select('id')
+          .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item) => item.id) || [id]
+      : [id];
+
+    const { data: userRegistrations } = await supabaseAdmin
       .from('session_participants')
       .select('*')
-      .eq('session_id', id)
+      .in('session_id', registrationSessionIds)
       .eq('user_id', userId)
-      .single();
+      .in('registration_status', ['registered', 'attended']);
+
+    const userRegistration = userRegistrations?.find((registration) => registration.session_id === id)
+      || userRegistrations?.[0];
 
     if (userRole !== 'admin' && session.instructor_id !== userId) {
       delete (session as any).zoom_start_url;
@@ -705,15 +715,25 @@ router.post(
       return res.status(400).json({ message: 'Cannot register for this session' });
     }
 
-    const { data: existing } = await supabaseAdmin
-      .from('session_participants')
-      .select('*')
-      .eq('session_id', id)
-      .eq('user_id', userId)
-      .single();
+    const sessionIds = session.recurrence_group_id
+      ? (await supabaseAdmin
+          .from('live_sessions')
+          .select('id')
+          .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item) => item.id) || [id]
+      : [id];
 
-    if (existing) {
-      return res.status(400).json({ message: 'Already registered for this session' });
+    const { data: existingRegistrations } = await supabaseAdmin
+      .from('session_participants')
+      .select('session_id, registration_status')
+      .in('session_id', sessionIds)
+      .eq('user_id', userId)
+      .in('registration_status', ['registered', 'attended']);
+
+    const registeredSessionIds = new Set(existingRegistrations?.map((registration) => registration.session_id));
+    const missingSessionIds = sessionIds.filter((sessionId) => !registeredSessionIds.has(sessionId));
+
+    if (missingSessionIds.length === 0) {
+      return res.status(200).json(existingRegistrations?.[0] || null);
     }
 
     if (session.max_participants) {
@@ -728,16 +748,9 @@ router.post(
       }
     }
 
-    const sessionIds = session.recurrence_group_id
-      ? (await supabaseAdmin
-          .from('live_sessions')
-          .select('id')
-          .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item) => item.id) || [id]
-      : [id];
-
     const { data: registrations, error } = await supabaseAdmin
       .from('session_participants')
-      .insert(sessionIds.map((sessionId) => ({
+      .insert(missingSessionIds.map((sessionId) => ({
         session_id: sessionId,
         user_id: userId,
         registration_status: 'registered',

@@ -200,12 +200,22 @@ async function handleGetSession(req: VercelRequest, res: VercelResponse, user: a
     }
   }
 
-  const { data: userRegistration } = await supabaseAdmin
+  const registrationSessionIds = session.recurrence_group_id
+    ? (await supabaseAdmin
+        .from('live_sessions')
+        .select('id')
+        .eq('recurrence_group_id', session.recurrence_group_id)).data?.map((item: any) => item.id) || [id]
+    : [id];
+
+  const { data: userRegistrations } = await supabaseAdmin
     .from('session_participants')
     .select('*')
-    .eq('session_id', id)
+    .in('session_id', registrationSessionIds)
     .eq('user_id', userId)
-    .single();
+    .in('registration_status', ['registered', 'attended']);
+
+  const userRegistration = userRegistrations?.find((registration) => registration.session_id === id)
+    || userRegistrations?.[0];
 
   if (userRole !== 'admin' && session.instructor_id !== userId) {
     delete (session as any).zoom_start_url;
