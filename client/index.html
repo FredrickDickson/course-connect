@@ -63,7 +63,27 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-loader" style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui,-apple-system,sans-serif;color:#666;">
+        <span>Loading…</span>
+      </div>
+    </div>
+    <script>
+      // Plain, non-module script so it still runs even if the app's module
+      // bundle itself fails to load (stale cache, blocked/dropped request,
+      // flaky mobile connection). If nothing has replaced the placeholder
+      // loader after a while, show a manual reload option instead of
+      // leaving the user on a blank/stuck screen forever.
+      setTimeout(function () {
+        var loader = document.getElementById("initial-loader");
+        if (!loader || !document.body.contains(loader)) return;
+        loader.innerHTML =
+          '<div style="text-align:center;padding:24px;">' +
+          '<p style="margin-bottom:12px;">This is taking longer than expected.</p>' +
+          '<button onclick="window.location.reload()" style="padding:8px 16px;font-size:14px;cursor:pointer;">Reload</button>' +
+          "</div>";
+      }, 12000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

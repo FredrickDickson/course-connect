@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cima-learn-cache-v2';
+const CACHE_NAME = 'cima-learn-cache-v3';
 const urlsToCache = [
   '/',
   '/dashboard',
@@ -12,48 +12,51 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
   );
-  event.skipWaiting();
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip caching for large files (PDFs, videos, etc.) and API requests
   const url = new URL(event.request.url);
-  
-  // Skip caching for:
-  // 1. External domains (Supabase, APIs, CDNs)
-  // 2. Large files
-  // 3. API endpoints
-  // 4. Non-GET requests
+
   const isExternalDomain = !url.origin.includes(self.location.origin);
   const isSupabaseRequest = url.hostname.includes('supabase.co');
-  const skipCache = 
+  const skipCache =
     isExternalDomain ||
     isSupabaseRequest ||
-    url.pathname.endsWith('.pdf') || 
-    url.pathname.endsWith('.zip') || 
+    url.pathname.endsWith('.pdf') ||
+    url.pathname.endsWith('.zip') ||
     url.pathname.endsWith('.mp4') ||
     url.pathname.includes('/api/') ||
     url.pathname.includes('/uploads/') ||
     event.request.method !== 'GET';
 
   if (skipCache) {
-    // Pass through without caching
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Only cache same-origin GET requests
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
+  // Hashed, content-addressed build assets never change for a given
+  // filename, so cache-first is safe and fast for them.
+  const isImmutableAsset = url.pathname.startsWith('/assets/');
 
+  if (isImmutableAsset) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
         return fetch(event.request).then((response) => {
-          // Only cache successful GET requests for small resources
-          if (event.request.method === 'GET' && response.ok) {
-            // Clone the response before caching to avoid "already used" errors
+          if (response.ok) {
             const responseToCache = response.clone();
             caches.open(CACHE_NAME)
               .then((cache) => cache.put(event.request, responseToCache))
@@ -62,6 +65,26 @@ self.addEventListener('fetch', (event) => {
           return response;
         });
       })
+    );
+    return;
+  }
+
+  // Everything else (navigations/HTML in particular) must go network-first:
+  // a deploy replaces hashed asset filenames, so a cached shell can point at
+  // JS that no longer exists on the server. Only fall back to cache when the
+  // network is genuinely unreachable (offline).
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseToCache))
+            .catch((error) => console.log('Cache put error:', error));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
 
@@ -95,6 +118,6 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'view' && event.notification.data.url) {
     clients.openWindow(event.notification.data.url);
   }
-  
+
   event.notification.close();
 });

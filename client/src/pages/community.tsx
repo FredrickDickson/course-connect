@@ -11,7 +11,7 @@ import StudentLayout from "@/components/student-layout";
 import { useLocation } from "wouter";
 import { Plus, Users, MessageSquare, TrendingUp, Calendar, ChevronRight, Clock, Eye, BookOpen, HelpCircle, Lightbulb, Briefcase, GraduationCap, Coffee, Search, Sparkles, Trophy, Zap } from "lucide-react";
 import { Link } from "wouter";
-import { ErrorBoundary } from "@/components/error-boundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NewPostModal from "@/components/NewPostModal";
 import EmptyState from "@/components/empty-state";
 import SkeletonLoader from "@/components/skeleton-loader";
