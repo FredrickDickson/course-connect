@@ -29,6 +29,11 @@ interface CreateMeetingParams {
   timezone?: string;
   password?: string;
   agenda?: string;
+  recurrence?: {
+    type: 1 | 2 | 3;
+    repeat_interval?: number;
+    end_times?: number;
+  };
   settings?: Partial<ZoomMeetingSettings>;
 }
 

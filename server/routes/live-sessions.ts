@@ -308,35 +308,37 @@ router.post(
       const recurrenceGroupId = recurrenceCount > 1 ? randomUUID() : null;
       const createdSessions = [];
 
+      console.log('📍 Step 4: Creating one Zoom meeting for the session series...');
+      const zoomMeeting = await zoomService.createMeeting('me', {
+        topic: sessionData.title,
+        type: recurrenceCount > 1 ? 8 : 2,
+        start_time: zoomStartTime,
+        duration: durationMinutes,
+        timezone: sessionData.timezone,
+        password: sessionData.meeting_password,
+        agenda: sessionData.description,
+        ...(recurrenceCount > 1 ? {
+          recurrence: { type: 1, repeat_interval: 1, end_times: recurrenceCount },
+        } : {}),
+        settings: {
+        host_video: true,
+        participant_video: true,
+        join_before_host: false,
+        mute_upon_entry: true,
+        waiting_room: false,
+        approval_type: 2,
+        audio: 'both',
+        auto_recording: 'cloud',
+        watermark: false,
+        use_pmi: false,
+        registration_type: 0,
+        meeting_authentication: false,
+        },
+      });
+
       for (let day = 0; day < recurrenceCount; day++) {
         const occurrenceStart = addDays(startDate, day);
         const occurrenceEnd = addDays(end, day);
-        const occurrenceStartTime = formatInTimeZone(occurrenceStart, sessionData.timezone, "yyyy-MM-dd'T'HH:mm:ss");
-
-        console.log(`📍 Step 4: Creating Zoom meeting ${day + 1}/${recurrenceCount}...`);
-        const zoomMeeting = await zoomService.createMeeting('me', {
-          topic: recurrenceCount > 1 ? `${sessionData.title} (${day + 1}/${recurrenceCount})` : sessionData.title,
-          type: 2,
-          start_time: occurrenceStartTime,
-          duration: durationMinutes,
-          timezone: sessionData.timezone,
-          password: sessionData.meeting_password,
-          agenda: sessionData.description,
-          settings: {
-          host_video: true,
-          participant_video: true,
-          join_before_host: false,
-          mute_upon_entry: true,
-          waiting_room: false,
-          approval_type: 2,
-          audio: 'both',
-          auto_recording: 'cloud',
-          watermark: false,
-          use_pmi: false,
-          registration_type: 0,
-          meeting_authentication: false,
-          },
-        });
 
         const { data: newSession, error: insertError } = await supabaseAdmin
           .from('live_sessions')
@@ -485,18 +487,34 @@ router.patch(
         return res.status(503).json({ message: 'Zoom service is unavailable for recurring sessions' });
       }
 
+      if (existingSession.zoom_meeting_id) {
+        await zoomService.updateMeeting(existingSession.zoom_meeting_id, {
+          type: 8,
+          recurrence: { type: 1, repeat_interval: 1, end_times: recurrenceCount },
+        });
+      }
+
+      const zoomMeeting = existingSession.zoom_meeting_id
+        ? {
+            id: existingSession.zoom_meeting_id,
+            password: existingSession.zoom_meeting_password,
+            join_url: existingSession.zoom_join_url,
+            start_url: existingSession.zoom_start_url,
+          }
+        : await zoomService.createMeeting('me', {
+            topic: updatedSession.title,
+            type: recurrenceCount > 1 ? 8 : 2,
+            start_time: formatInTimeZone(startDate, updatedSession.timezone, "yyyy-MM-dd'T'HH:mm:ss"),
+            duration: durationMinutes,
+            timezone: updatedSession.timezone,
+            agenda: updatedSession.description,
+            recurrence: { type: 1, repeat_interval: 1, end_times: recurrenceCount },
+            settings: { host_video: true, participant_video: true, join_before_host: false, mute_upon_entry: true, waiting_room: false, approval_type: 2, audio: 'both', auto_recording: 'cloud', watermark: false, use_pmi: false, registration_type: 0, meeting_authentication: false },
+          });
+
       for (let day = 1; day < recurrenceCount; day++) {
         const occurrenceStart = addDays(startDate, day);
         const occurrenceEnd = addDays(endDate, day);
-        const zoomMeeting = await zoomService.createMeeting('me', {
-          topic: `${updatedSession.title} (${day + 1}/${recurrenceCount})`,
-          type: 2,
-          start_time: formatInTimeZone(occurrenceStart, updatedSession.timezone, "yyyy-MM-dd'T'HH:mm:ss"),
-          duration: durationMinutes,
-          timezone: updatedSession.timezone,
-          agenda: updatedSession.description,
-          settings: { host_video: true, participant_video: true, join_before_host: false, mute_upon_entry: true, waiting_room: false, approval_type: 2, audio: 'both', auto_recording: 'cloud', watermark: false, use_pmi: false, registration_type: 0, meeting_authentication: false },
-        });
 
         const { data: occurrence, error: occurrenceError } = await supabaseAdmin.from('live_sessions').insert({
           title: updatedSession.title,

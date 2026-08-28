@@ -34,6 +34,7 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { cn, formatMinutesDuration } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -246,6 +247,29 @@ export default function SessionDetailPage() {
     if (!session) return false;
     if (session.status === 'cancelled' || session.status === 'completed') return false;
     return canManageSession();
+  };
+
+  const copyZoomLink = async () => {
+    if (!session?.zoom_join_url) return;
+
+    try {
+      await navigator.clipboard.writeText(session.zoom_join_url);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = session.zoom_join_url;
+      textArea.setAttribute('readonly', '');
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+
+    toast({
+      title: "Zoom link copied",
+      description: "The participant link is ready to paste.",
+    });
   };
 
   if (isLoading) {
@@ -603,6 +627,17 @@ export default function SessionDetailPage() {
                         Join Live Session Now
                       </Button>
                     )
+                  )}
+
+                  {canManageSession() && session.zoom_join_url && (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={copyZoomLink}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Zoom Link
+                    </Button>
                   )}
 
                   {/* Register Button - Show if not registered and can register */}
