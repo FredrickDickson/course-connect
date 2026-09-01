@@ -2,6 +2,7 @@
  * Personal Notes Forms Management Component
  * 
  * Admin interface to view, search, and export employee personal notes forms
+ * Version: 1.0.1
  */
 
 import { useState } from "react";
