@@ -11,6 +11,10 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./ ':!*.md'",
   "rewrites": [
     {
+      "source": "/api/personal-notes-forms",
+      "destination": "/api/personal-notes-forms/index.ts"
+    },
+    {
       "source": "/api/sessions",
       "destination": "/api/sessions/index.ts"
     },
