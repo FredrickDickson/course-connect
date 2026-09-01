@@ -553,7 +553,7 @@ export default function PersonalNotesFormsManagement() {
                                 <Separator />
 
                                 {/* Health Information */}
-                                {(form.blood_group || form.medical_conditions?.length > 0) && (
+                                {(form.blood_group || (form.medical_conditions && form.medical_conditions.length > 0)) && (
                                   <>
                                     <div>
                                       <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -567,7 +567,7 @@ export default function PersonalNotesFormsManagement() {
                                             <p className="font-medium">{form.blood_group}</p>
                                           </div>
                                         )}
-                                        {form.medical_conditions?.length > 0 && (
+                                        {form.medical_conditions && form.medical_conditions.length > 0 && (
                                           <div>
                                             <Label className="text-[#6b5d4f] text-xs">Medical Conditions</Label>
                                             <p className="font-medium">{form.medical_conditions.join(", ")}</p>

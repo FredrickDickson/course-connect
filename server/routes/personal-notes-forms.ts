@@ -79,9 +79,18 @@ router.post("/", async (req: Request, res: Response) => {
         };
 
         // Handle file uploads
-        const idDocumentsUrl = files.idDocuments ? await uploadFile(files.idDocuments as formidable.File, 'id-documents') : null;
-        const leftThumbUrl = files.leftThumb ? await uploadFile(files.leftThumb as formidable.File, 'thumbprints') : null;
-        const rightThumbUrl = files.rightThumb ? await uploadFile(files.rightThumb as formidable.File, 'thumbprints') : null;
+        const idDocumentsUrl = files.idDocuments ? await uploadFile(
+          Array.isArray(files.idDocuments) ? files.idDocuments[0] : files.idDocuments,
+          'id-documents'
+        ) : null;
+        const leftThumbUrl = files.leftThumb ? await uploadFile(
+          Array.isArray(files.leftThumb) ? files.leftThumb[0] : files.leftThumb,
+          'thumbprints'
+        ) : null;
+        const rightThumbUrl = files.rightThumb ? await uploadFile(
+          Array.isArray(files.rightThumb) ? files.rightThumb[0] : files.rightThumb,
+          'thumbprints'
+        ) : null;
 
         // Parse children details if provided
         let childrenDetails = null;
