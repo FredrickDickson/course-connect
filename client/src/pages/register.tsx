@@ -19,6 +19,15 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Extract redirect URL from query params and store it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirectUrl = params.get('redirect');
+    if (redirectUrl) {
+      sessionStorage.setItem("redirectAfterLogin", redirectUrl);
+    }
+  }, []);
+
   // Check if user is already authenticated and redirect
   useEffect(() => {
     const checkAuth = async () => {

@@ -284,7 +284,8 @@ export default function CourseDetail() {
 
   const handleEnroll = async () => {
     if (!user) {
-      setLocation(`/login?redirect=/course/${id}`);
+      // Store the intended course for enrollment and redirect to login
+      setLocation(`/login?redirect=/course/${id}&enroll=true`);
       return;
     }
 
@@ -593,12 +594,20 @@ export default function CourseDetail() {
                   ) : (
                     <Card className="bg-white shadow-lg">
                       <CardContent className="p-6">
+                        {!user && (
+                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800 flex items-center">
+                              <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                              Sign in or create an account to enroll
+                            </p>
+                          </div>
+                        )}
                         <div className="mb-4">
                           <p className="text-sm text-muted-foreground mb-1">Course Price</p>
                           <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                         </div>
                         <Button className="w-full" size="lg" onClick={handleEnroll}>
-                          {isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now')}
+                          {!user ? 'Sign In to Enroll' : (isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now'))}
                         </Button>
                         <p className="text-xs text-muted-foreground mt-3 text-center">
                           {isInstructorOfCourse ? 'No payment required · Manage your course' : (isFreeCourse ? 'No payment required · Instant access' : 'Secure checkout · Instant access')}

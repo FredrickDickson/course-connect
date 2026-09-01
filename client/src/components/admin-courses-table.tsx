@@ -30,7 +30,7 @@ import { formatCoursePrice } from "@/lib/format-price";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
-  MapPin, Clock, Layers, Pencil, KeyRound,
+  MapPin, Clock, Layers, Pencil, KeyRound, Link2, Copy, Check,
 } from "lucide-react";
 
 interface CourseWithEnrollments {
@@ -114,6 +114,7 @@ export default function AdminCoursesTable() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [completionDialog, setCompletionDialog] = useState<CourseWithEnrollments | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   const { data: rawCourses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ["admin-courses-enhanced"],
@@ -250,6 +251,18 @@ export default function AdminCoursesTable() {
     a.click();
   };
 
+  const copyShareableLink = async (courseId: string) => {
+    const shareableUrl = `${window.location.origin}/course/${courseId}`;
+    try {
+      await navigator.clipboard.writeText(shareableUrl);
+      setCopiedLinkId(courseId);
+      toast({ title: "Link copied!", description: "Shareable course link copied to clipboard" });
+      setTimeout(() => setCopiedLinkId(null), 2000);
+    } catch (err) {
+      toast({ title: "Failed to copy", description: "Please copy the link manually", variant: "destructive" });
+    }
+  };
+
   // Enrollments for selected course drawer
   const courseEnrollments = selectedCourse
     ? allEnrollments.filter((e: any) => e.course_id === selectedCourse.id)
@@ -337,6 +350,14 @@ export default function AdminCoursesTable() {
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => copyShareableLink(c.id)}>
+                            {copiedLinkId === c.id ? (
+                              <><Check className="h-4 w-4 mr-2 text-green-600" /> Link Copied!</>
+                            ) : (
+                              <><Link2 className="h-4 w-4 mr-2" /> Copy Shareable Link</>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setSelectedCourse(c)}>
                             <Eye className="h-4 w-4 mr-2" /> View Details
                           </DropdownMenuItem>
