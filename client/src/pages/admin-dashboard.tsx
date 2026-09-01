@@ -30,6 +30,7 @@ import AdminUsersProfiles from "@/components/admin-users-profiles";
 import InstructorList from "@/components/admin/instructor-list";
 import ResourcesManagement from "@/components/admin/resources-management";
 import AdminLiveSessions from "@/components/admin/admin-live-sessions";
+import PersonalNotesFormsManagement from "@/components/admin/personal-notes-forms-management";
 import CreateSessionDialog from "@/components/live-sessions/create-session-dialog";
 import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
@@ -435,6 +436,7 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Users</TabsTrigger>
               <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Resources</TabsTrigger>
+              <TabsTrigger value="personal-notes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Personal Notes</TabsTrigger>
             </TabsList>
           </div>
 
@@ -563,6 +565,11 @@ export default function AdminDashboard() {
           {/* Resources Tab */}
           <TabsContent value="resources" className="space-y-6">
             <ResourcesManagement />
+          </TabsContent>
+
+          {/* Personal Notes Forms Tab */}
+          <TabsContent value="personal-notes" className="space-y-6">
+            <PersonalNotesFormsManagement />
           </TabsContent>
         </Tabs>
       </div>

@@ -78,6 +78,7 @@ import AuthCallback from "@/pages/auth-callback";
 import EnrollmentStatus from "@/pages/enrollment-status";
 import Sessions from "@/pages/sessions";
 import SessionDetail from "@/pages/session-detail";
+import PersonalNotesForm from "@/pages/personal-notes-form";
 
 // Lazy loaded components - heavy/role-gated pages
 const InstructorDashboard = lazy(() => import("@/pages/instructor-dashboard"));
@@ -249,6 +250,9 @@ function Router() {
       <Route path="/verify/:memberId" component={VerifyMember} />
       <Route path="/certificates/completion/:certificationId" component={CertificateOfCompletion} />
       <Route path="/auth/callback" component={AuthCallback} />
+      
+      {/* Personal Notes Form - Public route accessible via link */}
+      <Route path="/personal-notes-form" component={PersonalNotesForm} />
 
       {/* Protected membership routes */}
       <ProtectedRoute path="/renew-membership" component={RenewMembership} />

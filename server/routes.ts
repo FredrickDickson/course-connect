@@ -87,6 +87,7 @@ import adminAccessTokensRouter from "./routes/admin/access-tokens";
 import adminMembersRouter from "./routes/admin/members";
 import aiTutorRouter from "./routes/ai-tutor";
 import liveSessionsRouter from "./routes/live-sessions";
+import personalNotesFormsRouter from "./routes/personal-notes-forms";
 import {
   insertCourseSchema,
 
@@ -357,6 +358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount Live Sessions routes
   app.use("/api/sessions", liveSessionsRouter);
+  
+  // Mount Personal Notes Forms routes
+  app.use("/api/personal-notes-forms", requireSupabaseAuth, personalNotesFormsRouter);
   
   // Mount brochure download route (public - no auth required)
   app.use(brochureDownloadRouter);
