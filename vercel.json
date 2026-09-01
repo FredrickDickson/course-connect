@@ -11,62 +11,6 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./ ':!*.md'",
   "rewrites": [
     {
-      "source": "/api/personal-notes-forms",
-      "destination": "/api/personal-notes-forms/index.ts"
-    },
-    {
-      "source": "/api/sessions",
-      "destination": "/api/sessions/index.ts"
-    },
-    {
-      "source": "/api/sessions/:id",
-      "destination": "/api/sessions/[id].ts"
-    },
-    {
-      "source": "/api/sessions/:id/register",
-      "destination": "/api/sessions/[id]/register.ts"
-    },
-    {
-      "source": "/api/sessions/:id/assignments",
-      "destination": "/api/sessions/[id]/assignments.ts"
-    },
-    {
-      "source": "/api/sessions/:id/resources",
-      "destination": "/api/sessions/[id]/resources.ts"
-    },
-    {
-      "source": "/api/instructor/courses",
-      "destination": "/api/instructor/courses.ts"
-    },
-    {
-      "source": "/api/instructor/courses/:id",
-      "destination": "/api/instructor/courses/[id].ts"
-    },
-    {
-      "source": "/api/verify-payment",
-      "destination": "/api/verify-payment.ts"
-    },
-    {
-      "source": "/api/videos/validate",
-      "destination": "/api/videos/validate.ts"
-    },
-    {
-      "source": "/api/enrollments/check-eligibility",
-      "destination": "/api/enrollments/check-eligibility.ts"
-    },
-    {
-      "source": "/api/admin/access-tokens",
-      "destination": "/api/admin/access-tokens.ts"
-    },
-    {
-      "source": "/api/admin/access-tokens/:id/disable",
-      "destination": "/api/admin/access-tokens/[id]/disable.ts"
-    },
-    {
-      "source": "/api/admin/access-tokens/:id",
-      "destination": "/api/admin/access-tokens/[id].ts"
-    },
-    {
       "source": "/:path((?!api|assets).*)",
       "destination": "/index.html"
     }
