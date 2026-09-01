@@ -193,7 +193,7 @@ export function PublishCourseDialog({
                         {item.checked ? (
                           <CheckCircle2 className="w-5 h-5 text-green-600" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-red-600" />
+                          <XCircle className="w-5 h-5 text-[#5A2633]" />
                         )}
                         <span
                           className={

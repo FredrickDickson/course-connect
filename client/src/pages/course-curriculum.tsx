@@ -443,7 +443,7 @@ export default function CourseCurriculum() {
     return (
       <StudentLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin w-8 h-8 border-4 border-[#610000] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-[#5A2633] border-t-transparent rounded-full" />
         </div>
       </StudentLayout>
     );
@@ -493,7 +493,7 @@ export default function CourseCurriculum() {
                 variant={courseDetails?.isPublished ? "outline" : "default"}
                 onClick={() => setPublishDialogOpen(true)}
                 data-testid="button-publish-course"
-                className={courseDetails?.isPublished ? "border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white" : "bg-[#610000] text-white hover:bg-[#7d0000]"}
+                className={courseDetails?.isPublished ? "border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633] hover:text-white" : "bg-[#5A2633] text-white hover:bg-[#5A2633]"}
               >
                 <Rocket className="w-4 h-4 mr-2" />
                 {courseDetails?.isPublished
@@ -501,17 +501,17 @@ export default function CourseCurriculum() {
                   : "Publish Course"}
               </Button>
               <Link href={isAdminRoute ? "/admin" : "/instructor"}>
-                <Button variant="outline" className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">← Back to Dashboard</Button>
+                <Button variant="outline" className="border-[#d4c5b0]/50 text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#5A2633]">← Back to Dashboard</Button>
               </Link>
             </div>
           </div>
         </div>
 
         {/* Instructions */}
-        <Card className="mb-6 bg-[#610000]/5 border-[#610000]/20">
+        <Card className="mb-6 bg-[#5A2633]/5 border-[#5A2633]/20">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
-              <div className="bg-[#610000] rounded-full p-2">
+              <div className="bg-[#5A2633] rounded-full p-2">
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -546,7 +546,7 @@ export default function CourseCurriculum() {
                   moduleIndex={moduleIndex}
                 >
                   {({ attributes, listeners }: any) => (
-                    <Card className="border-l-4 border-l-[#610000] bg-white border-[#d4c5b0]/30">
+                    <Card className="border-l-4 border-l-[#5A2633] bg-white border-[#d4c5b0]/30">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1">
@@ -564,9 +564,9 @@ export default function CourseCurriculum() {
                               className="p-0 h-auto hover:bg-[#f5f3ed]"
                             >
                               {expandedModules.has(module.id) ? (
-                                <ChevronDown className="h-5 w-5 text-[#610000]" />
+                                <ChevronDown className="h-5 w-5 text-[#5A2633]" />
                               ) : (
-                                <ChevronRight className="h-5 w-5 text-[#610000]" />
+                                <ChevronRight className="h-5 w-5 text-[#5A2633]" />
                               )}
                             </Button>
                             <div className="flex-1">
@@ -593,7 +593,7 @@ export default function CourseCurriculum() {
                               onClick={() =>
                                 deleteModuleMutation.mutate(module.id)
                               }
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-[#5A2633] hover:text-[#5A2633] hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -631,21 +631,21 @@ export default function CourseCurriculum() {
                                               <GripVertical className="h-4 w-4 text-[#8b6f47]" />
                                             </div>
                                             {lesson.contentType === "video" && (
-                                              <Play className="h-4 w-4 text-[#610000]" />
+                                              <Play className="h-4 w-4 text-[#5A2633]" />
                                             )}
                                             {lesson.contentType === "text" && (
-                                              <FileText className="h-4 w-4 text-[#610000]" />
+                                              <FileText className="h-4 w-4 text-[#5A2633]" />
                                             )}
                                             {lesson.contentType === "quiz" && (
-                                              <ClipboardList className="h-4 w-4 text-[#610000]" />
+                                              <ClipboardList className="h-4 w-4 text-[#5A2633]" />
                                             )}
                                             {lesson.contentType ===
                                               "assignment" && (
-                                              <FileText className="h-4 w-4 text-[#610000]" />
+                                              <FileText className="h-4 w-4 text-[#5A2633]" />
                                             )}
                                             {lesson.contentType ===
                                               "presentation" && (
-                                              <Presentation className="h-4 w-4 text-[#610000]" />
+                                              <Presentation className="h-4 w-4 text-[#5A2633]" />
                                             )}
                                             <div className="flex-1">
                                               <p className="font-medium text-sm text-[#2c2015]">
@@ -672,7 +672,7 @@ export default function CourseCurriculum() {
                                               onClick={() =>
                                                 handlePreviewLecture(lesson)
                                               }
-                                              className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]"
+                                              className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]"
                                             >
                                               <Eye className="h-3 w-3" />
                                             </Button>
@@ -685,7 +685,7 @@ export default function CourseCurriculum() {
                                                   module.id,
                                                 )
                                               }
-                                              className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]"
+                                              className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]"
                                             >
                                               <Edit className="h-3 w-3" />
                                             </Button>
@@ -697,7 +697,7 @@ export default function CourseCurriculum() {
                                                   lesson.id,
                                                 )
                                               }
-                                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              className="text-[#5A2633] hover:text-[#5A2633] hover:bg-red-50"
                                             >
                                               <Trash2 className="h-3 w-3" />
                                             </Button>
@@ -717,7 +717,7 @@ export default function CourseCurriculum() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full mt-2 border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
+                              className="w-full mt-2 border-[#d4c5b0]/50 text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#5A2633]"
                               onClick={() => handleAddLecture(module.id)}
                             >
                               <Plus className="h-4 w-4 mr-2" />
@@ -762,7 +762,7 @@ export default function CourseCurriculum() {
                         <Button
                           onClick={handleAddModule}
                           disabled={addModuleMutation.isPending}
-                          className="bg-[#610000] text-white hover:bg-[#7d0000]"
+                          className="bg-[#5A2633] text-white hover:bg-[#5A2633]"
                         >
                           {addModuleMutation.isPending
                             ? "Adding..."
@@ -771,7 +771,7 @@ export default function CourseCurriculum() {
                         <Button
                           variant="outline"
                           onClick={() => setIsAddingModule(false)}
-                          className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
+                          className="border-[#d4c5b0]/50 text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#5A2633]"
                         >
                           Cancel
                         </Button>
@@ -783,7 +783,7 @@ export default function CourseCurriculum() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full border-dashed border-2 border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]"
+                  className="w-full border-dashed border-2 border-[#d4c5b0] text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#5A2633]"
                   onClick={() => setIsAddingModule(true)}
                 >
                   <Plus className="h-5 w-5 mr-2" />

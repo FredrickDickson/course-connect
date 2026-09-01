@@ -21,8 +21,8 @@ export default function AITutorMessage({ message }: AITutorMessageProps) {
       <div className={cn(
         "flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold",
         isUser 
-          ? "bg-[#610000] text-white" 
-          : "bg-gradient-to-br from-[#610000] to-[#8b0000] text-white border-2 border-[#610000]/20"
+          ? "bg-[#5A2633] text-white" 
+          : "bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white border-2 border-[#5A2633]/20"
       )}>
         {isUser ? <User className="h-4 w-4" /> : 'MS'}
       </div>
@@ -31,7 +31,7 @@ export default function AITutorMessage({ message }: AITutorMessageProps) {
       <div className={cn(
         "flex-1 rounded-lg px-4 py-3 max-w-[85%]",
         isUser 
-          ? "bg-[#610000] text-white ml-auto" 
+          ? "bg-[#5A2633] text-white ml-auto" 
           : "bg-gray-50 text-gray-900 border border-gray-200"
       )}>
         <div className={cn(

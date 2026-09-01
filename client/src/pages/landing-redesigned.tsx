@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
-import cimaLogo from "/images/logo.jpeg";
+import cimaLogo from "/uploads/logo.png";
 import FinalCTASection from "./FinalCTASection";
 import { Gavel, Users, Globe, Star, ArrowRight, CheckCircle, Award, Clock, BookOpen } from "lucide-react";
 
@@ -24,16 +24,16 @@ export default function Landing() {
   }, [isAuthenticated, isLoading, user, setLocation]);
 
   return (
-    <div className="bg-[#faf9f6] text-[#2c2015] font-sf-pro-text selection:bg-[#8b0000]/10 min-h-screen">
+    <div className="bg-[#faf9f6] text-[#2c2015] font-sf-pro-text selection:bg-[#5A2633]/10 min-h-screen">
       {/* Premium Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 pt-8 px-6 lg:px-12">
         <div className="max-w-[1600px] mx-auto">
-          <nav className="bg-white/80 backdrop-blur-2xl rounded-[20px] shadow-[0_8px_32px_rgba(97,0,0,0.08)] border border-[#8b0000]/5">
+          <nav className="bg-white/80 backdrop-blur-2xl rounded-[20px] shadow-[0_8px_32px_rgba(97,0,0,0.08)] border border-[#5A2633]/5">
             <div className="flex h-24 items-center justify-between px-8 lg:px-12">
               {/* Logo */}
               <Link href="/" className="flex items-center space-x-4 hover:opacity-90 transition-all duration-500 group">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-[#8b0000]/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <div className="absolute inset-0 bg-[#5A2633]/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <img 
                     src={cimaLogo} 
                     alt="CIMA Logo" 
@@ -42,7 +42,7 @@ export default function Landing() {
                 </div>
                 <div>
                   <div className="hidden sm:block">
-                    <h1 className="text-2xl font-bold text-[#610000] font-sf-pro-display tracking-tight">CIMA Learn</h1>
+                    <h1 className="text-2xl font-bold text-[#5A2633] font-sf-pro-display tracking-tight">CIMA Learn</h1>
                     <p className="text-[10px] text-[#8b6f47] -mt-1 font-sf-pro-text tracking-[0.08em] uppercase font-semibold">Professional ADR Education</p>
                   </div>
                 </div>
@@ -51,17 +51,17 @@ export default function Landing() {
               {/* Navigation Links */}
               <div className="hidden lg:flex items-center space-x-1">
                 <Link href="/courses">
-                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#610000] px-6 py-3 rounded-[14px] hover:bg-[#610000]/5 transition-all duration-500 group">
+                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#5A2633] px-6 py-3 rounded-[14px] hover:bg-[#5A2633]/5 transition-all duration-500 group">
                     <span className="relative z-10">Courses</span>
                   </button>
                 </Link>
                 <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#610000] px-6 py-3 rounded-[14px] hover:bg-[#610000]/5 transition-all duration-500 group">
+                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#5A2633] px-6 py-3 rounded-[14px] hover:bg-[#5A2633]/5 transition-all duration-500 group">
                     <span className="relative z-10">Pathways</span>
                   </button>
                 </a>
                 <Link href="/contact">
-                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#610000] px-6 py-3 rounded-[14px] hover:bg-[#610000]/5 transition-all duration-500 group">
+                  <button className="relative text-base font-medium text-[#4a3828] hover:text-[#5A2633] px-6 py-3 rounded-[14px] hover:bg-[#5A2633]/5 transition-all duration-500 group">
                     <span className="relative z-10">Contact</span>
                   </button>
                 </Link>
@@ -70,13 +70,13 @@ export default function Landing() {
               {/* CTA Buttons */}
               <div className="flex items-center space-x-4">
                 <Link href="/login">
-                  <button className="hidden sm:block text-base font-medium text-[#4a3828] hover:text-[#610000] transition-all duration-500 px-6 py-3">
+                  <button className="hidden sm:block text-base font-medium text-[#4a3828] hover:text-[#5A2633] transition-all duration-500 px-6 py-3">
                     Member Portal
                   </button>
                 </Link>
                 <Link href="/register">
-                  <button className="group relative bg-gradient-to-br from-[#610000] to-[#8b0000] text-white px-8 py-3.5 text-base font-semibold rounded-[14px] overflow-hidden hover:shadow-[0_12px_32px_rgba(97,0,0,0.24)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#610000] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <button className="group relative bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white px-8 py-3.5 text-base font-semibold rounded-[14px] overflow-hidden hover:shadow-[0_12px_32px_rgba(97,0,0,0.24)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633] to-[#5A2633] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                     <span className="relative z-10">Enroll Now</span>
                   </button>
                 </Link>
@@ -153,13 +153,13 @@ function PremiumHeroSection() {
       
       {/* Subtle Pattern Overlay */}
       <div className="absolute inset-0 opacity-[0.02]" style={{
-        backgroundImage: 'radial-gradient(circle at 1px 1px, #610000 1px, transparent 0)',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, #5A2633 1px, transparent 0)',
         backgroundSize: '40px 40px'
       }}></div>
 
       {/* Decorative Elements */}
       <div className="absolute top-1/4 -right-64 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#8b6f47]/10 to-transparent blur-3xl"></div>
-      <div className="absolute bottom-1/4 -left-64 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#610000]/5 to-transparent blur-3xl"></div>
+      <div className="absolute bottom-1/4 -left-64 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#5A2633]/5 to-transparent blur-3xl"></div>
 
       <div className="max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 items-center py-24 lg:py-32 relative z-10">
         {/* Left: Content */}
@@ -174,9 +174,9 @@ function PremiumHeroSection() {
 
           {/* Hero Headline */}
           <div className="space-y-6 animate-fade-in" style={{animationDelay: '0.1s'}}>
-            <h1 className="font-sf-pro-display text-[3.5rem] sm:text-[4.5rem] lg:text-[5.5rem] xl:text-[6rem] leading-[0.95] text-[#610000] tracking-[-0.02em] font-bold">
+            <h1 className="font-sf-pro-display text-[3.5rem] sm:text-[4.5rem] lg:text-[5.5rem] xl:text-[6rem] leading-[0.95] text-[#5A2633] tracking-[-0.02em] font-bold">
               The Definitive Standard in{" "}
-              <span className="block mt-2 font-light italic text-[#8b0000]">
+              <span className="block mt-2 font-light italic text-[#5A2633]">
                 Self-Paced Learning
               </span>
             </h1>
@@ -190,8 +190,8 @@ function PremiumHeroSection() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-5 animate-fade-in" style={{animationDelay: '0.3s'}}>
             <Link href="/courses">
-              <button className="group relative bg-gradient-to-br from-[#610000] to-[#8b0000] text-white px-10 py-5 rounded-[16px] font-sf-pro-text font-semibold text-lg tracking-wide overflow-hidden hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#610000] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              <button className="group relative bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white px-10 py-5 rounded-[16px] font-sf-pro-text font-semibold text-lg tracking-wide overflow-hidden hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633] to-[#5A2633] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                 <span className="relative z-10 flex items-center justify-center gap-3">
                   Browse Courses
                   <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-500" />
@@ -199,7 +199,7 @@ function PremiumHeroSection() {
               </button>
             </Link>
             <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-              <button className="group relative bg-white border-2 border-[#d4c5b0] text-[#610000] px-10 py-5 rounded-[16px] font-sf-pro-text font-semibold text-lg tracking-wide hover:border-[#8b6f47] hover:shadow-[0_12px_32px_rgba(139,111,71,0.12)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
+              <button className="group relative bg-white border-2 border-[#d4c5b0] text-[#5A2633] px-10 py-5 rounded-[16px] font-sf-pro-text font-semibold text-lg tracking-wide hover:border-[#8b6f47] hover:shadow-[0_12px_32px_rgba(139,111,71,0.12)] transition-all duration-700 hover:scale-[1.02] active:scale-[0.98]">
                 <span className="relative z-10 flex items-center justify-center gap-3">
                   Explore Pathways
                   <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-500" />
@@ -215,7 +215,7 @@ function PremiumHeroSection() {
                 <Star className="w-6 h-6 text-[#8b6f47] fill-[#8b6f47]" />
               </div>
               <div>
-                <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">4.9</div>
+                <div className="text-2xl font-sf-pro-display font-bold text-[#5A2633]">4.9</div>
                 <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Average Rating</div>
               </div>
             </div>
@@ -224,7 +224,7 @@ function PremiumHeroSection() {
                 <Users className="w-6 h-6 text-[#8b6f47]" />
               </div>
               <div>
-                <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">4,800+</div>
+                <div className="text-2xl font-sf-pro-display font-bold text-[#5A2633]">4,800+</div>
                 <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Active Members</div>
               </div>
             </div>
@@ -233,7 +233,7 @@ function PremiumHeroSection() {
                 <Globe className="w-6 h-6 text-[#8b6f47]" />
               </div>
               <div>
-                <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">38</div>
+                <div className="text-2xl font-sf-pro-display font-bold text-[#5A2633]">38</div>
                 <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Jurisdictions</div>
               </div>
             </div>
@@ -243,11 +243,11 @@ function PremiumHeroSection() {
         {/* Right: Premium Image */}
         <div className="lg:col-span-6 relative animate-fade-in" style={{animationDelay: '0.2s'}}>
           {/* Decorative Frame */}
-          <div className="absolute -inset-4 bg-gradient-to-br from-[#8b6f47]/10 to-[#610000]/5 rounded-[32px] blur-2xl"></div>
+          <div className="absolute -inset-4 bg-gradient-to-br from-[#8b6f47]/10 to-[#5A2633]/5 rounded-[32px] blur-2xl"></div>
           
           {/* Main Image Container */}
           <div className="relative h-[600px] lg:h-[750px] rounded-[28px] overflow-hidden shadow-[0_24px_64px_rgba(97,0,0,0.16)] border border-white/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#610000]/10 via-transparent to-[#8b6f47]/10"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633]/10 via-transparent to-[#8b6f47]/10"></div>
             <img 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] hover:scale-105" 
               alt="Professional legal professionals in modern office environment reviewing documents and collaborating on international arbitration cases" 
@@ -259,11 +259,11 @@ function PremiumHeroSection() {
           {/* Floating Credential Badge */}
           <div className="absolute -bottom-8 -left-8 bg-white rounded-[24px] shadow-[0_16px_48px_rgba(97,0,0,0,0.2)] border border-[#d4c5b0]/20 p-8 hidden lg:block backdrop-blur-sm bg-white/95">
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-[18px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg">
+              <div className="w-20 h-20 rounded-[18px] bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center shadow-lg">
                 <Award className="w-10 h-10 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-sf-pro-display font-bold text-[#610000]">ICC Recognized</div>
+                <div className="text-2xl font-sf-pro-display font-bold text-[#5A2633]">ICC Recognized</div>
                 <div className="text-sm font-sf-pro-text text-[#6b5d4f] font-medium">Global Certification</div>
               </div>
             </div>
@@ -281,23 +281,23 @@ function TrustIndicatorsSection() {
       <div className="max-w-[1600px] mx-auto">
         <div className="flex flex-wrap justify-center items-center gap-12 lg:gap-20">
           <div className="text-center">
-            <div className="text-4xl font-sf-pro-display font-bold text-[#610000] mb-2">ICC</div>
+            <div className="text-4xl font-sf-pro-display font-bold text-[#5A2633] mb-2">ICC</div>
             <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Recognized</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-sf-pro-display font-bold text-[#610000] mb-2">LCIA</div>
+            <div className="text-4xl font-sf-pro-display font-bold text-[#5A2633] mb-2">LCIA</div>
             <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Accredited</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-sf-pro-display font-bold text-[#610000] mb-2">SIAC</div>
+            <div className="text-4xl font-sf-pro-display font-bold text-[#5A2633] mb-2">SIAC</div>
             <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Certified</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-sf-pro-display font-bold text-[#610000] mb-2">RIAC</div>
+            <div className="text-4xl font-sf-pro-display font-bold text-[#5A2633] mb-2">RIAC</div>
             <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Partner</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-sf-pro-display font-bold text-[#610000] mb-2">CIArb</div>
+            <div className="text-4xl font-sf-pro-display font-bold text-[#5A2633] mb-2">CIArb</div>
             <div className="text-sm font-sf-pro-text text-[#6b5d4f]">Approved</div>
           </div>
         </div>

@@ -73,7 +73,7 @@ export function PwaInstallButton({ className = "" }: { className?: string }) {
     <Button
       type="button"
       onClick={handleInstall}
-      className={`inline-flex items-center gap-2 rounded-full bg-[#610000] text-white px-4 py-2 text-sm font-semibold shadow-[0_10px_25px_rgba(97,0,0,0.25)] transition-all hover:bg-[#7a0d0d] hover:shadow-[0_12px_28px_rgba(97,0,0,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full bg-[#5A2633] text-white px-4 py-2 text-sm font-semibold shadow-[0_10px_25px_rgba(97,0,0,0.25)] transition-all hover:bg-[#7a0d0d] hover:shadow-[0_12px_28px_rgba(97,0,0,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5A2633] focus-visible:ring-offset-2 ${className}`}
     >
       <Smartphone className="h-4 w-4" />
       <span>{isUnsupported ? "Install Guide" : "Install App"}</span>

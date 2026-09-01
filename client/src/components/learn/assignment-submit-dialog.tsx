@@ -145,7 +145,7 @@ export default function AssignmentSubmitDialog({ open, onOpenChange, assignment,
         )}
         {!graded && (
           <DialogFooter>
-            <Button onClick={submit} disabled={busy} className="bg-[#B91C1C] hover:bg-[#A01818]">
+            <Button onClick={submit} disabled={busy} className="bg-[#5A2633] hover:bg-[#4a1f29]">
               {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
               {existing ? "Update submission" : "Submit"}
             </Button>

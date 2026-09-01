@@ -443,7 +443,7 @@ export default function CreateSessionDialog({
         </DialogTrigger>
       ) : (
         <DialogTrigger asChild>
-          <Button className="gap-2 bg-[#610000] hover:bg-[#7d0000]">
+          <Button className="gap-2 bg-[#5A2633] hover:bg-[#5A2633]">
             <Video className="h-4 w-4" />
             Schedule Live Session
           </Button>
@@ -467,13 +467,13 @@ export default function CreateSessionDialog({
             <TabsTrigger value="assignments">
               Assignments
               {assignments.length > 0 && (
-                <Badge className="ml-2 bg-[#610000]">{assignments.length}</Badge>
+                <Badge className="ml-2 bg-[#5A2633]">{assignments.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="resources">
               Resources
               {resources.length > 0 && (
-                <Badge className="ml-2 bg-[#610000]">{resources.length}</Badge>
+                <Badge className="ml-2 bg-[#5A2633]">{resources.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
@@ -648,9 +648,9 @@ export default function CreateSessionDialog({
                                 caption_label: "text-sm font-semibold text-[#2c2015]",
                                 head_cell: "w-9 text-center text-[0.7rem] font-semibold uppercase tracking-wide text-[#8b6f47]",
                                 cell: "h-9 w-9 p-0 text-center",
-                                day: "h-9 w-9 rounded-lg p-0 text-sm text-[#2c2015] transition-colors hover:bg-[#f2e7d8] focus-visible:ring-2 focus-visible:ring-[#610000]",
-                                day_selected: "bg-[#610000] text-white hover:bg-[#7d0000] hover:text-white focus:bg-[#610000] focus:text-white",
-                                day_today: "border border-[#610000] bg-transparent font-semibold text-[#610000]",
+                                day: "h-9 w-9 rounded-lg p-0 text-sm text-[#2c2015] transition-colors hover:bg-[#f2e7d8] focus-visible:ring-2 focus-visible:ring-[#5A2633]",
+                                day_selected: "bg-[#5A2633] text-white hover:bg-[#5A2633] hover:text-white focus:bg-[#5A2633] focus:text-white",
+                                day_today: "border border-[#5A2633] bg-transparent font-semibold text-[#5A2633]",
                                 day_outside: "text-[#b9aa99] opacity-60",
                                 day_disabled: "text-[#c7bbae] opacity-50",
                               }}
@@ -786,7 +786,7 @@ export default function CreateSessionDialog({
                               variant="ghost"
                               size="sm"
                               onClick={() => removeAssignment(assignment.id)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-[#5A2633] hover:text-[#5A2633]"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -891,7 +891,7 @@ export default function CreateSessionDialog({
                     {resources.map((resource) => (
                       <Card key={resource.id} className="border-[#d4c5b0]/30">
                         <CardContent className="flex items-center gap-4 p-4">
-                          <File className="h-10 w-10 text-[#610000] flex-shrink-0" />
+                          <File className="h-10 w-10 text-[#5A2633] flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <Input
                               value={resource.title}
@@ -913,7 +913,7 @@ export default function CreateSessionDialog({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeResource(resource.id)}
-                            className="text-red-600 hover:text-red-700 flex-shrink-0"
+                            className="text-[#5A2633] hover:text-[#5A2633] flex-shrink-0"
                           >
                             <X className="h-5 w-5" />
                           </Button>
@@ -945,7 +945,7 @@ export default function CreateSessionDialog({
                   <Button 
                     type="submit" 
                     disabled={createSessionMutation.isPending}
-                    className="bg-[#610000] hover:bg-[#7d0000] gap-2"
+                    className="bg-[#5A2633] hover:bg-[#5A2633] gap-2"
                   >
                     {createSessionMutation.isPending ? (
                       <>

@@ -266,7 +266,7 @@ export default function Courses() {
   return (
     <StudentLayout noPadding>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#8b0000] to-[#610000] text-white py-16">
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <div className="space-y-4">
@@ -595,7 +595,7 @@ export default function Courses() {
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <div className="text-2xl font-bold text-foreground">{formatCoursePrice(course.price, course.currency || "USD")}</div>
+                          <div className="text-2xl font-light text-foreground">{formatCoursePrice(course.price, course.currency || "USD")}</div>
                           <div className="text-sm text-muted-foreground">
                             {course.duration_hours} hours • {course.enrollment_count} enrolled
                           </div>

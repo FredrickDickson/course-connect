@@ -52,12 +52,12 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
               placeholder="What do you want to learn?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pr-12 pl-4 py-5 text-sm border-[#d4c5b0]/40 focus:border-[#610000] focus:ring-[#610000] rounded-full bg-[#faf9f6]"
+              className="w-full pr-12 pl-4 py-5 text-sm border-[#d4c5b0]/40 focus:border-[#5A2633] focus:ring-[#5A2633] rounded-full bg-[#faf9f6]"
             />
             <Button
               type="submit"
               size="icon"
-              className="absolute right-1 bg-[#610000] hover:bg-[#7d0000] text-white rounded-full h-10 w-10 shadow-md"
+              className="absolute right-1 bg-[#5A2633] hover:bg-[#5A2633] text-white rounded-full h-10 w-10 shadow-md"
             >
               <Search className="w-4 h-4" />
             </Button>
@@ -71,8 +71,8 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
             <Button
               variant="ghost"
               className={cn(
-                "text-sm font-medium text-[#4a3828] hover:text-[#610000] hover:bg-transparent",
-                location === "/dashboard" && "text-[#610000] font-semibold"
+                "text-sm font-medium text-[#4a3828] hover:text-[#5A2633] hover:bg-transparent",
+                location === "/dashboard" && "text-[#5A2633] font-semibold"
               )}
             >
               My learning
@@ -94,7 +94,7 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
                     src={user?.profileImageUrl || undefined}
                     alt={`${user?.firstName} ${user?.lastName}`}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold text-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold text-sm">
                     {user?.firstName?.[0]}
                     {user?.lastName?.[0]}
                   </AvatarFallback>
@@ -119,26 +119,26 @@ export default function TopNavbar({ onSearch }: TopNavbarProps) {
               <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2 text-[#610000]" />
+                  <User className="w-4 h-4 mr-2 text-[#5A2633]" />
                   <span>My Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard" className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2 text-[#610000]" />
+                  <User className="w-4 h-4 mr-2 text-[#5A2633]" />
                   <span>My Learning</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/notification-settings" className="cursor-pointer">
-                  <Settings className="w-4 h-4 mr-2 text-[#610000]" />
+                  <Settings className="w-4 h-4 mr-2 text-[#5A2633]" />
                   <span>Settings</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
               <DropdownMenuItem
                 onClick={handleSignOut}
-                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                className="cursor-pointer text-[#5A2633] focus:text-[#5A2633] focus:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 <span>Sign Out</span>

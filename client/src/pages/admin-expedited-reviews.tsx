@@ -232,12 +232,12 @@ export default function AdminExpeditedReviews() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-end">
-            <Button asChild variant="ghost" size="sm" className="text-sm text-[#6b5d4f] hover:text-[#610000]">
+            <Button asChild variant="ghost" size="sm" className="text-sm text-[#6b5d4f] hover:text-[#5A2633]">
               <Link href="/admin" className="gap-2 flex items-center">
                 ← Back to dashboard
               </Link>
             </Button>
-            <Button variant="outline" className="gap-2 border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed]" onClick={() => profilesQuery.refetch()}>
+            <Button variant="outline" className="gap-2 border-[#d4c5b0] text-[#5A2633] hover:bg-[#f5f3ed]" onClick={() => profilesQuery.refetch()}>
               <Loader2 className={cn("w-4 h-4", profilesQuery.isFetching && "animate-spin")} />
               Refresh
             </Button>

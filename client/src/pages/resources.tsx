@@ -103,7 +103,7 @@ export default function Resources() {
   return (
     <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold font-sf-pro-display" data-testid="title">Professional Resources</h1>

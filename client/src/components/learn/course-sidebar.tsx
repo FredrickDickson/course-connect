@@ -171,7 +171,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                       <li key={lesson.id}>
                         <div className={cn(
                           "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11",
-                          isActive && "bg-[#2D2F31] border-l-[3px] border-[#B91C1C] pl-[13px]",
+                          isActive && "bg-[#2D2F31] border-l-[3px] border-[#5A2633] pl-[13px]",
                           !isActive && "border-l-[3px] border-transparent",
                         )}>
                           <Link
@@ -215,7 +215,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="shrink-0 h-8 px-3 border-[#8b6f47]/50 bg-[#8b6f47]/10 text-[#8b6f47] hover:text-[#610000] hover:bg-[#8b6f47]/20 hover:border-[#610000]/50 transition-colors"
+                                  className="shrink-0 h-8 px-3 border-[#8b6f47]/50 bg-[#8b6f47]/10 text-[#8b6f47] hover:text-[#5A2633] hover:bg-[#8b6f47]/20 hover:border-[#5A2633]/50 transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileStack className="h-3.5 w-3.5 mr-1.5" />
@@ -224,7 +224,7 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-64 bg-white border-[#d4c5b0]">
                                 <div className="px-3 py-2 border-b border-[#d4c5b0]/30">
-                                  <p className="text-xs font-semibold text-[#610000] uppercase tracking-wider">
+                                  <p className="text-xs font-semibold text-[#5A2633] uppercase tracking-wider">
                                     Lesson Resources
                                   </p>
                                 </div>
@@ -235,8 +235,8 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                                     className="cursor-pointer py-3 px-3 hover:bg-[#faf9f6] focus:bg-[#faf9f6] text-[#2c2015]"
                                   >
                                     <div className="flex items-center gap-3 w-full">
-                                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#610000]/10 flex items-center justify-center">
-                                        <FileText className="h-4 w-4 text-[#610000]" />
+                                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#5A2633]/10 flex items-center justify-center">
+                                        <FileText className="h-4 w-4 text-[#5A2633]" />
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-[#2c2015] truncate">

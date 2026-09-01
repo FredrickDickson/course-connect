@@ -464,7 +464,7 @@ export default function CreateCourse() {
     <StudentLayout>
       <div className="space-y-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+          <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
             <Link href={isRouteAdmin ? "/admin" : "/instructor"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
@@ -483,7 +483,7 @@ export default function CreateCourse() {
         <Card className="bg-white border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#2c2015] font-display">
-              <BookOpen className="h-5 w-5 text-[#610000]" />
+              <BookOpen className="h-5 w-5 text-[#5A2633]" />
               Course Information
             </CardTitle>
           </CardHeader>
@@ -494,10 +494,10 @@ export default function CreateCourse() {
                 className="space-y-6"
               >
                 {isAdmin && (
-                  <div className="space-y-6 rounded-xl border-2 border-[#610000]/20 bg-gradient-to-br from-[#faf9f6] to-[#f5f3ed] p-6">
+                  <div className="space-y-6 rounded-xl border-2 border-[#5A2633]/20 bg-gradient-to-br from-[#faf9f6] to-[#f5f3ed] p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h2 className="text-xl font-bold text-[#610000] font-display flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-[#5A2633] font-display flex items-center gap-2">
                           <Shield className="w-5 h-5" />
                           Admin Mode: Instructor Details
                         </h2>
@@ -508,7 +508,7 @@ export default function CreateCourse() {
                       <Button
                         type="button"
                         onClick={addInstructor}
-                        className="bg-[#610000] text-white hover:bg-[#7d0000]"
+                        className="bg-[#5A2633] text-white hover:bg-[#5A2633]"
                         size="sm"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -529,7 +529,7 @@ export default function CreateCourse() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeInstructor(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-[#5A2633] hover:text-[#5A2633] hover:bg-red-50"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -983,10 +983,10 @@ export default function CreateCourse() {
                 />
 
                 <div className="flex items-center justify-end gap-4 pt-4 border-t border-[#d4c5b0]/30">
-                  <Button type="button" variant="outline" asChild className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed] hover:border-[#610000]">
+                  <Button type="button" variant="outline" asChild className="border-[#d4c5b0]/50 text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#5A2633]">
                     <Link href={isRouteAdmin ? "/admin" : "/instructor"}>Cancel</Link>
                   </Button>
-                  <Button type="submit" disabled={saveCourse.isPending || uploadingImagesCount > 0} className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                  <Button type="submit" disabled={saveCourse.isPending || uploadingImagesCount > 0} className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                         {uploadingImagesCount > 0 ? (
                           <>
                             <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />

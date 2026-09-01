@@ -299,12 +299,12 @@ export default function RenewalManagement() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                <XCircle className="h-4 w-4 mr-2 text-[#5A2633]" />
                 Expired
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">
+              <div className="text-3xl font-bold text-[#5A2633]">
                 {expiredMembers}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -573,7 +573,7 @@ export default function RenewalManagement() {
                             <Clock className="h-4 w-4 text-amber-600" />
                           )}
                           {status.status === "expired" && (
-                            <XCircle className="h-4 w-4 text-red-600" />
+                            <XCircle className="h-4 w-4 text-[#5A2633]" />
                           )}
                           <span className="capitalize">{status.status}</span>
                         </div>

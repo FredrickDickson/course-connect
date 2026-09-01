@@ -246,14 +246,14 @@ export default function PersonalNotesForm() {
           <p className="text-[#6b5d4f] font-sf-pro-text">
             Domestic Employee Security & Intelligence Record
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 bg-[#610000]/10 text-[#610000] px-4 py-2 rounded-full text-sm font-medium">
+          <div className="mt-4 inline-flex items-center gap-2 bg-[#5A2633]/10 text-[#5A2633] px-4 py-2 rounded-full text-sm font-medium">
             <Shield className="w-4 h-4" />
             Confidential
           </div>
         </div>
 
         {/* Purpose Statement */}
-        <Card className="mb-6 border-[#610000]/20 bg-[#610000]/5">
+        <Card className="mb-6 border-[#5A2633]/20 bg-[#5A2633]/5">
           <CardContent className="p-6">
             <p className="text-sm text-[#2c2015] leading-relaxed font-sf-pro-text">
               <strong>Purpose:</strong> This form is intended solely for household security,
@@ -267,7 +267,7 @@ export default function PersonalNotesForm() {
         <form onSubmit={handleSubmit((data) => submitForm.mutate(data))} className="space-y-6">
           {/* A. PERSONAL DETAILS */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">A. PERSONAL DETAILS</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -280,7 +280,7 @@ export default function PersonalNotesForm() {
                   placeholder="Enter your full name as it appears on official documents"
                 />
                 {errors.fullName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.fullName.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.fullName.message}</p>
                 )}
               </div>
 
@@ -322,7 +322,7 @@ export default function PersonalNotesForm() {
                     className="mt-1"
                   />
                   {errors.dateOfBirth && (
-                    <p className="text-sm text-red-600 mt-1">{errors.dateOfBirth.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.dateOfBirth.message}</p>
                   )}
                 </div>
                 <div>
@@ -335,7 +335,7 @@ export default function PersonalNotesForm() {
                     placeholder="Your current age"
                   />
                   {errors.age && (
-                    <p className="text-sm text-red-600 mt-1">{errors.age.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.age.message}</p>
                   )}
                 </div>
               </div>
@@ -350,7 +350,7 @@ export default function PersonalNotesForm() {
                     placeholder="e.g., Ghanaian"
                   />
                   {errors.nationality && (
-                    <p className="text-sm text-red-600 mt-1">{errors.nationality.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.nationality.message}</p>
                   )}
                 </div>
                 <div>
@@ -362,7 +362,7 @@ export default function PersonalNotesForm() {
                     placeholder="Your hometown"
                   />
                   {errors.hometown && (
-                    <p className="text-sm text-red-600 mt-1">{errors.hometown.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.hometown.message}</p>
                   )}
                 </div>
               </div>
@@ -376,7 +376,7 @@ export default function PersonalNotesForm() {
                   placeholder="e.g., Greater Accra"
                 />
                 {errors.region && (
-                  <p className="text-sm text-red-600 mt-1">{errors.region.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.region.message}</p>
                 )}
               </div>
 
@@ -389,7 +389,7 @@ export default function PersonalNotesForm() {
                   placeholder="e.g., English, Twi, Ga"
                 />
                 {errors.languagesSpoken && (
-                  <p className="text-sm text-red-600 mt-1">{errors.languagesSpoken.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.languagesSpoken.message}</p>
                 )}
               </div>
             </CardContent>
@@ -397,7 +397,7 @@ export default function PersonalNotesForm() {
 
           {/* B. IDENTIFICATION */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">B. IDENTIFICATION</CardTitle>
               <CardDescription className="text-white/80">
                 Please provide at least one form of identification
@@ -478,7 +478,7 @@ export default function PersonalNotesForm() {
 
           {/* C. CURRENT RESIDENTIAL ADDRESS */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">C. CURRENT RESIDENTIAL ADDRESS</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -501,7 +501,7 @@ export default function PersonalNotesForm() {
                     placeholder="Street name or area"
                   />
                   {errors.streetArea && (
-                    <p className="text-sm text-red-600 mt-1">{errors.streetArea.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.streetArea.message}</p>
                   )}
                 </div>
               </div>
@@ -515,7 +515,7 @@ export default function PersonalNotesForm() {
                   placeholder="Town or city"
                 />
                 {errors.townCity && (
-                  <p className="text-sm text-red-600 mt-1">{errors.townCity.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.townCity.message}</p>
                 )}
               </div>
 
@@ -543,7 +543,7 @@ export default function PersonalNotesForm() {
 
           {/* E. FAMILY INFORMATION */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">E. FAMILY INFORMATION</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -593,7 +593,7 @@ export default function PersonalNotesForm() {
 
           {/* F. NEXT OF KIN */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">F. NEXT OF KIN</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -606,7 +606,7 @@ export default function PersonalNotesForm() {
                   placeholder="Full name"
                 />
                 {errors.nokName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.nokName.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.nokName.message}</p>
                 )}
               </div>
 
@@ -620,7 +620,7 @@ export default function PersonalNotesForm() {
                     placeholder="e.g., Brother, Sister"
                   />
                   {errors.nokRelationship && (
-                    <p className="text-sm text-red-600 mt-1">{errors.nokRelationship.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.nokRelationship.message}</p>
                   )}
                 </div>
                 <div>
@@ -632,7 +632,7 @@ export default function PersonalNotesForm() {
                     placeholder="+233 XX XXX XXXX"
                   />
                   {errors.nokTelephone && (
-                    <p className="text-sm text-red-600 mt-1">{errors.nokTelephone.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.nokTelephone.message}</p>
                   )}
                 </div>
               </div>
@@ -647,7 +647,7 @@ export default function PersonalNotesForm() {
                   rows={2}
                 />
                 {errors.nokAddress && (
-                  <p className="text-sm text-red-600 mt-1">{errors.nokAddress.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.nokAddress.message}</p>
                 )}
               </div>
 
@@ -665,7 +665,7 @@ export default function PersonalNotesForm() {
 
           {/* G. EMERGENCY CONTACT */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">G. EMERGENCY CONTACT</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -678,7 +678,7 @@ export default function PersonalNotesForm() {
                   placeholder="Full name"
                 />
                 {errors.emergencyName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.emergencyName.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.emergencyName.message}</p>
                 )}
               </div>
 
@@ -692,7 +692,7 @@ export default function PersonalNotesForm() {
                     placeholder="e.g., Spouse, Parent"
                   />
                   {errors.emergencyRelationship && (
-                    <p className="text-sm text-red-600 mt-1">{errors.emergencyRelationship.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.emergencyRelationship.message}</p>
                   )}
                 </div>
                 <div>
@@ -704,7 +704,7 @@ export default function PersonalNotesForm() {
                     placeholder="+233 XX XXX XXXX"
                   />
                   {errors.emergencyTelephone && (
-                    <p className="text-sm text-red-600 mt-1">{errors.emergencyTelephone.message}</p>
+                    <p className="text-sm text-[#5A2633] mt-1">{errors.emergencyTelephone.message}</p>
                   )}
                 </div>
               </div>
@@ -719,7 +719,7 @@ export default function PersonalNotesForm() {
                   rows={2}
                 />
                 {errors.emergencyAddress && (
-                  <p className="text-sm text-red-600 mt-1">{errors.emergencyAddress.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.emergencyAddress.message}</p>
                 )}
               </div>
             </CardContent>
@@ -727,7 +727,7 @@ export default function PersonalNotesForm() {
 
           {/* H. EDUCATION */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">H. EDUCATION</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -765,7 +765,7 @@ export default function PersonalNotesForm() {
 
           {/* K. HEALTH INFORMATION */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">K. HEALTH INFORMATION</CardTitle>
               <CardDescription className="text-white/80">
                 Voluntary - for emergency treatment and workplace safety
@@ -939,7 +939,7 @@ export default function PersonalNotesForm() {
 
           {/* P. SOCIAL MEDIA */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">P. SOCIAL MEDIA (Optional)</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -977,7 +977,7 @@ export default function PersonalNotesForm() {
 
           {/* R. BIOMETRIC RECORD */}
           <Card className="border-[#d4c5b0] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">R. BIOMETRIC RECORD</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -1039,8 +1039,8 @@ export default function PersonalNotesForm() {
           </Card>
 
           {/* S. DECLARATION */}
-          <Card className="border-[#610000] shadow-sm">
-            <CardHeader className="bg-[#610000] text-white">
+          <Card className="border-[#5A2633] shadow-sm">
+            <CardHeader className="bg-[#5A2633] text-white">
               <CardTitle className="font-sf-pro-display">S. DECLARATION</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
@@ -1063,7 +1063,7 @@ export default function PersonalNotesForm() {
                   placeholder="Type your full name as signature"
                 />
                 {errors.employeeSignatureName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.employeeSignatureName.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.employeeSignatureName.message}</p>
                 )}
               </div>
 
@@ -1076,7 +1076,7 @@ export default function PersonalNotesForm() {
                   className="mt-1"
                 />
                 {errors.declarationDate && (
-                  <p className="text-sm text-red-600 mt-1">{errors.declarationDate.message}</p>
+                  <p className="text-sm text-[#5A2633] mt-1">{errors.declarationDate.message}</p>
                 )}
               </div>
 
@@ -1094,7 +1094,7 @@ export default function PersonalNotesForm() {
                 </Label>
               </div>
               {errors.declarationAgreed && (
-                <p className="text-sm text-red-600">{errors.declarationAgreed.message}</p>
+                <p className="text-sm text-[#5A2633]">{errors.declarationAgreed.message}</p>
               )}
             </CardContent>
           </Card>
@@ -1104,7 +1104,7 @@ export default function PersonalNotesForm() {
             <Button
               type="submit"
               disabled={submitForm.isPending}
-              className="bg-[#610000] text-white hover:bg-[#7d0000] px-12 py-6 text-lg font-semibold shadow-lg"
+              className="bg-[#5A2633] text-white hover:bg-[#5A2633] px-12 py-6 text-lg font-semibold shadow-lg"
             >
               {submitForm.isPending ? (
                 <>

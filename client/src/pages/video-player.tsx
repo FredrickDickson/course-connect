@@ -437,7 +437,7 @@ export default function VideoPlayerPage() {
               </Button>
               <Button size="sm" disabled={!nextLesson}
                 onClick={() => nextLesson && goToLesson(nextLesson.id)}
-                className="bg-[#B91C1C] hover:bg-[#A01818] min-w-0">
+                className="bg-[#5A2633] hover:bg-[#4a1f29] min-w-0">
                 <span className="truncate max-w-[120px] sm:max-w-[200px]">{nextLesson?.title || "Course end"}</span>
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>

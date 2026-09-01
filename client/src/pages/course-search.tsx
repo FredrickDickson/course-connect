@@ -254,7 +254,7 @@ export default function CourseSearch() {
   return (
     <StudentLayout noPadding>
       {/* Hero Strip */}
-      <section className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white py-12">
+      <section className="bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl lg:text-4xl font-bold mb-2 font-sf-pro-display">Course Catalog</h1>
           <p className="text-white/80">{courses.length} courses available</p>
@@ -529,7 +529,7 @@ export default function CourseSearch() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-lg text-foreground">
+                        <span className="font-light text-lg text-foreground">
                           {formatCoursePrice(course.price, course.currency || "GHS")}
                         </span>
                       </div>

@@ -60,7 +60,7 @@ export default function AssignmentStage({ lesson, onComplete }: { lesson: LearnL
               {submission?.graded_at && <Badge className="bg-blue-600 text-white border-0">Score {submission.score}/{assignment.max_score}</Badge>}
             </div>
             <div className="flex justify-end">
-              <Button onClick={() => setOpen(true)} className="bg-[#B91C1C] hover:bg-[#A01818]">
+              <Button onClick={() => setOpen(true)} className="bg-[#5A2633] hover:bg-[#4a1f29]">
                 <Send className="h-4 w-4 mr-1" />{submission ? "View / update submission" : "Submit assignment"}
               </Button>
             </div>

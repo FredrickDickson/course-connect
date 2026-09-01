@@ -185,12 +185,12 @@ export default function StudentSidebar({
         {!collapsed ? (
           <Link href="/home" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
             <img 
-              src="/images/logo.jpeg" 
+              src="/uploads/logo.png" 
               alt="CIMA Logo" 
               className="w-10 h-10 object-contain"
             />
             <div>
-              <h1 className="text-lg font-bold text-[#610000] font-sf-pro-display">CIMA Learn</h1>
+              <h1 className="text-lg font-bold text-[#5A2633] font-sf-pro-display">CIMA Learn</h1>
               <p className="text-[10px] text-[#8b6f47] font-sf-pro-text uppercase tracking-[0.08em] font-semibold">
                 Professional ADR Education
               </p>
@@ -199,7 +199,7 @@ export default function StudentSidebar({
         ) : (
           <Link href="/home" className="flex items-center justify-center w-full">
             <img 
-              src="/images/logo.jpeg" 
+              src="/uploads/logo.png" 
               alt="CIMA Logo" 
               className="w-10 h-10 object-contain"
             />
@@ -214,9 +214,9 @@ export default function StudentSidebar({
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed ? (
-          <ChevronRight className="w-4 h-4 text-[#610000]" />
+          <ChevronRight className="w-4 h-4 text-[#5A2633]" />
         ) : (
-          <ChevronLeft className="w-4 h-4 text-[#610000]" />
+          <ChevronLeft className="w-4 h-4 text-[#5A2633]" />
         )}
       </button>
 
@@ -241,14 +241,14 @@ export default function StudentSidebar({
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-[12px] transition-all duration-300 group relative",
                         collapsed && "justify-center",
                         isActive
-                          ? "bg-[#610000] text-white shadow-md"
-                          : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#610000]"
+                          ? "bg-[#5A2633] text-white shadow-md"
+                          : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#5A2633]"
                       )}
                     >
                       <Icon
                         className={cn(
                           "w-5 h-5 flex-shrink-0 transition-colors",
-                          isActive ? "text-white" : "text-[#8b6f47] group-hover:text-[#610000]"
+                          isActive ? "text-white" : "text-[#8b6f47] group-hover:text-[#5A2633]"
                         )}
                       />
                       {!collapsed && (
@@ -261,7 +261,7 @@ export default function StudentSidebar({
                               className={cn(
                                 "h-5 px-2 text-xs font-semibold",
                                 isActive
-                                  ? "bg-white text-[#610000]"
+                                  ? "bg-white text-[#5A2633]"
                                   : "bg-[#8b6f47] text-white"
                               )}
                             >
@@ -295,7 +295,7 @@ export default function StudentSidebar({
                     src={user?.profileImageUrl || undefined}
                     alt={`${user?.firstName} ${user?.lastName}`}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
@@ -310,7 +310,7 @@ export default function StudentSidebar({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-[#4a3828] hover:text-[#610000] hover:bg-[#f5f3ed]"
+              className="w-full justify-start text-[#4a3828] hover:text-[#5A2633] hover:bg-[#f5f3ed]"
               onClick={async () => {
                 const { supabase } = await import("@/integrations/supabase/client");
                 await supabase.auth.signOut();
@@ -329,7 +329,7 @@ export default function StudentSidebar({
                   src={user?.profileImageUrl || undefined}
                   alt={`${user?.firstName} ${user?.lastName}`}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold text-sm">
+                <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold text-sm">
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
@@ -337,7 +337,7 @@ export default function StudentSidebar({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full p-2 text-[#4a3828] hover:text-[#610000] hover:bg-[#f5f3ed]"
+              className="w-full p-2 text-[#4a3828] hover:text-[#5A2633] hover:bg-[#f5f3ed]"
               onClick={async () => {
                 const { supabase } = await import("@/integrations/supabase/client");
                 await supabase.auth.signOut();

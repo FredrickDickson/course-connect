@@ -155,7 +155,7 @@ export default function Dashboard() {
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight break-words font-display">
                   <span className="text-black">Master dispute resolution.</span>
                   <br />
-                  <span className="text-[#610000]">Anywhere, anytime.</span>
+                  <span className="text-[#5A2633]">Anywhere, anytime.</span>
                 </h1>
                 <p className="text-base sm:text-lg text-[#6b5d4f] leading-relaxed font-body break-words">
                   World-class, self-paced learning in Arbitration, Mediation,
@@ -165,7 +165,7 @@ export default function Dashboard() {
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link href="/courses" className="w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto bg-[#610000] text-white hover:bg-[#7d0000] px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl shadow-md font-semibold font-body">
+                  <Button className="w-full sm:w-auto bg-[#5A2633] text-white hover:bg-[#5A2633] px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl shadow-md font-semibold font-body">
                     <PlayCircle className="w-5 h-5 mr-2" />
                     Continue learning
                   </Button>
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 <Link href="/course-catalog" className="w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto border-2 border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl font-semibold font-body"
+                    className="w-full sm:w-auto border-2 border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633] hover:text-white px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base rounded-xl font-semibold font-body"
                   >
                     Explore courses
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -212,7 +212,7 @@ export default function Dashboard() {
                   <CardContent className="p-5 text-center">
                     <p className="text-[#6b5d4f] mb-3">Start your learning journey today!</p>
                     <Link href="/course-catalog">
-                      <Button className="bg-[#610000] text-white hover:bg-[#7d0000]" size="sm">
+                      <Button className="bg-[#5A2633] text-white hover:bg-[#5A2633]" size="sm">
                         Explore Courses
                       </Button>
                     </Link>
@@ -267,7 +267,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-[#2c2015] font-display">Continue learning</h2>
               <Link href="/courses">
-                <Button variant="link" className="text-[#610000]">
+                <Button variant="link" className="text-[#5A2633]">
                   View all <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                 <CardContent className="py-16 text-center">
                   <p className="text-[#6b5d4f] mb-4">No courses in progress</p>
                   <Link href="/course-catalog">
-                    <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                    <Button className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                       Explore Courses
                     </Button>
                   </Link>
@@ -294,7 +294,7 @@ export default function Dashboard() {
                     <div className="flex flex-col sm:flex-row gap-0">
                       {/* Course Image */}
                       <Link href={`/learn/${enrollment.course?.id}`}>
-                        <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#610000] to-[#8b0000] flex-shrink-0 cursor-pointer">
+                        <div className="relative w-full sm:w-80 h-56 bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex-shrink-0 cursor-pointer">
                           {enrollment.course?.thumbnail_url ? (
                             <CourseThumbnail
                               src={enrollment.course.thumbnail_url}
@@ -302,7 +302,7 @@ export default function Dashboard() {
                               className="w-full h-full"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000] to-[#8b0000]">
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5A2633] to-[#5A2633]">
                               <PlayCircle className="w-16 h-16 text-white/50" />
                             </div>
                           )}
@@ -316,8 +316,8 @@ export default function Dashboard() {
                               >
                                 <path
                                   d="M8 5v14l11-7L8 5z"
-                                  fill="#610000"
-                                  className="group-hover:fill-[#7d0000] transition-colors"
+                                  fill="#5A2633"
+                                  className="group-hover:fill-[#5A2633] transition-colors"
                                 />
                               </svg>
                             </div>
@@ -329,7 +329,7 @@ export default function Dashboard() {
                       <CardContent className="flex-1 p-6 flex flex-col justify-between">
                         <div className="space-y-4">
                           <div>
-                            <Badge className="bg-[#610000]/10 text-[#610000] hover:bg-[#610000]/20 mb-3 font-semibold uppercase text-xs">
+                            <Badge className="bg-[#5A2633]/10 text-[#5A2633] hover:bg-[#5A2633]/20 mb-3 font-semibold uppercase text-xs">
                               IN PROGRESS
                             </Badge>
                             <h3 className="text-2xl font-bold text-[#2c2015] mb-2 leading-tight">
@@ -353,7 +353,7 @@ export default function Dashboard() {
 
                           <Link href={`/learn/${enrollment.course?.id}`}>
                             <Button
-                              className="text-[#610000] hover:text-[#7d0000] p-0 h-auto font-bold text-base group"
+                              className="text-[#5A2633] hover:text-[#5A2633] p-0 h-auto font-bold text-base group"
                               variant="link"
                             >
                               Go to course 
@@ -386,7 +386,7 @@ export default function Dashboard() {
                         cx="48"
                         cy="48"
                         r="40"
-                        stroke="#610000"
+                        stroke="#5A2633"
                         strokeWidth="8"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 40 * (overallProgress / 100)} ${
@@ -396,7 +396,7 @@ export default function Dashboard() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-[#610000]">{overallProgress}%</span>
+                      <span className="text-3xl font-bold text-[#5A2633]">{overallProgress}%</span>
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-[#2c2015]">Overall progress</p>
@@ -444,7 +444,7 @@ export default function Dashboard() {
                           cx="64"
                           cy="64"
                           r="56"
-                          stroke="#610000"
+                          stroke="#5A2633"
                           strokeWidth="12"
                           fill="none"
                           strokeDasharray={`${2 * Math.PI * 56 * (overallProgress / 100)} ${
@@ -454,7 +454,7 @@ export default function Dashboard() {
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-4xl font-bold text-[#610000]">{overallProgress}%</span>
+                        <span className="text-4xl font-bold text-[#5A2633]">{overallProgress}%</span>
                         <span className="text-xs text-[#6b5d4f]">Overall progress</span>
                       </div>
                     </div>
@@ -484,7 +484,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 id="upcoming-live-sessions" className="text-3xl font-bold text-[#2c2015] font-display flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center">
                   <Video className="w-6 h-6 text-white" />
                 </div>
                 Live Sessions
@@ -492,7 +492,7 @@ export default function Dashboard() {
               <p className="text-sm text-[#6b5d4f] mt-2">Join interactive sessions with expert instructors</p>
             </div>
             <Link href="/sessions">
-              <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white">
+              <Button variant="outline" className="border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633] hover:text-white">
                 View all <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -505,7 +505,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-[#2c2015] font-display">Recommended for you</h2>
             <Link href="/course-catalog">
-              <Button variant="link" className="text-[#610000]">
+              <Button variant="link" className="text-[#5A2633]">
                 View all <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -516,7 +516,7 @@ export default function Dashboard() {
               <CardContent className="py-12 text-center">
                 <p className="text-[#6b5d4f] mb-4">No courses available at the moment</p>
                 <Link href="/course-catalog">
-                  <Button className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                  <Button className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                     Browse Courses
                   </Button>
                 </Link>
@@ -535,19 +535,19 @@ export default function Dashboard() {
                           className="w-full h-full"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#610000]/5 to-[#8b6f47]/5">
-                          <PlayCircle className="w-16 h-16 text-[#610000]/20" />
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5A2633]/5 to-[#8b6f47]/5">
+                          <PlayCircle className="w-16 h-16 text-[#5A2633]/20" />
                         </div>
                       )}
                       {course.is_featured && (
-                        <Badge className="absolute top-3 left-3 bg-[#610000] text-white text-xs font-semibold shadow-md">
+                        <Badge className="absolute top-3 left-3 bg-[#5A2633] text-white text-xs font-semibold shadow-md">
                           FEATURED
                         </Badge>
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-3 right-3 bg-white/90 hover:bg-white text-[#610000] hover:text-[#7d0000] rounded-full shadow-sm"
+                        className="absolute top-3 right-3 bg-white/90 hover:bg-white text-[#5A2633] hover:text-[#5A2633] rounded-full shadow-sm"
                         onClick={(e) => e.preventDefault()}
                       >
                         <Heart className="w-4 h-4" />
@@ -580,7 +580,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between text-xs mt-auto pt-3 border-t border-[#d4c5b0]/30">
                         <span className="text-[#6b5d4f] capitalize">{course.level || "All levels"}</span>
-                        <span className="font-bold text-[#610000] text-base">
+                        <span className="font-bold text-[#5A2633] text-base">
                           ${Number(course.price).toFixed(2)}
                         </span>
                       </div>

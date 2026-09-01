@@ -160,7 +160,7 @@ export default function AdminNotifications() {
     info: "text-blue-600",
     payment: "text-green-600",
     warning: "text-amber-600",
-    capacity: "text-red-600",
+    capacity: "text-[#5A2633]",
   };
 
   return (
@@ -169,7 +169,7 @@ export default function AdminNotifications() {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px] bg-red-500 text-white border-0">
+            <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px] bg-[#5A2633] text-white border-0">
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}

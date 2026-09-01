@@ -89,7 +89,7 @@ export function VideoUrlInput({
             <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
           )}
           {validationResult?.valid && validationResult.platform === 'youtube' && (
-            <Youtube className="h-5 w-5 text-red-600" />
+            <Youtube className="h-5 w-5 text-[#5A2633]" />
           )}
           {validationResult?.valid && validationResult.platform === 'vimeo' && (
             <Video className="h-5 w-5 text-blue-600" />

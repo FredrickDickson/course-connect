@@ -132,7 +132,7 @@ export default function SessionMaterials({
       return <Badge variant="destructive" className="text-xs">Overdue</Badge>;
     }
     
-    return <Badge variant="outline" className="text-xs border-[#610000] text-[#610000]">Due {format(date, "MMM d, yyyy")}</Badge>;
+    return <Badge variant="outline" className="text-xs border-[#5A2633] text-[#5A2633]">Due {format(date, "MMM d, yyyy")}</Badge>;
   };
 
   if (!userRegistered && !isInstructor) {
@@ -154,7 +154,7 @@ export default function SessionMaterials({
   if (assignmentsLoading || resourcesLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#610000]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#5A2633]" />
       </div>
     );
   }
@@ -202,7 +202,7 @@ export default function SessionMaterials({
         <Card className="border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#610000]" />
+              <FileText className="h-5 w-5 text-[#5A2633]" />
               Session Assignments
             </CardTitle>
             <CardDescription>
@@ -261,7 +261,7 @@ export default function SessionMaterials({
                   <div className="flex gap-2">
                     <Button
                       variant="default"
-                      className="bg-[#610000] hover:bg-[#7d0000]"
+                      className="bg-[#5A2633] hover:bg-[#5A2633]"
                       onClick={() => {
                         // TODO: Navigate to assignment submission page
                         toast({
@@ -285,7 +285,7 @@ export default function SessionMaterials({
         <Card className="border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-[#610000]" />
+              <Download className="h-5 w-5 text-[#5A2633]" />
               Session Resources
             </CardTitle>
             <CardDescription>
@@ -301,7 +301,7 @@ export default function SessionMaterials({
                 >
                     <div className="flex min-w-0 items-center gap-3">
                     <div className="flex-shrink-0">
-                      <File className="h-10 w-10 text-[#610000]" />
+                      <File className="h-10 w-10 text-[#5A2633]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h5 className="break-words font-medium text-[#2c2015]">
@@ -317,7 +317,7 @@ export default function SessionMaterials({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white sm:w-auto sm:flex-shrink-0"
+                    className="w-full border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633] hover:text-white sm:w-auto sm:flex-shrink-0"
                     onClick={() => downloadResource(resource)}
                   >
                     <Download className="h-4 w-4 mr-2" />

@@ -57,12 +57,12 @@ export default function StudentLayout({
           {/* Logo */}
           <div className="flex items-center gap-2">
             <img 
-              src="/images/logo.jpeg" 
+              src="/uploads/logo.png" 
               alt="CIMA Logo" 
               className="w-10 h-10 object-contain"
             />
             <div className="flex flex-col">
-              <span className="text-base font-bold text-[#610000] leading-none">CIMA Learn</span>
+              <span className="text-base font-bold text-[#5A2633] leading-none">CIMA Learn</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Professional ADR Education</span>
             </div>
           </div>
@@ -79,7 +79,7 @@ export default function StudentLayout({
                   {user?.profileImageUrl ? (
                     <img src={user.profileImageUrl} alt={user.firstName || "User"} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-[#610000] text-white flex items-center justify-center text-sm font-semibold">
+                    <div className="w-full h-full bg-[#5A2633] text-white flex items-center justify-center text-sm font-semibold">
                       {user?.firstName?.[0]}{user?.lastName?.[0]}
                     </div>
                   )}
@@ -97,19 +97,19 @@ export default function StudentLayout({
                 <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="cursor-pointer">
-                    <User className="w-4 h-4 mr-2 text-[#610000]" />
+                    <User className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>My Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard" className="cursor-pointer">
-                    <BookOpen className="w-4 h-4 mr-2 text-[#610000]" />
+                    <BookOpen className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>My Learning</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/notification-settings" className="cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2 text-[#610000]" />
+                    <Settings className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>Settings</span>
                   </Link>
                 </DropdownMenuItem>
@@ -120,7 +120,7 @@ export default function StudentLayout({
                     await supabase.auth.signOut();
                     window.location.href = "/";
                   }}
-                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  className="cursor-pointer text-[#5A2633] focus:text-[#5A2633] focus:bg-red-50"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   <span>Log Out</span>

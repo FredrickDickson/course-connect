@@ -24,19 +24,19 @@ export default function AdminContextBadge({
   showClearButton = false,
 }: AdminContextBadgeProps) {
   return (
-    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-[#610000]/10 to-[#8b6f47]/10 border-2 border-[#610000]/20 rounded-xl">
-      <Shield className="w-5 h-5 text-[#610000]" />
+    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-[#5A2633]/10 to-[#8b6f47]/10 border-2 border-[#5A2633]/20 rounded-xl">
+      <Shield className="w-5 h-5 text-[#5A2633]" />
       
       <div className="flex items-center gap-2 flex-1">
-        <Avatar className="h-6 w-6 border-2 border-[#610000]/30">
+        <Avatar className="h-6 w-6 border-2 border-[#5A2633]/30">
           <AvatarImage src={instructorImage} />
-          <AvatarFallback className="text-xs bg-[#610000] text-white">
+          <AvatarFallback className="text-xs bg-[#5A2633] text-white">
             {instructorName.split(' ').map(n => n[0]).join('').substring(0, 2)}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-          <Badge variant="outline" className="border-[#610000] text-[#610000] text-xs font-semibold w-fit">
+          <Badge variant="outline" className="border-[#5A2633] text-[#5A2633] text-xs font-semibold w-fit">
             Admin Mode
           </Badge>
           <span className="text-sm font-medium text-[#2c2015]">
@@ -50,7 +50,7 @@ export default function AdminContextBadge({
           variant="ghost"
           size="sm"
           onClick={onClearContext}
-          className="h-8 px-2 hover:bg-red-100 hover:text-red-600"
+          className="h-8 px-2 hover:bg-red-100 hover:text-[#5A2633]"
         >
           <X className="w-4 h-4" />
           <span className="ml-1 text-xs">Clear</span>

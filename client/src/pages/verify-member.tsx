@@ -7,7 +7,7 @@ import { useRoute } from "wouter";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, XCircle, Shield, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import cimaLogo from "@/assets/cima-logo.png";
+import cimaLogo from "/uploads/logo.png";
 
 interface MemberVerification {
   full_name: string;
@@ -79,7 +79,7 @@ export default function VerifyMember() {
             <CardContent className="pt-6 text-center">
               <XCircle className="h-12 w-12 text-red-500 mx-auto mb-3" />
               <h2 className="text-lg font-semibold text-red-800">Member Not Found</h2>
-              <p className="text-red-600 text-sm mt-1">
+              <p className="text-[#5A2633] text-sm mt-1">
                 No member was found with ID <span className="font-mono font-bold">{memberId}</span>.
                 Please check the ID and try again.
               </p>

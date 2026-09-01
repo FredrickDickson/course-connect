@@ -70,7 +70,7 @@ const LIFECYCLE_STATUSES = [
 function CapacityBar({ enrolled, capacity }: { enrolled: number; capacity: number | null }) {
   if (!capacity || capacity === 0) return <span className="text-xs text-muted-foreground">No cap</span>;
   const pct = Math.min(100, Math.round((enrolled / capacity) * 100));
-  const color = pct >= 100 ? "bg-red-500" : pct >= 70 ? "bg-green-500" : pct >= 30 ? "bg-amber-500" : "bg-amber-400";
+  const color = pct >= 100 ? "bg-[#5A2633]" : pct >= 70 ? "bg-green-500" : pct >= 30 ? "bg-amber-500" : "bg-amber-400";
   return (
     <div className="flex items-center gap-2 min-w-[120px]">
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">

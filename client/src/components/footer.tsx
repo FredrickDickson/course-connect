@@ -10,13 +10,13 @@ export default function Footer() {
           <div className="space-y-4" data-testid="footer-company">
             <div className="flex items-center space-x-3">
               <img 
-                src="/images/logo.jpeg" 
+                src="/uploads/logo.png" 
                 alt="CIMA Logo" 
                 className="h-12 w-auto"
               />
               <div>
-                <h3 className="text-lg font-bold text-[#610000]">CIMA Learn</h3>
-                <p className="text-xs text-[#610000] -mt-1">Professional ADR Education</p>
+                <h3 className="text-lg font-bold text-[#5A2633]">CIMA Learn</h3>
+                <p className="text-xs text-[#5A2633] -mt-1">Professional ADR Education</p>
               </div>
             </div>
             <p className="text-sm text-black">
@@ -145,7 +145,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   download
-                  className="flex items-center gap-2 text-sm text-black hover:text-[#610000] transition-colors"
+                  className="flex items-center gap-2 text-sm text-black hover:text-[#5A2633] transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   <span className="truncate">UK Standards V2.0 (Apr 2023)</span>
@@ -157,7 +157,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   download
-                  className="flex items-center gap-2 text-sm text-black hover:text-[#610000] transition-colors"
+                  className="flex items-center gap-2 text-sm text-black hover:text-[#5A2633] transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   <span className="truncate">ASIC UK Handbook V2.2.1</span>

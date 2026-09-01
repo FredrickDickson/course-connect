@@ -104,7 +104,7 @@ export default function AITutorSuggestions({ lessonContext, onSuggestionClick }:
             key={index}
             variant="outline"
             size="sm"
-            className="justify-start text-left h-auto py-3 px-4 whitespace-normal hover:bg-[#610000]/5 hover:border-[#610000]/30"
+            className="justify-start text-left h-auto py-3 px-4 whitespace-normal hover:bg-[#5A2633]/5 hover:border-[#5A2633]/30"
             onClick={() => onSuggestionClick(suggestion)}
           >
             {suggestion}

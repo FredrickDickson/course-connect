@@ -79,7 +79,7 @@ export default function GlobalMAProgram() {
                   <div className="text-blue-200">Program Duration</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold">$3,500</div>
+                  <div className="text-3xl font-light">$3,500</div>
                   <div className="text-blue-200">Investment</div>
                 </div>
               </div>

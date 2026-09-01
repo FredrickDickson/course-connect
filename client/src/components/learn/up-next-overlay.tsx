@@ -21,7 +21,7 @@ export default function UpNextOverlay({ nextTitle, onPlay, onCancel }: Props) {
         <p className="text-sm text-white/70">Up next in {secs} second{secs === 1 ? "" : "s"}…</p>
         <h3 className="text-lg font-semibold">{nextTitle}</h3>
         <div className="flex flex-col sm:flex-row gap-2 justify-center">
-          <Button onClick={onPlay} className="bg-[#B91C1C] hover:bg-[#A01818] text-white">
+          <Button onClick={onPlay} className="bg-[#5A2633] hover:bg-[#4a1f29] text-white">
             <Play className="h-4 w-4 mr-2 fill-white" /> Play now
           </Button>
           <Button onClick={onCancel} variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white">

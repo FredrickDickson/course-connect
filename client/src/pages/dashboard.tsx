@@ -265,7 +265,7 @@ export default function Dashboard() {
 
           {/* Continue Learning Card */}
           {nextCourse && (
-            <Card className="bg-gradient-to-br from-[#610000] to-[#8b0000] border-0 rounded-[24px] overflow-hidden shadow-[0_24px_64px_rgba(97,0,0,0.16)] hover:shadow-[0_32px_80px_rgba(97,0,0,0.24)] transition-all duration-700 hover:-translate-y-1">
+            <Card className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] border-0 rounded-[24px] overflow-hidden shadow-[0_24px_64px_rgba(97,0,0,0.16)] hover:shadow-[0_32px_80px_rgba(97,0,0,0.24)] transition-all duration-700 hover:-translate-y-1">
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                   <div className="flex-1 space-y-4">
@@ -305,7 +305,7 @@ export default function Dashboard() {
                     <Link href={`/learn/${nextCourse.course?.id}`}>
                       <Button
                         size="lg"
-                        className="bg-white text-[#610000] hover:bg-white/90 shadow-xl px-8 py-6 text-base font-semibold rounded-[16px] transition-all duration-300 hover:scale-105"
+                        className="bg-white text-[#5A2633] hover:bg-white/90 shadow-xl px-8 py-6 text-base font-semibold rounded-[16px] transition-all duration-300 hover:scale-105"
                       >
                         Continue Learning
                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -324,7 +324,7 @@ export default function Dashboard() {
                 icon: BookOpen,
                 value: enrollments.length,
                 label: "Courses Enrolled",
-                color: "from-[#610000] to-[#8b0000]",
+                color: "from-[#5A2633] to-[#5A2633]",
               },
               {
                 icon: Trophy,
@@ -336,7 +336,7 @@ export default function Dashboard() {
                 icon: Award,
                 value: certificates.length,
                 label: "Certificates Earned",
-                color: "from-[#610000] to-[#8b0000]",
+                color: "from-[#5A2633] to-[#5A2633]",
               },
               {
                 icon: Clock,
@@ -403,7 +403,7 @@ export default function Dashboard() {
               <Link href="/courses">
                 <Button
                   variant="outline"
-                  className="border-[#d4c5b0] text-[#610000] hover:bg-[#f5f3ed] hover:border-[#8b6f47]"
+                  className="border-[#d4c5b0] text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#8b6f47]"
                 >
                   View All
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -425,7 +425,7 @@ export default function Dashboard() {
                     your first course
                   </p>
                   <Link href="/course-catalog">
-                    <Button className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-500 hover:scale-105 px-8 py-6 rounded-[16px] text-base font-semibold">
+                    <Button className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-500 hover:scale-105 px-8 py-6 rounded-[16px] text-base font-semibold">
                       Explore Courses
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -440,7 +440,7 @@ export default function Dashboard() {
                     href={`/learn/${enrollment.course?.id}`}
                   >
                     <Card className="group bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] overflow-hidden hover:border-[#8b6f47]/30 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 cursor-pointer">
-                      <div className="relative h-40 bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center">
+                      <div className="relative h-40 bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center">
                         {enrollment.course?.thumbnail_url ? (
                           <CourseThumbnail
                             src={enrollment.course.thumbnail_url}
@@ -466,13 +466,13 @@ export default function Dashboard() {
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
                             <span className="text-[#6b5d4f]">Progress</span>
-                            <span className="text-[#610000] font-bold">
+                            <span className="text-[#5A2633] font-bold">
                               {Math.round(Number(enrollment.progress) || 0)}%
                             </span>
                           </div>
                           <div className="w-full bg-[#e3beb8] rounded-full h-2">
                             <div
-                              className="bg-gradient-to-r from-[#610000] to-[#8b6f47] h-2 rounded-full transition-all duration-1000"
+                              className="bg-gradient-to-r from-[#5A2633] to-[#8b6f47] h-2 rounded-full transition-all duration-1000"
                               style={{
                                 width: `${Number(enrollment.progress) || 0}%`,
                               }}
@@ -505,7 +505,7 @@ export default function Dashboard() {
                       href={activity.courseId ? `/learn/${activity.courseId}` : "#"}
                     >
                       <div className="flex items-start gap-3 p-3 bg-[#faf9f6] rounded-[12px] hover:bg-[#f5f3ed] transition-colors cursor-pointer">
-                        <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center flex-shrink-0">
                           <Target className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -550,7 +550,7 @@ export default function Dashboard() {
                       key={cert.id}
                       className="flex items-center gap-3 pb-4 border-b border-[#d4c5b0]/30 last:border-0 last:pb-0"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center flex-shrink-0">
                         <Award className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">

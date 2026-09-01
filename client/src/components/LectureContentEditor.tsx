@@ -746,7 +746,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
           <p className="text-sm text-[#6b5d4f]">Add downloadable files or links for students</p>
         </div>
         {!isAdding && (
-          <Button onClick={() => setIsAdding(true)} size="sm" className="bg-[#610000] text-white hover:bg-[#7d0000]">
+          <Button onClick={() => setIsAdding(true)} size="sm" className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
             <Plus className="w-4 h-4 mr-2" />
             Add Resource
           </Button>
@@ -795,7 +795,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
               <Button
                 onClick={handleAddResource}
                 disabled={uploading}
-                className="bg-[#610000] text-white hover:bg-[#7d0000]"
+                className="bg-[#5A2633] text-white hover:bg-[#5A2633]"
               >
                 {uploading ? (
                   <>
@@ -818,7 +818,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
                   setResourceLink('');
                 }}
                 disabled={uploading}
-                className="border-[#d4c5b0]/50 text-[#610000] hover:bg-[#f5f3ed]"
+                className="border-[#d4c5b0]/50 text-[#5A2633] hover:bg-[#f5f3ed]"
               >
                 Cancel
               </Button>
@@ -829,7 +829,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
 
       {isLoading ? (
         <div className="text-center py-8">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#610000]" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#5A2633]" />
         </div>
       ) : resources.length === 0 ? (
         <div className="text-center py-8 text-[#8b6f47]">
@@ -857,7 +857,7 @@ function LessonResourceManager({ lessonId }: { lessonId: string }) {
                       deleteResource.mutate(resource.id);
                     }
                   }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-[#5A2633] hover:text-[#5A2633] hover:bg-red-50"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

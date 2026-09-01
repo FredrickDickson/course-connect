@@ -393,7 +393,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
               const used = att.length;
               return (
                 <Card key={q.id}><CardContent className="p-4 flex items-center gap-3">
-                  <HelpCircle className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <HelpCircle className="h-5 w-5 text-[#5A2633] shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{q.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -403,7 +403,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                   </div>
                   {passed && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Passed</Badge>}
                   <Link href={`/quiz/${q.id}`}>
-                    <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]">
+                    <Button size="sm" className="bg-[#5A2633] hover:bg-[#4a1f29]">
                       <Play className="h-4 w-4 mr-1" />{passed ? "Retake" : used > 0 ? "Continue" : "Start"}
                     </Button>
                   </Link>
@@ -414,7 +414,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
               const sub = assignmentSubs.find((s: any) => s.assignment_id === a.id);
               return (
                 <Card key={a.id}><CardContent className="p-4 flex items-center gap-3">
-                  <ClipboardList className="h-5 w-5 text-[#B91C1C] shrink-0" />
+                  <ClipboardList className="h-5 w-5 text-[#5A2633] shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{a.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -423,7 +423,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                   </div>
                   {sub?.graded_at && <Badge className="bg-blue-600 text-white border-0">{sub.score}/{a.max_score}</Badge>}
                   {sub && !sub.graded_at && <Badge className="bg-[#22C55E] text-white border-0"><Check className="h-3 w-3 mr-1" />Submitted</Badge>}
-                  <Button size="sm" className="bg-[#B91C1C] hover:bg-[#A01818]" onClick={() => setSubmitFor(a)}>
+                  <Button size="sm" className="bg-[#5A2633] hover:bg-[#4a1f29]" onClick={() => setSubmitFor(a)}>
                     <Send className="h-4 w-4 mr-1" />{sub ? "View" : "Submit"}
                   </Button>
                 </CardContent></Card>
@@ -439,7 +439,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
       <TabsContent value="announcements" className="pt-4 space-y-3">
         {isInstructor && (
           <div className="flex justify-end">
-            <Button className="bg-[#B91C1C] hover:bg-[#A01818]" onClick={() => openAnnDialog()}>
+            <Button className="bg-[#5A2633] hover:bg-[#4a1f29]" onClick={() => openAnnDialog()}>
               <Plus className="h-4 w-4 mr-1" />New announcement
             </Button>
           </div>

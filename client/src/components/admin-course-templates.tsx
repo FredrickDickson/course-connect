@@ -23,7 +23,7 @@ export default function AdminCourseTemplates() {
           <BookOpen className="w-12 h-12 text-[#8b6f47] mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-[#2c2015] mb-2 font-sf-pro-display">Ready to create a new course?</h3>
           <p className="text-[#6b5d4f] mb-6 font-sf-pro-text">Click the button below to create a course on behalf of an instructor.</p>
-          <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000]">
+          <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
             <a href="/admin/courses/new">
               <Plus className="h-4 w-4 mr-2" /> Create Course
             </a>

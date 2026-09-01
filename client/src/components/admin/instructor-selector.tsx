@@ -72,7 +72,7 @@ export default function InstructorSelector({
       
       {isLoading ? (
         <div className="flex items-center justify-center p-4 border border-[#d4c5b0]/30 rounded-lg bg-white">
-          <Loader2 className="w-5 h-5 animate-spin text-[#610000]" />
+          <Loader2 className="w-5 h-5 animate-spin text-[#5A2633]" />
           <span className="ml-2 text-sm text-[#6b5d4f]">Loading instructors...</span>
         </div>
       ) : (
@@ -84,19 +84,19 @@ export default function InstructorSelector({
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 border-[#d4c5b0]/50 focus:border-[#610000]"
+              className="pl-9 border-[#d4c5b0]/50 focus:border-[#5A2633]"
             />
           </div>
 
           {/* Instructor Selector */}
           <Select value={value} onValueChange={handleValueChange}>
-            <SelectTrigger className="w-full border-[#d4c5b0]/50 focus:border-[#610000]">
+            <SelectTrigger className="w-full border-[#d4c5b0]/50 focus:border-[#5A2633]">
               <SelectValue placeholder={placeholder}>
                 {selectedInstructor && (
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={selectedInstructor.profile_image_url} />
-                      <AvatarFallback className="text-xs bg-[#610000] text-white">
+                      <AvatarFallback className="text-xs bg-[#5A2633] text-white">
                         {selectedInstructor.first_name[0]}
                         {selectedInstructor.last_name[0]}
                       </AvatarFallback>
@@ -105,7 +105,7 @@ export default function InstructorSelector({
                       {selectedInstructor.first_name} {selectedInstructor.last_name}
                     </span>
                     {selectedInstructor.is_verified && (
-                      <Badge variant="secondary" className="h-4 text-[10px] px-1 bg-[#610000]/10 text-[#610000]">
+                      <Badge variant="secondary" className="h-4 text-[10px] px-1 bg-[#5A2633]/10 text-[#5A2633]">
                         Verified
                       </Badge>
                     )}
@@ -124,7 +124,7 @@ export default function InstructorSelector({
                     <div className="flex items-center gap-3 py-1">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={instructor.profile_image_url} />
-                        <AvatarFallback className="text-xs bg-[#610000] text-white">
+                        <AvatarFallback className="text-xs bg-[#5A2633] text-white">
                           {instructor.first_name[0]}
                           {instructor.last_name[0]}
                         </AvatarFallback>
@@ -135,7 +135,7 @@ export default function InstructorSelector({
                             {instructor.first_name} {instructor.last_name}
                           </span>
                           {instructor.is_verified && (
-                            <Badge variant="secondary" className="h-4 text-[10px] px-1 bg-[#610000]/10 text-[#610000]">
+                            <Badge variant="secondary" className="h-4 text-[10px] px-1 bg-[#5A2633]/10 text-[#5A2633]">
                               ✓
                             </Badge>
                           )}
@@ -160,7 +160,7 @@ export default function InstructorSelector({
               <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10 border-2 border-[#d4c5b0]">
                   <AvatarImage src={selectedInstructor.profile_image_url} />
-                  <AvatarFallback className="bg-[#610000] text-white">
+                  <AvatarFallback className="bg-[#5A2633] text-white">
                     {selectedInstructor.first_name[0]}
                     {selectedInstructor.last_name[0]}
                   </AvatarFallback>
@@ -171,7 +171,7 @@ export default function InstructorSelector({
                       {selectedInstructor.first_name} {selectedInstructor.last_name}
                     </p>
                     {selectedInstructor.is_verified && (
-                      <Badge variant="secondary" className="h-5 text-xs bg-[#610000] text-white">
+                      <Badge variant="secondary" className="h-5 text-xs bg-[#5A2633] text-white">
                         Verified Instructor
                       </Badge>
                     )}

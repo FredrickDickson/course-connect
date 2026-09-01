@@ -140,7 +140,7 @@ export default function AdminRenewalManagement() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Expiring (30 days)", value: stats.expiringThisMonth, icon: AlertTriangle, color: "text-amber-600" },
-          { label: "Overdue (Expired)", value: stats.overdue, icon: Clock, color: "text-red-600" },
+          { label: "Overdue (Expired)", value: stats.overdue, icon: Clock, color: "text-[#5A2633]" },
           { label: "Renewed This Month", value: stats.renewedThisMonth, icon: CheckCircle, color: "text-green-600" },
           { label: "Total Active", value: stats.totalActive, icon: Users, color: "text-primary" },
         ].map((s) => (
@@ -216,7 +216,7 @@ export default function AdminRenewalManagement() {
                         <TableCell>{m.expiry_date ? formatDate(m.expiry_date) : "—"}</TableCell>
                         <TableCell>
                           {days !== null ? (
-                            <span className={days <= 0 ? "text-red-600 font-bold" : days <= 30 ? "text-amber-600 font-semibold" : "text-green-600"}>
+                            <span className={days <= 0 ? "text-[#5A2633] font-bold" : days <= 30 ? "text-amber-600 font-semibold" : "text-green-600"}>
                               {days <= 0 ? `${Math.abs(days)}d overdue` : `${days}d`}
                             </span>
                           ) : "—"}

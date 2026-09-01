@@ -666,7 +666,7 @@ export default function NewPostModal({ open, onOpenChange, preSelectedCategory }
                   type="button"
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className="bg-red-600 hover:bg-red-700 active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
+                  className="bg-[#5A2633] hover:bg-[#5A2633] active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400"
                 >
                   {isSubmitting ? (
                     <>

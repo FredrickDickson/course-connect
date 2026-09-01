@@ -79,7 +79,7 @@ const ScrubBar: React.FC<ScrubBarProps> = ({ current, duration, buffered, onSeek
     >
       <div className="relative h-1 group-hover:h-1.5 transition-all bg-white/25 rounded-full overflow-hidden">
         <div className="absolute inset-y-0 left-0 bg-white/40" style={{ width: `${bufferedPct}%` }} />
-        <div className="absolute inset-y-0 left-0 bg-[#B91C1C]" style={{ width: `${progressPct}%` }} />
+        <div className="absolute inset-y-0 left-0 bg-[#5A2633]" style={{ width: `${progressPct}%` }} />
       </div>
       <div
         className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
@@ -573,7 +573,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
             width: "100%",
             height: "100%",
             // @ts-ignore CSS custom property
-            "--media-primary-color": "#B91C1C",
+            "--media-primary-color": "#5A2633",
             "--controls-backdrop-color": "rgba(0,0,0,0.6)",
           } as React.CSSProperties}
           onLoadedMetadata={(e: any) => {
@@ -855,7 +855,7 @@ const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>((props, ref) =>
                     type="range" min={0} max={1} step={0.05}
                     value={isMuted ? 0 : volume}
                     onChange={(e) => adapterSetVolume(parseFloat(e.target.value))}
-                    className="w-full accent-[#B91C1C] cursor-pointer"
+                    className="w-full accent-[#5A2633] cursor-pointer"
                     aria-label="Volume"
                   />
                 </div>

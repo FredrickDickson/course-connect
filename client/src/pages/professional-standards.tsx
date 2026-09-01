@@ -262,18 +262,18 @@ export default function ProfessionalStandards() {
                         </ul>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="font-medium text-sm text-red-700 dark:text-red-400">Prohibited</h4>
+                        <h4 className="font-medium text-sm text-[#5A2633] dark:text-red-400">Prohibited</h4>
                         <ul className="space-y-1 text-sm">
                           <li className="flex items-center space-x-2">
-                            <i className="fas fa-times text-red-600 text-xs"></i>
+                            <i className="fas fa-times text-[#5A2633] text-xs"></i>
                             <span>Plagiarism or copying</span>
                           </li>
                           <li className="flex items-center space-x-2">
-                            <i className="fas fa-times text-red-600 text-xs"></i>
+                            <i className="fas fa-times text-[#5A2633] text-xs"></i>
                             <span>Unauthorized collaboration</span>
                           </li>
                           <li className="flex items-center space-x-2">
-                            <i className="fas fa-times text-red-600 text-xs"></i>
+                            <i className="fas fa-times text-[#5A2633] text-xs"></i>
                             <span>Fabrication of information</span>
                           </li>
                         </ul>

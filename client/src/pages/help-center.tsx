@@ -9,7 +9,7 @@ export default function HelpCenter() {
   return (
     <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8" dir={isRTL ? "rtl" : "ltr"}>
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8" dir={isRTL ? "rtl" : "ltr"}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4">
             <h1
@@ -34,7 +34,7 @@ export default function HelpCenter() {
             <Card className="cursor-pointer hover:shadow-lg transition-shadow border-[#d4c5b0]/30">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3 font-sf-pro-display">
-                  <i className="fas fa-graduation-cap text-[#610000]"></i>
+                  <i className="fas fa-graduation-cap text-[#5A2633]"></i>
                   <span>{t("helpCenter.gettingStarted")}</span>
                 </CardTitle>
               </CardHeader>
@@ -149,7 +149,7 @@ export default function HelpCenter() {
             </p>
             <div className="flex justify-center space-x-4">
               <Link href="/contact">
-                <Button className="bg-[#610000] hover:bg-[#7d0000]" data-testid="button-contact-support">
+                <Button className="bg-[#5A2633] hover:bg-[#5A2633]" data-testid="button-contact-support">
                   <i className="fas fa-envelope mr-2"></i>
                   {t("helpCenter.contactSupport")}
                 </Button>
@@ -157,7 +157,7 @@ export default function HelpCenter() {
               <Link href="/technical-support">
                 <Button
                   variant="outline"
-                  className="border-[#d4c5b0] text-[#610000] hover:bg-white"
+                  className="border-[#d4c5b0] text-[#5A2633] hover:bg-white"
                   data-testid="button-technical-support"
                 >
                   <i className="fas fa-tools mr-2"></i>

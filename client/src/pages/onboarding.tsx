@@ -836,7 +836,7 @@ export default function Onboarding() {
 
         <div className="text-center space-y-4">
 
-          <Loader2 className="w-12 h-12 animate-spin text-[#610000] mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-[#5A2633] mx-auto" />
 
           <p className="text-[#6b5d4f] font-sf-pro-text">Loading your profile...</p>
 
@@ -874,7 +874,7 @@ export default function Onboarding() {
 
           <div className="flex items-center justify-center mb-4">
 
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center shadow-lg">
 
               <User className="w-8 h-8 text-white" />
 
@@ -904,7 +904,7 @@ export default function Onboarding() {
 
           <div className="flex items-center justify-between mb-3">
 
-            <span className="text-sm font-semibold text-[#610000] font-sf-pro-text">Step {step} of 2</span>
+            <span className="text-sm font-semibold text-[#5A2633] font-sf-pro-text">Step {step} of 2</span>
 
             <span className="text-sm text-[#8b6f47] font-sf-pro-text">{step === 1 ? "Personal Information" : "Professional Details"}</span>
 
@@ -912,9 +912,9 @@ export default function Onboarding() {
 
           <div className="flex gap-3">
 
-            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 1 ? "bg-gradient-to-r from-[#610000] to-[#8b0000]" : "bg-[#d4c5b0]"}`} />
+            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 1 ? "bg-gradient-to-r from-[#5A2633] to-[#5A2633]" : "bg-[#d4c5b0]"}`} />
 
-            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 2 ? "bg-gradient-to-r from-[#610000] to-[#8b0000]" : "bg-[#d4c5b0]"}`} />
+            <div className={`h-2 flex-1 rounded-full transition-all duration-500 ease-out ${step >= 2 ? "bg-gradient-to-r from-[#5A2633] to-[#5A2633]" : "bg-[#d4c5b0]"}`} />
 
           </div>
 
@@ -930,9 +930,9 @@ export default function Onboarding() {
 
               <div className="flex items-center gap-4">
 
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5A2633]/10 to-[#5A2633]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                  <User className="w-6 h-6 text-[#610000]" aria-hidden="true" />
+                  <User className="w-6 h-6 text-[#5A2633]" aria-hidden="true" />
 
                 </div>
 
@@ -958,7 +958,7 @@ export default function Onboarding() {
 
                   <AvatarImage src={form.profile_photo_url} alt={form.full_name} />
 
-                  <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white text-lg font-semibold">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white text-lg font-semibold">{initials}</AvatarFallback>
 
                 </Avatar>
 
@@ -1281,7 +1281,7 @@ export default function Onboarding() {
 
                 onClick={saveStep1} 
 
-                className="w-full min-h-[48px] bg-gradient-to-r from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold text-base" 
+                className="w-full min-h-[48px] bg-gradient-to-r from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#5A2633] focus-visible:ring-offset-2 font-sf-pro-text font-semibold text-base" 
 
                 disabled={isSaving}
 
@@ -1315,9 +1315,9 @@ export default function Onboarding() {
 
                 <div className="flex items-center gap-4">
 
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5A2633]/10 to-[#5A2633]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                    <ShieldCheck className="w-6 h-6 text-[#610000]" aria-hidden="true" />
+                    <ShieldCheck className="w-6 h-6 text-[#5A2633]" aria-hidden="true" />
 
                   </div>
 
@@ -1335,13 +1335,13 @@ export default function Onboarding() {
 
               <CardContent className="space-y-6 pt-6">
 
-                <p className="text-sm text-[#4a3828] font-sf-pro-text leading-relaxed">Selecting <strong className="text-[#610000]">Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong className="text-[#610000]">No</strong> grants instant Associate access so you can start learning right away.</p>
+                <p className="text-sm text-[#4a3828] font-sf-pro-text leading-relaxed">Selecting <strong className="text-[#5A2633]">Yes</strong> lets you submit a professional profile for expedited review. Choosing <strong className="text-[#5A2633]">No</strong> grants instant Associate access so you can start learning right away.</p>
 
-                <div className="rounded-xl border-2 border-[#610000]/20 bg-gradient-to-br from-[#610000]/5 to-[#8b6f47]/5 p-5">
+                <div className="rounded-xl border-2 border-[#5A2633]/20 bg-gradient-to-br from-[#5A2633]/5 to-[#8b6f47]/5 p-5">
                   <div className="flex items-start gap-3">
-                    <ShieldCheck className="w-6 h-6 text-[#610000] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <ShieldCheck className="w-6 h-6 text-[#5A2633] flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <div className="space-y-2">
-                      <p className="text-sm font-bold text-[#610000] font-sf-pro-display">Associate Access Unlocked Instantly</p>
+                      <p className="text-sm font-bold text-[#5A2633] font-sf-pro-display">Associate Access Unlocked Instantly</p>
                       <p className="text-sm text-[#4a3828] font-sf-pro-text leading-relaxed">
                         Submit these details so our admissions team can review you for Member or Fellow access while you keep progressing.
                       </p>
@@ -1363,7 +1363,7 @@ export default function Onboarding() {
 
                       experienceChoice === "no" 
 
-                        ? "border-[#610000] bg-[#610000]/5 hover:bg-[#610000]/10 shadow-md" 
+                        ? "border-[#5A2633] bg-[#5A2633]/5 hover:bg-[#5A2633]/10 shadow-md" 
 
                         : "border-[#d4c5b0] hover:border-[#8b6f47] hover:shadow-md bg-white"
 
@@ -1379,11 +1379,11 @@ export default function Onboarding() {
 
                       {isExperienceSubmitting && experienceChoice === "no" ? (
 
-                        <Loader2 className="h-5 w-5 animate-spin text-[#610000]" aria-hidden="true" />
+                        <Loader2 className="h-5 w-5 animate-spin text-[#5A2633]" aria-hidden="true" />
 
                       ) : (
 
-                        <ShieldCheck className="h-5 w-5 text-[#610000]" aria-hidden="true" />
+                        <ShieldCheck className="h-5 w-5 text-[#5A2633]" aria-hidden="true" />
 
                       )}
 
@@ -1403,7 +1403,7 @@ export default function Onboarding() {
 
                       "h-auto min-h-[100px] py-5 px-5 justify-start text-left flex-col items-start gap-2 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg font-sf-pro-text",
 
-                      "bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white border-0"
+                      "bg-gradient-to-br from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#6b5d4f] text-white border-0"
 
                     )}
 
@@ -1455,7 +1455,7 @@ export default function Onboarding() {
 
                     size="sm"
 
-                    className="px-0 text-[#8b6f47] hover:text-[#610000] font-sf-pro-text"
+                    className="px-0 text-[#8b6f47] hover:text-[#5A2633] font-sf-pro-text"
 
                     onClick={resetExperienceFlow}
 
@@ -1479,9 +1479,9 @@ export default function Onboarding() {
 
                   <div className="flex items-center gap-4">
 
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#610000]/10 to-[#8b0000]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5A2633]/10 to-[#5A2633]/10 flex items-center justify-center transition-transform duration-200 hover:scale-105">
 
-                      <Briefcase className="w-6 h-6 text-[#610000]" aria-hidden="true" />
+                      <Briefcase className="w-6 h-6 text-[#5A2633]" aria-hidden="true" />
 
                     </div>
 
@@ -1717,7 +1717,7 @@ export default function Onboarding() {
 
                       variant="outline"
 
-                      className="flex-1 min-h-[48px] border-2 border-[#d4c5b0] text-[#610000] hover:bg-[#faf9f6] hover:border-[#8b6f47] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
+                      className="flex-1 min-h-[48px] border-2 border-[#d4c5b0] text-[#5A2633] hover:bg-[#faf9f6] hover:border-[#8b6f47] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#5A2633] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
 
                       onClick={() => setStep(1)}
 
@@ -1735,7 +1735,7 @@ export default function Onboarding() {
 
                       onClick={saveStep2} 
 
-                      className="flex-1 min-h-[48px] bg-gradient-to-r from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#610000] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
+                      className="flex-1 min-h-[48px] bg-gradient-to-r from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#6b5d4f] text-white transition-all duration-300 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#5A2633] focus-visible:ring-offset-2 font-sf-pro-text font-semibold" 
 
                       disabled={isSaving}
 

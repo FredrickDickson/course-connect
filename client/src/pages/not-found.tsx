@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import cimaLogo from "@/assets/cima-logo.png";
+import cimaLogo from "/uploads/logo.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function NotFound() {

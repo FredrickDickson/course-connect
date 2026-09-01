@@ -42,7 +42,7 @@ export default function NotificationSettings() {
     return (
       <StudentLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#610000]"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5A2633]"></div>
         </div>
       </StudentLayout>
     );
@@ -51,7 +51,7 @@ export default function NotificationSettings() {
   return (
     <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold font-sf-pro-display mb-2">Notification Settings</h1>
@@ -69,7 +69,7 @@ export default function NotificationSettings() {
           <Card className="border-[#d4c5b0]/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-sf-pro-display">
-                <Mail className="h-5 w-5 text-[#610000]" />
+                <Mail className="h-5 w-5 text-[#5A2633]" />
                 Email Notifications
               </CardTitle>
             </CardHeader>
@@ -219,7 +219,7 @@ export default function NotificationSettings() {
         <Card className="border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-sf-pro-display">
-              <Clock className="h-5 w-5 text-[#610000]" />
+              <Clock className="h-5 w-5 text-[#5A2633]" />
               Quiet Hours
             </CardTitle>
           </CardHeader>
@@ -271,7 +271,7 @@ export default function NotificationSettings() {
         <Card className="border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-sf-pro-display">
-              <Settings className="h-5 w-5 text-[#610000]" />
+              <Settings className="h-5 w-5 text-[#5A2633]" />
               Email Frequency
             </CardTitle>
           </CardHeader>
@@ -303,7 +303,7 @@ export default function NotificationSettings() {
         <Card className="border-[#d4c5b0]/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-sf-pro-display">
-              <Smartphone className="h-5 w-5 text-[#610000]" />
+              <Smartphone className="h-5 w-5 text-[#5A2633]" />
               Push Notifications
             </CardTitle>
           </CardHeader>
@@ -332,7 +332,7 @@ export default function NotificationSettings() {
 
         {/* Save Button */}
         <div className="flex justify-end mt-8">
-          <Button onClick={handleSave} className="px-8 bg-[#610000] hover:bg-[#7d0000]">
+          <Button onClick={handleSave} className="px-8 bg-[#5A2633] hover:bg-[#5A2633]">
             <Settings className="h-4 w-4 mr-2" />
             Save Settings
           </Button>

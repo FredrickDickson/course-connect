@@ -192,7 +192,7 @@ export default function CourseBrowser() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-lg text-foreground">
+                        <span className="font-light text-lg text-foreground">
                           {formatCoursePrice(course.price, course.currency || "GHS")}
                         </span>
                         {/* Spots left display removed */}

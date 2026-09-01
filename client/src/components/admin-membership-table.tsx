@@ -191,7 +191,7 @@ export default function AdminMembershipTable() {
           { label: "Total", value: stats.total, color: "text-foreground" },
           { label: "Active", value: stats.active, color: "text-green-600" },
           { label: "Expiring", value: stats.expiring, color: "text-amber-600" },
-          { label: "Expired", value: stats.expired, color: "text-red-600" },
+          { label: "Expired", value: stats.expired, color: "text-[#5A2633]" },
           { label: "Pending", value: stats.pending, color: "text-muted-foreground" },
           { label: "Associates", value: levelStats.associate, color: "text-blue-600" },
           { label: "Members", value: levelStats.member, color: "text-purple-600" },

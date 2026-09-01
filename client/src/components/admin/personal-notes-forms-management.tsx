@@ -227,7 +227,7 @@ export default function PersonalNotesFormsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin w-8 h-8 border-4 border-[#610000] border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-[#5A2633] border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -250,7 +250,7 @@ export default function PersonalNotesFormsManagement() {
             onClick={exportToCSV}
             variant="outline"
             size="sm"
-            className="border-[#610000] text-[#610000] hover:bg-[#610000]/5 text-xs sm:text-sm"
+            className="border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633]/5 text-xs sm:text-sm"
             disabled={forms.length === 0}
           >
             <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -267,9 +267,9 @@ export default function PersonalNotesFormsManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-[#6b5d4f]">Total Submissions</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#610000]">{forms.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#5A2633]">{forms.length}</p>
               </div>
-              <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-[#610000]/20" />
+              <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-[#5A2633]/20" />
             </div>
           </CardContent>
         </Card>
@@ -384,7 +384,7 @@ export default function PersonalNotesFormsManagement() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setSelectedForm(form)}
-                                className="text-[#610000] hover:text-[#7d0000] hover:bg-[#610000]/5"
+                                className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#5A2633]/5"
                               >
                                 <Eye className="w-4 h-4 mr-1" />
                                 View
@@ -407,7 +407,7 @@ export default function PersonalNotesFormsManagement() {
                                       <Button
                                         size="sm"
                                         variant="destructive"
-                                        className="bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto"
+                                        className="bg-[#5A2633] hover:bg-[#5A2633] text-xs sm:text-sm w-full sm:w-auto"
                                       >
                                         <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                         Delete
@@ -425,7 +425,7 @@ export default function PersonalNotesFormsManagement() {
                                         <AlertDialogCancel className="m-0 w-full sm:w-auto">Cancel</AlertDialogCancel>
                                         <AlertDialogAction
                                           onClick={() => deleteForm.mutate(form.id)}
-                                          className="bg-red-600 hover:bg-red-700 m-0 w-full sm:w-auto"
+                                          className="bg-[#5A2633] hover:bg-[#5A2633] m-0 w-full sm:w-auto"
                                         >
                                           {deleteForm.isPending ? "Deleting..." : "Delete Form"}
                                         </AlertDialogAction>
@@ -439,7 +439,7 @@ export default function PersonalNotesFormsManagement() {
                                 <div className="space-y-4 sm:space-y-6">
                                 {/* Personal Details */}
                                 <div>
-                                  <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                  <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                                     <User className="w-3 h-3 sm:w-4 sm:h-4" />
                                     Personal Details
                                   </h3>
@@ -479,7 +479,7 @@ export default function PersonalNotesFormsManagement() {
 
                                 {/* Identification */}
                                 <div>
-                                  <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 text-sm sm:text-base">Identification</h3>
+                                  <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 text-sm sm:text-base">Identification</h3>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                                     {form.ghana_card_no && (
                                       <div>
@@ -512,7 +512,7 @@ export default function PersonalNotesFormsManagement() {
 
                                 {/* Address */}
                                 <div>
-                                  <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                  <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                                     <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                                     Current Address
                                   </h3>
@@ -532,12 +532,12 @@ export default function PersonalNotesFormsManagement() {
 
                                 {/* Emergency Contacts */}
                                 <div>
-                                  <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                  <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                                     <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
                                     Emergency Contacts
                                   </h3>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                                    <div className="border-l-2 border-[#610000] pl-3">
+                                    <div className="border-l-2 border-[#5A2633] pl-3">
                                       <Label className="text-[#6b5d4f] text-xs">Next of Kin</Label>
                                       <p className="font-medium">{form.nok_name}</p>
                                       <p className="text-[#6b5d4f]">{form.nok_relationship}</p>
@@ -557,7 +557,7 @@ export default function PersonalNotesFormsManagement() {
                                 {(form.blood_group || (form.medical_conditions && form.medical_conditions.length > 0)) && (
                                   <>
                                     <div>
-                                      <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                      <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                                         <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                                         Health Information
                                       </h3>
@@ -582,7 +582,7 @@ export default function PersonalNotesFormsManagement() {
 
                                 {/* Review Section */}
                                 <div className="bg-[#faf9f6] border border-[#d4c5b0] rounded-lg p-3 sm:p-4">
-                                  <h3 className="font-semibold text-[#610000] mb-2 sm:mb-3 text-sm sm:text-base">Admin Review</h3>
+                                  <h3 className="font-semibold text-[#5A2633] mb-2 sm:mb-3 text-sm sm:text-base">Admin Review</h3>
                                   {form.reviewed_at ? (
                                     <div className="space-y-2 text-xs sm:text-sm">
                                       <div className="flex items-center gap-2 text-green-600">
@@ -608,7 +608,7 @@ export default function PersonalNotesFormsManagement() {
                                       <Button
                                         onClick={() => addReview.mutate({ id: form.id, notes: reviewNotes })}
                                         disabled={addReview.isPending || !reviewNotes.trim()}
-                                        className="bg-[#610000] text-white hover:bg-[#7d0000] w-full sm:w-auto text-xs sm:text-sm"
+                                        className="bg-[#5A2633] text-white hover:bg-[#5A2633] w-full sm:w-auto text-xs sm:text-sm"
                                       >
                                         {addReview.isPending ? "Saving..." : "Mark as Reviewed"}
                                       </Button>
@@ -625,7 +625,7 @@ export default function PersonalNotesFormsManagement() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-[#5A2633] hover:text-[#5A2633] hover:bg-red-50"
                               title="Delete form"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -643,7 +643,7 @@ export default function PersonalNotesFormsManagement() {
                               <AlertDialogCancel className="m-0 w-full sm:w-auto">Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => deleteForm.mutate(form.id)}
-                                className="bg-red-600 hover:bg-red-700 m-0 w-full sm:w-auto"
+                                className="bg-[#5A2633] hover:bg-[#5A2633] m-0 w-full sm:w-auto"
                               >
                                 {deleteForm.isPending ? "Deleting..." : "Delete Form"}
                               </AlertDialogAction>
@@ -662,10 +662,10 @@ export default function PersonalNotesFormsManagement() {
       </Card>
 
       {/* Privacy Notice */}
-      <Card className="border-[#610000]/20 bg-[#610000]/5">
+      <Card className="border-[#5A2633]/20 bg-[#5A2633]/5">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2 sm:gap-3">
-            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[#610000] mt-0.5 flex-shrink-0" />
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[#5A2633] mt-0.5 flex-shrink-0" />
             <div className="text-xs sm:text-sm text-[#2c2015]">
               <p className="font-semibold mb-1">Confidentiality Notice</p>
               <p className="text-[#6b5d4f]">

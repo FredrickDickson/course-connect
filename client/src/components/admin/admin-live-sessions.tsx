@@ -110,7 +110,7 @@ export default function AdminLiveSessions() {
   const getStatusBadge = (session: LiveSession) => {
     if (session.status === 'live') {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse border-0">
+        <Badge className="bg-[#5A2633] text-white animate-pulse border-0">
           <span className="h-2 w-2 rounded-full bg-white mr-1.5 animate-pulse" />
           Live Now
         </Badge>
@@ -131,7 +131,7 @@ export default function AdminLiveSessions() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#610000] border-t-transparent" />
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#5A2633] border-t-transparent" />
       </div>
     );
   }
@@ -154,21 +154,21 @@ export default function AdminLiveSessions() {
         <Button
           variant={filter === 'upcoming' ? 'default' : 'outline'}
           onClick={() => setFilter('upcoming')}
-          className={filter === 'upcoming' ? 'bg-[#610000] hover:bg-[#7d0000]' : ''}
+          className={filter === 'upcoming' ? 'bg-[#5A2633] hover:bg-[#5A2633]' : ''}
         >
           Upcoming
         </Button>
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
           onClick={() => setFilter('all')}
-          className={filter === 'all' ? 'bg-[#610000] hover:bg-[#7d0000]' : ''}
+          className={filter === 'all' ? 'bg-[#5A2633] hover:bg-[#5A2633]' : ''}
         >
           All
         </Button>
         <Button
           variant={filter === 'past' ? 'default' : 'outline'}
           onClick={() => setFilter('past')}
-          className={filter === 'past' ? 'bg-[#610000] hover:bg-[#7d0000]' : ''}
+          className={filter === 'past' ? 'bg-[#5A2633] hover:bg-[#5A2633]' : ''}
         >
           Past
         </Button>
@@ -199,7 +199,7 @@ export default function AdminLiveSessions() {
                   <div className="flex flex-col lg:flex-row gap-6">
                     {/* Date Badge */}
                     <div className="flex-shrink-0">
-                      <div className="w-20 h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
+                      <div className="w-20 h-20 bg-gradient-to-br from-[#5A2633] to-[#5A2633] rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
                         <span className="text-2xl font-bold">
                           {format(startDate, 'd')}
                         </span>
@@ -284,7 +284,7 @@ export default function AdminLiveSessions() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="gap-2 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                                  className="gap-2 text-[#5A2633] hover:text-[#5A2633] border-red-200 hover:bg-red-50"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                   Cancel Session
@@ -301,7 +301,7 @@ export default function AdminLiveSessions() {
                                   <AlertDialogCancel>Keep Session</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => deleteMutation.mutate(session.id)}
-                                    className="bg-red-600 hover:bg-red-700"
+                                    className="bg-[#5A2633] hover:bg-[#5A2633]"
                                   >
                                     Cancel Session
                                   </AlertDialogAction>

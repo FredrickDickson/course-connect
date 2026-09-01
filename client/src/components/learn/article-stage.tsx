@@ -27,7 +27,7 @@ export default function ArticleStage({ lesson, completed, onMarkComplete }: Prop
           <Button
             onClick={onMarkComplete}
             disabled={completed}
-            className={completed ? "bg-[#22C55E] hover:bg-[#22C55E]" : "bg-[#B91C1C] hover:bg-[#A01818]"}
+            className={completed ? "bg-[#22C55E] hover:bg-[#22C55E]" : "bg-[#5A2633] hover:bg-[#4a1f29]"}
           >
             <Check className="h-4 w-4 mr-1" />
             {completed ? "Completed" : "Mark as complete"}

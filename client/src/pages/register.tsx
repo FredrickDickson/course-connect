@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import cimaLogo from "/images/logo.jpeg";
+import cimaLogo from "/uploads/logo.png";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -162,7 +162,7 @@ export default function Register() {
         />
         
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000]/90 via-[#610000]/85 to-black/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633]/90 via-[#5A2633]/85 to-black/80"></div>
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
@@ -204,7 +204,7 @@ export default function Register() {
       <div className="flex-1 flex items-center justify-center p-4 lg:p-6 overflow-y-auto bg-gray-50">
         <div className="w-full max-w-md my-auto">
           {/* Mobile Back Button */}
-          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#610000] hover:text-[#8b0000] transition-colors">
+          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#5A2633] hover:text-[#5A2633] transition-colors">
             <ArrowLeft className="h-5 w-5 mr-2" />
             <span className="text-sm font-medium">Back to Home</span>
           </Link>
@@ -221,10 +221,10 @@ export default function Register() {
                     className="h-12 w-12 sm:h-16 sm:w-16 object-contain rounded-lg"
                   />
                   <div className="text-left">
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#610000] tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#5A2633] tracking-tight">
                       CIMA Learn
                     </h1>
-                    <p className="text-[10px] sm:text-xs text-[#610000]/90 uppercase tracking-wider font-medium">
+                    <p className="text-[10px] sm:text-xs text-[#5A2633]/90 uppercase tracking-wider font-medium">
                       Professional ADR Education
                     </p>
                   </div>
@@ -233,7 +233,7 @@ export default function Register() {
 
               {/* Header */}
               <div className="space-y-1 text-center">
-                <h2 className="font-sf-pro-display text-xl sm:text-2xl text-[#610000]">
+                <h2 className="font-sf-pro-display text-xl sm:text-2xl text-[#5A2633]">
                   Get Started
                 </h2>
                 <p className="font-sf-pro-text text-xs sm:text-sm text-neutral-600">
@@ -267,7 +267,7 @@ export default function Register() {
                         onChange={handleChange}
                         required
                         disabled={isLoading}
-                        className="h-9 pl-8 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-xs transition-all"
+                        className="h-9 pl-8 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-xs transition-all"
                       />
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export default function Register() {
                         onChange={handleChange}
                         required
                         disabled={isLoading}
-                        className="h-9 pl-8 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-xs transition-all"
+                        className="h-9 pl-8 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-xs transition-all"
                       />
                     </div>
                   </div>
@@ -305,7 +305,7 @@ export default function Register() {
                       value={formData.middleName}
                       onChange={handleChange}
                       disabled={isLoading}
-                      className="h-10 pl-10 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-sm transition-all"
+                      className="h-10 pl-10 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-sm transition-all"
                     />
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function Register() {
                       onChange={handleChange}
                       required
                       disabled={isLoading}
-                      className="h-10 pl-10 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-sm transition-all"
+                      className="h-10 pl-10 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-sm transition-all"
                     />
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function Register() {
                       onChange={handleChange}
                       required
                       disabled={isLoading}
-                      className="h-10 pl-10 pr-10 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-sm transition-all"
+                      className="h-10 pl-10 pr-10 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-sm transition-all"
                     />
                     <button
                       type="button"
@@ -376,7 +376,7 @@ export default function Register() {
                       onChange={handleChange}
                       required
                       disabled={isLoading}
-                      className="h-10 pl-10 pr-10 rounded-lg border-neutral-200 focus:border-[#610000] focus:ring-[#610000] font-sf-pro-text text-sm transition-all"
+                      className="h-10 pl-10 pr-10 rounded-lg border-neutral-200 focus:border-[#5A2633] focus:ring-[#5A2633] font-sf-pro-text text-sm transition-all"
                     />
                     <button
                       type="button"
@@ -416,11 +416,11 @@ export default function Register() {
                   <label htmlFor="agreeToTerms" className="text-xs sm:text-sm text-neutral-600 font-sf-pro-text cursor-pointer">
                     I agree to the{" "}
                     <Link href="/terms-of-service">
-                      <span className="text-[#610000] hover:text-[#8b0000] font-medium transition-colors">Terms</span>
+                      <span className="text-[#5A2633] hover:text-[#5A2633] font-medium transition-colors">Terms</span>
                     </Link>{" "}
                     and{" "}
                     <Link href="/privacy-policy">
-                      <span className="text-[#610000] hover:text-[#8b0000] font-medium transition-colors">Privacy</span>
+                      <span className="text-[#5A2633] hover:text-[#5A2633] font-medium transition-colors">Privacy</span>
                     </Link>
                   </label>
                 </div>
@@ -428,7 +428,7 @@ export default function Register() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full h-10 bg-[#610000] hover:bg-[#8b0000] text-white rounded-lg font-sf-pro-text font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-10 bg-[#5A2633] hover:bg-[#5A2633] text-white rounded-lg font-sf-pro-text font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                   disabled={isLoading || !formData.agreeToTerms}
                 >
                   {isLoading ? (
@@ -476,7 +476,7 @@ export default function Register() {
                 <p className="text-[10px] sm:text-xs text-neutral-600 font-sf-pro-text">
                   Already have an account?{" "}
                   <Link href="/login">
-                    <span className="text-[#610000] hover:text-[#8b0000] font-semibold cursor-pointer transition-colors">
+                    <span className="text-[#5A2633] hover:text-[#5A2633] font-semibold cursor-pointer transition-colors">
                       Sign In
                     </span>
                   </Link>

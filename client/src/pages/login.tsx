@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
-import cimaLogo from "/images/logo.jpeg";
+import cimaLogo from "/uploads/logo.png";
 
 export default function Login() {
   const { t, isRTL } = useLanguage();
@@ -146,7 +146,7 @@ export default function Login() {
         />
         
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000]/90 via-[#610000]/85 to-black/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633]/90 via-[#5A2633]/85 to-black/80"></div>
         
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
@@ -188,7 +188,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-4 lg:p-8 bg-gray-50">
         <div className="w-full max-w-md">
           {/* Mobile Back Button */}
-          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#610000] hover:text-[#8b0000] transition-colors">
+          <Link href="/" className="lg:hidden inline-flex items-center mb-4 text-[#5A2633] hover:text-[#5A2633] transition-colors">
             <ArrowLeft className="h-5 w-5 mr-2" />
             <span className="text-sm font-medium">Back to Home</span>
           </Link>
@@ -205,10 +205,10 @@ export default function Login() {
                     className="h-16 w-16 object-contain rounded-lg"
                   />
                   <div className="text-left">
-                    <h1 className="text-2xl font-bold text-[#610000] tracking-tight">
+                    <h1 className="text-2xl font-bold text-[#5A2633] tracking-tight">
                       CIMA Learn
                     </h1>
-                    <p className="text-xs text-[#610000]/90 uppercase tracking-wider font-medium">
+                    <p className="text-xs text-[#5A2633]/90 uppercase tracking-wider font-medium">
                       Professional ADR Education
                     </p>
                   </div>
@@ -217,7 +217,7 @@ export default function Login() {
 
               {/* Header */}
               <div className="space-y-2 text-center">
-                <h2 className="text-3xl font-bold text-[#610000]">
+                <h2 className="text-3xl font-bold text-[#5A2633]">
                   {t("auth.welcomeBack")}
                 </h2>
                 <p className="text-sm text-gray-600">
@@ -251,7 +251,7 @@ export default function Login() {
                       onChange={handleChange}
                       required
                       disabled={isLoading}
-                      className="h-12 pl-12 pr-4 rounded-xl border-gray-200 focus:border-[#8b0000] focus:ring-[#8b0000] text-sm transition-all"
+                      className="h-12 pl-12 pr-4 rounded-xl border-gray-200 focus:border-[#5A2633] focus:ring-[#5A2633] text-sm transition-all"
                     />
                   </div>
                 </div>
@@ -263,7 +263,7 @@ export default function Login() {
                       {t("auth.password")}
                     </Label>
                     <Link href="/forgot-password">
-                      <span className="text-sm text-[#8b0000] hover:text-[#610000] cursor-pointer transition-colors font-medium">
+                      <span className="text-sm text-[#5A2633] hover:text-[#5A2633] cursor-pointer transition-colors font-medium">
                         {t("auth.forgotPassword")}
                       </span>
                     </Link>
@@ -279,7 +279,7 @@ export default function Login() {
                       onChange={handleChange}
                       required
                       disabled={isLoading}
-                      className="h-12 pl-12 pr-12 rounded-xl border-gray-200 focus:border-[#8b0000] focus:ring-[#8b0000] text-sm transition-all"
+                      className="h-12 pl-12 pr-12 rounded-xl border-gray-200 focus:border-[#5A2633] focus:ring-[#5A2633] text-sm transition-all"
                     />
                     <button
                       type="button"
@@ -296,7 +296,7 @@ export default function Login() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-[#8b0000] hover:bg-[#610000] text-white rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full h-12 bg-[#5A2633] hover:bg-[#5A2633] text-white rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -344,7 +344,7 @@ export default function Login() {
                 <p className="text-sm text-gray-600">
                   {t("auth.noAccount")}{" "}
                   <Link href="/register">
-                    <span className="text-[#8b0000] hover:text-[#610000] font-semibold cursor-pointer transition-colors">
+                    <span className="text-[#5A2633] hover:text-[#5A2633] font-semibold cursor-pointer transition-colors">
                       {t("auth.getStarted")}
                     </span>
                   </Link>
@@ -357,13 +357,13 @@ export default function Login() {
           <div className="mt-6 text-center text-xs text-gray-500">
             {t("auth.agreeToTerms")}{" "}
             <Link href="/terms-of-service">
-              <span className="text-[#8b0000] hover:underline cursor-pointer">
+              <span className="text-[#5A2633] hover:underline cursor-pointer">
                 {t("auth.termsOfService")}
               </span>
             </Link>{" "}
             {t("auth.and")}{" "}
             <Link href="/privacy-policy">
-              <span className="text-[#8b0000] hover:underline cursor-pointer">
+              <span className="text-[#5A2633] hover:underline cursor-pointer">
                 {t("auth.privacyPolicy")}
               </span>
             </Link>

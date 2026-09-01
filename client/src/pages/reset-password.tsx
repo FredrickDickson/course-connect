@@ -160,7 +160,7 @@ export default function ResetPassword() {
                         ) : (
                           <X className="h-4 w-4 text-red-500" />
                         )}
-                        <span className={passwordStrength.minLength ? "text-green-600" : "text-red-600"}>
+                        <span className={passwordStrength.minLength ? "text-green-600" : "text-[#5A2633]"}>
                           At least 8 characters
                         </span>
                       </div>
@@ -170,7 +170,7 @@ export default function ResetPassword() {
                         ) : (
                           <X className="h-4 w-4 text-red-500" />
                         )}
-                        <span className={passwordStrength.hasUppercase ? "text-green-600" : "text-red-600"}>
+                        <span className={passwordStrength.hasUppercase ? "text-green-600" : "text-[#5A2633]"}>
                           One uppercase letter
                         </span>
                       </div>
@@ -180,7 +180,7 @@ export default function ResetPassword() {
                         ) : (
                           <X className="h-4 w-4 text-red-500" />
                         )}
-                        <span className={passwordStrength.hasNumber ? "text-green-600" : "text-red-600"}>
+                        <span className={passwordStrength.hasNumber ? "text-green-600" : "text-[#5A2633]"}>
                           One number
                         </span>
                       </div>
@@ -190,7 +190,7 @@ export default function ResetPassword() {
                         ) : (
                           <X className="h-4 w-4 text-red-500" />
                         )}
-                        <span className={passwordStrength.hasSpecialChar ? "text-green-600" : "text-red-600"}>
+                        <span className={passwordStrength.hasSpecialChar ? "text-green-600" : "text-[#5A2633]"}>
                           One special character (!@#$%^&*)
                         </span>
                       </div>
@@ -212,7 +212,7 @@ export default function ResetPassword() {
                       disabled={isLoading}
                       className={`pl-10 pr-10 ${
                         confirmPassword && !passwordsMatch
-                          ? "border-red-500 focus:border-red-500"
+                          ? "border-[#5A2633] focus:border-[#5A2633]"
                           : confirmPassword && passwordsMatch
                           ? "border-green-500 focus:border-green-500"
                           : ""
@@ -233,7 +233,7 @@ export default function ResetPassword() {
                     </button>
                   </div>
                   {confirmPassword && !passwordsMatch && (
-                    <p className="text-sm text-red-600">Passwords do not match</p>
+                    <p className="text-sm text-[#5A2633]">Passwords do not match</p>
                   )}
                   {confirmPassword && passwordsMatch && (
                     <p className="text-sm text-green-600">Passwords match</p>

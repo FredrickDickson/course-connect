@@ -140,11 +140,11 @@ export default function NotificationBellMerged() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-[#4a3828] hover:text-[#610000] hover:bg-[#faf9f6]"
+          className="relative text-[#4a3828] hover:text-[#5A2633] hover:bg-[#faf9f6]"
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-[#610000] text-white text-[10px] rounded-full">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-[#5A2633] text-white text-[10px] rounded-full">
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}
@@ -182,7 +182,7 @@ export default function NotificationBellMerged() {
               >
                 <div className="flex items-start gap-3 w-full">
                   {!notification.read && (
-                    <div className="h-2 w-2 mt-2 rounded-full bg-[#610000] flex-shrink-0" />
+                    <div className="h-2 w-2 mt-2 rounded-full bg-[#5A2633] flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{notification.title}</p>

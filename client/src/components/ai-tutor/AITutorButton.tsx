@@ -33,7 +33,7 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
           size="lg"
           className={cn(
             "rounded-full w-14 h-14 shadow-lg transition-all duration-300",
-            "bg-gradient-to-r from-[#610000] to-[#8b0000] hover:from-[#7d0000] hover:to-[#a01818]",
+            "bg-gradient-to-r from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#4a1f29]",
             "text-white hover:scale-110",
             isOpen && "scale-90"
           )}
@@ -51,7 +51,7 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
         
         {/* Pulse animation when closed */}
         {!isOpen && (
-          <div className="absolute inset-0 rounded-full bg-[#610000] animate-ping opacity-20 pointer-events-none" />
+          <div className="absolute inset-0 rounded-full bg-[#5A2633] animate-ping opacity-20 pointer-events-none" />
         )}
       </div>
 

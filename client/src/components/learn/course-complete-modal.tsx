@@ -119,7 +119,7 @@ export default function CourseCompleteModal({ open, onOpenChange, courseTitle, c
             <Button
               onClick={handleDownloadCertificate}
               disabled={loadingCert}
-              className="bg-[#B91C1C] hover:bg-[#A01818]"
+              className="bg-[#5A2633] hover:bg-[#4a1f29]"
             >
               {loadingCert ? (
                 <>Loading...</>

@@ -81,7 +81,7 @@ export default function DownloadableResources() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-[#610000]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#5A2633]" />
         <p className="text-muted-foreground">Loading resources...</p>
       </div>
     );
@@ -121,8 +121,8 @@ export default function DownloadableResources() {
       <Card key={resource.id} className="hover:shadow-lg transition-all duration-300 flex flex-col h-full">
         <CardHeader className="flex-shrink-0">
           <div className="flex items-start justify-between mb-3">
-            <div className="w-12 h-12 bg-[#610000]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Icon className="w-6 h-6 text-[#610000]" />
+            <div className="w-12 h-12 bg-[#5A2633]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Icon className="w-6 h-6 text-[#5A2633]" />
             </div>
             <div className="flex flex-col items-end space-y-2">
               <Badge variant="secondary" className={getTypeBadgeColor(resource.resource_type)}>
@@ -154,7 +154,7 @@ export default function DownloadableResources() {
           
           <Button 
             variant="outline" 
-            className="w-full border-[#610000] text-[#610000] hover:bg-[#610000] hover:text-white transition-colors"
+            className="w-full border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633] hover:text-white transition-colors"
             onClick={() => handleDownload(resource)}
             disabled={isDownloading}
             data-testid={`download-${resource.id}`}
@@ -192,7 +192,7 @@ export default function DownloadableResources() {
       {arbitratorResources.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center space-x-3">
-            <Scale className="w-6 h-6 text-[#610000]" />
+            <Scale className="w-6 h-6 text-[#5A2633]" />
             <h3 className="text-2xl font-bold text-[#2c2015] font-sf-pro-display">
               Arbitrator Resources
             </h3>
@@ -208,7 +208,7 @@ export default function DownloadableResources() {
       {mediatorResources.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center space-x-3">
-            <Users className="w-6 h-6 text-[#610000]" />
+            <Users className="w-6 h-6 text-[#5A2633]" />
             <h3 className="text-2xl font-bold text-[#2c2015] font-sf-pro-display">
               Mediator Resources
             </h3>

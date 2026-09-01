@@ -36,9 +36,9 @@ const STATUS_META: Record<EligibilityResponse["status"], {
   },
   BLOCKED: {
     badge: "Action Required",
-    badgeClass: "text-red-600 border-red-100 bg-red-50",
+    badgeClass: "text-[#5A2633] border-red-100 bg-red-50",
     icon: AlertTriangle,
-    iconClass: "text-red-600",
+    iconClass: "text-[#5A2633]",
   },
 };
 

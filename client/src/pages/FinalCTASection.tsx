@@ -11,7 +11,7 @@ function FinalCTASection() {
       className={`relative py-28 sm:py-36 lg:py-44 px-6 lg:px-12 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
     >
       {/* Background with Premium Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-landing-primary via-landing-primary-container to-[#8b0000]"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-landing-primary via-landing-primary-container to-[#5A2633]"></div>
       
       {/* Subtle Pattern Overlay */}
       <div className="absolute inset-0 opacity-10" style={{

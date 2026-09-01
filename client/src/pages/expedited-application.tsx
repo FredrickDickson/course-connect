@@ -527,9 +527,9 @@ export default function ExpeditedApplication() {
       {/* Header component hidden - navigation removed */}
       
       {/* Hero Section */}
-      <section className="bg-[#8b0000] text-white py-12 relative overflow-hidden">
+      <section className="bg-[#5A2633] text-white py-12 relative overflow-hidden">
         {/* Decorative gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#8b0000] to-[#410000] opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5A2633] to-[#410000] opacity-50" />
         <ScrollReveal direction="up" distance={40} duration={0.7}>
           <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link href="/onboarding">
@@ -965,7 +965,7 @@ export default function ExpeditedApplication() {
                                     {(doc.file.size / 1024).toFixed(2)} KB
                                   </p>
                                   {doc.status === "error" && doc.error && (
-                                    <p className="text-xs text-red-600 mt-1">{doc.error}</p>
+                                    <p className="text-xs text-[#5A2633] mt-1">{doc.error}</p>
                                   )}
                                 </div>
                               </div>
@@ -1004,10 +1004,10 @@ export default function ExpeditedApplication() {
 
                 {/* Error Message */}
                 {errorMessage && (
-                  <Card className="border-red-500/20 bg-red-500/5">
+                  <Card className="border-[#5A2633]/20 bg-[#5A2633]/5">
                     <CardContent className="p-4 flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-red-700">{errorMessage}</p>
+                      <AlertCircle className="w-5 h-5 text-[#5A2633] mt-0.5 shrink-0" />
+                      <p className="text-sm text-[#5A2633]">{errorMessage}</p>
                     </CardContent>
                   </Card>
                 )}

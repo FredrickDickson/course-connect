@@ -97,13 +97,13 @@ export default function CourseCardStatus({
       : "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300";
 
   const levelColors = {
-    associate: "bg-[#610000]/10 text-[#610000] border-[#610000]/20",
+    associate: "bg-[#5A2633]/10 text-[#5A2633] border-[#5A2633]/20",
     member: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20",
     fellow: "bg-[#d4c5b0]/30 text-[#4a3828] border-[#8b6f47]/20"
   };
 
   const pathwayColors = {
-    arbitration: "bg-[#610000]/10 text-[#610000] border-[#610000]/20",
+    arbitration: "bg-[#5A2633]/10 text-[#5A2633] border-[#5A2633]/20",
     mediation: "bg-[#8b6f47]/10 text-[#8b6f47] border-[#8b6f47]/20"
   };
 
@@ -113,7 +113,7 @@ export default function CourseCardStatus({
       buttonVariant: "default" as const,
       buttonText: "Enroll Now",
       buttonIcon: ShoppingCart,
-      buttonClass: "bg-[#610000] text-white hover:bg-[#7d0000] shadow-md hover:shadow-lg transition-all",
+      buttonClass: "bg-[#5A2633] text-white hover:bg-[#5A2633] shadow-md hover:shadow-lg transition-all",
       overlay: null
     },
     NEXT_STEP: {
@@ -146,7 +146,7 @@ export default function CourseCardStatus({
 
   return (
     <Card
-      className={`group h-full flex flex-col hover:shadow-xl hover:shadow-[#610000]/10 hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden border border-[#d4c5b0]/40 hover:border-[#610000]/30 relative bg-white ${
+      className={`group h-full flex flex-col hover:shadow-xl hover:shadow-[#5A2633]/10 hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden border border-[#d4c5b0]/40 hover:border-[#5A2633]/30 relative bg-white ${
         status === "LOCKED" ? "opacity-80 cursor-pointer" : ""
       }`}
       data-testid={`course-card-${course.id}`}
@@ -175,7 +175,7 @@ export default function CourseCardStatus({
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 right-2 sm:right-3 flex items-start justify-between gap-2">
           {course.is_featured && (
             <Badge
-              className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white border-0 shadow-lg text-[10px] sm:text-xs"
+              className="bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white border-0 shadow-lg text-[10px] sm:text-xs"
               data-testid="featured-badge"
             >
               <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5" />
@@ -233,7 +233,7 @@ export default function CourseCardStatus({
         </div>
 
         {/* Title - Fixed 2 lines */}
-        <h3 className="text-base sm:text-lg font-bold text-[#2c2015] mb-1.5 sm:mb-2 group-hover:text-[#610000] transition-colors line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3.5rem]" data-testid="course-title">
+        <h3 className="text-base sm:text-lg font-bold text-[#2c2015] mb-1.5 sm:mb-2 group-hover:text-[#5A2633] transition-colors line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-[3.5rem]" data-testid="course-title">
           {course.title}
         </h3>
 
@@ -312,7 +312,7 @@ export default function CourseCardStatus({
         {/* Instructor */}
         {course.instructor && (
           <div className="text-xs text-[#6b5d4f] mb-4 flex items-center" data-testid="instructor-info">
-            <div className="w-7 h-7 rounded-full bg-[#610000]/10 flex items-center justify-center mr-2.5 text-[#610000] font-semibold text-xs">
+            <div className="w-7 h-7 rounded-full bg-[#5A2633]/10 flex items-center justify-center mr-2.5 text-[#5A2633] font-semibold text-xs">
               {course.instructor.first_name?.[0]}
             </div>
             <span className="font-medium">
@@ -327,7 +327,7 @@ export default function CourseCardStatus({
         {/* Footer - Price & CTA */}
         <div className="flex items-center justify-between pt-4 mt-auto border-t border-[#d4c5b0]/30">
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-[#610000]" data-testid="course-price">
+            <span className="text-2xl font-light text-[#5A2633]" data-testid="course-price">
               {parseFloat(course.price) > 0 ? `$${parseFloat(course.price).toFixed(2)}` : 'Free'}
             </span>
             {parseFloat(course.price) > 0 && (

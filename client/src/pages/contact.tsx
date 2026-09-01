@@ -141,12 +141,12 @@ export default function Contact() {
 
                 {submitStatus === "error" && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
-                    <i className="fas fa-exclamation-circle text-red-600 text-xl"></i>
+                    <i className="fas fa-exclamation-circle text-[#5A2633] text-xl"></i>
                     <div>
                       <h4 className="font-medium text-red-900">
                         Error Sending Message
                       </h4>
-                      <p className="text-sm text-red-700">{errorMessage}</p>
+                      <p className="text-sm text-[#5A2633]">{errorMessage}</p>
                     </div>
                   </div>
                 )}

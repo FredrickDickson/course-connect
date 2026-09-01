@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import cimaLogo from "/images/logo.jpeg";
+import cimaLogo from "/uploads/logo.png";
 import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Handshake, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText, GraduationCap } from "lucide-react";
 
 // Custom inline icon: Engineer hard hat
@@ -145,7 +145,7 @@ function LiveSessionBanner() {
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 font-display">
                 {isLive ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                    <span className="w-3 h-3 bg-[#5A2633] rounded-full animate-pulse"></span>
                     Live Now!
                   </span>
                 ) : (
@@ -215,7 +215,7 @@ export default function Landing() {
   return (
     <div className="bg-white text-gray-900 min-h-screen">
       {/* Top Alert Bar */}
-      <div className="bg-[#610000] text-white text-center py-3 px-4">
+      <div className="bg-[#5A2633] text-white text-center py-3 px-4">
         <span className="text-base font-body"></span>
       </div>
 
@@ -227,14 +227,14 @@ export default function Landing() {
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 pl-2">
               <img src={cimaLogo} alt="CIMA Learn" className="h-10 w-auto" />
               <div className="flex flex-col">
-                <p className="text-sm font-semibold text-[#610000] whitespace-nowrap leading-tight font-display">CIMA Learn</p>
+                <p className="text-sm font-semibold text-[#5A2633] whitespace-nowrap leading-tight font-display">CIMA Learn</p>
                 <p className="text-[9px] text-gray-600 uppercase tracking-wider whitespace-nowrap leading-tight font-body">Professional ADR</p>
               </div>
             </Link>
 
             {/* Navigation with Search */}
             <nav className="hidden lg:flex items-center gap-6 flex-1 justify-center">
-              <a href="#categories" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Categories</a>
+              <a href="#categories" className="text-base text-gray-700 hover:text-[#5A2633] transition font-medium whitespace-nowrap font-body">Categories</a>
               
               {/* Search Bar in Navbar */}
               <form onSubmit={handleSearch} className="relative w-96">
@@ -249,22 +249,22 @@ export default function Landing() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearchInput}
                   placeholder="Search for anything"
-                  className="w-full py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8b0000] focus:border-transparent focus:bg-white transition-all font-body"
+                  className="w-full py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5A2633] focus:border-transparent focus:bg-white transition-all font-body"
                 />
               </form>
               
-              <Link href="/courses" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Learning Pathways</Link>
-              <Link href="/community" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Live Sessions</Link>
-              <Link href="/resources" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">Resources</Link>
+              <Link href="/courses" className="text-base text-gray-700 hover:text-[#5A2633] transition font-medium whitespace-nowrap font-body">Learning Pathways</Link>
+              <Link href="/community" className="text-base text-gray-700 hover:text-[#5A2633] transition font-medium whitespace-nowrap font-body">Live Sessions</Link>
+              <Link href="/resources" className="text-base text-gray-700 hover:text-[#5A2633] transition font-medium whitespace-nowrap font-body">Resources</Link>
             </nav>
 
             {/* CTA Buttons - Far Right */}
             <div className="flex items-center gap-3 flex-shrink-0 pr-2">
               <PwaInstallButton className="hidden md:inline-flex" />
-              <Link href="/login" className="text-base text-gray-700 hover:text-[#610000] transition font-medium whitespace-nowrap font-body">
+              <Link href="/login" className="text-base text-gray-700 hover:text-[#5A2633] transition font-medium whitespace-nowrap font-body">
                 Login
               </Link>
-              <Link href="/register" className="bg-[#610000] text-white px-6 py-2 rounded-md text-base font-semibold hover:bg-[#8b0000] transition whitespace-nowrap font-body shadow-sm hover:shadow-md">
+              <Link href="/register" className="bg-[#5A2633] text-white px-6 py-2 rounded-md text-base font-semibold hover:bg-[#5A2633] transition whitespace-nowrap font-body shadow-sm hover:shadow-md">
                 Create Account
               </Link>
             </div>
@@ -352,7 +352,7 @@ function StatsBarSection() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Users className="w-10 h-10 text-[#610000]" />
+              <Users className="w-10 h-10 text-[#5A2633]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">4,800+</p>
             <p className="text-base text-gray-700 font-body font-medium">Learners Worldwide</p>
@@ -360,7 +360,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Handshake className="w-10 h-10 text-[#610000]" />
+              <Handshake className="w-10 h-10 text-[#5A2633]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">120+</p>
             <p className="text-base text-gray-700 font-body font-medium">Charitable Partners</p>
@@ -368,7 +368,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <GraduationCap className="w-10 h-10 text-[#610000]" />
+              <GraduationCap className="w-10 h-10 text-[#5A2633]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">200+</p>
             <p className="text-base text-gray-700 font-body font-medium">Expert-Led Courses</p>
@@ -376,7 +376,7 @@ function StatsBarSection() {
           
           <div className="group text-center">
             <div className="flex items-center justify-center mb-4">
-              <Award className="w-10 h-10 text-[#610000]" />
+              <Award className="w-10 h-10 text-[#5A2633]" />
             </div>
             <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">98%</p>
             <p className="text-base text-gray-700 font-body font-medium">Satisfaction Rate</p>
@@ -425,7 +425,7 @@ function FeaturedCoursesSection() {
             <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Featured Courses</h2>
           </div>
           <Link href="/courses">
-            <button className="text-[#610000] font-semibold hover:underline flex items-center gap-2 text-lg font-body">
+            <button className="text-[#5A2633] font-semibold hover:underline flex items-center gap-2 text-lg font-body">
               View all
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -438,7 +438,7 @@ function FeaturedCoursesSection() {
               <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full relative">
                 {/* Badge - Fixed positioning */}
                 {index === 0 && (
-                  <div className="absolute top-5 left-5 bg-[#610000] text-white px-4 py-2 rounded-md text-sm font-semibold z-20 font-body">
+                  <div className="absolute top-5 left-5 bg-[#5A2633] text-white px-4 py-2 rounded-md text-sm font-semibold z-20 font-body">
                     Featured
                   </div>
                 )}
@@ -456,13 +456,13 @@ function FeaturedCoursesSection() {
 
                 {/* Minimal Content */}
                 <div className="p-6">
-                  <h3 className="font-semibold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-[#610000] transition font-display">
+                  <h3 className="font-semibold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-[#5A2633] transition font-display">
                     {course.title}
                   </h3>
                   <p className="text-base text-gray-700 mb-4 font-body font-medium">
                     {course.instructor?.first_name} {course.instructor?.last_name}
                   </p>
-                  <button className="mt-4 w-full bg-[#610000] text-white py-3 rounded-md font-semibold hover:bg-[#8b0000] transition text-base font-body">
+                  <button className="mt-4 w-full bg-[#5A2633] text-white py-3 rounded-md font-semibold hover:bg-[#5A2633] transition text-base font-body">
                     Enroll Now
                   </button>
                 </div>
@@ -479,9 +479,9 @@ function FeaturedCoursesSection() {
 function SearchSection() {
   console.log('SearchSection is rendering!'); // DEBUG
   return (
-    <section className="py-12 bg-white border-y-4 border-[#610000]">
+    <section className="py-12 bg-white border-y-4 border-[#5A2633]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold text-[#610000] mb-4">SEARCH BAR IS HERE</h2>
+        <h2 className="text-center text-2xl font-bold text-[#5A2633] mb-4">SEARCH BAR IS HERE</h2>
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
@@ -492,7 +492,7 @@ function SearchSection() {
             <input
               type="text"
               placeholder="Search for anything"
-              className="w-full py-5 pl-16 pr-6 text-base text-gray-900 placeholder-gray-400 bg-white border-2 border-gray-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[#610000] focus:border-[#610000] transition-all hover:border-gray-300"
+              className="w-full py-5 pl-16 pr-6 text-base text-gray-900 placeholder-gray-400 bg-white border-2 border-gray-200 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5A2633] focus:border-[#5A2633] transition-all hover:border-gray-300"
             />
           </div>
         </div>
@@ -570,10 +570,10 @@ function LearningPathwaysSection() {
             return (
               <div
                 key={index}
-                className="bg-[#610000] rounded-[20px] p-8 md:p-10 shadow-[0_12px_28px_rgba(97,0,0,0.18)] border border-[#7f1d1d] min-h-[360px] flex flex-col items-center justify-center text-center hover:translate-y-[-2px] transition-transform duration-300"
+                className="bg-[#5A2633] rounded-[20px] p-8 md:p-10 shadow-[0_12px_28px_rgba(97,0,0,0.18)] border border-[#7f1d1d] min-h-[360px] flex flex-col items-center justify-center text-center hover:translate-y-[-2px] transition-transform duration-300"
               >
                 <div className="w-20 h-20 bg-[#f5f1f0] rounded-[18px] flex items-center justify-center mb-7 shadow-inner">
-                  <Icon className="w-9 h-9 text-[#610000]" />
+                  <Icon className="w-9 h-9 text-[#5A2633]" />
                 </div>
 
                 <h3 className="text-3xl md:text-[2.1rem] font-semibold text-white leading-tight font-display mb-5">
@@ -647,8 +647,8 @@ function WhyLearnWithCIMASection() {
             const Icon = benefit.icon;
             return (
               <div key={index} className="text-center p-8 rounded-lg hover:bg-gray-50 transition-all duration-300">
-                <div className="w-20 h-20 bg-[#610000]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Icon className="w-10 h-10 text-[#610000]" />
+                <div className="w-20 h-20 bg-[#5A2633]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Icon className="w-10 h-10 text-[#5A2633]" />
                 </div>
                 <h3 className="text-2xl font-semibold text-gray-900 font-display">
                   {benefit.title}
@@ -697,7 +697,7 @@ function BrochureDownloadSection() {
           {/* Left Column - Content */}
           <div className="space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-[#610000]/10 text-[#610000] px-4 py-2 rounded-full text-sm font-semibold font-body">
+            <div className="inline-flex items-center gap-2 bg-[#5A2633]/10 text-[#5A2633] px-4 py-2 rounded-full text-sm font-semibold font-body">
               <FileText className="w-4 h-4" />
               Professional Resources
             </div>
@@ -707,7 +707,7 @@ function BrochureDownloadSection() {
               <h2 className="text-5xl lg:text-6xl font-light text-gray-900 mb-6 font-display leading-tight">
                 Get our complete
                 <br />
-                <span className="text-[#610000] font-semibold">programme brochure</span>
+                <span className="text-[#5A2633] font-semibold">programme brochure</span>
               </h2>
               <p className="text-xl text-gray-700 leading-relaxed font-body">
                 Discover comprehensive details about our certification pathways, course offerings, faculty expertise, and career outcomes in a beautifully designed PDF guide.
@@ -725,8 +725,8 @@ function BrochureDownloadSection() {
                 const Icon = feature.icon;
                 return (
                   <div key={index} className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#610000]/10 flex items-center justify-center mt-1">
-                      <Icon className="w-4 h-4 text-[#610000]" />
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5A2633]/10 flex items-center justify-center mt-1">
+                      <Icon className="w-4 h-4 text-[#5A2633]" />
                     </div>
                     <p className="text-lg text-gray-800 font-body font-medium">{feature.text}</p>
                   </div>
@@ -737,7 +737,7 @@ function BrochureDownloadSection() {
             {/* Trust Signals - Meta Style */}
             <div className="flex flex-wrap items-center gap-8 pt-6 border-t border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center shadow-lg">
                   <Download className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -761,10 +761,10 @@ function BrochureDownloadSection() {
           <div className="lg:pl-8">
             <div className="bg-white rounded-2xl shadow-[0_20px_70px_rgba(0,0,0,0.08)] border border-gray-100 p-8 lg:p-12 relative overflow-hidden">
               {/* Decorative Element */}
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#610000]/5 to-transparent rounded-full blur-3xl" />
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#5A2633]/5 to-transparent rounded-full blur-3xl" />
               
               <div className="relative text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#5A2633] to-[#5A2633] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                   <Download className="w-10 h-10 text-white" />
                 </div>
                 
@@ -774,7 +774,7 @@ function BrochureDownloadSection() {
                 {/* Download Button - Premium Design */}
                 <button
                   onClick={handleDownload}
-                  className="group w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white px-8 py-5 rounded-xl text-xl font-semibold hover:shadow-[0_10px_40px_rgba(97,0,0,0.3)] transition-all duration-300 flex items-center justify-center gap-3 font-body"
+                  className="group w-full bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white px-8 py-5 rounded-xl text-xl font-semibold hover:shadow-[0_10px_40px_rgba(97,0,0,0.3)] transition-all duration-300 flex items-center justify-center gap-3 font-body"
                 >
                   <Download className="w-6 h-6 group-hover:translate-y-0.5 transition-transform" />
                   <span>Download Brochure (PDF)</span>
@@ -789,7 +789,7 @@ function BrochureDownloadSection() {
 
             {/* Below Card CTA */}
             <p className="text-center text-base text-gray-600 mt-6 font-body">
-              Questions? <Link href="/contact" className="text-[#610000] hover:underline font-semibold">Contact our team</Link>
+              Questions? <Link href="/contact" className="text-[#5A2633] hover:underline font-semibold">Contact our team</Link>
             </p>
           </div>
         </div>
@@ -862,7 +862,7 @@ function TestimonialsSection() {
 
               {/* Author */}
               <div className="flex items-center gap-4 border-t border-gray-100 pt-6">
-                <div className="w-14 h-14 rounded-full bg-[#610000] flex items-center justify-center text-white font-bold text-lg font-display">
+                <div className="w-14 h-14 rounded-full bg-[#5A2633] flex items-center justify-center text-white font-bold text-lg font-display">
                   {testimonial.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
@@ -930,7 +930,7 @@ function UpcomingLiveProgramsSection() {
             <h2 className="text-4xl font-bold text-gray-900 mb-2">Upcoming Live Programs</h2>
             <p className="text-gray-600">Join our expert-led live sessions and masterclasses</p>
           </div>
-          <button className="text-[#610000] font-semibold hover:underline flex items-center gap-1">
+          <button className="text-[#5A2633] font-semibold hover:underline flex items-center gap-1">
             View all programs
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -940,14 +940,14 @@ function UpcomingLiveProgramsSection() {
           {programs.map((program, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 group">
               {/* Date Badge */}
-              <div className="bg-[#610000] text-white text-center py-4">
+              <div className="bg-[#5A2633] text-white text-center py-4">
                 <p className="text-3xl font-bold">{program.date}</p>
                 <p className="text-sm uppercase tracking-wide">{program.month}</p>
               </div>
 
               {/* Content */}
               <div className="p-5">
-                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#610000] transition min-h-[3rem]">
+                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#5A2633] transition min-h-[3rem]">
                   {program.title}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3 line-clamp-2 min-h-[2.5rem]">
@@ -963,7 +963,7 @@ function UpcomingLiveProgramsSection() {
                     {program.attendees} attending
                   </div>
                 </div>
-                <button className="w-full bg-[#610000] text-white py-2 rounded-lg font-semibold hover:bg-[#8b0000] transition">
+                <button className="w-full bg-[#5A2633] text-white py-2 rounded-lg font-semibold hover:bg-[#5A2633] transition">
                   {program.status}
                 </button>
               </div>
@@ -990,7 +990,7 @@ function FinalCTASection() {
           loading="lazy"
           style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#610000]/95 to-[#610000]/85" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#5A2633]/95 to-[#5A2633]/85" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
@@ -998,7 +998,7 @@ function FinalCTASection() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20">
           <Link href="/register">
-            <button className="bg-white text-[#610000] px-14 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition shadow-2xl font-body">
+            <button className="bg-white text-[#5A2633] px-14 py-5 rounded-md font-semibold text-lg hover:bg-gray-100 transition shadow-2xl font-body">
               Create Your Account
             </button>
           </Link>

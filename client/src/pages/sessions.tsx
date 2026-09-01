@@ -154,7 +154,7 @@ export default function SessionsPage() {
     // If explicitly marked as live
     if (session.status === 'live') {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse border-0">
+        <Badge className="bg-[#5A2633] text-white animate-pulse border-0">
           <span className="h-2 w-2 rounded-full bg-white mr-1.5 animate-pulse" />
           Live Now
         </Badge>
@@ -164,7 +164,7 @@ export default function SessionsPage() {
     // If meeting is currently in progress (between start and end time)
     if (now >= start && now <= end) {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse border-0">
+        <Badge className="bg-[#5A2633] text-white animate-pulse border-0">
           <span className="h-2 w-2 rounded-full bg-white mr-1.5 animate-pulse" />
           In Progress
         </Badge>
@@ -241,7 +241,7 @@ export default function SessionsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold text-[#2c2015] font-sf-pro-display flex items-center gap-3">
-                <Video className="h-10 w-10 text-[#610000]" />
+                <Video className="h-10 w-10 text-[#5A2633]" />
                 Live Sessions
               </h1>
               <p className="text-lg text-[#6b5d4f] mt-2">
@@ -254,7 +254,7 @@ export default function SessionsPage() {
 
         {/* Notice Banner for Today's Sessions */}
         {todaysSessions.length > 0 && (
-          <Card className="border-[#610000] bg-gradient-to-r from-[#610000] to-[#8b0000] text-white shadow-lg">
+          <Card className="border-[#5A2633] bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white shadow-lg">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
@@ -305,7 +305,7 @@ export default function SessionsPage() {
                               <Button 
                                 variant="secondary" 
                                 size="sm" 
-                                className="h-8 text-xs sm:text-sm bg-white text-[#610000] hover:bg-white/90 w-full xs:w-auto font-semibold"
+                                className="h-8 text-xs sm:text-sm bg-white text-[#5A2633] hover:bg-white/90 w-full xs:w-auto font-semibold"
                               >
                                 Register Now →
                               </Button>
@@ -444,7 +444,7 @@ function SessionsList({
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#610000] border-t-transparent" />
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#5A2633] border-t-transparent" />
       </div>
     );
   }
@@ -487,7 +487,7 @@ function SessionsList({
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 {/* Date Badge */}
                 <div className="flex-shrink-0 self-start">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#610000] to-[#8b0000] rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#5A2633] to-[#5A2633] rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
                     <span className="text-xl sm:text-2xl font-bold">
                       {format(startDate, 'd')}
                     </span>
@@ -539,7 +539,7 @@ function SessionsList({
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
                         <AvatarImage src={session.instructor.profile_image_url} />
-                        <AvatarFallback className="text-[10px] sm:text-xs bg-[#610000] text-white">
+                        <AvatarFallback className="text-[10px] sm:text-xs bg-[#5A2633] text-white">
                           {session.instructor.first_name[0]}
                           {session.instructor.last_name[0]}
                         </AvatarFallback>
@@ -578,7 +578,7 @@ function SessionsList({
                     {/* Start Meeting Button - Instructor/admin host control */}
                     {isStartable && session.zoom_start_url && !showPast ? (
                       <Button
-                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000]"
+                        className="gap-2 bg-gradient-to-br from-[#5A2633] to-[#5A2633] hover:from-[#7a0000] hover:to-[#a00000]"
                         onClick={() => window.open(session.zoom_start_url, '_blank')}
                       >
                         <Video className="h-4 w-4" />
@@ -587,7 +587,7 @@ function SessionsList({
                     ) : /* Join Button - Only if registered and session is live */
                     isJoinable && session.zoom_join_url && !showPast ? (
                       <Button
-                        className="gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] hover:from-[#7a0000] hover:to-[#a00000] w-full xs:w-auto text-sm"
+                        className="gap-2 bg-gradient-to-br from-[#5A2633] to-[#5A2633] hover:from-[#7a0000] hover:to-[#a00000] w-full xs:w-auto text-sm"
                         size="default"
                         onClick={() => window.open(session.zoom_join_url, '_blank')}
                       >
@@ -615,7 +615,7 @@ function SessionsList({
                       </Button>
                     ) : !showPast ? (
                       <Button
-                        className="gap-2 bg-[#610000] hover:bg-[#7a0000] w-full xs:w-auto text-sm"
+                        className="gap-2 bg-[#5A2633] hover:bg-[#7a0000] w-full xs:w-auto text-sm"
                         size="default"
                         onClick={(e) => {
                           e.stopPropagation();

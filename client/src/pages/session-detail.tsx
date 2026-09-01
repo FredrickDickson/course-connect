@@ -180,7 +180,7 @@ export default function SessionDetailPage() {
 
     if (session.status === 'live') {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse border-0">
+        <Badge className="bg-[#5A2633] text-white animate-pulse border-0">
           <span className="h-2 w-2 rounded-full bg-white mr-1.5 animate-pulse" />
           Live Now
         </Badge>
@@ -276,7 +276,7 @@ export default function SessionDetailPage() {
     return (
       <StudentLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#610000] border-t-transparent" />
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#5A2633] border-t-transparent" />
         </div>
       </StudentLayout>
     );
@@ -377,7 +377,7 @@ export default function SessionDetailPage() {
                 />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
+                    <Button variant="outline" size="sm" className="gap-2 text-[#5A2633] hover:text-[#5A2633]">
                       <Trash2 className="h-4 w-4" />
                       <span className="hidden sm:inline">Cancel</span>
                     </Button>
@@ -393,7 +393,7 @@ export default function SessionDetailPage() {
                       <AlertDialogCancel>Keep Session</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => deleteMutation.mutate()}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-[#5A2633] hover:bg-[#5A2633]"
                       >
                         Cancel Session
                       </AlertDialogAction>
@@ -484,7 +484,7 @@ export default function SessionDetailPage() {
                         >
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={participant.user?.profile_image_url} />
-                            <AvatarFallback className="bg-[#610000] text-white">
+                            <AvatarFallback className="bg-[#5A2633] text-white">
                               {participant.user?.first_name?.[0]}
                               {participant.user?.last_name?.[0]}
                             </AvatarFallback>
@@ -527,7 +527,7 @@ export default function SessionDetailPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={session.instructor.profile_image_url} />
-                      <AvatarFallback className="bg-[#610000] text-white">
+                      <AvatarFallback className="bg-[#5A2633] text-white">
                         {session.instructor.first_name[0]}
                         {session.instructor.last_name[0]}
                       </AvatarFallback>
@@ -608,7 +608,7 @@ export default function SessionDetailPage() {
                   {/* Start Meeting Button - Instructor/admin host control, opens the Zoom host link */}
                   {isStartable && session.zoom_start_url ? (
                     <Button
-                      className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
+                      className="w-full gap-2 bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
                       size="lg"
                       onClick={() => window.open(session.zoom_start_url, '_blank')}
                     >
@@ -619,7 +619,7 @@ export default function SessionDetailPage() {
                     /* Join Button - Only show if registered and session is live */
                     isJoinable && session.zoom_join_url && (
                       <Button
-                        className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
+                        className="w-full gap-2 bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white hover:from-[#7a0000] hover:to-[#a00000] animate-pulse"
                         size="lg"
                         onClick={() => window.open(session.zoom_join_url, '_blank')}
                       >
@@ -643,7 +643,7 @@ export default function SessionDetailPage() {
                   {/* Register Button - Show if not registered and can register */}
                   {!session.user_registered && canRegister && !isInstructor() && (
                     <Button
-                      className="w-full gap-2 bg-gradient-to-br from-[#610000] to-[#8b0000] text-white"
+                      className="w-full gap-2 bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white"
                       size="lg"
                       onClick={() => registerMutation.mutate()}
                       disabled={registerMutation.isPending}
@@ -657,7 +657,7 @@ export default function SessionDetailPage() {
                   {session.user_registered && !isSessionLive && !isInstructor() && (
                     <Button
                       variant="outline"
-                      className="w-full gap-2 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                      className="w-full gap-2 text-[#5A2633] hover:text-[#5A2633] border-red-200 hover:bg-red-50"
                       onClick={() => unregisterMutation.mutate()}
                       disabled={unregisterMutation.isPending}
                     >

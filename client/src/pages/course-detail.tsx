@@ -560,7 +560,7 @@ export default function CourseDetail() {
                       <CardContent className="p-6">
                         <div className="mb-4">
                           <p className="text-sm text-muted-foreground mb-1">Course Price</p>
-                          <p className="text-3xl font-bold text-primary">{formatCoursePrice(course.price, course.currency || 'USD')}</p>
+                          <p className="text-3xl font-light text-primary">{formatCoursePrice(course.price, course.currency || 'USD')}</p>
                         </div>
                         {prerequisiteCourse && (
                           <div className="mb-4">
@@ -604,7 +604,7 @@ export default function CourseDetail() {
                         )}
                         <div className="mb-4">
                           <p className="text-sm text-muted-foreground mb-1">Course Price</p>
-                          <p className="text-3xl font-bold text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
+                          <p className="text-3xl font-light text-primary">{isInstructorOfCourse ? 'Free' : formatCoursePrice(course.price, course.currency || 'USD')}</p>
                         </div>
                         <Button className="w-full" size="lg" onClick={handleEnroll}>
                           {!user ? 'Sign In to Enroll' : (isInstructorOfCourse ? 'Enroll as Instructor' : (isFreeCourse ? 'Enroll for Free' : 'Enroll Now'))}

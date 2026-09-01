@@ -113,7 +113,7 @@ export default function UpcomingSessionsCard() {
 
     if (session.status === 'live') {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse">
+        <Badge className="bg-[#5A2633] text-white animate-pulse">
           <span className="h-2 w-2 rounded-full bg-white mr-1" />
           Live Now
         </Badge>
@@ -122,7 +122,7 @@ export default function UpcomingSessionsCard() {
 
     if (now >= start && now <= end) {
       return (
-        <Badge className="bg-red-500 text-white animate-pulse">
+        <Badge className="bg-[#5A2633] text-white animate-pulse">
           <span className="h-2 w-2 rounded-full bg-white mr-1" />
           In Progress
         </Badge>
@@ -313,7 +313,7 @@ export default function UpcomingSessionsCard() {
                       className={cn(
                         "gap-1",
                         isInProgress
-                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                          ? "bg-[#5A2633] hover:bg-[#5A2633] text-white animate-pulse"
                           : "bg-green-600 hover:bg-green-700 text-white"
                       )}
                       onClick={() => window.open(session.zoom_start_url, '_blank')}
@@ -327,7 +327,7 @@ export default function UpcomingSessionsCard() {
                       className={cn(
                         "gap-1",
                         isInProgress
-                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                          ? "bg-[#5A2633] hover:bg-[#5A2633] text-white animate-pulse"
                           : "bg-green-600 hover:bg-green-700 text-white"
                       )}
                       onClick={() => window.open(session.zoom_join_url, '_blank')}
@@ -346,7 +346,7 @@ export default function UpcomingSessionsCard() {
                     <Button
                       size="sm"
                       variant="default"
-                      className="gap-1 bg-[#610000] hover:bg-[#7a0000]"
+                      className="gap-1 bg-[#5A2633] hover:bg-[#7a0000]"
                       onClick={(e) => {
                         e.stopPropagation();
                         registerMutation.mutate(session.id);

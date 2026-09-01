@@ -342,7 +342,7 @@ export default function AdminDashboard() {
             <CreateSessionDialog />
             <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="border-[#610000] text-[#610000] hover:bg-[#610000]/5">
+                <Button variant="outline" className="border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633]/5">
                   <Shield className="h-4 w-4 mr-2" />
                   Create Admin
                 </Button>
@@ -393,7 +393,7 @@ export default function AdminDashboard() {
                     <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters.</p>
                   </div>
                   <Button
-                    className="w-full bg-[#610000] text-white hover:bg-[#7d0000]"
+                    className="w-full bg-[#5A2633] text-white hover:bg-[#5A2633]"
                     onClick={handleCreateAdmin}
                     disabled={isCreatingAdmin}
                   >
@@ -402,7 +402,7 @@ export default function AdminDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000] shadow-md">
+            <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633] shadow-md">
               <Link href="/admin/courses/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Course
@@ -414,16 +414,16 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
-              <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Overview</TabsTrigger>
-              <TabsTrigger value="sessions" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Live Sessions</TabsTrigger>
-              <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Instructors</TabsTrigger>
-              <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Enrollments</TabsTrigger>
-              <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Courses</TabsTrigger>
-              <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Quizzes</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Create Course</TabsTrigger>
-              <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Members</TabsTrigger>
-              <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Renewals</TabsTrigger>
-              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#610000]">
+              <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Overview</TabsTrigger>
+              <TabsTrigger value="sessions" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Live Sessions</TabsTrigger>
+              <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Instructors</TabsTrigger>
+              <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Enrollments</TabsTrigger>
+              <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Courses</TabsTrigger>
+              <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Quizzes</TabsTrigger>
+              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Create Course</TabsTrigger>
+              <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Members</TabsTrigger>
+              <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Renewals</TabsTrigger>
+              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">
                 Applications
                 {(pendingCount || 0) > 0 && (
                   <Badge
@@ -434,9 +434,9 @@ export default function AdminDashboard() {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Users</TabsTrigger>
-              <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Resources</TabsTrigger>
-              <TabsTrigger value="personal-notes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#610000]">Personal Notes</TabsTrigger>
+              <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Users</TabsTrigger>
+              <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Resources</TabsTrigger>
+              <TabsTrigger value="personal-notes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Personal Notes</TabsTrigger>
             </TabsList>
           </div>
 

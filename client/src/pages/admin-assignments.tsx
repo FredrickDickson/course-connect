@@ -343,7 +343,7 @@ export default function AdminAssignmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.overdue_assignments}</div>
+              <div className="text-2xl font-bold text-[#5A2633]">{stats.overdue_assignments}</div>
             </CardContent>
           </Card>
 
@@ -448,7 +448,7 @@ export default function AdminAssignmentsPage() {
             <TabsTrigger value="overdue" className="relative">
               Overdue
               {stats.overdue_assignments > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0">
+                <Badge className="ml-2 bg-[#5A2633] text-white text-xs px-1.5 py-0">
                   {stats.overdue_assignments}
                 </Badge>
               )}
@@ -497,7 +497,7 @@ export default function AdminAssignmentsPage() {
                                   <div className="font-medium text-[#2c2015] flex items-center gap-2">
                                     {assignment.title}
                                     {assignment.is_required && (
-                                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                                      <Badge variant="outline" className="text-xs bg-red-50 text-[#5A2633] border-red-200">
                                         Required
                                       </Badge>
                                     )}
@@ -559,7 +559,7 @@ export default function AdminAssignmentsPage() {
                                       className={`h-2 rounded-full transition-all ${
                                         completionRate >= 80 ? 'bg-green-500' :
                                         completionRate >= 50 ? 'bg-yellow-500' :
-                                        'bg-red-500'
+                                        'bg-[#5A2633]'
                                       }`}
                                       style={{ width: `${completionRate}%` }}
                                     />
@@ -602,7 +602,7 @@ export default function AdminAssignmentsPage() {
                     </p>
                     <Button
                       onClick={() => setLocation("/admin?tab=courses")}
-                      className="bg-[#610000] hover:bg-[#7d0000]"
+                      className="bg-[#5A2633] hover:bg-[#5A2633]"
                     >
                       <BookOpen className="h-4 w-4 mr-2" />
                       Go to Courses

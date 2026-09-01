@@ -136,7 +136,7 @@ export default function InstructorDashboard() {
           </div>
           <div className="flex gap-3 mt-4 sm:mt-0">
             <CreateSessionDialog />
-            <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000]">
+            <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
               <Link href="/instructor/courses/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Course
@@ -208,14 +208,14 @@ export default function InstructorDashboard() {
               <CardContent>
                 {coursesLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-[#610000] border-t-transparent rounded-full mx-auto" />
+                    <div className="animate-spin w-8 h-8 border-4 border-[#5A2633] border-t-transparent rounded-full mx-auto" />
                   </div>
                 ) : courses.length === 0 ? (
                   <div className="text-center py-8">
                     <BookOpen className="h-12 w-12 text-[#8b6f47] mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-[#2c2015] mb-2">No courses yet</h3>
                     <p className="text-[#6b5d4f] mb-4">Create your first course to get started</p>
-                    <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                    <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                       <Link href="/instructor/courses/new">
                         <Plus className="h-4 w-4 mr-2" />
                         Create Course
@@ -230,12 +230,12 @@ export default function InstructorDashboard() {
                           {course.thumbnail_url ? (
                             <CourseThumbnail src={course.thumbnail_url} alt={course.title} className="w-full h-full" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[#610000]/20 to-[#8b6f47]/5 flex items-center justify-center">
-                              <BookOpen className="h-12 w-12 text-[#610000]/40" />
+                            <div className="w-full h-full bg-gradient-to-br from-[#5A2633]/20 to-[#8b6f47]/5 flex items-center justify-center">
+                              <BookOpen className="h-12 w-12 text-[#5A2633]/40" />
                             </div>
                           )}
                           <div className="absolute top-2 right-2">
-                            <Badge variant={course.is_published ? "default" : "secondary"} className={course.is_published ? "bg-[#610000]" : ""}>
+                            <Badge variant={course.is_published ? "default" : "secondary"} className={course.is_published ? "bg-[#5A2633]" : ""}>
                               {course.is_published ? "Published" : "Draft"}
                             </Badge>
                           </div>
@@ -253,13 +253,13 @@ export default function InstructorDashboard() {
                             </span>
                           </div>
                           <div className="flex items-center gap-1 mt-3">
-                            <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                            <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                               <Link href={`/course/${course.id}`}><Eye className="h-4 w-4" /></Link>
                             </Button>
-                            <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                            <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                               <Link href={`/instructor/courses/${course.id}/edit`}><Settings className="h-4 w-4" /></Link>
                             </Button>
-                            <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                            <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                               <Link href={`/instructor/courses/${course.id}/curriculum`}><Edit className="h-4 w-4" /></Link>
                             </Button>
                           </div>
@@ -275,7 +275,7 @@ export default function InstructorDashboard() {
           <TabsContent value="courses" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-[#2c2015] font-display">All Courses ({courses.length})</h2>
-              <Button asChild className="bg-[#610000] text-white hover:bg-[#7d0000]">
+              <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                 <Link href="/instructor/courses/new">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Course
@@ -288,7 +288,7 @@ export default function InstructorDashboard() {
                 <BookOpen className="h-16 w-16 text-[#8b6f47] mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-[#2c2015] mb-2">No courses yet</h3>
                 <p className="text-[#6b5d4f] mb-6">Create your first course to start teaching</p>
-                <Button asChild size="lg" className="bg-[#610000] text-white hover:bg-[#7d0000]">
+                <Button asChild size="lg" className="bg-[#5A2633] text-white hover:bg-[#5A2633]">
                   <Link href="/instructor/courses/new">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First Course
@@ -303,8 +303,8 @@ export default function InstructorDashboard() {
                       {course.thumbnail_url ? (
                         <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#610000]/20 to-[#8b6f47]/5 flex items-center justify-center">
-                          <BookOpen className="h-12 w-12 text-[#610000]/40" />
+                        <div className="w-full h-full bg-gradient-to-br from-[#5A2633]/20 to-[#8b6f47]/5 flex items-center justify-center">
+                          <BookOpen className="h-12 w-12 text-[#5A2633]/40" />
                         </div>
                       )}
                       <Badge className="absolute top-2 right-2" variant={course.is_published ? "default" : "secondary"}>
@@ -322,13 +322,13 @@ export default function InstructorDashboard() {
                         <span>{formatCurrency(Number(course.price))}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-3">
-                        <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                        <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                           <Link href={`/course/${course.id}`}><Eye className="h-4 w-4" /></Link>
                         </Button>
-                        <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                        <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                           <Link href={`/instructor/courses/${course.id}/edit`}><Settings className="h-4 w-4" /></Link>
                         </Button>
-                        <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                        <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                           <Link href={`/instructor/courses/${course.id}/curriculum`}><Edit className="h-4 w-4" /></Link>
                         </Button>
                       </div>
@@ -393,7 +393,7 @@ export default function InstructorDashboard() {
                             {assignment.board?.description || 'No description'}
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm" asChild className="text-[#610000] hover:text-[#7d0000] hover:bg-[#f5f3ed]">
+                        <Button variant="ghost" size="sm" asChild className="text-[#5A2633] hover:text-[#5A2633] hover:bg-[#f5f3ed]">
                           <Link href={`/community/forums/${assignment.board?.slug}`}>
                             <Eye className="h-4 w-4" />
                           </Link>
@@ -406,15 +406,15 @@ export default function InstructorDashboard() {
                 <div className="pt-4 border-t border-[#d4c5b0]/30">
                   <h3 className="font-semibold text-[#2c2015] mb-3">Community Management</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button asChild variant="outline" className="h-auto flex-col py-6 border-[#d4c5b0]/50 hover:bg-[#f5f3ed] hover:border-[#610000]">
+                    <Button asChild variant="outline" className="h-auto flex-col py-6 border-[#d4c5b0]/50 hover:bg-[#f5f3ed] hover:border-[#5A2633]">
                       <Link href="/community">
-                        <MessageSquare className="h-8 w-8 mb-2 text-[#610000]" />
+                        <MessageSquare className="h-8 w-8 mb-2 text-[#5A2633]" />
                         <span className="text-[#2c2015]">View Community</span>
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" className="h-auto flex-col py-6 border-[#d4c5b0]/50 hover:bg-[#f5f3ed] hover:border-[#610000]">
+                    <Button asChild variant="outline" className="h-auto flex-col py-6 border-[#d4c5b0]/50 hover:bg-[#f5f3ed] hover:border-[#5A2633]">
                       <Link href="/community/forums/general/new">
-                        <Plus className="h-8 w-8 mb-2 text-[#610000]" />
+                        <Plus className="h-8 w-8 mb-2 text-[#5A2633]" />
                         <span className="text-[#2c2015]">Post Announcement</span>
                       </Link>
                     </Button>
@@ -429,7 +429,7 @@ export default function InstructorDashboard() {
               <Card className="bg-white border-[#d4c5b0]/30">
                 <CardHeader>
                   <CardTitle className="flex items-center text-[#2c2015] font-display">
-                    <BarChart3 className="w-5 h-5 mr-2 text-[#610000]" />
+                    <BarChart3 className="w-5 h-5 mr-2 text-[#5A2633]" />
                     Course Performance
                   </CardTitle>
                 </CardHeader>
@@ -461,7 +461,7 @@ export default function InstructorDashboard() {
               <Card className="bg-white border-[#d4c5b0]/30">
                 <CardHeader>
                   <CardTitle className="flex items-center text-[#2c2015] font-display">
-                    <Target className="w-5 h-5 mr-2 text-[#610000]" />
+                    <Target className="w-5 h-5 mr-2 text-[#5A2633]" />
                     Summary
                   </CardTitle>
                 </CardHeader>

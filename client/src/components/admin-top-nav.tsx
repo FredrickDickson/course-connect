@@ -51,12 +51,12 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
                 placeholder="Search users, courses, applications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-12 pl-4 py-5 text-sm border-[#d4c5b0]/40 focus:border-[#610000] focus:ring-[#610000] rounded-full bg-[#faf9f6]"
+                className="w-full pr-12 pl-4 py-5 text-sm border-[#d4c5b0]/40 focus:border-[#5A2633] focus:ring-[#5A2633] rounded-full bg-[#faf9f6]"
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-1 bg-[#610000] hover:bg-[#7d0000] text-white rounded-full h-10 w-10 shadow-md"
+                className="absolute right-1 bg-[#5A2633] hover:bg-[#5A2633] text-white rounded-full h-10 w-10 shadow-md"
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -66,7 +66,7 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
           {/* Right Actions */}
           <div className="flex items-center gap-3">
             {/* Admin Badge */}
-            <Badge variant="outline" className="text-xs px-3 py-1 border-[#610000] text-[#610000]">
+            <Badge variant="outline" className="text-xs px-3 py-1 border-[#5A2633] text-[#5A2633]">
               <Shield className="w-3 h-3 mr-1" />
               Admin
             </Badge>
@@ -76,8 +76,8 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
               <Button
                 variant="ghost"
                 className={cn(
-                  "text-sm font-medium text-[#4a3828] hover:text-[#610000] hover:bg-transparent",
-                  location === "/admin" && "text-[#610000] font-semibold"
+                  "text-sm font-medium text-[#4a3828] hover:text-[#5A2633] hover:bg-transparent",
+                  location === "/admin" && "text-[#5A2633] font-semibold"
                 )}
               >
                 Dashboard
@@ -99,7 +99,7 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
                       src={user?.profileImageUrl || undefined}
                       alt={`${user?.firstName} ${user?.lastName}`}
                     />
-                    <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold text-sm">
+                    <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold text-sm">
                       {user?.firstName?.[0]}
                       {user?.lastName?.[0]}
                     </AvatarFallback>
@@ -126,26 +126,26 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
                 <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="cursor-pointer">
-                    <User className="w-4 h-4 mr-2 text-[#610000]" />
+                    <User className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>My Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/admin" className="cursor-pointer">
-                    <Shield className="w-4 h-4 mr-2 text-[#610000]" />
+                    <Shield className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>Admin Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/notification-settings" className="cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2 text-[#610000]" />
+                    <Settings className="w-4 h-4 mr-2 text-[#5A2633]" />
                     <span>Settings</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  className="cursor-pointer text-[#5A2633] focus:text-[#5A2633] focus:bg-red-50"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   <span>Sign Out</span>
@@ -165,18 +165,18 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
           onClick={onMobileMenuToggle}
           className="h-9 w-9"
         >
-          <Menu className="w-5 h-5 text-[#610000]" />
+          <Menu className="w-5 h-5 text-[#5A2633]" />
         </Button>
 
         {/* Logo */}
         <div className="flex items-center gap-2">
           <img 
-            src="/images/logo.jpeg" 
+            src="/uploads/logo.png" 
             alt="CIMA Logo" 
             className="w-10 h-10 object-contain"
           />
           <div className="flex flex-col">
-            <span className="text-base font-bold text-[#610000] leading-none">Admin Portal</span>
+            <span className="text-base font-bold text-[#5A2633] leading-none">Admin Portal</span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Management</span>
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
                 {user?.profileImageUrl ? (
                   <img src={user.profileImageUrl} alt={user.firstName || "User"} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-[#610000] text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="w-full h-full bg-[#5A2633] text-white flex items-center justify-center text-sm font-semibold">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </div>
                 )}
@@ -212,20 +212,20 @@ export default function AdminTopNav({ onMobileMenuToggle }: AdminTopNavProps) {
               <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="cursor-pointer">
-                  <User className="w-4 h-4 mr-2 text-[#610000]" />
+                  <User className="w-4 h-4 mr-2 text-[#5A2633]" />
                   <span>My Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/notification-settings" className="cursor-pointer">
-                  <Settings className="w-4 h-4 mr-2 text-[#610000]" />
+                  <Settings className="w-4 h-4 mr-2 text-[#5A2633]" />
                   <span>Settings</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-[#d4c5b0]/30" />
               <DropdownMenuItem
                 onClick={handleSignOut}
-                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                className="cursor-pointer text-[#5A2633] focus:text-[#5A2633] focus:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 <span>Sign Out</span>

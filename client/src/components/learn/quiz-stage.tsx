@@ -64,7 +64,7 @@ export default function QuizStage({ lesson, onComplete }: { lesson: LearnLesson;
             </div>
             <div className="flex justify-end">
               <Link href={`/quiz/${quiz.id}`}>
-                <Button className="bg-[#B91C1C] hover:bg-[#A01818]">
+                <Button className="bg-[#5A2633] hover:bg-[#4a1f29]">
                   <Play className="h-4 w-4 mr-1" />{passed ? "Retake" : used > 0 ? "Continue" : "Start quiz"}
                 </Button>
               </Link>

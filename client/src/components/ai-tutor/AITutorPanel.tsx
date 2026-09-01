@@ -158,9 +158,9 @@ export default function AITutorPanel({ isOpen, onClose, lessonContext }: AITutor
       />
 
       {/* Panel */}
-      <Card className="relative w-full md:w-[400px] h-[80vh] md:h-[600px] flex flex-col shadow-2xl border-2 border-[#610000]/20 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-300">
+      <Card className="relative w-full md:w-[400px] h-[80vh] md:h-[600px] flex flex-col shadow-2xl border-2 border-[#5A2633]/20 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#610000] to-[#8b0000] text-white rounded-t-lg">
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-semibold text-lg border-2 border-white/30">
               MS
@@ -197,7 +197,7 @@ export default function AITutorPanel({ isOpen, onClose, lessonContext }: AITutor
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#610000] to-[#8b0000] flex items-center justify-center text-white font-bold text-2xl border-4 border-[#610000]/20 shadow-lg">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center text-white font-bold text-2xl border-4 border-[#5A2633]/20 shadow-lg">
                 MS
               </div>
               <div>
@@ -253,7 +253,7 @@ export default function AITutorPanel({ isOpen, onClose, lessonContext }: AITutor
               onClick={handleSend}
               disabled={!input.trim() || sendMessage.isPending}
               size="icon"
-              className="bg-[#610000] hover:bg-[#7d0000] h-[60px] w-[60px] flex-shrink-0"
+              className="bg-[#5A2633] hover:bg-[#5A2633] h-[60px] w-[60px] flex-shrink-0"
             >
               {sendMessage.isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

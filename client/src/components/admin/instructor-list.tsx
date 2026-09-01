@@ -107,7 +107,7 @@ export default function InstructorList() {
         </div>
         <Dialog open={showAddInstructor} onOpenChange={setShowAddInstructor}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-[#610000] to-[#8b0000] text-white">
+            <Button className="bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white">
               <Plus className="w-4 h-4 mr-2" />
               Add Instructor
             </Button>
@@ -158,7 +158,7 @@ export default function InstructorList() {
                 <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters.</p>
               </div>
               <Button
-                className="w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white"
+                className="w-full bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white"
                 disabled={
                   createInstructor.isPending ||
                   !newInstructor.firstName ||
@@ -224,7 +224,7 @@ export default function InstructorList() {
                 <div className="flex items-start gap-4 mb-4">
                   <Avatar className="h-14 w-14 border-2 border-[#d4c5b0]">
                     <AvatarImage src={instructor.profile_image_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold">
                       {instructor.first_name[0]}
                       {instructor.last_name[0]}
                     </AvatarFallback>
@@ -254,7 +254,7 @@ export default function InstructorList() {
                 {/* Stats */}
                 <div className="flex items-center justify-between mb-4 p-3 bg-[#faf9f6] rounded-lg">
                   <div className="text-center flex-1">
-                    <div className="text-xl font-bold text-[#610000]">
+                    <div className="text-xl font-bold text-[#5A2633]">
                       {instructor.course_count}
                     </div>
                     <div className="text-xs text-[#6b5d4f]">Courses</div>
@@ -298,7 +298,7 @@ export default function InstructorList() {
                 <div className="mt-3 pt-3 border-t border-[#d4c5b0]/30">
                   <Button 
                     size="sm" 
-                    className="w-full bg-gradient-to-r from-[#610000] to-[#8b0000] text-white"
+                    className="w-full bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white"
                     asChild
                   >
                     <Link href={`/admin/courses/new?instructorId=${instructor.id}`}>

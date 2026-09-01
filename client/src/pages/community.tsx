@@ -301,7 +301,7 @@ export default function Community() {
     return (
       <StudentLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#610000]"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5A2633]"></div>
         </div>
       </StudentLayout>
     );
@@ -311,7 +311,7 @@ export default function Community() {
     <StudentLayout fullWidth>
     <ErrorBoundary>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-16 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
           <h1 className="text-3xl lg:text-4xl font-bold font-sf-pro-display">CIMA Community</h1>
           <p className="text-xl text-white/80 max-w-3xl mx-auto font-sf-pro-text">
@@ -331,18 +331,18 @@ export default function Community() {
       <div className="bg-white border-b sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex gap-6 py-3 overflow-x-auto">
-            <Link href="/community" className="text-sm font-medium font-sf-pro-text text-[#610000] border-b-2 border-[#610000] pb-3 whitespace-nowrap">
+            <Link href="/community" className="text-sm font-medium font-sf-pro-text text-[#5A2633] border-b-2 border-[#5A2633] pb-3 whitespace-nowrap">
               All Forums
             </Link>
-            <Link href="/community/my-boards" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap">
+            <Link href="/community/my-boards" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#5A2633] pb-3 whitespace-nowrap">
               My Course Boards
             </Link>
-            <Link href="/community/my-posts" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap">
+            <Link href="/community/my-posts" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#5A2633] pb-3 whitespace-nowrap">
               My Posts
             </Link>
-            <Link href="/community/notifications" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#610000] pb-3 whitespace-nowrap flex items-center gap-1">
+            <Link href="/community/notifications" className="text-sm font-medium font-sf-pro-text text-[#6b5d4f] hover:text-[#5A2633] pb-3 whitespace-nowrap flex items-center gap-1">
               Notifications
-              <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+              <span className="bg-[#5A2633] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
             </Link>
           </nav>
         </div>
@@ -740,7 +740,7 @@ export default function Community() {
 
       {/* Mobile FAB */}
       <Button
-        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-[#610000] hover:bg-[#7d0000] z-50"
+        className="fixed bottom-6 right-6 lg:hidden w-14 h-14 rounded-full shadow-lg bg-[#5A2633] hover:bg-[#5A2633] z-50"
         size="icon"
         onClick={() => setShowNewPostModal(true)}
       >

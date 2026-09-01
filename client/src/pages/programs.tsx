@@ -84,7 +84,7 @@ export default function Programs() {
   return (
     <StudentLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#610000] via-[#7d0000] to-[#8b0000] text-white py-12 sm:py-16 md:py-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+      <section className="bg-gradient-to-br from-[#5A2633] via-[#5A2633] to-[#5A2633] text-white py-12 sm:py-16 md:py-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-sf-pro-display mb-4 sm:mb-6" data-testid="programs-title">
             Professional ADR Programs
@@ -102,7 +102,7 @@ export default function Programs() {
             <Button 
               data-testid="button-speak-advisor"
               variant="outline"
-              className="w-full sm:w-auto border-2 border-white bg-white/10 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-white hover:text-[#610000] transition-colors backdrop-blur-sm"
+              className="w-full sm:w-auto border-2 border-white bg-white/10 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold hover:bg-white hover:text-[#5A2633] transition-colors backdrop-blur-sm"
             >
               Speak to an Advisor
             </Button>
@@ -209,7 +209,7 @@ export default function Programs() {
 
                           <div className="flex items-center justify-between pt-4 border-t">
                             <div>
-                              <div className="text-3xl font-bold text-foreground" data-testid={`price-${course.id}`}>
+                              <div className="text-3xl font-light text-foreground" data-testid={`price-${course.id}`}>
                                 ${Number(course.price).toFixed(0)}
                               </div>
                               <div className="text-sm text-muted-foreground">{course.currency || "USD"}</div>
@@ -323,7 +323,7 @@ export default function Programs() {
                       </div>
                     </div>
 
-                    <div className="text-2xl font-bold text-foreground mb-2">$1,200</div>
+                    <div className="text-2xl font-light text-foreground mb-2">$1,200</div>
                     <div className="text-sm text-muted-foreground mb-6">Complete package</div>
                     <Button className="w-full">Start Foundation</Button>
                   </CardContent>
@@ -362,7 +362,7 @@ export default function Programs() {
                       </div>
                     </div>
 
-                    <div className="text-2xl font-bold text-foreground mb-2">$3,500</div>
+                    <div className="text-2xl font-light text-foreground mb-2">$3,500</div>
                     <div className="text-sm text-muted-foreground mb-6">Save $450 vs individual</div>
                     <Button className="w-full bg-primary">Start Professional</Button>
                   </CardContent>
@@ -398,7 +398,7 @@ export default function Programs() {
                       </div>
                     </div>
 
-                    <div className="text-2xl font-bold text-foreground mb-2">$4,750</div>
+                    <div className="text-2xl font-light text-foreground mb-2">$4,750</div>
                     <div className="text-sm text-muted-foreground mb-6">Premium qualification</div>
                     <Button className="w-full bg-accent text-accent-foreground">Apply for Fellowship</Button>
                   </CardContent>
@@ -420,7 +420,7 @@ export default function Programs() {
             <Button 
               data-testid="button-get-started"
               size="lg" 
-              className="w-full sm:w-auto bg-[#610000] text-white hover:bg-[#7d0000]"
+              className="w-full sm:w-auto bg-[#5A2633] text-white hover:bg-[#5A2633]"
             >
               Get Started Today
             </Button>

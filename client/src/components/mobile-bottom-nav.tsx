@@ -125,7 +125,7 @@ export default function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg transition-colors min-w-[60px] ${
-                  isActive ? "text-[#610000]" : "text-muted-foreground hover:text-foreground"
+                  isActive ? "text-[#5A2633]" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : ""}`} />
@@ -152,12 +152,12 @@ export default function MobileBottomNav() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <img 
-                    src="/images/logo.jpeg" 
+                    src="/uploads/logo.png" 
                     alt="CIMA Logo" 
                     className="w-10 h-10 object-contain"
                   />
                   <div>
-                    <SheetTitle className="text-lg font-bold text-[#610000] font-sf-pro-display">
+                    <SheetTitle className="text-lg font-bold text-[#5A2633] font-sf-pro-display">
                       CIMA Learn
                     </SheetTitle>
                     <p className="text-[10px] text-[#8b6f47] font-sf-pro-text uppercase tracking-[0.08em] font-semibold">
@@ -189,8 +189,8 @@ export default function MobileBottomNav() {
                             className={cn(
                               "w-full flex items-center gap-3 px-4 py-3 rounded-[12px] transition-all duration-300",
                               isActive
-                                ? "bg-[#610000] text-white shadow-md"
-                                : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#610000]"
+                                ? "bg-[#5A2633] text-white shadow-md"
+                                : "text-[#4a3828] hover:bg-[#f5f3ed] hover:text-[#5A2633]"
                             )}
                           >
                             <Icon
@@ -224,7 +224,7 @@ export default function MobileBottomNav() {
                         src={user?.profileImageUrl || undefined}
                         alt={`${user?.firstName} ${user?.lastName}`}
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-[#610000] to-[#8b0000] text-white font-semibold">
+                      <AvatarFallback className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white font-semibold">
                         {user?.firstName?.[0]}{user?.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
@@ -239,7 +239,7 @@ export default function MobileBottomNav() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-[#4a3828] hover:text-[#610000] hover:bg-[#f5f3ed]"
+                  className="w-full justify-start text-[#4a3828] hover:text-[#5A2633] hover:bg-[#f5f3ed]"
                   onClick={async () => {
                     const { supabase } = await import("@/integrations/supabase/client");
                     await supabase.auth.signOut();
