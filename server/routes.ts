@@ -359,8 +359,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount Live Sessions routes
   app.use("/api/sessions", liveSessionsRouter);
   
-  // Mount Personal Notes Forms routes
-  app.use("/api/personal-notes-forms", requireSupabaseAuth, personalNotesFormsRouter);
+  // Mount Personal Notes Forms routes (POST is public, rest require auth)
+  app.use("/api/personal-notes-forms", personalNotesFormsRouter);
   
   // Mount brochure download route (public - no auth required)
   app.use(brochureDownloadRouter);
