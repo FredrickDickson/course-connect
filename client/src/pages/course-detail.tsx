@@ -477,10 +477,10 @@ export default function CourseDetail() {
                   {course.subtitle && (
                     <p className="text-lg text-primary-foreground/90 mb-6" data-testid="course-subtitle">{course.subtitle}</p>
                   )}
-                  <div className="flex flex-wrap items-center gap-6 text-sm">
+                  <div className="flex flex-wrap items-start gap-4 text-sm">
                     {instructorList.length > 0 && (
-                      <div className="flex items-center space-x-2">
-                        <div className="flex -space-x-2">
+                      <div className="flex items-start space-x-2 w-full sm:w-auto">
+                        <div className="flex -space-x-2 flex-shrink-0">
                           {instructorList.slice(0, 3).map((ins: any) => (
                             avatarFor(ins) ? (
                               <img
@@ -499,7 +499,7 @@ export default function CourseDetail() {
                             )
                           ))}
                         </div>
-                        <span>
+                        <span className="text-sm leading-relaxed break-words flex-1 min-w-0">
                           By {instructorList.slice(0, 3).map((ins: any) => `${ins.first_name} ${ins.last_name}`).join(", ")}
                           {instructorList.length > 3 ? ` +${instructorList.length - 3} more` : ""}
                         </span>
