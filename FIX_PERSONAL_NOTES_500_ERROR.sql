@@ -9,6 +9,9 @@ DROP TABLE IF EXISTS personal_notes_forms CASCADE;
 CREATE TABLE personal_notes_forms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
+  -- Profile Photo
+  profile_picture_url VARCHAR(500),
+  
   -- Basic Information
   full_name VARCHAR(255) NOT NULL,
   other_names VARCHAR(255),
@@ -22,6 +25,7 @@ CREATE TABLE personal_notes_forms (
   
   -- Identification Numbers
   ghana_card_no VARCHAR(100),
+  ghana_card_url VARCHAR(500),
   passport_no VARCHAR(100),
   voter_id_no VARCHAR(100),
   nhis_no VARCHAR(100),

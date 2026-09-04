@@ -25,13 +25,19 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const authHeader = await getAuthHeader();
+  
+  // Check if data is FormData (for file uploads)
+  const isFormData = data instanceof FormData;
+  
   const res = await fetch(url, {
     method,
     headers: {
       ...authHeader,
-      ...(data ? { "Content-Type": "application/json" } : {}),
+      // Only set Content-Type for JSON, let browser set it automatically for FormData
+      ...(!isFormData && data ? { "Content-Type": "application/json" } : {}),
     },
-    body: data ? JSON.stringify(data) : undefined,
+    // Don't stringify FormData, pass it directly to preserve files
+    body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     credentials: "include",
   });
 

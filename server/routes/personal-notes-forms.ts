@@ -79,6 +79,14 @@ router.post("/", async (req: Request, res: Response) => {
         };
 
         // Handle file uploads
+        const profilePictureUrl = files.profilePicture ? await uploadFile(
+          Array.isArray(files.profilePicture) ? files.profilePicture[0] : files.profilePicture,
+          'profile-pictures'
+        ) : null;
+        const ghanaCardUrl = files.ghanaCard ? await uploadFile(
+          Array.isArray(files.ghanaCard) ? files.ghanaCard[0] : files.ghanaCard,
+          'ghana-cards'
+        ) : null;
         const idDocumentsUrl = files.idDocuments ? await uploadFile(
           Array.isArray(files.idDocuments) ? files.idDocuments[0] : files.idDocuments,
           'id-documents'
@@ -108,6 +116,9 @@ router.post("/", async (req: Request, res: Response) => {
 
         // Prepare data for database insertion
         const formData = {
+          // Profile & Photo
+          profile_picture_url: profilePictureUrl,
+          
           // A. Personal Details
           full_name: getField(fields.fullName),
           other_names: getField(fields.otherNames),
@@ -121,6 +132,7 @@ router.post("/", async (req: Request, res: Response) => {
           
           // B. Identification
           ghana_card_no: getField(fields.ghanaCardNo),
+          ghana_card_url: ghanaCardUrl,
           passport_no: getField(fields.passportNo),
           voter_id_no: getField(fields.voterIdNo),
           nhis_no: getField(fields.nhisNo),

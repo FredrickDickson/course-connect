@@ -1,4 +1,7 @@
-/* SF Pro Fonts - Local Loading */
+/* SF Pro Fonts - Using System Fallback (font files not available) */
+/* Commented out to prevent 404 errors - using system fonts instead */
+
+/* 
 @font-face {
   font-family: 'SF Pro Display';
   src: url('/sf-pro-display/SFPRODISPLAYREGULAR.OTF') format('opentype');
@@ -70,6 +73,7 @@
   font-display: swap;
   font-synthesis: none;
 }
+*/
 
 /* SF Pro Text Fonts - System Fallback */
 @font-face {

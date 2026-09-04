@@ -265,6 +265,51 @@ export default function PersonalNotesForm() {
         </Card>
 
         <form onSubmit={handleSubmit((data) => submitForm.mutate(data))} className="space-y-6">
+          {/* PROFILE PICTURE */}
+          <Card className="border-[#5A2633] shadow-md bg-gradient-to-br from-white to-[#faf9f6]">
+            <CardHeader className="bg-[#5A2633] text-white">
+              <CardTitle className="font-sf-pro-display flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                PROFILE PICTURE
+              </CardTitle>
+              <CardDescription className="text-white/80">
+                Upload a recent passport-size photograph
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center gap-4">
+                {uploadedFiles.profilePicture && (
+                  <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-[#5A2633] shadow-lg">
+                    <img 
+                      src={URL.createObjectURL(uploadedFiles.profilePicture)} 
+                      alt="Profile Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="w-full max-w-md">
+                  <Label htmlFor="profilePicture" className="text-[#5A2633] font-medium">
+                    Upload Profile Picture *
+                  </Label>
+                  <Input
+                    id="profilePicture"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleFileUpload("profilePicture", e.target.files[0]);
+                      }
+                    }}
+                    className="mt-2 cursor-pointer"
+                  />
+                  <p className="text-xs text-[#8b7d6b] mt-2">
+                    📸 Passport-size photo, clear background, recent (max 5MB)
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* A. PERSONAL DETAILS */}
           <Card className="border-[#d4c5b0] shadow-sm">
             <CardHeader className="bg-[#5A2633] text-white">
@@ -414,6 +459,38 @@ export default function PersonalNotesForm() {
                 />
               </div>
 
+              {/* Ghana Card Upload - Featured */}
+              <div className="pt-2 pb-2 bg-[#5A2633]/5 -mx-6 px-6 border-y border-[#5A2633]/10">
+                <Label htmlFor="ghanaCard" className="text-[#5A2633] font-semibold flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Upload Ghana Card (Official) *
+                </Label>
+                <div className="mt-3 space-y-2">
+                  {uploadedFiles.ghanaCard && (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <span className="text-sm text-green-800 font-medium">
+                        Ghana Card uploaded: {uploadedFiles.ghanaCard.name}
+                      </span>
+                    </div>
+                  )}
+                  <Input
+                    id="ghanaCard"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleFileUpload("ghanaCard", e.target.files[0]);
+                      }
+                    }}
+                    className="mt-1 cursor-pointer"
+                  />
+                  <p className="text-xs text-[#8b7d6b]">
+                    📄 Upload clear photo/scan of your Ghana Card (front and back if possible)
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="passportNo">Passport No. (if any)</Label>
                 <Input
@@ -455,7 +532,7 @@ export default function PersonalNotesForm() {
               </div>
 
               <div className="pt-4 border-t">
-                <Label htmlFor="idDocuments">Attach photocopies of identification documents</Label>
+                <Label htmlFor="idDocuments">Attach other identification documents (optional)</Label>
                 <div className="mt-2 flex items-center gap-3">
                   <Input
                     id="idDocuments"
