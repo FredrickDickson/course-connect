@@ -526,7 +526,7 @@ export default function BecomeInstructor() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-              Become a CIMA Instructor
+              Join our Global Faculty
             </h1>
             <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed">
               Share your expertise in Alternative Dispute Resolution and help professionals worldwide advance their careers.

@@ -86,7 +86,7 @@ export default function Footer() {
               <li>
                 <Link href="/become-instructor">
                   <span className="text-sm text-black font-medium hover:text-gray-600 transition-colors">
-                    Become an Instructor
+                    Join our Global Faculty
                   </span>
                 </Link>
               </li>

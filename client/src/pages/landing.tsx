@@ -1077,7 +1077,7 @@ function Footer() {
             <ul className="space-y-3 text-base font-body">
               <li><Link href="/contact" className="text-black hover:text-gray-600 transition">About CIMA</Link></li>
               <li><Link href="/accreditation" className="text-black hover:text-gray-600 transition">Accreditation</Link></li>
-              <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Become Instructor</Link></li>
+              <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Join our Global Faculty</Link></li>
               <li><Link href="/contact" className="text-black hover:text-gray-600 transition">Contact Us</Link></li>
             </ul>
           </div>
