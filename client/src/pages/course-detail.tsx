@@ -757,13 +757,13 @@ export default function CourseDetail() {
                   </Tabs>
                 </div>
 
-                {/* Instructor Info */}
+                {/* Faculty Info */}
                 <div className="lg:col-span-1 space-y-6">
                   {instructorList.length > 0 && (
                     <Card>
                       <CardContent className="p-6">
                         <h3 className="text-lg font-semibold mb-4">
-                          {instructorList.length > 1 ? "Instructors" : "Instructor"}
+                          {instructorList.length > 1 ? "Faculty" : "Faculty"}
                         </h3>
                         <div className="space-y-6">
                           {instructorList.map((ins: any) => (
