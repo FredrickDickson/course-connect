@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin-layout";
 import AdminMembershipTable from "@/components/admin-membership-table";
 import AdminEnrollmentsUnified from "@/components/admin-enrollments-unified";
+import AdminPaymentsTable from "@/components/admin-payments-table";
 import AdminRenewalManagement from "@/components/admin-renewal-management";
 import AdminOverviewStats from "@/components/admin-overview-stats";
 import AdminCoursesTable from "@/components/admin-courses-table";
@@ -418,6 +419,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="sessions" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Live Sessions</TabsTrigger>
               <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Instructors</TabsTrigger>
               <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Enrollments</TabsTrigger>
+              <TabsTrigger value="payments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Payments</TabsTrigger>
               <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Courses</TabsTrigger>
               <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Quizzes</TabsTrigger>
               <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Create Course</TabsTrigger>
@@ -461,6 +463,11 @@ export default function AdminDashboard() {
           {/* Enrollments Tab */}
           <TabsContent value="enrollments">
             <AdminEnrollmentsUnified />
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments">
+            <AdminPaymentsTable />
           </TabsContent>
 
           {/* Courses Tab — Enhanced with capacity bars */}

@@ -20,8 +20,6 @@ import { createServer, type Server } from "http";
 
 import express from "express";
 
-import crypto from "crypto";
-
 import { storage, supabaseAdmin } from "./storage";
 
 import { requireSupabaseAuth } from "./supabaseAuth";
@@ -1788,151 +1786,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.post(
-
-    "/api/paystack-webhook",
-
-    express.raw({ type: "application/json" }),
-
-    asyncHandler(async (req: Request, res: Response) => {
-
-      if (!PAYSTACK_SECRET_KEY) {
-
-        console.error("Paystack webhook received but SECRET_KEY is missing");
-
-        return res
-
-          .status(503)
-
-          .json({ message: "Payment system is not configured" });
-
-      }
-
-
-
-      try {
-
-        const hash = crypto
-
-          .createHmac("sha512", PAYSTACK_SECRET_KEY)
-
-          .update(req.body)
-
-          .digest("hex");
-
-        const signature = req.headers["x-paystack-signature"] as string;
-
-
-
-        const hashBuffer = Buffer.from(hash, "hex");
-        const signatureBuffer = signature ? Buffer.from(signature, "hex") : null;
-        const signatureValid =
-          !!signatureBuffer &&
-          signatureBuffer.length === hashBuffer.length &&
-          crypto.timingSafeEqual(hashBuffer, signatureBuffer);
-
-        if (!signatureValid) {
-
-          console.warn("Invalid Paystack signature received");
-
-          return res.status(400).send("Invalid signature");
-
-        }
-
-
-
-        const event = JSON.parse(req.body.toString());
-
-        console.log(`Paystack Webhook Event: ${event.event}`, {
-
-          reference: event.data?.reference,
-
-          status: event.data?.status,
-
-        });
-
-
-
-        if (event.event === "charge.success") {
-
-          const { reference, metadata } = event.data;
-
-          // ----------------------------------------------------------------
-          // Expedited application payment: flip status draft -> submitted
-          // ----------------------------------------------------------------
-          if (metadata?.expeditedApplicationId) {
-            const { markApplicationPaid } = await import(
-              "./storage/qualification"
-            );
-            const updated = await markApplicationPaid(reference);
-            if (!updated) {
-              console.error(
-                "Failed to mark expedited application paid for reference",
-                reference,
-              );
-              return res
-                .status(500)
-                .json({ message: "Expedited payment reconciliation failed" });
-            }
-            console.log(
-              `Expedited application ${updated.id} marked submitted after payment ${reference}`,
-            );
-            return res.json({ received: true, kind: "expedited" });
-          }
-
-          const { courseId, userId } = metadata;
-
-
-
-          if (!courseId || !userId) {
-
-            console.error("Missing metadata in Paystack success event", {
-
-              metadata,
-
-            });
-
-            return res.status(400).json({ message: "Missing metadata" });
-
-          }
-
-
-
-          console.log(
-
-            `Processing successful payment for user ${userId}, course ${courseId}`,
-
-          );
-
-          await storage.updateOrderByReference(reference, "completed");
-
-          await storage.enrollUser({ userId, courseId, progress: "0", enrollmentType: "COURSE", status: "ACTIVE" });
-
-        }
-
-
-
-        res.json({ received: true });
-
-      } catch (error) {
-
-        console.error("Error processing Paystack webhook:", error);
-
-        // Still return 200 to Paystack to avoid retries if the signature was valid but processing failed
-
-        res
-
-          .status(200)
-
-          .json({ received: true, error: "Internal processing error" });
-
-      }
-
-    }),
-
-  );
-
-
+  // The Paystack webhook handler used to live here. It's been removed: this
+  // Express app is not deployed in production (Vercel + Supabase only), so
+  // this route never received real traffic, but it was a divergent copy of
+  // supabase/functions/paystack-webhook (e.g. it had no branch for
+  // membership renewals) that risked confusing future maintainers into
+  // thinking it was live. The real, registered webhook endpoint is
+  // https://emvibxbcrvritkwkguya.supabase.co/functions/v1/paystack-webhook —
+  // see supabase/functions/paystack-webhook/index.ts.
 
   app.post(
 

@@ -23,16 +23,42 @@ import {
   Search, User, Mail, Phone, MapPin, Briefcase, GraduationCap,
   Building2, Globe, MessageSquare, BookOpen, CheckCircle, AlertCircle,
   Eye, Users, Download, Filter, Bell, History, Activity, ShieldCheck,
+  CreditCard, Clock, Award, Scale,
 } from "lucide-react";
 
 interface UserRow {
   id: string;
   email: string | null;
   first_name: string | null;
+  middle_name?: string | null;
   last_name: string | null;
   role: string | null;
   created_at: string | null;
   country: string | null;
+  // Fields below already come back from `select("*")` but weren't
+  // previously typed/rendered here — widened so the drawer can show them.
+  bio?: string | null;
+  timezone?: string | null;
+  job_title?: string | null;
+  current_employer?: string | null;
+  pathway_type?: string | null;
+  assigned_level?: string | null;
+  level_source?: string | null;
+  level_updated_at?: string | null;
+  bar_admission_number?: string | null;
+  bar_jurisdiction?: string | null;
+  has_llm_degree?: boolean | null;
+  llm_institution?: string | null;
+  llm_graduation_year?: string | number | null;
+  llm_specialization?: string | null;
+  years_adr_experience?: string | number | null;
+  years_legal_experience?: string | number | null;
+  professional_portfolio_url?: string | null;
+  professional_references?: unknown;
+  paystack_authorization_code?: string | null;
+  paystack_authorization_reusable?: boolean | null;
+  paystack_customer_code?: string | null;
+  created_by_admin_id?: string | null;
 }
 
 interface ProfileRow {
@@ -63,6 +89,15 @@ interface ProfileRow {
   organisation: string | null;
   city: string | null;
   profile_photo_url: string | null;
+  status?: string | null;
+  timezone?: string | null;
+  referral_source?: string | null;
+  community_role?: string | null;
+  community_username?: string | null;
+  reputation_points?: number | null;
+  followers_count?: number | null;
+  following_count?: number | null;
+  badges?: string[] | null;
 }
 
 function getProfileCompletion(p: ProfileRow | null) {
@@ -477,8 +512,9 @@ export default function AdminUsersProfiles() {
               </Card>
 
               <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="w-full grid grid-cols-5">
+                <TabsList className="w-full grid grid-cols-6">
                   <TabsTrigger value="profile" className="text-xs">Profile</TabsTrigger>
+                  <TabsTrigger value="account" className="text-xs">Account</TabsTrigger>
                   <TabsTrigger value="courses" className="text-xs">Courses</TabsTrigger>
                   <TabsTrigger value="membership" className="text-xs">Member</TabsTrigger>
                   <TabsTrigger value="history" className="text-xs">History</TabsTrigger>
@@ -534,9 +570,80 @@ export default function AdminUsersProfiles() {
                       </CardContent></Card>
                     )}
                   </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Qualifications & Pathway</h4>
+                    <Card>
+                      <CardContent className="p-4 space-y-0 divide-y">
+                        <InfoRow icon={Scale} label="Pathway" value={selectedUser.pathway_type} />
+                        <InfoRow icon={Briefcase} label="Current Employer" value={selectedUser.current_employer} />
+                        <InfoRow icon={Briefcase} label="Job Title" value={selectedUser.job_title} />
+                        <InfoRow icon={Scale} label="Bar Admission No." value={selectedUser.bar_admission_number} />
+                        <InfoRow icon={Scale} label="Bar Jurisdiction" value={selectedUser.bar_jurisdiction} />
+                        <InfoRow icon={GraduationCap} label="LLM Institution" value={selectedUser.llm_institution} />
+                        <InfoRow icon={GraduationCap} label="LLM Specialization" value={selectedUser.llm_specialization} />
+                        <InfoRow icon={GraduationCap} label="LLM Graduation Year" value={selectedUser.llm_graduation_year != null ? String(selectedUser.llm_graduation_year) : null} />
+                        <InfoRow icon={Award} label="Years ADR Experience" value={selectedUser.years_adr_experience != null ? String(selectedUser.years_adr_experience) : null} />
+                        <InfoRow icon={Award} label="Years Legal Experience" value={selectedUser.years_legal_experience != null ? String(selectedUser.years_legal_experience) : null} />
+                        <InfoRow icon={Globe} label="Portfolio" value={selectedUser.professional_portfolio_url} />
+                        <InfoRow icon={User} label="Bio" value={selectedUser.bio} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  {selectedUser.assigned_level && (
+                    <p className="text-xs text-muted-foreground">
+                      Assigned level: <span className="font-medium capitalize">{selectedUser.assigned_level}</span>
+                      {selectedUser.level_source && ` via ${selectedUser.level_source}`}
+                      {selectedUser.level_updated_at && ` on ${new Date(selectedUser.level_updated_at).toLocaleDateString("en-GB")}`}
+                    </p>
+                  )}
                   {selectedProfile && (
                     <p className="text-xs text-muted-foreground">
                       Updated: {new Date(selectedProfile.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  )}
+                </TabsContent>
+
+                {/* Account Tab */}
+                <TabsContent value="account" className="space-y-4 mt-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Payment</h4>
+                    <Card>
+                      <CardContent className="p-4 space-y-0 divide-y">
+                        <InfoRow icon={CreditCard} label="Paystack Customer Code" value={selectedUser.paystack_customer_code} />
+                        <InfoRow
+                          icon={CreditCard}
+                          label="Saved Card"
+                          value={selectedUser.paystack_authorization_code
+                            ? `${selectedUser.paystack_authorization_code} (${selectedUser.paystack_authorization_reusable ? "reusable" : "single-use"})`
+                            : null}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Community</h4>
+                    <Card>
+                      <CardContent className="p-4 space-y-0 divide-y">
+                        <InfoRow icon={User} label="Status" value={selectedProfile?.status} />
+                        <InfoRow icon={Clock} label="Timezone" value={selectedProfile?.timezone || selectedUser.timezone} />
+                        <InfoRow icon={User} label="Community Handle" value={selectedProfile?.community_username} />
+                        <InfoRow icon={User} label="Community Role" value={selectedProfile?.community_role} />
+                        <InfoRow
+                          icon={Users}
+                          label="Followers / Following"
+                          value={selectedProfile?.followers_count != null || selectedProfile?.following_count != null
+                            ? `${selectedProfile?.followers_count ?? 0} / ${selectedProfile?.following_count ?? 0}`
+                            : null}
+                        />
+                        <InfoRow icon={Award} label="Reputation" value={selectedProfile?.reputation_points != null ? String(selectedProfile.reputation_points) : null} />
+                        <InfoRow icon={Award} label="Badges" value={selectedProfile?.badges?.length ? selectedProfile.badges.join(", ") : null} />
+                        <InfoRow icon={Filter} label="Referral Source" value={selectedProfile?.referral_source} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  {selectedUser.created_by_admin_id && (
+                    <p className="text-xs text-muted-foreground">
+                      Created by admin: <span className="font-mono">{selectedUser.created_by_admin_id}</span>
                     </p>
                   )}
                 </TabsContent>

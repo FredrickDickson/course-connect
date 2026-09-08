@@ -1,24 +1,41 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { applyMembershipRenewal } from "../_shared/renewal-effects.ts";
+import { applyCourseEnrollment } from "../_shared/course-enrollment-effects.ts";
+import { triggerCoursePurchaseProvisioning } from "../_shared/course-purchase-provisioning.ts";
+import { applyExpeditedPayment } from "../_shared/expedited-payment-effects.ts";
+import { logWebhookEvent } from "../_shared/webhook-audit.ts";
 
 const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Constant-time comparison — a plain `===` on the signature short-circuits
+// on the first mismatched character, letting a network-timing attacker
+// discover the correct HMAC byte-by-byte.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  try {
-    // Verify Paystack signature
-    const signature = req.headers.get("x-paystack-signature");
-    const body = await req.text();
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const body = await req.text();
 
-    // Paystack signs the raw request body with HMAC-SHA512 using the
-    // secret key (not a plain digest of body+secret concatenated — that
-    // construction is not HMAC and doesn't match what Paystack computes).
+  try {
+    // Verify Paystack signature. Paystack signs the raw request body with
+    // HMAC-SHA512 using the secret key (not a plain digest of body+secret
+    // concatenated — that construction is not HMAC and doesn't match what
+    // Paystack computes).
+    const signature = req.headers.get("x-paystack-signature");
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
@@ -32,545 +49,203 @@ Deno.serve(async (req: Request) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    if (!signature || signature !== hashHex) {
+    if (!signature || !timingSafeEqual(signature, hashHex)) {
+      // Log every signature failure, even before we trust anything in the
+      // body — this is exactly the failure mode (a stale/mismatched
+      // PAYSTACK_SECRET_KEY) that previously left zero trace anywhere.
+      let attemptedReference: string | null = null;
+      let attemptedEventType = "unknown";
+      try {
+        const parsed = JSON.parse(body);
+        attemptedReference = parsed?.data?.reference ?? null;
+        attemptedEventType = parsed?.event ?? "unknown";
+      } catch {
+        // body wasn't even valid JSON — leave attempted* as-is
+      }
+      await logWebhookEvent(supabase, {
+        eventType: attemptedEventType,
+        reference: attemptedReference,
+        signatureValid: false,
+        status: "failed",
+        errorMessage: "Invalid Paystack signature — check PAYSTACK_SECRET_KEY matches the key used for this transaction (live vs test mismatch is the usual cause)",
+      });
       return new Response("Invalid signature", { status: 401 });
     }
 
     const event = JSON.parse(body);
 
-    // Handle successful payment
-    if (event.event === "charge.success") {
-      const metadata = event.data.metadata;
-
-      // ------------------------------------------------------------------
-      // Expedited application payment: flip status draft -> submitted
-      // ------------------------------------------------------------------
-      if (metadata && metadata.expeditedApplicationId) {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const now = new Date().toISOString();
-
-        const { data: updated, error: updateErr } = await supabase
-          .from("expedited_applications")
-          .update({
-            status: "submitted",
-            paid_at: now,
-            submitted_at: now,
-          })
-          .eq("paystack_reference", event.data.reference)
-          .select()
-          .single();
-
-        if (updateErr || !updated) {
-          console.error(
-            "Failed to mark expedited application paid",
-            updateErr,
-            event.data.reference,
-          );
-          return new Response("Expedited update failed", { status: 500 });
-        }
-
-        await supabase.from("activity_log").insert({
-          user_id: updated.user_id,
-          event_type: "expedited_payment_succeeded",
-          event_data: {
-            application_id: updated.id,
-            track: updated.track,
-            target_level: updated.target_level,
-            reference: event.data.reference,
-            amount: event.data.amount / 100,
-            currency: event.data.currency,
-          },
-        });
-
-        console.log(
-          `Expedited application ${updated.id} submitted after payment ${event.data.reference}`,
-        );
-        return new Response("Expedited payment recorded", { status: 200 });
-      }
-
-      // ------------------------------------------------------------------
-      // Membership renewal payment
-      // ------------------------------------------------------------------
-      if (metadata && metadata.type === "renewal" && metadata.member_id) {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-        // If Paystack included authorization details (card token), persist
-        // them to the associated user so auto-renew can charge later.
-        try {
-          const authorization = event.data.authorization;
-          if (authorization && authorization.authorization_code && metadata.member_id) {
-            // Find the member row to get the user_id
-            const { data: memberRow } = await supabase
-              .from("members")
-              .select("user_id")
-              .eq("member_id", metadata.member_id)
-              .single();
-
-            if (memberRow?.user_id) {
-              await supabase.from("users").update({
-                paystack_authorization_code: authorization.authorization_code,
-                paystack_authorization_reusable: !!authorization.reusable,
-                updated_at: new Date().toISOString(),
-              }).eq("id", memberRow.user_id);
-
-              console.log(`Stored Paystack authorization for user ${memberRow.user_id}`);
-            }
-          }
-        } catch (err) {
-          console.error("Failed to persist Paystack authorization:", err);
-        }
-
-        const result = await applyMembershipRenewal(supabase, {
-          memberId: metadata.member_id,
-          paymentMethod: "paystack",
-          amountPaid: event.data.amount / 100,
-          currency: "GHS", // this merchant always settles Paystack charges in GHS
-          displayAmount: metadata.display_amount || (event.data.amount / 100),
-          displayCurrency: metadata.currency || "USD",
-          paymentReference: event.data.reference,
-          incomeTier: metadata.income_tier || null,
-        });
-
-        if (!result.success) {
-          return new Response(result.error || "Renewal failed", {
-            status: result.error === "Member not found" ? 404 : 500,
-          });
-        }
-
-        console.log(`Renewal processed for member ${metadata.member_id}, ref ${event.data.reference}`);
-        return new Response("Renewal processed", { status: 200 });
-      }
-
-      if (metadata && metadata.courseId) {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-        // Check if enrollment already exists
-        const { data: existingEnrollment } = await supabase
-          .from("enrollments")
-          .select("*")
-          .eq("user_id", metadata.userId)
-          .eq("course_id", metadata.courseId)
-          .maybeSingle();
-
-        if (existingEnrollment) {
-          console.log("Enrollment already exists, skipping");
-          return new Response("Enrollment already exists", { status: 200 });
-        }
-
-        // Create order record with currency conversion details
-        const orderData = {
-          user_id: metadata.userId,
-          course_id: metadata.courseId,
-          amount: (event.data.amount / 100).toString(), // Charged amount in GHS
-          currency: event.data.currency, // GHS
-          status: "completed",
-          paystack_reference: event.data.reference,
-          // Currency conversion details from metadata. amount_usd is null
-          // when the course was priced natively in GHS — there is no real
-          // USD leg for that transaction (see paystack-course-initialize's
-          // resolveChargeAmount()).
-          amount_usd: metadata.amountUSD?.toString() || null,
-          amount_ghs: metadata.amountGhs?.toString() || (event.data.amount / 100).toString(),
-          exchange_rate: metadata.exchangeRate?.toString() || null,
-          original_currency: metadata.originalCurrency || "USD",
-          charged_currency: metadata.chargedCurrency || event.data.currency,
-        };
-
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .insert(orderData)
-          .select()
-          .single();
-
-        if (orderError) {
-          console.error("Order creation error:", orderError);
-          return new Response("Order creation failed", { status: 500 });
-        }
-
-        // Create enrollment
-        // Adjunct Courses have no qualification level - standalone,
-        // independent of the CIMA professional pathway.
-        const isAdjunctCourse = metadata.programmeType === "ADJUNCT_COURSE";
-        const { data: enrollment, error: enrollError } = await supabase
-          .from("enrollments")
-          .insert({
-            user_id: metadata.userId,
-            course_id: metadata.courseId,
-            progress: "0",
-            status: "ACTIVE",
-            enrollment_type: "COURSE",
-            enrollment_level: isAdjunctCourse ? null : (metadata.enrollmentLevel || "ASSOCIATE"),
-          })
-          .select()
-          .single();
-
-        if (enrollError) {
-          console.error("Enrollment creation error:", enrollError);
-          return new Response("Enrollment creation failed", { status: 500 });
-        }
-
-        // Log activity
-        await supabase.from("activity_log").insert({
-          user_id: metadata.userId,
-          event_type: "course_enrolled",
-          event_data: {
-            course_id: metadata.courseId,
-            course_name: metadata.courseName,
-            enrollment_id: enrollment.id,
-            payment_reference: event.data.reference,
-            payment_type: metadata.paymentType || "individual",
-            ...(metadata.paymentType === "company_invoice" && {
-              company_name: metadata.companyName,
-              company_email: metadata.companyEmail,
-              vat_id: metadata.vatId,
-            }),
-          },
-        });
-
-        // Update course enrollment count
-        const { data: courseRow } = await supabase
-          .from("courses")
-          .select("enrollment_count")
-          .eq("id", metadata.courseId)
-          .single();
-
-        await supabase
-          .from("courses")
-          .update({ enrollment_count: (courseRow?.enrollment_count || 0) + 1 })
-          .eq("id", metadata.courseId);
-
-        // If a partial-percentage coupon (access token) was used to reach
-        // this discounted Paystack charge, record its usage against the
-        // order now that payment is confirmed. 100%-off access tokens never
-        // reach this webhook — they're redeemed directly, without Paystack,
-        // by the redeem-access-token function.
-        if (metadata.accessTokenId) {
-          const { data: incremented, error: tokenError } = await supabase.rpc(
-            "increment_access_token_usage",
-            { p_access_token_id: metadata.accessTokenId },
-          );
-          if (tokenError || !incremented) {
-            console.error("Failed to increment coupon usage (non-fatal):", tokenError);
-          } else {
-            await supabase
-              .from("orders")
-              .update({ payment_method: "access_token", access_token_id: metadata.accessTokenId })
-              .eq("id", order.id);
-          }
-        }
-
-        // Trigger immediate provisioning
-        await triggerProvisioning(supabase, metadata);
-
-        console.log("Enrollment created successfully:", enrollment.id);
-      }
+    if (event.event !== "charge.success") {
+      await logWebhookEvent(supabase, {
+        eventType: event.event,
+        reference: event.data?.reference ?? null,
+        signatureValid: true,
+        status: "skipped",
+        errorMessage: "Event type not handled",
+      });
+      return new Response("Webhook received", { status: 200 });
     }
+
+    const metadata = event.data.metadata || {};
+    const reference = event.data.reference;
+
+    // ------------------------------------------------------------------
+    // Expedited application payment
+    // ------------------------------------------------------------------
+    if (metadata.expeditedApplicationId) {
+      const result = await applyExpeditedPayment(supabase, reference);
+      await logWebhookEvent(supabase, {
+        eventType: event.event,
+        reference,
+        signatureValid: true,
+        status: result.success ? (result.alreadyProcessed ? "already_processed" : "processed") : "failed",
+        errorMessage: result.error ?? null,
+        metadata: { kind: "expedited", applicationId: result.applicationId },
+      });
+      if (!result.success) {
+        return new Response(result.error || "Expedited update failed", { status: 500 });
+      }
+      console.log(`Expedited application ${result.applicationId} submitted after payment ${reference}`);
+      return new Response("Expedited payment recorded", { status: 200 });
+    }
+
+    // ------------------------------------------------------------------
+    // Membership renewal payment
+    // ------------------------------------------------------------------
+    if (metadata.type === "renewal" && metadata.member_id) {
+      try {
+        const authorization = event.data.authorization;
+        if (authorization?.authorization_code) {
+          const { data: memberRow } = await supabase
+            .from("members")
+            .select("user_id")
+            .eq("member_id", metadata.member_id)
+            .single();
+
+          if (memberRow?.user_id) {
+            await supabase.from("users").update({
+              paystack_authorization_code: authorization.authorization_code,
+              paystack_authorization_reusable: !!authorization.reusable,
+              updated_at: new Date().toISOString(),
+            }).eq("id", memberRow.user_id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to persist Paystack authorization:", err);
+      }
+
+      const result = await applyMembershipRenewal(supabase, {
+        memberId: metadata.member_id,
+        paymentMethod: "paystack",
+        amountPaid: event.data.amount / 100,
+        currency: "GHS", // this merchant always settles Paystack charges in GHS
+        displayAmount: metadata.display_amount || (event.data.amount / 100),
+        displayCurrency: metadata.currency || "USD",
+        paymentReference: reference,
+        incomeTier: metadata.income_tier || null,
+      });
+
+      await logWebhookEvent(supabase, {
+        eventType: event.event,
+        reference,
+        signatureValid: true,
+        status: result.success ? (result.alreadyProcessed ? "already_processed" : "processed") : "failed",
+        errorMessage: result.error ?? null,
+        metadata: { kind: "renewal", memberId: metadata.member_id },
+      });
+
+      if (!result.success) {
+        return new Response(result.error || "Renewal failed", {
+          status: result.error === "Member not found" ? 404 : 500,
+        });
+      }
+
+      console.log(`Renewal processed for member ${metadata.member_id}, ref ${reference}`);
+      return new Response("Renewal processed", { status: 200 });
+    }
+
+    // ------------------------------------------------------------------
+    // Course purchase
+    // ------------------------------------------------------------------
+    if (metadata.courseId) {
+      const result = await applyCourseEnrollment(supabase, {
+        userId: metadata.userId,
+        courseId: metadata.courseId,
+        paystackReference: reference,
+        amount: event.data.amount / 100,
+        currency: event.data.currency,
+        amountUSD: metadata.amountUSD,
+        amountGhs: metadata.amountGhs,
+        exchangeRate: metadata.exchangeRate,
+        originalCurrency: metadata.originalCurrency,
+        chargedCurrency: metadata.chargedCurrency,
+        enrollmentLevel: metadata.enrollmentLevel,
+        paymentType: metadata.paymentType,
+        companyName: metadata.companyName,
+        companyEmail: metadata.companyEmail,
+        vatId: metadata.vatId,
+        accessTokenId: metadata.accessTokenId,
+      });
+
+      await logWebhookEvent(supabase, {
+        eventType: event.event,
+        reference,
+        signatureValid: true,
+        status: result.success ? (result.alreadyEnrolled ? "already_processed" : "processed") : "failed",
+        errorMessage: result.error ?? null,
+        metadata: { kind: "course", courseId: metadata.courseId, userId: metadata.userId, orderId: result.orderId, enrollmentId: result.enrollmentId },
+      });
+
+      if (!result.success) {
+        console.error("Course enrollment failed:", result.error);
+        return new Response(result.error || "Enrollment creation failed", { status: 500 });
+      }
+
+      if (result.alreadyEnrolled) {
+        console.log("Enrollment already exists, skipping");
+        return new Response("Enrollment already exists", { status: 200 });
+      }
+
+      // Trigger immediate provisioning (best-effort; failures are logged
+      // inside triggerCoursePurchaseProvisioning and don't affect the
+      // webhook's response).
+      await triggerCoursePurchaseProvisioning(supabase, {
+        userId: metadata.userId,
+        courseId: metadata.courseId,
+        programmeType: metadata.programmeType || "PROFESSIONAL_PROGRAMME",
+        enrollmentLevel: result.isAdjunctCourse ? null : (metadata.enrollmentLevel || "ASSOCIATE"),
+        paymentType: metadata.paymentType || "individual",
+        companyName: metadata.companyName,
+        companyEmail: metadata.companyEmail,
+        vatId: metadata.vatId,
+      });
+
+      console.log("Enrollment created successfully:", result.enrollmentId);
+      return new Response("Webhook received", { status: 200 });
+    }
+
+    // charge.success with none of the known metadata shapes — log it so
+    // it's visible instead of silently falling through.
+    await logWebhookEvent(supabase, {
+      eventType: event.event,
+      reference,
+      signatureValid: true,
+      status: "skipped",
+      errorMessage: "charge.success with no recognized metadata shape (expected expeditedApplicationId, renewal type+member_id, or courseId)",
+      metadata,
+    });
 
     return new Response("Webhook received", { status: 200 });
   } catch (error) {
     console.error("Webhook error:", error);
+    try {
+      await logWebhookEvent(supabase, {
+        eventType: "unknown",
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+    } catch {
+      // best-effort only
+    }
     return new Response("Internal server error", { status: 500 });
   }
 });
-
-async function triggerProvisioning(supabase: any, metadata: any) {
-  // Get user and course details
-  const [{ data: user }, { data: course }] = await Promise.all([
-    supabase.from("users").select("*").eq("id", metadata.userId).single(),
-    supabase.from("courses").select("*").eq("id", metadata.courseId).single(),
-  ]);
-
-  if (!user || !course) {
-    console.error("User or course not found for provisioning");
-    return;
-  }
-
-  const isAdjunctCourse = metadata.programmeType === "ADJUNCT_COURSE";
-  const context = {
-    userId: metadata.userId,
-    courseId: metadata.courseId,
-    programmeType: metadata.programmeType || "PROFESSIONAL_PROGRAMME",
-    enrollmentLevel: isAdjunctCourse ? null : (metadata.enrollmentLevel || "ASSOCIATE"),
-    paymentType: metadata.paymentType || "individual",
-    companyName: metadata.companyName,
-    companyEmail: metadata.companyEmail,
-    vatId: metadata.vatId,
-  };
-
-  console.log(`Provisioning triggered for user ${context.userId}, course ${context.courseId}, level ${context.enrollmentLevel ?? "N/A (adjunct)"}`);
-
-  try {
-    // 1. Send tiered welcome email (Associate/Member/Fellow)
-    await sendWelcomeEmail(supabase, user, course, context);
-
-    // 2. Add user to track-specific community channels
-    await addCommunityAccess(supabase, user, course, context);
-
-    // 3. Update CRM with professional data
-    await updateCRM(supabase, user, course, context);
-
-    // 4. Generate company invoice if applicable
-    if (metadata.paymentType === "company_invoice") {
-      await generateCompanyInvoice(supabase, user, course, context);
-    }
-
-    // Log provisioning activity
-    await supabase.from("activity_log").insert({
-      user_id: context.userId,
-      event_type: "provisioning_completed",
-      event_data: {
-        ...context,
-        completed_steps: ["welcome_email", "community_access", "crm_update", ...(metadata.paymentType === "company_invoice" ? ["company_invoice"] : [])]
-      },
-    });
-
-    console.log(`Provisioning completed for user ${context.userId}`);
-  } catch (error) {
-    console.error("Provisioning error:", error);
-    await supabase.from("activity_log").insert({
-      user_id: context.userId,
-      event_type: "provisioning_failed",
-      event_data: {
-        ...context,
-        error: error instanceof Error ? error.message : "Unknown error"
-      },
-    });
-  }
-}
-
-async function sendWelcomeEmail(supabase: any, user: any, course: any, context: any) {
-  const isAdjunctCourse = context.programmeType === "ADJUNCT_COURSE";
-
-  // Get email template based on enrollment level - Adjunct Courses get a
-  // single simple welcome, not the tiered Associate/Member/Fellow templates
-  const templates = {
-    ASSOCIATE: "welcome_associate",
-    MEMBER: "welcome_member",
-    FELLOW: "welcome_fellow"
-  };
-
-  const template = isAdjunctCourse
-    ? "welcome_adjunct_course"
-    : templates[context.enrollmentLevel as keyof typeof templates] || templates.ASSOCIATE;
-
-  // Send email via send-email Edge Function
-  try {
-    const internalApiKey = Deno.env.get("INTERNAL_API_KEY");
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${internalApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        to: user.email,
-        subject: isAdjunctCourse
-          ? `Welcome to ${course.title}`
-          : `Welcome to ${course.title} - ${context.enrollmentLevel} Enrollment`,
-        html: isAdjunctCourse
-          ? generateAdjunctWelcomeEmailHTML(user, course)
-          : generateWelcomeEmailHTML(user, course, context.enrollmentLevel),
-        from: "CIMA Learn <noreply@thecima.org>",
-        tags: [
-          { name: "type", value: "welcome" },
-          { name: "course", value: String(course.id) },
-          ...(isAdjunctCourse ? [] : [{ name: "level", value: context.enrollmentLevel }]),
-        ]
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Email function error: ${error}`);
-    }
-
-    console.log(`Welcome email sent to ${user.email} for course ${course.title}`);
-  } catch (error) {
-    console.error("Failed to send welcome email:", error);
-    // Don't throw - email failure shouldn't break the enrollment flow
-  }
-  
-  // Log email activity
-  await supabase.from("activity_log").insert({
-    user_id: context.userId,
-    event_type: "email_sent",
-    event_data: {
-      template,
-      recipient: user.email,
-      course_name: course.title,
-    },
-  });
-}
-
-function generateWelcomeEmailHTML(user: any, course: any, level: string) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Welcome to ${course.title}</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2 style="color: #1a365d;">Welcome to CIMA Learn, ${user.first_name || 'Student'}!</h2>
-    
-    <p>You've successfully enrolled in <strong>${course.title}</strong> at the <strong>${level}</strong> level.</p>
-    
-    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin-top: 0; color: #2d3748;">What's Next?</h3>
-      <ul>
-        <li>Access your course materials in your dashboard</li>
-        <li>Join the community discussions</li>
-        <li>Start with the first module</li>
-      </ul>
-    </div>
-    
-    <p><a href="https://cima-learn.vercel.app/dashboard" 
-          style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-      Go to Dashboard
-    </a></p>
-    
-    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-    <p style="font-size: 12px; color: #718096;">
-      If you have questions, reply to this email or contact support.
-    </p>
-  </div>
-</body>
-</html>`;
-}
-
-function generateAdjunctWelcomeEmailHTML(user: any, course: any) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Welcome to ${course.title}</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2 style="color: #1a365d;">Welcome to CIMA Learn, ${user.first_name || 'Student'}!</h2>
-
-    <p>You've successfully enrolled in <strong>${course.title}</strong>.</p>
-
-    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin-top: 0; color: #2d3748;">What's Next?</h3>
-      <ul>
-        <li>Access your course materials in your dashboard</li>
-        <li>Work through the lessons at your own pace</li>
-        <li>Earn a Certificate of Completion when you finish</li>
-      </ul>
-    </div>
-
-    <p><a href="https://cima-learn.vercel.app/dashboard"
-          style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-      Go to Dashboard
-    </a></p>
-
-    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-    <p style="font-size: 12px; color: #718096;">
-      If you have questions, reply to this email or contact support.
-    </p>
-  </div>
-</body>
-</html>`;
-}
-
-async function addCommunityAccess(supabase: any, user: any, course: any, context: any) {
-  const isAdjunctCourse = context.programmeType === "ADJUNCT_COURSE";
-
-  // Add user to course-specific community channels. Adjunct Courses skip
-  // the level-tagged channel entirely - that concept doesn't apply outside
-  // the CIMA professional pathway.
-  const communityChannels = [
-    `course-${course.id}-general`,
-    `course-${course.id}-announcements`,
-    ...(isAdjunctCourse ? [] : [`${context.enrollmentLevel.toLowerCase()}-members`]),
-  ];
-
-  console.log(`Adding user ${user.email} to channels: ${communityChannels.join(", ")}`);
-
-  // This would integrate with your community platform (Discord, Slack, etc.)
-  for (const channel of communityChannels) {
-    // Use upsert to ignore duplicates based on user_id and channel_name
-    await supabase.from("community_memberships").upsert({
-      user_id: context.userId,
-      channel_name: channel,
-      course_id: context.courseId,
-      joined_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,channel_name' });
-  }
-
-  // Log community access
-  await supabase.from("activity_log").insert({
-    user_id: context.userId,
-    event_type: "community_access_granted",
-    event_data: {
-      channels: communityChannels,
-      course_id: context.courseId,
-    },
-  });
-}
-
-async function updateCRM(supabase: any, user: any, course: any, context: any) {
-  // Update CRM with enrollment data
-  const crmData = {
-    user_id: context.userId,
-    email: user.email,
-    full_name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-    course_enrolled: course.title,
-    enrollment_level: context.enrollmentLevel,
-    enrollment_date: new Date().toISOString(),
-    payment_type: context.paymentType,
-    ...(context.paymentType === "company_invoice" && {
-      company_name: context.companyName,
-      company_email: context.companyEmail,
-      vat_id: context.vatId,
-    }),
-  };
-
-  console.log(`Updating CRM for user ${user.email} with data:`, crmData);
-
-  // This would integrate with your CRM system (HubSpot, Salesforce, etc.)
-  await supabase.from("crm_updates").insert({
-    user_id: context.userId,
-    crm_data: crmData,
-    status: "pending",
-    created_at: new Date().toISOString(),
-  });
-
-  // Log CRM update
-  await supabase.from("activity_log").insert({
-    user_id: context.userId,
-    event_type: "crm_update_queued",
-    event_data: crmData,
-  });
-}
-
-async function generateCompanyInvoice(supabase: any, user: any, course: any, context: any) {
-  const invoiceData = {
-    invoice_number: `INV-${Date.now()}`,
-    user_id: context.userId,
-    course_id: context.courseId,
-    company_name: context.companyName,
-    company_email: context.companyEmail,
-    vat_id: context.vatId,
-    amount: course.price,
-    currency: course.currency || "USD",
-    issue_date: new Date().toISOString(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-    status: "issued",
-  };
-
-  console.log(`Generating company invoice for ${context.companyName}:`, invoiceData);
-
-  // Create invoice record
-  await supabase.from("invoices").insert(invoiceData);
-
-  // Log invoice generation
-  await supabase.from("activity_log").insert({
-    user_id: context.userId,
-    event_type: "company_invoice_generated",
-    event_data: invoiceData,
-  });
-}

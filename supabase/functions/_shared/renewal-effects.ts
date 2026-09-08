@@ -25,6 +25,7 @@ export interface RenewalEffectsResult {
   success: boolean;
   certificateUrl?: string;
   error?: string;
+  alreadyProcessed?: boolean;
 }
 
 export async function applyMembershipRenewal(
@@ -43,6 +44,20 @@ export async function applyMembershipRenewal(
     notes,
     createdBy,
   } = input;
+
+  // Idempotency guard: a redelivered webhook (or a reconcile sweep racing a
+  // webhook that already succeeded) must not re-bump renewal_count/expiry a
+  // second time for the same payment_reference.
+  if (paymentReference) {
+    const { data: existingRenewal } = await supabase
+      .from("renewal_history")
+      .select("id")
+      .eq("payment_reference", paymentReference)
+      .maybeSingle();
+    if (existingRenewal) {
+      return { success: true, alreadyProcessed: true };
+    }
+  }
 
   const { data: member, error: memberErr } = await supabase
     .from("members")
@@ -108,7 +123,19 @@ export async function applyMembershipRenewal(
     });
 
   if (historyErr) {
+    if (historyErr.code === "23505") {
+      // Lost the race to a concurrent invocation for the same reference
+      // (the upfront check above missed it). The member record may have
+      // been double-updated by both invocations, but that's the same
+      // narrow window every idempotency-by-check-then-insert pattern has —
+      // report it as already-processed rather than masking it as a fresh
+      // success, so it doesn't look identical to the normal case in the
+      // audit log.
+      console.error("applyMembershipRenewal: duplicate renewal_history reference (race)", paymentReference);
+      return { success: true, alreadyProcessed: true };
+    }
     console.error("applyMembershipRenewal: renewal_history insert error", historyErr);
+    return { success: false, error: "Renewal history insert failed" };
   }
 
   // activity_log's real columns are user_id/event_type/description/metadata/
