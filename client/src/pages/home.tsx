@@ -166,6 +166,17 @@ export default function Home() {
                   <ArrowRight className="w-2.5 h-2.5 sm:w-4 sm:h-4" />
                 </button>
               </Link>
+              <a 
+                href="https://cima-oxfordshire-registration-2026.tiny-wasp-2896.chatgpt.site/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-auto"
+              >
+                <button className="bg-[#745b22] text-white px-2.5 sm:px-6 md:px-8 py-1.5 sm:py-3 rounded-sm font-['Work_Sans'] font-medium text-[7px] sm:text-xs md:text-sm tracking-wider hover:bg-[#8a6e2a] transition-colors duration-300 shadow-lg inline-flex items-center justify-center gap-0.5 sm:gap-2 whitespace-nowrap">
+                  <GraduationCap className="w-2.5 h-2.5 sm:w-4 sm:h-4" />
+                  <span>OXFORDSHIRE 2026</span>
+                </button>
+              </a>
             </div>
           </div>
         </div>
