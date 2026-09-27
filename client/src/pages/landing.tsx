@@ -320,6 +320,12 @@ function HeroSection() {
             <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </button>
         </a>
+        <a href="https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/" target="_blank" rel="noopener noreferrer">
+          <button className="group bg-[#745b22] text-white px-12 py-5 rounded-md font-bold text-lg hover:bg-[#8a6e2a] transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            <GraduationCap className="w-6 h-6" />
+            Medical Law & Mediation
+          </button>
+        </a>
       </div>
 
       {/* Floating Text Card - Montserrat Font with Enhanced Visibility */}
