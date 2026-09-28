@@ -22,7 +22,11 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    // Sharing the Express httpServer via `hmr: { server }` hits a WebSocket
+    // handshake rejection under Vite 8 (returns 400/200 instead of
+    // upgrading). Let Vite run its own dedicated HMR server on a separate
+    // port instead — the standard, well-supported middlewareMode setup.
+    hmr: { port: 24678, clientPort: 24678 },
     allowedHosts: true as const,
   };
 

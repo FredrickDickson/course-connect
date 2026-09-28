@@ -404,6 +404,12 @@ verify_jwt = false
 # the function even runs) as a first layer, on top of its own in-function
 # check that the caller is specifically an admin, not just any logged-in user.
 
+# paystack-reconcile intentionally has no override here either: it keeps
+# verify_jwt = true (only a real Supabase JWT gets past the gateway) plus its
+# own in-function check that the bearer token is specifically the service
+# role key, since pg_cron is the only intended caller and this function both
+# calls Paystack with the account's secret key and writes payment records.
+
 [analytics]
 enabled = true
 port = 54327

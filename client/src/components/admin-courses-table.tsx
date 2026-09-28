@@ -27,11 +27,20 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { formatCoursePrice } from "@/lib/format-price";
+import { fetchJoinedEnrollments, type JoinedEnrollment } from "@/lib/joined-enrollments";
+import { fetchProfilesAndUsersMaps, getEnrollmentDisplayInfo } from "@/lib/enrollment-display-info";
 import {
   Search, MoreVertical, Eye, Download, Mail, BookOpen, CheckCircle2,
   AlertTriangle, Play, Archive, Award, Users, DollarSign, Calendar,
   MapPin, Clock, Layers, Pencil, KeyRound, Link2, Copy, Check,
 } from "lucide-react";
+
+const ENROLLMENT_STATUS_LABEL: Record<string, string> = {
+  ACTIVE: "Active",
+  PENDING_APPROVAL: "Pending Approval",
+  DROPPED: "Dropped",
+  COMPLETED: "Completed",
+};
 
 interface CourseWithEnrollments {
   id: string;
@@ -115,6 +124,7 @@ export default function AdminCoursesTable() {
   const [emailBody, setEmailBody] = useState("");
   const [completionDialog, setCompletionDialog] = useState<CourseWithEnrollments | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [rosterSearch, setRosterSearch] = useState("");
 
   const { data: rawCourses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ["admin-courses-enhanced"],
@@ -151,6 +161,23 @@ export default function AdminCoursesTable() {
     },
   });
 
+  // Roster source for the per-course Enrollees tab — enrollment-centric
+  // (who is actually enrolled, not just who placed an order), enriched with
+  // live profiles/users contact info instead of the mostly-empty order
+  // snapshot. Kept separate from `allEnrollments` above, which stays
+  // orders-based since course-level capacity/revenue stats are payment
+  // metrics, not enrollment-roster metrics.
+  const { data: rosterEnrollments = [] } = useQuery<JoinedEnrollment[]>({
+    queryKey: ["admin-courses-roster-enrollments"],
+    queryFn: () => fetchJoinedEnrollments(),
+  });
+  const { data: rosterProfileUserMaps } = useQuery({
+    queryKey: ["admin-profiles-users-maps"],
+    queryFn: fetchProfilesAndUsersMaps,
+  });
+  const rosterProfileByUserId = rosterProfileUserMaps?.profileByUserId ?? new Map();
+  const rosterUserByUserId = rosterProfileUserMaps?.userByUserId ?? new Map();
+
   const courses: CourseWithEnrollments[] = rawCourses.map((c: any) => {
     const courseEnr = allEnrollments.filter((e: any) => e.course_id === c.id);
     const confirmed = courseEnr.filter((e: any) => e.payment_status === "confirmed");
@@ -160,6 +187,11 @@ export default function AdminCoursesTable() {
   });
 
   const getEffectiveStatus = (c: CourseWithEnrollments) => c.course_status || (c.is_published ? "registration_open" : "draft");
+
+  const openCourseDrawer = (c: CourseWithEnrollments) => {
+    setRosterSearch("");
+    setSelectedCourse(c);
+  };
 
   const filtered = courses.filter((c) => {
     const matchesInstructor = !instructorFilter || c.instructor_id === instructorFilter;
@@ -239,11 +271,38 @@ export default function AdminCoursesTable() {
     },
   });
 
+  // Enriched roster for a given course: who is actually enrolled, with real
+  // contact info resolved via the profiles/users fallback (not the
+  // mostly-empty order snapshot).
+  const getCourseRoster = (courseId: string) => {
+    return rosterEnrollments
+      .filter((e) => e.course_id === courseId)
+      .map((e) => {
+        const info = getEnrollmentDisplayInfo(e, rosterProfileByUserId, rosterUserByUserId);
+        return {
+          enrollmentId: e.id,
+          full_name: info.full_name || "—",
+          email: info.email || "—",
+          phone: info.phone || "",
+          country: info.country || "",
+          enrollment_level: e.enrollment_level,
+          enrollment_status: e.status,
+          payment_status: e.order?.status === "completed" ? "confirmed" : e.order?.status === "cancelled" ? "cancelled" : "pending_bank",
+          amount: e.order?.amount ?? null,
+          booking_ref: e.order?.booking_ref || "—",
+          created_at: e.order?.created_at || e.enrolled_at,
+        };
+      });
+  };
+
   const exportCourseCSV = (courseId: string, courseTitle: string) => {
-    const courseEnr = allEnrollments.filter((e: any) => e.course_id === courseId);
-    const headers = ["Name", "Email", "Ticket", "Amount", "Status", "Booking Ref", "Date"];
-    const rows = courseEnr.map((e: any) => [e.full_name, e.email, e.ticket_type, e.ticket_price, e.payment_status, e.booking_ref, e.created_at]);
-    const csv = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
+    const courseRoster = getCourseRoster(courseId);
+    const headers = ["Name", "Email", "Phone", "Country", "Level", "Enrollment Status", "Amount", "Payment Status", "Booking Ref", "Date"];
+    const rows = courseRoster.map((e) => [
+      e.full_name, e.email, e.phone, e.country, e.enrollment_level || "",
+      e.enrollment_status, e.amount ?? "", e.payment_status, e.booking_ref, e.created_at,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -263,12 +322,15 @@ export default function AdminCoursesTable() {
     }
   };
 
-  // Enrollments for selected course drawer
-  const courseEnrollments = selectedCourse
-    ? allEnrollments.filter((e: any) => e.course_id === selectedCourse.id)
-    : [];
-  const courseConfirmed = courseEnrollments.filter((e: any) => e.payment_status === "confirmed");
-  const coursePending = courseEnrollments.filter((e: any) => e.payment_status !== "confirmed" && e.payment_status !== "cancelled");
+  // Roster for selected course drawer
+  const courseRoster = selectedCourse ? getCourseRoster(selectedCourse.id) : [];
+  const filteredCourseRoster = rosterSearch
+    ? courseRoster.filter((e) =>
+        e.full_name.toLowerCase().includes(rosterSearch.toLowerCase()) ||
+        e.email.toLowerCase().includes(rosterSearch.toLowerCase()))
+    : courseRoster;
+  const courseConfirmed = filteredCourseRoster.filter((e) => e.payment_status === "confirmed");
+  const coursePending = filteredCourseRoster.filter((e) => e.payment_status !== "confirmed" && e.payment_status !== "cancelled");
 
   return (
     <div className="space-y-4">
@@ -333,7 +395,7 @@ export default function AdminCoursesTable() {
               {filtered.map((c) => {
                 const effectiveStatus = getEffectiveStatus(c);
                 return (
-                  <tr key={c.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedCourse(c)}>
+                  <tr key={c.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => openCourseDrawer(c)}>
                     <td className="p-3 font-medium max-w-[200px] truncate">{c.title}</td>
                     {/* Cohort ID removed - courses are online only */}
                     <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">
@@ -358,7 +420,7 @@ export default function AdminCoursesTable() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setSelectedCourse(c)}>
+                          <DropdownMenuItem onClick={() => openCourseDrawer(c)}>
                             <Eye className="h-4 w-4 mr-2" /> View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => window.open(`/course/${c.id}`, "_blank")}>
@@ -471,7 +533,7 @@ export default function AdminCoursesTable() {
               <Tabs defaultValue="info" className="w-full">
                 <TabsList className="w-full grid grid-cols-3">
                   <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
-                  <TabsTrigger value="enrollees" className="text-xs">Enrollees ({courseEnrollments.length})</TabsTrigger>
+                  <TabsTrigger value="enrollees" className="text-xs">Enrollees ({courseRoster.length})</TabsTrigger>
                   <TabsTrigger value="actions" className="text-xs">Actions</TabsTrigger>
                 </TabsList>
 
@@ -503,47 +565,76 @@ export default function AdminCoursesTable() {
 
                 {/* Enrollees Tab */}
                 <TabsContent value="enrollees" className="space-y-3 mt-4">
-                  {courseEnrollments.length === 0 ? (
+                  {courseRoster.length === 0 ? (
                     <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">No enrollments yet.</CardContent></Card>
                   ) : (
                     <>
-                      {/* Confirmed */}
-                      {courseConfirmed.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                            Confirmed ({courseConfirmed.length})
-                          </h4>
-                          <div className="space-y-1">
-                            {courseConfirmed.map((e: any) => (
-                              <div key={e.booking_ref} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/30 text-sm">
-                                <div>
-                                  <p className="font-medium">{e.full_name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{e.email} • {e.ticket_type}</p>
-                                </div>
-                                <span className="text-xs font-mono text-muted-foreground">{e.booking_ref}</span>
-                              </div>
-                            ))}
-                          </div>
+                      {courseRoster.length > 5 && (
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search enrollees by name or email..."
+                            value={rosterSearch}
+                            onChange={(e) => setRosterSearch(e.target.value)}
+                            className="pl-9 h-9 text-sm"
+                          />
                         </div>
                       )}
-                      {/* Pending */}
-                      {coursePending.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">
-                            Pending ({coursePending.length})
-                          </h4>
-                          <div className="space-y-1">
-                            {coursePending.map((e: any) => (
-                              <div key={e.booking_ref} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/30 text-sm">
-                                <div>
-                                  <p className="font-medium">{e.full_name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{e.email} • {e.payment_status}</p>
-                                </div>
-                                <span className="text-xs font-mono text-muted-foreground">{e.booking_ref}</span>
+                      {filteredCourseRoster.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No enrollees match "{rosterSearch}".</p>
+                      ) : (
+                        <>
+                          {/* Confirmed */}
+                          {courseConfirmed.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                                Confirmed ({courseConfirmed.length})
+                              </h4>
+                              <div className="space-y-1">
+                                {courseConfirmed.map((e) => (
+                                  <div key={e.enrollmentId} className="flex items-start justify-between gap-3 py-1.5 px-2 rounded hover:bg-muted/30 text-sm">
+                                    <div className="min-w-0">
+                                      <p className="font-medium truncate">{e.full_name}</p>
+                                      <p className="text-[10px] text-muted-foreground truncate">
+                                        {e.email}{e.phone && ` • ${e.phone}`}{e.country && ` • ${e.country}`}
+                                      </p>
+                                      <div className="flex items-center gap-1 mt-0.5">
+                                        {e.enrollment_level && <Badge variant="outline" className="text-[9px] capitalize">{e.enrollment_level}</Badge>}
+                                        <Badge variant="outline" className="text-[9px]">{ENROLLMENT_STATUS_LABEL[e.enrollment_status] || e.enrollment_status}</Badge>
+                                      </div>
+                                    </div>
+                                    <span className="text-xs font-mono text-muted-foreground flex-shrink-0">{e.booking_ref}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                            </div>
+                          )}
+                          {/* Pending */}
+                          {coursePending.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-2">
+                                Pending ({coursePending.length})
+                              </h4>
+                              <div className="space-y-1">
+                                {coursePending.map((e) => (
+                                  <div key={e.enrollmentId} className="flex items-start justify-between gap-3 py-1.5 px-2 rounded hover:bg-muted/30 text-sm">
+                                    <div className="min-w-0">
+                                      <p className="font-medium truncate">{e.full_name}</p>
+                                      <p className="text-[10px] text-muted-foreground truncate">
+                                        {e.email}{e.phone && ` • ${e.phone}`}{e.country && ` • ${e.country}`} • {e.payment_status}
+                                      </p>
+                                      <div className="flex items-center gap-1 mt-0.5">
+                                        {e.enrollment_level && <Badge variant="outline" className="text-[9px] capitalize">{e.enrollment_level}</Badge>}
+                                        <Badge variant="outline" className="text-[9px]">{ENROLLMENT_STATUS_LABEL[e.enrollment_status] || e.enrollment_status}</Badge>
+                                      </div>
+                                    </div>
+                                    <span className="text-xs font-mono text-muted-foreground flex-shrink-0">{e.booking_ref}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                       <Button variant="outline" size="sm" className="w-full" onClick={() => exportCourseCSV(selectedCourse.id, selectedCourse.title)}>
                         <Download className="w-3.5 h-3.5 mr-1" /> Export Enrollee List
