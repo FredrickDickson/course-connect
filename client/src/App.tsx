@@ -31,6 +31,7 @@ import { NotificationToastContainer } from "@/components/ui/NotificationToast";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Analytics } from "@vercel/analytics/react";
 import NotFound from "@/pages/not-found";
+import "@/styles/admin-responsive.css";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";

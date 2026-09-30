@@ -157,7 +157,7 @@ export default function AdminSidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 self-start h-screen flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out",
+        "flex flex-col bg-[#faf9f6] border-r border-[#d4c5b0]/30 transition-all duration-300 ease-in-out h-screen",
         collapsed ? "w-20" : "w-[280px]"
       )}
     >

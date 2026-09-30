@@ -332,23 +332,23 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
-            <p className="text-[#6b5d4f] mt-1 font-sf-pro-text">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#2c2015] font-sf-pro-display">Admin Dashboard</h1>
+            <p className="text-sm text-[#6b5d4f] mt-1 font-sf-pro-text">
               Manage instructors, courses, and platform operations
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <CreateSessionDialog />
             <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633]/5">
+                <Button variant="outline" className="border-[#5A2633] text-[#5A2633] hover:bg-[#5A2633]/5 w-full sm:w-auto">
                   <Shield className="h-4 w-4 mr-2" />
                   Create Admin
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md w-[calc(100vw-2rem)] sm:w-full mx-4 sm:mx-0">
                 <DialogHeader>
                   <DialogTitle>Create Admin Account</DialogTitle>
                   <DialogDescription>
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="newAdminFirstName">First Name</Label>
                       <Input
@@ -403,7 +403,7 @@ export default function AdminDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633] shadow-md">
+            <Button asChild className="bg-[#5A2633] text-white hover:bg-[#5A2633] shadow-md w-full sm:w-auto">
               <Link href="/admin/courses/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Course
@@ -413,33 +413,35 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6]">
-              <TabsTrigger value="overview" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Overview</TabsTrigger>
-              <TabsTrigger value="sessions" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Live Sessions</TabsTrigger>
-              <TabsTrigger value="instructors" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Instructors</TabsTrigger>
-              <TabsTrigger value="enrollments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Enrollments</TabsTrigger>
-              <TabsTrigger value="payments" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Payments</TabsTrigger>
-              <TabsTrigger value="courses" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Courses</TabsTrigger>
-              <TabsTrigger value="quizzes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Quizzes</TabsTrigger>
-              <TabsTrigger value="templates" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Create Course</TabsTrigger>
-              <TabsTrigger value="members" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Members</TabsTrigger>
-              <TabsTrigger value="renewals" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Renewals</TabsTrigger>
-              <TabsTrigger value="applications" className="text-sm px-4 py-2 relative data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">
-                Applications
-                {(pendingCount || 0) > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="ml-1.5 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px]"
-                  >
-                    {pendingCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="users" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Users</TabsTrigger>
-              <TabsTrigger value="resources" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Resources</TabsTrigger>
-              <TabsTrigger value="personal-notes" className="text-sm px-4 py-2 data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Personal Notes</TabsTrigger>
-            </TabsList>
+          <div className="w-full overflow-hidden">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-thin scrollbar-thumb-gray-300">
+              <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 h-auto p-1 gap-1 bg-[#faf9f6] flex-nowrap">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Overview</TabsTrigger>
+                <TabsTrigger value="sessions" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Sessions</TabsTrigger>
+                <TabsTrigger value="instructors" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Instructors</TabsTrigger>
+                <TabsTrigger value="enrollments" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Enrollments</TabsTrigger>
+                <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Payments</TabsTrigger>
+                <TabsTrigger value="courses" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Courses</TabsTrigger>
+                <TabsTrigger value="quizzes" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Quizzes</TabsTrigger>
+                <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Create</TabsTrigger>
+                <TabsTrigger value="members" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Members</TabsTrigger>
+                <TabsTrigger value="renewals" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Renewals</TabsTrigger>
+                <TabsTrigger value="applications" className="text-xs sm:text-sm px-2 sm:px-4 py-2 relative whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">
+                  Applications
+                  {(pendingCount || 0) > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-1 sm:ml-1.5 h-4 sm:h-5 min-w-[16px] sm:min-w-[20px] p-0 flex items-center justify-center text-[9px] sm:text-[10px]"
+                    >
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Users</TabsTrigger>
+                <TabsTrigger value="resources" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Resources</TabsTrigger>
+                <TabsTrigger value="personal-notes" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-[#5A2633]">Notes</TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
           {/* Overview Tab — Year selector, charts, YoY */}
@@ -656,12 +658,12 @@ function ApplicationCard({
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" className="w-full sm:w-auto">
               <Eye className="w-3 h-3 mr-1" />
               Review
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] sm:w-full max-h-[85vh] sm:max-h-[80vh] overflow-y-auto mx-4 sm:mx-0">
             <DialogHeader>
               <DialogTitle>
                 Instructor Application - {application.first_name} {application.last_name}
@@ -672,7 +674,7 @@ function ApplicationCard({
             </DialogHeader>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Name</Label>
                   <p className="text-sm text-muted-foreground">
@@ -714,7 +716,7 @@ function ApplicationCard({
               {/* CV and Video */}
               <div className="space-y-3 pt-2 border-t">
                 <Label className="text-sm font-medium">Uploaded Documents</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="border rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className="w-4 h-4 text-primary" />
@@ -764,15 +766,15 @@ function ApplicationCard({
                       rows={3}
                     />
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button className="bg-green-600 hover:bg-green-700" disabled={isPending}>
+                        <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" disabled={isPending}>
                           <UserCheck className="w-4 h-4 mr-2" />
                           Approve
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[calc(100vw-2rem)] sm:w-full mx-4 sm:mx-0">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Approve Instructor Application</AlertDialogTitle>
                           <AlertDialogDescription>
@@ -780,9 +782,9 @@ function ApplicationCard({
                             manage courses.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onReview("approved")}>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onReview("approved")} className="w-full sm:w-auto">
                             Approve
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -791,21 +793,21 @@ function ApplicationCard({
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={isPending}>
+                        <Button variant="destructive" disabled={isPending} className="w-full sm:w-auto">
                           <UserX className="w-4 h-4 mr-2" />
                           Reject
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[calc(100vw-2rem)] sm:w-full mx-4 sm:mx-0">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Reject Application</AlertDialogTitle>
                           <AlertDialogDescription>
                             Are you sure? This cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onReview("rejected")}>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onReview("rejected")} className="w-full sm:w-auto">
                             Reject
                           </AlertDialogAction>
                         </AlertDialogFooter>
