@@ -106,6 +106,9 @@ async function upsertProfile(authUserId: string, user: TestUser) {
     status: user.role,
     country: "Ghana",
     timezone: "Africa/Accra",
+    // ProtectedRoute sends students with no phone on file back to onboarding.
+    phone: "+233244000000",
+    whatsapp: "+233244000000",
   };
 
   if (existing) {

@@ -195,7 +195,7 @@ const GENDERS = [
 
 export default function Onboarding() {
 
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [, setLocation] = useLocation();
 
@@ -607,6 +607,9 @@ export default function Onboarding() {
       }, { onConflict: "user_id" });
 
       if (error) throw error;
+
+      // Unlocks ProtectedRoute's contact-info gate for the rest of the session.
+      updateUser({ phone: form.phone, country: form.country });
 
       toast.success("Personal info saved!");
 

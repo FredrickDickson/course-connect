@@ -34,7 +34,7 @@ test.describe("Onboarding", () => {
     await expect(page.locator("div.font-sf-pro-display", { hasText: "Personal Information" })).toBeVisible();
   });
 
-  test("choosing 'No' ADR experience grants instant Associate access and lands on the catalog", async ({ page }) => {
+  test("choosing 'No' ADR experience grants instant Associate access and lands on live sessions", async ({ page }) => {
     const { email } = await createFreshUser();
     const login = new LoginPage(page);
     await login.goto();
@@ -46,8 +46,8 @@ test.describe("Onboarding", () => {
 
     await expect(onboarding.experienceGateHeading).toBeVisible({ timeout: 10_000 });
     await onboarding.noExperienceButton.click();
-    await page.waitForURL(/\/course-catalog/, { timeout: 10_000 });
-    await expect(page).toHaveURL(/\/course-catalog/);
+    await page.waitForURL(/\/sessions/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/sessions/);
   });
 
   test("choosing 'Yes' ADR experience routes to the expedited application", async ({ page }) => {

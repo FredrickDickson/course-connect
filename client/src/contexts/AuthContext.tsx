@@ -17,6 +17,7 @@ interface UserProfile {
   country?: string;
   timezone?: string;
   createdAt?: string;
+  phone?: string;
 }
 
 interface AuthContextType {
@@ -29,6 +30,7 @@ interface AuthContextType {
   isAdmin: () => boolean;
   isStudent: () => boolean;
   refreshUser: () => Promise<void>;
+  updateUser: (patch: Partial<UserProfile>) => void;
   signOut: () => Promise<void>;
 }
 
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [{ data: profile, error: profileError }, { data: userRow, error: userError }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("status, full_name, part, avatar_url, country, timezone, created_at")
+        .select("status, full_name, part, avatar_url, country, timezone, created_at, phone")
         .eq("user_id", currentAuthUser.id)
         .maybeSingle(),
       supabase
@@ -139,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       country: profileData?.country || "",
       timezone: profileData?.timezone || "",
       createdAt: profileData?.created_at || "",
+      phone: profileData?.phone || "",
     };
   }, []);
 
@@ -240,6 +243,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser, fetchUserProfile]);
 
+  // Patch the in-memory user after a write we already know succeeded, without
+  // a refetch (a refetch flips isLoading and remounts the current route).
+  const updateUser = useCallback((patch: Partial<UserProfile>) => {
+    setUser(prev => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setAuthUser(null);
@@ -270,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isStudent,
         refreshUser,
+        updateUser,
         signOut,
       }}
     >
