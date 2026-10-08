@@ -115,24 +115,24 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
   });
 
   return (
-    <aside className="flex flex-col h-full bg-[#1C1D1F] text-white w-full lg:w-[380px] shrink-0 border-l border-white/5">
-      <div className="flex items-center justify-between px-4 h-14 sm:h-12 border-b border-white/10">
-        <h2 className="font-semibold text-sm sm:text-base">Course content</h2>
+    <aside className="flex flex-col h-full bg-white text-[#252525] w-full lg:w-[380px] shrink-0 border-r border-[#E8E4DC] shadow-lg">
+      <div className="flex items-center justify-between px-4 h-14 sm:h-12 border-b border-[#E8E4DC] bg-[#5A2633]">
+        <h2 className="font-semibold text-sm sm:text-base text-white">Course content</h2>
         {onClose && (
-          <button onClick={onClose} className="p-2 sm:p-1 rounded-lg sm:rounded hover:bg-white/10 active:bg-white/20 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] touch-none" aria-label="Close sidebar">
+          <button onClick={onClose} className="p-2 sm:p-1 rounded-lg sm:rounded hover:bg-white/20 active:bg-white/30 text-white min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] touch-none" aria-label="Close sidebar">
             <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
         )}
       </div>
 
-      <div className="px-4 py-3 border-b border-white/10 space-y-2">
-        <p className="text-xs text-white/70">
+      <div className="px-4 py-3 border-b border-[#E8E4DC] space-y-2 bg-[#F5F1E8]">
+        <p className="text-xs text-[#6B6761]">
           {completed} of {total} lessons · {formatDuration(remaining)} remaining
         </p>
-        <Progress value={total ? (completed / total) * 100 : 0} className="h-1.5 bg-white/15 [&>div]:bg-[#22C55E]" />
+        <Progress value={total ? (completed / total) * 100 : 0} className="h-1.5 bg-[#E8E4DC] [&>div]:bg-[#22C55E]" />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-white">
         {course.modules?.map((module: LearnModule, mIdx: number) => {
           const lessons = module.lessons || [];
           const sectionDoneCount = lessons.filter(l => progress.find(p => p.lesson_id === l.id)?.completed).length;
@@ -141,18 +141,18 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
           const isOpen = open[module.id] ?? true;
 
           return (
-            <div key={module.id} className="border-b border-white/5">
+            <div key={module.id} className="border-b border-[#E8E4DC]">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-left bg-[#2D2F31] hover:bg-[#34363A] transition-colors min-h-11"
+                className="w-full flex items-center justify-between px-4 py-3 text-left bg-[#F5F1E8] hover:bg-[#E8E4DC] transition-colors min-h-11"
                 onClick={() => setOpen(o => ({ ...o, [module.id]: !isOpen }))}
               >
                 <div className="min-w-0 pr-2">
-                  <p className="font-medium text-sm line-clamp-2">Section {mIdx + 1}: {module.title}</p>
-                  <p className="text-xs text-white/60 mt-0.5">{sectionDoneCount} / {lessons.length} · {formatDuration(sectionDuration)}</p>
+                  <p className="font-medium text-sm line-clamp-2 text-[#252525]">Section {mIdx + 1}: {module.title}</p>
+                  <p className="text-xs text-[#6B6761] mt-0.5">{sectionDoneCount} / {lessons.length} · {formatDuration(sectionDuration)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {allDone && <Badge className="bg-[#22C55E] hover:bg-[#22C55E] text-white border-0 text-[10px]"><Check className="h-3 w-3 mr-0.5" />Complete</Badge>}
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                  <ChevronDown className={cn("h-4 w-4 transition-transform text-[#5A2633]", isOpen && "rotate-180")} />
                 </div>
               </button>
 
@@ -170,8 +170,8 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                     return (
                       <li key={lesson.id}>
                         <div className={cn(
-                          "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#2D2F31] transition-colors min-h-[44px] sm:min-h-11",
-                          isActive && "bg-[#2D2F31] border-l-[3px] border-[#5A2633] pl-[13px]",
+                          "flex items-start gap-3 sm:gap-2 px-4 py-3 sm:py-2 text-sm hover:bg-[#F5F1E8] transition-colors min-h-[44px] sm:min-h-11",
+                          isActive && "bg-[#F5F1E8] border-l-[3px] border-[#5A2633] pl-[13px]",
                           !isActive && "border-l-[3px] border-transparent",
                         )}>
                           <Link
@@ -183,28 +183,28 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(lesson.id, !done); }}
                               className={cn(
                                 "mt-0.5 h-5 w-5 sm:h-4 sm:w-4 shrink-0 rounded border flex items-center justify-center touch-none",
-                                done ? "bg-[#22C55E] border-[#22C55E]" : "border-white/40 hover:border-white active:border-white"
+                                done ? "bg-[#22C55E] border-[#22C55E]" : "border-[#D1CEC7] hover:border-[#B49A67] active:border-[#5A2633]"
                               )}
                               aria-label={done ? "Mark as not complete" : "Mark complete"}
                             >
                               {done && <Check className="h-3 w-3 text-white" />}
                             </button>
                             {thumbnailUrl ? (
-                              <div className="relative mt-0.5 h-10 w-[72px] shrink-0 overflow-hidden rounded bg-black/40">
+                              <div className="relative mt-0.5 h-10 w-[72px] shrink-0 overflow-hidden rounded bg-[#E8E4DC]">
                                 <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                                   <Play className="h-3.5 w-3.5 fill-white text-white" />
                                 </div>
                               </div>
                             ) : (
-                              <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-white/60" />
+                              <Icon className="h-3.5 w-3.5 mt-1 shrink-0 text-[#B49A67]" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className={cn("line-clamp-2", isActive ? "font-semibold text-white" : "text-white/90")}>
+                              <p className={cn("line-clamp-2", isActive ? "font-semibold text-[#5A2633]" : "text-[#252525]")}>
                                 {lIdx + 1}. {lesson.title}
                               </p>
                               {lesson.duration_seconds ? (
-                                <p className="text-[11px] text-white/50 mt-0.5">{formatDuration(lesson.duration_seconds)}</p>
+                                <p className="text-[11px] text-[#6B6761] mt-0.5">{formatDuration(lesson.duration_seconds)}</p>
                               ) : null}
                             </div>
                           </Link>
@@ -215,15 +215,15 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="shrink-0 h-8 px-3 border-[#8b6f47]/50 bg-[#8b6f47]/10 text-[#8b6f47] hover:text-[#5A2633] hover:bg-[#8b6f47]/20 hover:border-[#5A2633]/50 transition-colors"
+                                  className="shrink-0 h-8 px-3 border-[#B49A67]/50 bg-[#B49A67]/10 text-[#5A2633] hover:text-[#5A2633] hover:bg-[#B49A67]/20 hover:border-[#5A2633]/50 transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <FileStack className="h-3.5 w-3.5 mr-1.5" />
                                   Resources
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-64 bg-white border-[#d4c5b0]">
-                                <div className="px-3 py-2 border-b border-[#d4c5b0]/30">
+                              <DropdownMenuContent align="end" className="w-64 bg-white border-[#E8E4DC]">
+                                <div className="px-3 py-2 border-b border-[#E8E4DC]">
                                   <p className="text-xs font-semibold text-[#5A2633] uppercase tracking-wider">
                                     Lesson Resources
                                   </p>
@@ -232,18 +232,18 @@ export default function CourseSidebar({ course, courseId, currentLessonId, progr
                                   <DropdownMenuItem 
                                     key={resource.id}
                                     onClick={() => handleDownloadResource(resource)}
-                                    className="cursor-pointer py-3 px-3 hover:bg-[#faf9f6] focus:bg-[#faf9f6] text-[#2c2015]"
+                                    className="cursor-pointer py-3 px-3 hover:bg-[#F5F1E8] focus:bg-[#F5F1E8] text-[#252525]"
                                   >
                                     <div className="flex items-center gap-3 w-full">
                                       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#5A2633]/10 flex items-center justify-center">
                                         <FileText className="h-4 w-4 text-[#5A2633]" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-[#2c2015] truncate">
+                                        <p className="text-sm font-medium text-[#252525] truncate">
                                           {resource.title}
                                         </p>
                                         {resource.file_size && (
-                                          <p className="text-xs text-[#8b6f47] mt-0.5">
+                                          <p className="text-xs text-[#B49A67] mt-0.5">
                                             {(resource.file_size / 1024).toFixed(0)} KB
                                           </p>
                                         )}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -318,7 +319,7 @@ export default function VideoPlayerPage() {
   const lessonProgress = progress.find(p => p.lesson_id === currentLesson.id);
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#F5F1E8] overflow-hidden">
       {!theatreMode && (
         <CourseTopBar
           course={course}
@@ -329,33 +330,53 @@ export default function VideoPlayerPage() {
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 flex flex-col overflow-y-auto">
-          {!theatreMode && (
-            <div className="px-4 sm:px-6 lg:px-8 py-3 border-b bg-background">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/course-catalog">Course Catalog</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink href={`/course/${courseId}`}>{course.title}</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{currentLesson.title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+        {/* Sidebar - Left side with dark theme (kept for navigation contrast) */}
+        {sidebarOpen && !theatreMode && (
+          <div className="hidden lg:block">
+            <CourseSidebar
+              course={course} courseId={courseId!} currentLessonId={currentLesson.id}
+              progress={progress} onToggleComplete={handleToggleComplete}
+              onClose={() => setSidebarOpen(false)}
+            />
           </div>
+        )}
+        {!sidebarOpen && !theatreMode && (
+          <button onClick={() => setSidebarOpen(true)}
+            className="hidden lg:flex fixed left-0 top-20 z-20 bg-[#5A2633] text-white px-3 py-2 rounded-r-md shadow items-center gap-2 text-sm hover:bg-[#3D1A22] transition-colors">
+            <ListVideo className="h-4 w-4" /> Course content
+          </button>
+        )}
+
+        <main className="flex-1 flex flex-col overflow-y-auto bg-[#F5F1E8]">
+          {/* Course Header - Lesson Title and Metadata with Official CIMA Colors */}
+          {!theatreMode && (
+            <div className="px-6 lg:px-12 py-6 bg-white border-b border-[#E8E4DC]">
+              <div className="max-w-5xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs font-medium text-[#B49A67] uppercase tracking-wider">
+                    {currentModule?.title || 'Module'} - Video Lesson
+                  </span>
+                  {currentLesson.content_type && (
+                    <Badge className="bg-[#5A2633] text-white text-xs border-0 uppercase">
+                      {currentLesson.content_type}
+                    </Badge>
+                  )}
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-bold text-[#252525] mb-3 leading-tight">
+                  {currentLesson.title}
+                </h1>
+                {currentLesson.description && (
+                  <p className="text-base text-[#4A4A4A] leading-relaxed max-w-4xl">
+                    {currentLesson.description}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
 
+          {/* Video/Content Area - Dark Theme */}
           {isVideoLesson ? (
-            <div className="flex-1 bg-black relative">
+            <div className="bg-black">
               <ErrorBoundary>
                 <VP
                   ref={videoRef}
@@ -404,69 +425,63 @@ export default function VideoPlayerPage() {
             />
           ) : null}
 
-          <div className={cn(
-            "px-4 sm:px-6 lg:px-8 py-4 space-y-4 max-w-5xl w-full",
-            lessonType === "presentation" && "border-t mt-2",
-          )}>
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Section {sectionIndex} · {currentModule?.title}</p>
-                <h2 className="text-xl sm:text-2xl font-bold font-serif">{currentLesson.title}</h2>
-              </div>
-              <div className="lg:hidden">
-                <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="default" className="lg:hidden"><ListVideo className="h-4 w-4 mr-2" />Course content</Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-[#1C1D1F] border-l-0 text-white [&>button]:text-white [&>button]:opacity-100 [&>button]:right-3 [&>button]:top-3 [&>button]:h-10 [&>button]:w-10 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-md [&>button]:hover:bg-white/10 [&>button>svg]:h-5 [&>button>svg]:w-5">
-                    <CourseSidebar
-                      course={course} courseId={courseId!} currentLessonId={currentLesson.id}
-                      progress={progress} onToggleComplete={handleToggleComplete}
-                      onLessonClick={() => setMobileSheetOpen(false)}
-                    />
-                  </SheetContent>
-                </Sheet>
+          {/* Content Section - Official CIMA Light Theme */}
+          <div className="px-6 lg:px-12 py-8 bg-[#F5F1E8]">
+            <div className="max-w-5xl space-y-8">
+              {/* Transcript/Overview Section */}
+              <ContentTabs
+                course={course}
+                lesson={currentLesson}
+                moduleTitle={currentModule?.title}
+                getCurrentVideoTime={() => videoRef.current?.currentTime || 0}
+              />
+
+              {/* Navigation Buttons - Official CIMA Colors */}
+              <div className="flex items-center justify-between gap-4 pt-6 pb-20 border-t border-[#D1CEC7]">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  disabled={!prevLesson}
+                  onClick={() => prevLesson && goToLesson(prevLesson.id)} 
+                  className="flex-1 sm:flex-none border-[#D1CEC7] hover:border-[#B49A67] bg-white text-[#5A2633] hover:bg-[#F5F1E8] transition-all"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous lesson
+                </Button>
+                <Button 
+                  size="lg" 
+                  disabled={!nextLesson}
+                  onClick={() => nextLesson && goToLesson(nextLesson.id)}
+                  className="flex-1 sm:flex-none bg-[#5A2633] hover:bg-[#3D1A22] text-white shadow-md hover:shadow-lg transition-all"
+                >
+                  {nextLesson ? "Next lesson" : "Course Complete"}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
             </div>
-
-            <div className="flex items-center justify-between gap-3 pt-3 border-t">
-              <Button variant="outline" size="sm" disabled={!prevLesson}
-                onClick={() => prevLesson && goToLesson(prevLesson.id)} className="min-w-0">
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                <span className="truncate max-w-[120px] sm:max-w-[200px]">{prevLesson?.title || "Previous"}</span>
-              </Button>
-              <Button size="sm" disabled={!nextLesson}
-                onClick={() => nextLesson && goToLesson(nextLesson.id)}
-                className="bg-[#5A2633] hover:bg-[#4a1f29] min-w-0">
-                <span className="truncate max-w-[120px] sm:max-w-[200px]">{nextLesson?.title || "Course end"}</span>
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-
-            <ContentTabs
-              course={course}
-              lesson={currentLesson}
-              moduleTitle={currentModule?.title}
-              getCurrentVideoTime={() => videoRef.current?.currentTime || 0}
-            />
           </div>
+
+          {/* Mobile Course Content Button */}
+          {!theatreMode && (
+            <div className="lg:hidden fixed bottom-6 right-6 z-30">
+              <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button size="lg" className="bg-[#5A2633] hover:bg-[#3D1A22] text-white shadow-lg">
+                    <ListVideo className="h-5 w-5 mr-2" />
+                    Course content
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="p-0 w-full sm:max-w-md bg-white border-l border-[#E8E4DC] text-[#252525] [&>button]:text-[#5A2633] [&>button]:opacity-100 [&>button]:right-3 [&>button]:top-3 [&>button]:h-10 [&>button]:w-10 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-md [&>button]:hover:bg-[#F5F1E8] [&>button>svg]:h-5 [&>button>svg]:w-5">
+                  <CourseSidebar
+                    course={course} courseId={courseId!} currentLessonId={currentLesson.id}
+                    progress={progress} onToggleComplete={handleToggleComplete}
+                    onLessonClick={() => setMobileSheetOpen(false)}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          )}
         </main>
-
-        {sidebarOpen && !theatreMode && (
-          <div className="hidden lg:block">
-            <CourseSidebar
-              course={course} courseId={courseId!} currentLessonId={currentLesson.id}
-              progress={progress} onToggleComplete={handleToggleComplete}
-              onClose={() => setSidebarOpen(false)}
-            />
-          </div>
-        )}
-        {!sidebarOpen && !theatreMode && (
-          <button onClick={() => setSidebarOpen(true)}
-            className="hidden lg:flex fixed right-3 top-20 z-20 bg-[#1C1D1F] text-white px-3 py-2 rounded-l-md shadow items-center gap-2 text-sm">
-            <ListVideo className="h-4 w-4" /> Course content
-          </button>
-        )}
       </div>
 
       <CourseCompleteModal

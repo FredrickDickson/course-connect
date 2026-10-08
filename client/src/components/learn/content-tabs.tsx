@@ -312,41 +312,85 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
   const canPreview = (t: string) => ["pdf", "image", "video", "audio", "link"].includes(t);
 
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-transparent h-auto p-0 gap-2 sm:gap-4" role="tablist">
-        {["overview", /* "notes", "activities", */ "announcements", "resources"].map(t => (
+    <Tabs defaultValue="transcript" className="w-full">
+      <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b border-[#D1CEC7] bg-transparent h-auto p-0 gap-0" role="tablist">
+        {["transcript", "overview", "announcements", "resources"].map(t => (
           <TabsTrigger
             key={t}
             value={t}
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent py-3 px-2 capitalize text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#5A2633] data-[state=active]:text-[#5A2633] data-[state=active]:bg-transparent py-3 px-6 capitalize text-sm font-medium text-[#6B6761] hover:text-[#252525] hover:bg-[#F5F1E8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             role="tab"
             aria-selected={false}
           >
-            {t}
+            {t === "transcript" ? "Transcript" : t}
           </TabsTrigger>
         ))}
       </TabsList>
 
-      {/* Overview */}
-      <TabsContent value="overview" className="pt-4">
-        <Card><CardContent className="p-6 space-y-6">
-          <section>
-            <h3 className="font-semibold mb-2">About this course</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">{course.description || "No description."}</p>
+      {/* Transcript Tab - Official CIMA Light Theme */}
+      <TabsContent value="transcript" className="pt-6" role="tabpanel">
+        <div className="space-y-4">
+          <div className="text-sm text-[#4A4A4A] leading-relaxed space-y-4 bg-white p-6 rounded-lg border border-[#E8E4DC] shadow-sm">
+            <p className="flex items-start gap-3">
+              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:00</span>
+              <span>Welcome to CIMA Learn. In this demonstration lesson we place mediation within the wider landscape of alternative dispute resolution.</span>
+            </p>
+            <p className="flex items-start gap-3">
+              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:15</span>
+              <span>Negotiation is the most simple process. The parties work out their own settlement, without a neutral third party.</span>
+            </p>
+            <p className="flex items-start gap-3">
+              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:30</span>
+              <span>In mediation, a neutral mediator helps the parties communicate and explore options. The mediator has no power to impose an outcome. Any agreement is the parties' own agreement.</span>
+            </p>
+            <p className="flex items-start gap-3">
+              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">1:00</span>
+              <span>In arbitration, the parties appoint a tribunal that hears the case and issues a binding award. Under the New York Convention of 1958, awards can be recognised and enforced in contracting states.</span>
+            </p>
+            <p className="flex items-start gap-3">
+              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">1:30</span>
+              <span>The central distinction is control. In negotiation and mediation the parties keep control of the outcome. In arbitration, they hand it to a tribunal in exchange for a binding, enforceable award.</span>
+            </p>
+          </div>
+          <div className="pt-4 border-t border-[#E8E4DC]">
+            <p className="text-xs text-[#6B6761]">
+              Source: Original CIMA Learn demonstration recording (dashboard materials)
+            </p>
+          </div>
+        </div>
+      </TabsContent>
+
+      {/* Overview - Official CIMA Light Theme */}
+      <TabsContent value="overview" className="pt-6" role="tabpanel">
+        <div className="space-y-6">
+          <section className="bg-white rounded-lg border border-[#E8E4DC] p-6 shadow-sm hover:shadow-md hover:border-[#B49A67]/50 transition-all">
+            <h3 className="text-lg font-semibold text-[#252525] mb-3 flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#5A2633]"></div>
+              About this course
+            </h3>
+            <p className="text-sm text-[#4A4A4A] leading-relaxed whitespace-pre-line">{course.description || "No description available."}</p>
           </section>
+          
           {moduleTitle && (
-            <section>
-              <h3 className="font-semibold mb-1">Current section</h3>
-              <p className="text-sm text-muted-foreground">{moduleTitle}</p>
+            <section className="bg-gradient-to-r from-[#F5F1E8] to-white rounded-lg border border-[#B49A67]/30 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-[#252525] mb-2 flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-[#B49A67]"></div>
+                Current section
+              </h3>
+              <p className="text-sm text-[#5A2633] font-medium">{moduleTitle}</p>
             </section>
           )}
+          
           {lesson.description && (
-            <section>
-              <h3 className="font-semibold mb-1">About this lesson</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">{lesson.description}</p>
+            <section className="bg-white rounded-lg border border-[#E8E4DC] p-6 shadow-sm hover:shadow-md hover:border-[#B49A67]/50 transition-all">
+              <h3 className="text-lg font-semibold text-[#252525] mb-3 flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-[#5A2633]"></div>
+                About this lesson
+              </h3>
+              <p className="text-sm text-[#4A4A4A] leading-relaxed whitespace-pre-line">{lesson.description}</p>
             </section>
           )}
-        </CardContent></Card>
+        </div>
       </TabsContent>
 
       {/* Notes — temporarily disabled */}
@@ -435,32 +479,37 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
       </TabsContent>
       )}
 
-      {/* Announcements */}
-      <TabsContent value="announcements" className="pt-4 space-y-3">
+      {/* Announcements - Official CIMA Light Theme */}
+      <TabsContent value="announcements" className="pt-6 space-y-4" role="tabpanel">
         {isInstructor && (
           <div className="flex justify-end">
-            <Button className="bg-[#5A2633] hover:bg-[#4a1f29]" onClick={() => openAnnDialog()}>
-              <Plus className="h-4 w-4 mr-1" />New announcement
+            <Button className="bg-[#5A2633] hover:bg-[#3D1A22] text-white shadow-sm hover:shadow-md transition-all" onClick={() => openAnnDialog()}>
+              <Plus className="h-4 w-4 mr-2" />New announcement
             </Button>
           </div>
         )}
         {announcements.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">No announcements yet.</p>
+          <div className="py-12 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[#F5F1E8] border border-[#E8E4DC] flex items-center justify-center mb-4">
+              <HelpCircle className="h-8 w-8 text-[#B49A67]" />
+            </div>
+            <p className="text-sm text-[#6B6761]">No announcements yet.</p>
+          </div>
         ) : announcements.map((a: any) => {
           const unread = !reads.includes(a.id);
           return (
-            <Card key={a.id} onClick={() => unread && markRead.mutate(a.id)}>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  {unread && <span className="h-2 w-2 rounded-full bg-destructive" aria-label="Unread announcement" />}
-                  <h4 className="font-semibold">{a.title}</h4>
-                  <span className="text-xs text-muted-foreground ml-auto">{new Date(a.created_at).toLocaleDateString()}</span>
+            <Card key={a.id} onClick={() => unread && markRead.mutate(a.id)} className="hover:shadow-md transition-shadow border border-[#E8E4DC] hover:border-[#B49A67]/50 bg-white">
+              <CardContent className="p-6 space-y-3">
+                <div className="flex items-center gap-3">
+                  {unread && <span className="h-2.5 w-2.5 rounded-full bg-[#5A2633]" aria-label="Unread announcement" />}
+                  <h4 className="font-semibold text-[#252525] flex-1">{a.title}</h4>
+                  <span className="text-xs text-[#6B6761]">{new Date(a.created_at).toLocaleDateString()}</span>
                   {isInstructor && (
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()} role="group" aria-label="Announcement actions">
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8" 
+                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 hover:bg-[#F5F1E8] text-[#5A2633]" 
                         onClick={() => openAnnDialog(a)} 
                         aria-label="Edit announcement"
                       >
@@ -469,7 +518,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 text-destructive hover:text-destructive" 
+                        className="h-8 w-8 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
                         onClick={() => { if (confirm("Delete this announcement?")) deleteAnnouncement.mutate(a.id); }} 
                         aria-label="Delete announcement"
                       >
@@ -478,40 +527,40 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">{a.body}</p>
+                <p className="text-sm text-[#4A4A4A] leading-relaxed whitespace-pre-line">{a.body}</p>
               </CardContent>
             </Card>
           );
         })}
 
         <Dialog open={annOpen} onOpenChange={setAnnOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setAnnOpen(false)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg bg-white border-[#E8E4DC]" onEscapeKeyDown={() => setAnnOpen(false)}>
             <DialogHeader>
-              <DialogTitle>{annEditing ? "Edit announcement" : "New announcement"}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-[#252525]">{annEditing ? "Edit announcement" : "New announcement"}</DialogTitle>
+              <DialogDescription className="text-[#6B6761]">
                 {annEditing ? "Edit the announcement title and message for your course." : "Create a new announcement to share with your course participants."}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label htmlFor="announcement-title" className="text-sm font-medium">Title</label>
+                <label htmlFor="announcement-title" className="text-sm font-medium text-[#252525]">Title</label>
                 <Input 
                   id="announcement-title"
                   placeholder="Enter announcement title" 
                   value={annTitle} 
                   onChange={e => setAnnTitle(e.target.value)} 
                   aria-required="true"
-                  className="mt-1"
+                  className="mt-1 bg-white border-[#D1CEC7] text-[#252525] placeholder:text-[#6B6761]"
                 />
               </div>
               <div>
-                <label htmlFor="announcement-body" className="text-sm font-medium">Message</label>
+                <label htmlFor="announcement-body" className="text-sm font-medium text-[#252525]">Message</label>
                 <Textarea 
                   id="announcement-body"
                   placeholder="Enter your message..." 
                   value={annBody} 
                   onChange={e => setAnnBody(e.target.value)} 
-                  className="min-h-[140px] mt-1"
+                  className="min-h-[140px] mt-1 bg-white border-[#D1CEC7] text-[#252525] placeholder:text-[#6B6761]"
                   aria-required="true"
                 />
               </div>
@@ -520,6 +569,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
               <Button 
                 onClick={() => saveAnnouncement.mutate()} 
                 disabled={!annTitle.trim() || !annBody.trim() || saveAnnouncement.isPending}
+                className="bg-[#5A2633] hover:bg-[#3D1A22] text-white"
                 aria-describedby={(!annTitle.trim() || !annBody.trim()) ? "form-error" : undefined}
               >
                 {saveAnnouncement.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
@@ -530,54 +580,58 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         </Dialog>
       </TabsContent>
 
-      {/* Resources */}
-      <TabsContent value="resources" className="pt-4 space-y-2">
+      {/* Resources - Official CIMA Light Theme with Proper Styling */}
+      <TabsContent value="resources" className="pt-6 space-y-4" role="tabpanel">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-[#252525] mb-2">Readings and materials</h3>
+        </div>
+        
         {isInstructor && (
-          <div className="flex justify-end">
+          <div className="flex justify-end mb-4">
             <Dialog open={resOpen} onOpenChange={setResOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-destructive hover:bg-destructive/90" onClick={openResDialog}>
-                  <Plus className="h-4 w-4 mr-1" />Add resource
+                <Button className="bg-[#5A2633] hover:bg-[#3D1A22] text-white shadow-sm hover:shadow-md transition-all" onClick={openResDialog}>
+                  <Plus className="h-4 w-4 mr-2" />Add resource
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-lg" onEscapeKeyDown={() => setResOpen(false)}>
+              <DialogContent className="max-w-[95vw] sm:max-w-lg bg-white border-[#E8E4DC]" onEscapeKeyDown={() => setResOpen(false)}>
                 <DialogHeader>
-                  <DialogTitle>Add resource</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-[#252525]">Add resource</DialogTitle>
+                  <DialogDescription className="text-[#6B6761]">
                     Upload a file or provide an external link to add a learning resource for this lesson.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="resource-name" className="text-sm font-medium">Display name</label>
+                    <label htmlFor="resource-name" className="text-sm font-medium text-[#252525]">Display name</label>
                     <Input 
                       id="resource-name"
                       placeholder="Enter resource name" 
                       value={resName} 
                       onChange={e => setResName(e.target.value)} 
                       aria-required="true"
-                      className="mt-1"
+                      className="mt-1 bg-white border-[#D1CEC7] text-[#252525] placeholder:text-[#6B6761]"
                     />
                   </div>
                   <div>
-                    <label htmlFor="resource-file" className="text-sm font-medium">File</label>
+                    <label htmlFor="resource-file" className="text-sm font-medium text-[#252525]">File</label>
                     <Input 
                       id="resource-file"
                       type="file" 
                       onChange={e => setResFile(e.target.files?.[0] || null)}
-                      className="mt-1"
+                      className="mt-1 bg-white border-[#D1CEC7] text-[#252525]"
                       accept=".pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx,.key,.zip,.rar,.7z,.tar,.gz,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.mkv,.avi,.mp3,.wav,.m4a,.ogg,.flac"
                     />
                   </div>
-                  <div className="text-center text-sm text-muted-foreground">— or —</div>
+                  <div className="text-center text-sm text-[#6B6761]">— or —</div>
                   <div>
-                    <label htmlFor="resource-link" className="text-sm font-medium">External link</label>
+                    <label htmlFor="resource-link" className="text-sm font-medium text-[#252525]">External link</label>
                     <Input 
                       id="resource-link"
                       placeholder="https://example.com/resource" 
                       value={resLink} 
                       onChange={e => setResLink(e.target.value)}
-                      className="mt-1"
+                      className="mt-1 bg-white border-[#D1CEC7] text-[#252525] placeholder:text-[#6B6761]"
                     />
                   </div>
                 </div>
@@ -585,6 +639,7 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
                   <Button 
                     onClick={submitResource} 
                     disabled={resBusy || (!resName.trim() || (!resFile && !resLink.trim()))}
+                    className="bg-[#5A2633] hover:bg-[#3D1A22] text-white"
                     aria-describedby={(!resName.trim() || (!resFile && !resLink.trim())) ? "form-error" : undefined}
                   >
                     {resBusy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
@@ -597,46 +652,72 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
         )}
 
         {resources.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">No downloadable resources for this lesson.</p>
-        ) : resources.map((r: any) => (
-          <Card key={r.id}><CardContent className="p-4 flex items-center gap-3">
-            <ResourceIcon type={r.resource_type} />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{r.name}</p>
-              <p className="text-xs text-muted-foreground">{(r.resource_type || "file").toUpperCase()}{r.file_size_mb ? ` · ${r.file_size_mb} MB` : ""}</p>
+          <div className="py-12 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-[#5A2633]/10 border border-[#E8E4DC] flex items-center justify-center mb-4">
+              <FileText className="h-8 w-8 text-[#5A2633]" />
             </div>
-            {canPreview(r.resource_type) && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={() => handlePreview(r)}
-                className="min-h-[44px] min-w-[44px] sm:h-9 sm:px-3"
-                aria-label={`Preview ${r.name}`}
-              >
-                <Eye className="h-4 w-4 mr-1" />Preview
-              </Button>
-            )}
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => handleDownload(r)}
-              className="min-h-[44px] min-w-[44px] sm:h-9 sm:px-3"
-              aria-label={`Download ${r.name}`}
-            >
-              <Download className="h-4 w-4 mr-1" />Download
-            </Button>
-            {isInstructor && (
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px] sm:h-10 sm:w-10"
-                onClick={() => { if (confirm("Delete this resource?")) deleteResource.mutate(r); }}
-                aria-label={`Delete ${r.name}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </CardContent></Card>
+            <p className="text-sm text-[#6B6761]">No downloadable resources for this lesson.</p>
+          </div>
+        ) : resources.map((r: any) => (
+          <div key={r.id} className="bg-white border border-[#E8E4DC] rounded-lg p-5 hover:border-[#B49A67] hover:shadow-md transition-all group">
+            <div className="flex items-start gap-4">
+              {/* File Type Badge */}
+              <div className="flex-shrink-0">
+                <Badge className="bg-[#5A2633] text-white border-0 text-xs font-semibold px-3 py-1.5 uppercase">
+                  {r.resource_type === 'pdf' ? 'PDF' : (r.resource_type || 'FILE').toUpperCase()}
+                </Badge>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-[#252525] mb-1 group-hover:text-[#5A2633] transition-colors">
+                  {r.name}
+                </h4>
+                <p className="text-sm text-[#4A4A4A] mb-1">
+                  Lecture {(r.resource_type || "file").toUpperCase()} notes for CIMA Learn | demonstration video
+                </p>
+                <p className="text-xs text-[#6B6761]">
+                  Source: Markers for CIMA Learn | Demonstration Refers to the Convention on the Recognition and Enforcement of Foreign Arbitral Awards (New York 1958)
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex-shrink-0 flex items-center gap-2">
+                {canPreview(r.resource_type) && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handlePreview(r)}
+                    className="border-[#D1CEC7] text-[#5A2633] hover:bg-[#F5F1E8] hover:border-[#B49A67] h-9"
+                    aria-label={`Preview ${r.name}`}
+                  >
+                    <Eye className="h-4 w-4 mr-1.5" />
+                    Preview
+                  </Button>
+                )}
+                <Button 
+                  size="sm" 
+                  onClick={() => handleDownload(r)}
+                  className="bg-[#C93A47] hover:bg-[#B33340] text-white border-0 h-9 shadow-sm"
+                  aria-label={`Download ${r.name}`}
+                >
+                  <Download className="h-4 w-4 mr-1.5" />
+                  Download PDF
+                </Button>
+                {isInstructor && (
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9"
+                    onClick={() => { if (confirm("Delete this resource?")) deleteResource.mutate(r); }}
+                    aria-label={`Delete ${r.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
 
         <Dialog open={!!previewing} onOpenChange={(o) => { if (!o) { setPreviewing(null); setPreviewUrl(null); } }}>

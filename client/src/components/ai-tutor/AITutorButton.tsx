@@ -26,25 +26,25 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
 
   return (
     <>
-      {/* Floating Button */}
-      <div className={cn("fixed bottom-6 right-6 z-50", className)}>
+      {/* Floating Button - Smaller Size with Better Positioning */}
+      <div className={cn("fixed bottom-24 right-6 z-40", className)}>
         <Button
           onClick={handleClick}
-          size="lg"
+          size="default"
           className={cn(
-            "rounded-full w-14 h-14 shadow-lg transition-all duration-300",
+            "rounded-full w-12 h-12 shadow-lg transition-all duration-300",
             "bg-gradient-to-r from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#4a1f29]",
-            "text-white hover:scale-110",
+            "text-white hover:scale-105",
             isOpen && "scale-90"
           )}
           aria-label="AI Tutor"
         >
           {isOpen ? (
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           ) : (
             <div className="relative">
-              <Bot className="h-6 w-6" />
-              <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+              <Bot className="h-5 w-5" />
+              <Sparkles className="h-2.5 w-2.5 absolute -top-0.5 -right-0.5 text-yellow-300 animate-pulse" />
             </div>
           )}
         </Button>

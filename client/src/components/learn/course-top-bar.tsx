@@ -32,12 +32,12 @@ export default function CourseTopBar({ course, completed, total, nextLessonHref,
   };
 
   return (
-    <header className="flex items-center h-14 px-3 sm:px-4 bg-[#1C1D1F] text-white border-b border-white/10 gap-3">
+    <header className="flex items-center h-14 px-3 sm:px-4 bg-[#5A2633] text-white border-b border-[#3D1A22] gap-3 shadow-sm">
       <Link href="/dashboard">
         <Button 
           variant="ghost" 
           size="lg"
-          className="text-white hover:bg-white/10 hover:text-white shrink-0 min-h-[44px] md:min-h-[40px]" 
+          className="text-white hover:bg-white/20 hover:text-white shrink-0 min-h-[44px] md:min-h-[40px]" 
           aria-label="Exit to dashboard"
         >
           <ArrowLeft className="h-6 w-6 md:h-5 md:w-5" />
@@ -47,32 +47,32 @@ export default function CourseTopBar({ course, completed, total, nextLessonHref,
 
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <h1 className="font-semibold text-sm sm:text-base truncate">{truncated}</h1>
-        {post && <Badge variant="outline" className="hidden sm:inline-flex border-white/30 text-white bg-transparent text-[10px]">{post}</Badge>}
+        {post && <Badge variant="outline" className="hidden sm:inline-flex border-white/40 text-white bg-white/10 text-[10px]">{post}</Badge>}
       </div>
 
       <div className="hidden md:flex items-center gap-3 min-w-[260px]">
-        <Progress value={pct} className="h-1.5 flex-1 bg-white/15 [&>div]:bg-[#22C55E]" />
-        <span className="text-xs text-white/80 whitespace-nowrap tabular-nums">{completed} / {total} · {pct}%</span>
+        <Progress value={pct} className="h-1.5 flex-1 bg-white/20 [&>div]:bg-[#22C55E]" />
+        <span className="text-xs text-white/90 whitespace-nowrap tabular-nums">{completed} / {total} · {pct}%</span>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white hidden sm:inline-flex">
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 hover:text-white hidden sm:inline-flex">
               Your Progress <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>Course progress</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+          <DropdownMenuContent align="end" className="w-64 bg-white border-[#E8E4DC]">
+            <DropdownMenuLabel className="text-[#5A2633]">Course progress</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-[#E8E4DC]" />
             <div className="px-2 py-2 space-y-2">
-              <Progress value={pct} className="h-2" />
-              <p className="text-sm text-muted-foreground">{completed} of {total} lessons completed ({pct}%)</p>
+              <Progress value={pct} className="h-2 bg-[#E8E4DC] [&>div]:bg-[#22C55E]" />
+              <p className="text-sm text-[#6B6761]">{completed} of {total} lessons completed ({pct}%)</p>
             </div>
             {nextLessonHref && (
               <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                <DropdownMenuSeparator className="bg-[#E8E4DC]" />
+                <DropdownMenuItem asChild className="hover:bg-[#F5F1E8] focus:bg-[#F5F1E8] text-[#252525]">
                   <Link href={nextLessonHref}>Continue to next lesson</Link>
                 </DropdownMenuItem>
               </>
@@ -80,18 +80,18 @@ export default function CourseTopBar({ course, completed, total, nextLessonHref,
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" onClick={share} aria-label="Share">
+        <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" onClick={share} aria-label="Share">
           <Share2 className="h-4 w-4" />
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" aria-label="More options">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" aria-label="More options">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => toast({ title: "Resources tab", description: "See the Resources tab below the video." })}>
+          <DropdownMenuContent align="end" className="bg-white border-[#E8E4DC]">
+            <DropdownMenuItem onClick={() => toast({ title: "Resources tab", description: "See the Resources tab below the video." })} className="hover:bg-[#F5F1E8] focus:bg-[#F5F1E8] text-[#252525]">
               Download resources
             </DropdownMenuItem>
             {/* Hidden temporarily
