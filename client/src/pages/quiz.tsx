@@ -167,8 +167,8 @@ export default function QuizPage() {
         .from("quiz_questions")
         .select("*, answers:quiz_answers!quiz_answers_question_id_fkey(*)")
         .eq("quiz_id", quizId)
-        .order("order")
-        .order("order", { referencedTable: "answers" });
+        .order("order", { ascending: true })
+        .order("order", { referencedTable: "quiz_answers", ascending: true });
       if (qErr) throw qErr;
 
       return { ...quizRow, questions: questions || [] };

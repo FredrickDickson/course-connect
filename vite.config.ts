@@ -79,4 +79,8 @@ export default defineConfig(async ({ mode }) => ({
       },
     },
   },
+  optimizeDeps: {
+    force: true,
+    exclude: ['@replit/vite-plugin-runtime-error-modal'],
+  },
 }));

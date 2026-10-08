@@ -48,10 +48,16 @@ export function VideoUrlInput({
         
         onChange(value, { platform: data.platform, videoId: data.videoId });
       } catch (error: any) {
-        const errorData = await error.json?.catch(() => ({}));
+        let errorMessage = "Invalid video URL";
+        try {
+          const errorData = await error.json?.();
+          errorMessage = errorData?.message || errorMessage;
+        } catch {
+          // If JSON parsing fails, use default message
+        }
         setValidationResult({
           valid: false,
-          error: errorData.message || "Invalid video URL",
+          error: errorMessage,
         });
       } finally {
         setIsValidating(false);

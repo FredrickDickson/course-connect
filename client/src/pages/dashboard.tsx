@@ -248,52 +248,52 @@ export default function Dashboard() {
 
   return (
     <StudentLayout>
-      {/* Hero Section - Simplified */}
-      <section className="mb-12">
+      {/* Hero Section - Official CIMA Colors */}
+      <section className="mb-12 bg-gradient-to-br from-[#5A2633] to-[#3D1A22] rounded-[24px] p-8 shadow-[0_16px_48px_rgba(90,38,51,0.2)]">
         <div className="space-y-6">
           {/* Greeting */}
           <div>
-            <h1 className="text-4xl font-bold text-[#2c2015] font-sf-pro-display mb-2">
+            <h1 className="text-4xl font-bold text-white font-sf-pro-display mb-2">
               {greeting}, {user?.firstName}
             </h1>
-            <p className="text-lg text-[#6b5d4f] font-sf-pro-text">
+            <p className="text-lg text-white/80 font-sf-pro-text">
               {inProgressEnrollments.length > 0
                 ? "You're making great progress on your learning journey"
                 : "Ready to start your professional development journey?"}
             </p>
           </div>
 
-          {/* Continue Learning Card */}
+          {/* Continue Learning Card - Burgundy & Gold */}
           {nextCourse && (
-            <Card className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] border-0 rounded-[24px] overflow-hidden shadow-[0_24px_64px_rgba(97,0,0,0.16)] hover:shadow-[0_32px_80px_rgba(97,0,0,0.24)] transition-all duration-700 hover:-translate-y-1">
+            <Card className="bg-white border-2 border-[#B49A67]/30 rounded-[24px] overflow-hidden shadow-[0_24px_64px_rgba(90,38,51,0.15)] hover:shadow-[0_32px_80px_rgba(90,38,51,0.25)] hover:border-[#B49A67] transition-all duration-700 hover:-translate-y-1">
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                   <div className="flex-1 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur rounded-full">
-                      <PlayCircle className="w-4 h-4 text-[#8b6f47]" />
-                      <span className="text-sm font-semibold text-white">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#F5F1E8] rounded-full border border-[#B49A67]/30">
+                      <PlayCircle className="w-4 h-4 text-[#B49A67]" />
+                      <span className="text-sm font-semibold text-[#5A2633]">
                         Continue where you left off
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-white mb-2 font-sf-pro-display">
+                      <h3 className="text-2xl font-bold text-[#252525] mb-2 font-sf-pro-display">
                         {nextCourse.course?.title}
                       </h3>
-                      <p className="text-white/80 text-sm">
+                      <p className="text-[#4A4A4A] text-sm">
                         {nextCourse.course?.subtitle || "Keep up the momentum"}
                       </p>
                     </div>
                     {/* Progress Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-white/80">Your progress</span>
-                        <span className="text-white font-bold">
+                        <span className="text-[#6B6761]">Your progress</span>
+                        <span className="text-[#5A2633] font-bold">
                           {Math.round(Number(nextCourse.progress) || 0)}%
                         </span>
                       </div>
-                      <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+                      <div className="w-full bg-[#E8E4DC] rounded-full h-3 overflow-hidden border border-[#D1CEC7]">
                         <div
-                          className="bg-gradient-to-r from-[#8b6f47] to-[#c5a572] h-full rounded-full transition-all duration-1000 ease-out shadow-lg"
+                          className="bg-gradient-to-r from-[#B49A67] to-[#5A2633] h-full rounded-full transition-all duration-1000 ease-out shadow-md"
                           style={{
                             width: `${Number(nextCourse.progress) || 0}%`,
                           }}
@@ -305,7 +305,7 @@ export default function Dashboard() {
                     <Link href={`/learn/${nextCourse.course?.id}`}>
                       <Button
                         size="lg"
-                        className="bg-white text-[#5A2633] hover:bg-white/90 shadow-xl px-8 py-6 text-base font-semibold rounded-[16px] transition-all duration-300 hover:scale-105"
+                        className="bg-[#5A2633] text-white hover:bg-[#3D1A22] shadow-xl px-8 py-6 text-base font-semibold rounded-[16px] transition-all duration-300 hover:scale-105"
                       >
                         Continue Learning
                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -317,26 +317,26 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Quick Stats */}
+          {/* Quick Stats - Light Cards with Official Colors */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 icon: BookOpen,
                 value: enrollments.length,
                 label: "Courses Enrolled",
-                color: "from-[#5A2633] to-[#5A2633]",
+                color: "from-[#5A2633] to-[#3D1A22]",
               },
               {
                 icon: Trophy,
                 value: completedCount,
                 label: "Courses Completed",
-                color: "from-[#8b6f47] to-[#c5a572]",
+                color: "from-[#B49A67] to-[#8b7850]",
               },
               {
                 icon: Award,
                 value: certificates.length,
                 label: "Certificates Earned",
-                color: "from-[#5A2633] to-[#5A2633]",
+                color: "from-[#5A2633] to-[#3D1A22]",
               },
               {
                 icon: Clock,
@@ -344,30 +344,30 @@ export default function Dashboard() {
                   ? Math.round(totalStudyHours)
                   : Math.round(totalStudyHours * 10) / 10,
                 label: "Total Study Hours",
-                color: "from-[#8b6f47] to-[#c5a572]",
+                color: "from-[#B49A67] to-[#8b7850]",
               },
             ].map((stat, idx) => {
               const Icon = stat.icon;
               return (
                 <Card
                   key={idx}
-                  className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] hover:border-[#8b6f47]/30 hover:shadow-[0_16px_48px_rgba(97,0,0,0.08)] transition-all duration-500 hover:-translate-y-1"
+                  className="bg-white border-2 border-[#E8E4DC] rounded-[20px] hover:border-[#B49A67] hover:shadow-[0_16px_48px_rgba(180,154,103,0.15)] transition-all duration-500 hover:-translate-y-1"
                 >
                   <CardContent className="p-6">
                     <div className="space-y-3">
                       <div
                         className={cn(
-                          "w-12 h-12 rounded-[12px] flex items-center justify-center bg-gradient-to-br",
+                          "w-12 h-12 rounded-[12px] flex items-center justify-center bg-gradient-to-br shadow-md",
                           stat.color
                         )}
                       >
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <div className="text-3xl font-bold text-[#2c2015] font-sf-pro-display">
+                        <div className="text-3xl font-bold text-[#252525] font-sf-pro-display">
                           {stat.value}
                         </div>
-                        <p className="text-sm text-[#6b5d4f] font-sf-pro-text mt-1">
+                        <p className="text-sm text-[#6B6761] font-sf-pro-text mt-1">
                           {stat.label}
                         </p>
                       </div>
@@ -380,7 +380,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Upcoming Live Sessions - Prominent Display */}
+      {/* Upcoming Live Sessions - Dark Theme */}
       <section className="mb-12">
         <UpcomingSessionsCard />
       </section>
@@ -389,21 +389,21 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column - 2/3 */}
         <div className="lg:col-span-2 space-y-8">
-          {/* My Courses */}
+          {/* My Courses - Official CIMA Colors */}
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-[#2c2015] font-sf-pro-display">
+                <h2 className="text-2xl font-bold text-[#252525] font-sf-pro-display">
                   My Courses
                 </h2>
-                <p className="text-sm text-[#6b5d4f] mt-1">
+                <p className="text-sm text-[#6B6761] mt-1">
                   {enrollments.length} active courses
                 </p>
               </div>
               <Link href="/courses">
                 <Button
                   variant="outline"
-                  className="border-[#d4c5b0] text-[#5A2633] hover:bg-[#f5f3ed] hover:border-[#8b6f47]"
+                  className="border-[#D1CEC7] text-[#5A2633] hover:bg-[#F5F1E8] hover:border-[#B49A67] transition-colors"
                 >
                   View All
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -412,20 +412,20 @@ export default function Dashboard() {
             </div>
 
             {enrollments.length === 0 ? (
-              <Card className="bg-white border-2 border-dashed border-[#d4c5b0]/50 rounded-[24px]">
+              <Card className="bg-white border-2 border-dashed border-[#D1CEC7] rounded-[24px]">
                 <CardContent className="py-16 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#f5f3ed] flex items-center justify-center">
-                    <BookOpen className="w-10 h-10 text-[#8b6f47]" />
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#F5F1E8] flex items-center justify-center border-2 border-[#E8E4DC]">
+                    <BookOpen className="w-10 h-10 text-[#B49A67]" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#2c2015] mb-2">
+                  <h3 className="text-xl font-bold text-[#252525] mb-2">
                     No courses yet
                   </h3>
-                  <p className="text-[#6b5d4f] mb-6 max-w-md mx-auto">
+                  <p className="text-[#4A4A4A] mb-6 max-w-md mx-auto">
                     Start your professional development journey by enrolling in
                     your first course
                   </p>
                   <Link href="/course-catalog">
-                    <Button className="bg-gradient-to-br from-[#5A2633] to-[#5A2633] text-white hover:shadow-[0_20px_48px_rgba(97,0,0,0.24)] transition-all duration-500 hover:scale-105 px-8 py-6 rounded-[16px] text-base font-semibold">
+                    <Button className="bg-[#5A2633] text-white hover:bg-[#3D1A22] hover:shadow-[0_20px_48px_rgba(90,38,51,0.25)] transition-all duration-500 hover:scale-105 px-8 py-6 rounded-[16px] text-base font-semibold">
                       Explore Courses
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -439,8 +439,8 @@ export default function Dashboard() {
                     key={enrollment.id}
                     href={`/learn/${enrollment.course?.id}`}
                   >
-                    <Card className="group bg-white border-2 border-[#d4c5b0]/20 rounded-[20px] overflow-hidden hover:border-[#8b6f47]/30 hover:shadow-[0_24px_64px_rgba(97,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 cursor-pointer">
-                      <div className="relative h-40 bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center">
+                    <Card className="group bg-white border-2 border-[#E8E4DC] rounded-[20px] overflow-hidden hover:border-[#B49A67] hover:shadow-[0_24px_64px_rgba(180,154,103,0.2)] hover:-translate-y-2 transition-all duration-700 cursor-pointer">
+                      <div className="relative h-40 bg-gradient-to-br from-[#5A2633] to-[#3D1A22] flex items-center justify-center">
                         {enrollment.course?.thumbnail_url ? (
                           <CourseThumbnail
                             src={enrollment.course.thumbnail_url}
@@ -455,24 +455,24 @@ export default function Dashboard() {
                       </div>
                       <CardContent className="p-6 space-y-4">
                         <div>
-                          <h3 className="text-lg font-bold text-[#2c2015] mb-1 line-clamp-2 font-sf-pro-display">
+                          <h3 className="text-lg font-bold text-[#252525] mb-1 line-clamp-2 font-sf-pro-display">
                             {enrollment.course?.title}
                           </h3>
-                          <p className="text-sm text-[#8b6f47]">
+                          <p className="text-sm text-[#B49A67] font-medium">
                             {enrollment.course?.level || "Associate"} Level
                           </p>
                         </div>
                         {/* Progress */}
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-[#6b5d4f]">Progress</span>
+                            <span className="text-[#6B6761]">Progress</span>
                             <span className="text-[#5A2633] font-bold">
                               {Math.round(Number(enrollment.progress) || 0)}%
                             </span>
                           </div>
-                          <div className="w-full bg-[#e3beb8] rounded-full h-2">
+                          <div className="w-full bg-[#E8E4DC] rounded-full h-2 border border-[#D1CEC7]">
                             <div
-                              className="bg-gradient-to-r from-[#5A2633] to-[#8b6f47] h-2 rounded-full transition-all duration-1000"
+                              className="bg-gradient-to-r from-[#B49A67] to-[#5A2633] h-2 rounded-full transition-all duration-1000"
                               style={{
                                 width: `${Number(enrollment.progress) || 0}%`,
                               }}
@@ -488,15 +488,15 @@ export default function Dashboard() {
           </section>
         </div>
 
-        {/* Right Column - 1/3 */}
+        {/* Right Column - 1/3 Official CIMA Colors */}
         <div className="space-y-8">
           {/* Upcoming Activities */}
           <section>
-            <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#8b6f47]" />
+            <h2 className="text-xl font-bold text-[#252525] mb-4 font-sf-pro-display flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#B49A67]" />
               Upcoming Activities
             </h2>
-            <Card className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px]">
+            <Card className="bg-white border-2 border-[#E8E4DC] rounded-[20px] hover:shadow-[0_12px_32px_rgba(180,154,103,0.1)] transition-shadow">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {upcomingAssignments.map((activity: any) => (
@@ -504,20 +504,20 @@ export default function Dashboard() {
                       key={activity.id}
                       href={activity.courseId ? `/learn/${activity.courseId}` : "#"}
                     >
-                      <div className="flex items-start gap-3 p-3 bg-[#faf9f6] rounded-[12px] hover:bg-[#f5f3ed] transition-colors cursor-pointer">
-                        <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center flex-shrink-0">
+                      <div className="flex items-start gap-3 p-3 bg-[#F5F1E8] rounded-[12px] hover:bg-[#E8E4DC] transition-colors cursor-pointer border border-[#D1CEC7]/50">
+                        <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#5A2633] to-[#3D1A22] flex items-center justify-center flex-shrink-0 shadow-md">
                           <Target className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[#2c2015]">
+                          <p className="text-sm font-semibold text-[#252525]">
                             {activity.title}
                           </p>
-                          <p className="text-xs text-[#6b5d4f] mt-1 truncate">
+                          <p className="text-xs text-[#6B6761] mt-1 truncate">
                             {[activity.moduleTitle, activity.courseTitle]
                               .filter(Boolean)
                               .join(" · ")}
                           </p>
-                          <p className="text-xs text-[#8b6f47] font-semibold mt-1">
+                          <p className="text-xs text-[#B49A67] font-semibold mt-1">
                             {getDueDateLabel(activity.dueDate)}
                           </p>
                         </div>
@@ -526,7 +526,7 @@ export default function Dashboard() {
                   ))}
                   {upcomingAssignments.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-sm text-[#6b5d4f]">
+                      <p className="text-sm text-[#6B6761]">
                         No upcoming activities
                       </p>
                     </div>
@@ -538,26 +538,26 @@ export default function Dashboard() {
 
           {/* Recent Activity */}
           <section>
-            <h2 className="text-xl font-bold text-[#2c2015] mb-4 font-sf-pro-display flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#8b6f47]" />
+            <h2 className="text-xl font-bold text-[#252525] mb-4 font-sf-pro-display flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#B49A67]" />
               Recent Activity
             </h2>
-            <Card className="bg-white border-2 border-[#d4c5b0]/20 rounded-[20px]">
+            <Card className="bg-white border-2 border-[#E8E4DC] rounded-[20px] hover:shadow-[0_12px_32px_rgba(180,154,103,0.1)] transition-shadow">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {certificates.slice(0, 3).map((cert: any) => (
                     <div
                       key={cert.id}
-                      className="flex items-center gap-3 pb-4 border-b border-[#d4c5b0]/30 last:border-0 last:pb-0"
+                      className="flex items-center gap-3 pb-4 border-b border-[#D1CEC7] last:border-0 last:pb-0"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B49A67] to-[#8b7850] flex items-center justify-center flex-shrink-0 shadow-md">
                         <Award className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#2c2015] truncate">
+                        <p className="text-sm font-semibold text-[#252525] truncate">
                           Certificate Earned
                         </p>
-                        <p className="text-xs text-[#6b5d4f] truncate">
+                        <p className="text-xs text-[#6B6761] truncate">
                           {cert.courses?.title || cert.course?.title}
                         </p>
                       </div>
@@ -565,7 +565,7 @@ export default function Dashboard() {
                   ))}
                   {certificates.length === 0 && (
                     <div className="text-center py-6">
-                      <p className="text-sm text-[#6b5d4f]">
+                      <p className="text-sm text-[#6B6761]">
                         No recent activity
                       </p>
                     </div>
