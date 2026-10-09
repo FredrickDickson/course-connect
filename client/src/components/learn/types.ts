@@ -14,6 +14,7 @@ export interface LearnLesson {
   order: number | null;
   content?: string | null;
   is_preview?: boolean | null;
+  transcript?: Array<{ timestamp: string; text: string }> | null;
 }
 export interface LearnModule {
   id: string;

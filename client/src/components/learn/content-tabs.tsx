@@ -330,33 +330,35 @@ export default function ContentTabs({ course, lesson, moduleTitle, getCurrentVid
       {/* Transcript Tab - Official CIMA Light Theme */}
       <TabsContent value="transcript" className="pt-6" role="tabpanel">
         <div className="space-y-4">
-          <div className="text-sm text-[#4A4A4A] leading-relaxed space-y-4 bg-white p-6 rounded-lg border border-[#E8E4DC] shadow-sm">
-            <p className="flex items-start gap-3">
-              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:00</span>
-              <span>Welcome to CIMA Learn. In this demonstration lesson we place mediation within the wider landscape of alternative dispute resolution.</span>
-            </p>
-            <p className="flex items-start gap-3">
-              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:15</span>
-              <span>Negotiation is the most simple process. The parties work out their own settlement, without a neutral third party.</span>
-            </p>
-            <p className="flex items-start gap-3">
-              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">0:30</span>
-              <span>In mediation, a neutral mediator helps the parties communicate and explore options. The mediator has no power to impose an outcome. Any agreement is the parties' own agreement.</span>
-            </p>
-            <p className="flex items-start gap-3">
-              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">1:00</span>
-              <span>In arbitration, the parties appoint a tribunal that hears the case and issues a binding award. Under the New York Convention of 1958, awards can be recognised and enforced in contracting states.</span>
-            </p>
-            <p className="flex items-start gap-3">
-              <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold">1:30</span>
-              <span>The central distinction is control. In negotiation and mediation the parties keep control of the outcome. In arbitration, they hand it to a tribunal in exchange for a binding, enforceable award.</span>
-            </p>
-          </div>
-          <div className="pt-4 border-t border-[#E8E4DC]">
-            <p className="text-xs text-[#6B6761]">
-              Source: Original CIMA Learn demonstration recording (dashboard materials)
-            </p>
-          </div>
+          {lesson.transcript && Array.isArray(lesson.transcript) && lesson.transcript.length > 0 ? (
+            <>
+              <div className="text-sm text-[#4A4A4A] leading-relaxed space-y-4 bg-white p-6 rounded-lg border border-[#E8E4DC] shadow-sm">
+                {lesson.transcript.map((entry: any, index: number) => (
+                  <p key={index} className="flex items-start gap-3">
+                    <span className="font-mono text-[#B49A67] text-xs mt-1 font-semibold whitespace-nowrap">
+                      {entry.timestamp || entry.time || "0:00"}
+                    </span>
+                    <span>{entry.text || entry.content || ""}</span>
+                  </p>
+                ))}
+              </div>
+              <div className="pt-4 border-t border-[#E8E4DC]">
+                <p className="text-xs text-[#6B6761]">
+                  Transcript generated from lesson audio
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="py-12 text-center bg-white rounded-lg border border-[#E8E4DC] shadow-sm">
+              <div className="mx-auto w-16 h-16 rounded-full bg-[#F5F1E8] border border-[#E8E4DC] flex items-center justify-center mb-4">
+                <FileText className="h-8 w-8 text-[#B49A67]" />
+              </div>
+              <p className="text-sm text-[#6B6761] mb-2">No transcript available yet</p>
+              <p className="text-xs text-[#6B6761] max-w-md mx-auto">
+                Transcripts are generated automatically when videos are processed. Check back later.
+              </p>
+            </div>
+          )}
         </div>
       </TabsContent>
 
