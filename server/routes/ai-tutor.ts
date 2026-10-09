@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { chat, type ChatRequest } from '../services/ai-tutor';
+import OpenAI from 'openai';
 
 const router = Router();
 
@@ -13,6 +14,14 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!);
+
+// Initialize DeepSeek for AI grading
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY || '',
+  baseURL: 'https://api.deepseek.com',
+});
+
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
 
 /**
  * POST /api/ai-tutor/chat
@@ -159,6 +168,100 @@ router.get('/conversations', async (req, res) => {
   } catch (error: any) {
     console.error('Error fetching conversations:', error);
     return res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+/**
+ * POST /api/ai-tutor/grade-assignment
+ * AI grading endpoint for assignments
+ */
+router.post('/grade-assignment', async (req, res) => {
+  try {
+    // Verify auth
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { submissionId, response, assignmentTitle, assignmentInstructions, maxScore } = req.body;
+
+    if (!submissionId || !response) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Call AI grading service
+    const gradingPrompt = `You are Michael Smith, a CIMA ADR instructor. Grade this student's assignment response.
+
+Assignment: ${assignmentTitle}
+Instructions: ${assignmentInstructions}
+Max Score: ${maxScore}
+
+Student Response:
+${response}
+
+Provide:
+1. A numerical score (0-${maxScore})
+2. Detailed feedback explaining the grade
+3. Specific strengths and areas for improvement
+4. Suggestions for how to improve
+
+Be fair, constructive, and encouraging. Focus on content quality, understanding of concepts, and practical application.
+
+Return ONLY a JSON object with this exact format:
+{
+  "score": <number>,
+  "passed": <boolean>,
+  "feedback": "<detailed feedback string>"
+}`;
+
+    const completion = await deepseek.chat.completions.create({
+      model: AI_MODEL,
+      messages: [
+        { role: 'system', content: 'You are an expert ADR instructor grading student assignments. Always return valid JSON.' },
+        { role: 'user', content: gradingPrompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
+    });
+
+    const aiResponse = completion.choices[0]?.message?.content || '';
+    
+    // Parse AI response
+    let gradingResult;
+    try {
+      gradingResult = JSON.parse(aiResponse);
+    } catch (e) {
+      // If AI didn't return valid JSON, extract score and feedback manually
+      const scoreMatch = aiResponse.match(/score["\s:]+(\d+)/i);
+      const score = scoreMatch ? parseInt(scoreMatch[1]) : Math.floor(maxScore * 0.7);
+      
+      gradingResult = {
+        score,
+        passed: score >= (maxScore * 0.7),
+        feedback: aiResponse.substring(0, 1000),
+      };
+    }
+
+    return res.status(200).json({
+      submissionId,
+      score: gradingResult.score,
+      passed: gradingResult.passed,
+      feedback: gradingResult.feedback,
+      gradedAt: new Date().toISOString(),
+    });
+
+  } catch (error: any) {
+    console.error('AI Assignment Grading Error:', error);
+    return res.status(500).json({ 
+      error: error.message || 'Failed to grade assignment' 
+    });
   }
 });
 
