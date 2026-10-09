@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, BookOpen, Users, HelpCircle, User, Menu, X, GraduationCap, Search, Target, Award, FileText, Bookmark, Settings, LogOut, Video } from "lucide-react";
+import { Home, BookOpen, Users, HelpCircle, User, Menu, X, GraduationCap, Search, Target, Award, FileText, Bookmark, Settings, LogOut, Video, Library } from "lucide-react";
 import { Link } from "wouter";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,6 +58,7 @@ export default function MobileBottomNav() {
         // { name: "Programs", href: "/programs", icon: GraduationCap },
         { name: "Qualification Pathway", href: "/qualification-pathway", icon: Target },
         { name: "Certificates", href: "/profile?tab=certificates", icon: Award },
+        { name: "Library", href: "/library", icon: Library },
         { name: "Resources", href: "/resources", icon: BookOpen },
       ],
     },
