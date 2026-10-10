@@ -234,10 +234,6 @@ export default function CourseCatalog() {
             >
               Course Catalog
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Professional ADR training courses designed to build competency and
-              expertise in international mediation and arbitration.
-            </p>
           </div>
 
           {/* Programme Type Tabs */}

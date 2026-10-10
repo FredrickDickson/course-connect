@@ -239,14 +239,13 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/technical-support" component={TechnicalSupport} />
       <Route path="/academic-advising" component={AcademicAdvising} />
-      <Route path="/course-catalog" component={CourseSearch} />
+      <Route path="/course-catalog" component={CourseCatalog} />
       <Route path="/search" component={CourseSearch} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/global-ma-program" component={GlobalMAProgram} />
       <Route path="/fcrimarb-fellowship" component={FCIMarbFellowship} />
       <Route path="/certification" component={Certification} />
       <Route path="/resources" component={Resources} />
-      <Route path="/library" component={Library} />
       <Route path="/community-forum" component={CommunityForum} />
       <Route path="/professional-standards" component={ProfessionalStandards} />
       <Route path="/qualification-pathway" component={QualificationPathway} />
@@ -285,6 +284,7 @@ function Router() {
         component={VideoPlayer}
       />
       <ProtectedRoute path="/quiz/:quizId" component={LazyQuizPage} />
+      <ProtectedRoute path="/library" component={Library} />
       <ProtectedRoute path="/community" component={Community} />
       <ProtectedRoute path="/community/forums/:slug" component={CommunityForumCategory} />
       <ProtectedRoute path="/community/forums/:slug/new" component={CommunityCreatePost} />
