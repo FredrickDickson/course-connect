@@ -368,9 +368,11 @@ export default function CourseCatalog() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => {
                 const eligibility = checkCourseEligibility(course);
+                // For public (non-logged-in) users, show courses as AVAILABLE instead of LOCKED
+                // This allows browsing and viewing course details before signing in
                 const status: CourseStatus = eligibility.status === "enrolled" 
                   ? "ENROLLED" 
-                  : eligibility.status === "eligible"
+                  : eligibility.status === "eligible" || eligibility.status === "unknown"
                   ? "AVAILABLE"
                   : "LOCKED";
                 
