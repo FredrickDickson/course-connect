@@ -275,7 +275,6 @@ export default function Landing() {
       <main>
         <LiveSessionBanner />
         <HeroSection />
-        <StatsBarSection />
         <FeaturedCoursesSection />
         <LearningPathwaysSection />
         <WhyLearnWithCIMASection />
@@ -338,61 +337,6 @@ function HeroSection() {
   );
 }
 
-// Stats Bar Section
-function StatsBarSection() {
-  return (
-    <section className="relative py-20 border-b border-gray-100 overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=2880&h=800&auto=format&fit=crop&q=100"
-          alt="Professional team collaboration"
-          className="w-full h-full object-cover opacity-30"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/60 to-white/80" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Users className="w-10 h-10 text-[#5A2633]" />
-            </div>
-            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">4,800+</p>
-            <p className="text-base text-gray-700 font-body font-medium">Learners Worldwide</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Handshake className="w-10 h-10 text-[#5A2633]" />
-            </div>
-            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">120+</p>
-            <p className="text-base text-gray-700 font-body font-medium">Charitable Partners</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-4">
-              <GraduationCap className="w-10 h-10 text-[#5A2633]" />
-            </div>
-            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">200+</p>
-            <p className="text-base text-gray-700 font-body font-medium">Expert-Led Courses</p>
-          </div>
-          
-          <div className="group text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Award className="w-10 h-10 text-[#5A2633]" />
-            </div>
-            <p className="text-5xl lg:text-6xl font-light text-gray-900 mb-2 font-display">98%</p>
-            <p className="text-base text-gray-700 font-body font-medium">Satisfaction Rate</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // Featured Courses Section
 function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
@@ -412,7 +356,7 @@ function FeaturedCoursesSection() {
   });
 
   return (
-    <section ref={ref} id="categories" className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <section ref={ref} id="categories" className={`relative py-12 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
@@ -426,9 +370,9 @@ function FeaturedCoursesSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-16">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Featured Courses</h2>
+            <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Self-Paced Courses</h2>
           </div>
           <Link href="/courses">
             <button className="text-[#5A2633] font-semibold hover:underline flex items-center gap-2 text-lg font-body">

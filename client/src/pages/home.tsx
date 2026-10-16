@@ -377,13 +377,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Courses - Recommended for You */}
+      {/* Self-Paced Courses */}
       <section className="py-12 sm:py-16 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6">
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight">
-                Recommended for You
+                Self-Paced Courses
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl">
                 {user 
