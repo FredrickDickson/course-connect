@@ -1,6 +1,6 @@
 /**
  * AI Tutor Floating Button
- * Triggers the AI Tutor panel
+ * Triggers the AI Tutor panel with avatar and name styling
  */
 
 import { useState } from 'react';
@@ -17,6 +17,7 @@ interface AITutorButtonProps {
 
 export default function AITutorButton({ lessonContext, className }: AITutorButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
     console.log('AI Tutor button clicked, current state:', isOpen);
@@ -26,31 +27,60 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
 
   return (
     <>
-      {/* Floating Button - Smaller Size with Better Positioning */}
+      {/* Floating Avatar Button - Styled like reference */}
       <div className={cn("fixed bottom-24 right-6 z-40", className)}>
-        <Button
+        <button
           onClick={handleClick}
-          size="default"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           className={cn(
-            "rounded-full w-12 h-12 shadow-lg transition-all duration-300",
-            "bg-gradient-to-r from-[#5A2633] to-[#5A2633] hover:from-[#5A2633] hover:to-[#4a1f29]",
-            "text-white hover:scale-105",
-            isOpen && "scale-90"
+            "group relative flex items-center gap-3 rounded-full shadow-2xl transition-all duration-300 overflow-hidden",
+            "bg-gradient-to-r from-[#5A2633] to-[#6B2D3D]",
+            "hover:shadow-[0_10px_40px_rgba(90,38,51,0.4)]",
+            "transform hover:scale-105",
+            isOpen ? "pr-4 pl-2 py-2" : isHovered ? "pr-6 pl-2 py-2" : "p-2"
           )}
-          aria-label="AI Tutor"
+          aria-label="Ask Michael Smith - AI Tutor"
         >
-          {isOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <div className="relative">
-              <Bot className="h-5 w-5" />
-              <Sparkles className="h-2.5 w-2.5 absolute -top-0.5 -right-0.5 text-yellow-300 animate-pulse" />
+          {/* Avatar Circle with Border */}
+          <div className="relative flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-white p-0.5 shadow-inner">
+              <div className="w-full h-full rounded-full overflow-hidden">
+                {/* Professional Avatar Image */}
+                <img 
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces" 
+                  alt="Michael Smith - AI Tutor"
+                  className="w-full h-full object-cover"
+                />
+                {/* Sparkle indicator */}
+                <Sparkles className="h-3 w-3 absolute top-0 right-0 text-[#B49A67] animate-pulse" />
+              </div>
             </div>
-          )}
-        </Button>
+          </div>
+
+          {/* Expandable Text */}
+          <div
+            className={cn(
+              "flex items-center gap-2 transition-all duration-300 overflow-hidden whitespace-nowrap",
+              isOpen || isHovered ? "max-w-[200px] opacity-100" : "max-w-0 opacity-0"
+            )}
+          >
+            {isOpen ? (
+              <>
+                <span className="text-white font-semibold text-base">Close</span>
+                <X className="h-4 w-4 text-white" />
+              </>
+            ) : (
+              <span className="text-white font-semibold text-base">Ask Michael Smith</span>
+            )}
+          </div>
+
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </button>
         
-        {/* Pulse animation when closed */}
-        {!isOpen && (
+        {/* Pulse animation ring when closed and not hovered */}
+        {!isOpen && !isHovered && (
           <div className="absolute inset-0 rounded-full bg-[#5A2633] animate-ping opacity-20 pointer-events-none" />
         )}
       </div>
