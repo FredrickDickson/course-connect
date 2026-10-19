@@ -17,7 +17,6 @@ interface AITutorButtonProps {
 
 export default function AITutorButton({ lessonContext, className }: AITutorButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
     console.log('AI Tutor button clicked, current state:', isOpen);
@@ -27,18 +26,16 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
 
   return (
     <>
-      {/* Floating Avatar Button - Styled like reference */}
+      {/* Floating Avatar Button - Always Expanded */}
       <div className={cn("fixed bottom-24 right-6 z-40", className)}>
         <button
           onClick={handleClick}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
           className={cn(
             "group relative flex items-center gap-3 rounded-full shadow-2xl transition-all duration-300 overflow-hidden",
             "bg-gradient-to-r from-[#5A2633] to-[#6B2D3D]",
             "hover:shadow-[0_10px_40px_rgba(90,38,51,0.4)]",
             "transform hover:scale-105",
-            isOpen ? "pr-4 pl-2 py-2" : isHovered ? "pr-6 pl-2 py-2" : "p-2"
+            "pr-6 pl-2 py-2"
           )}
           aria-label="Ask Michael Smith - AI Tutor"
         >
@@ -56,13 +53,8 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
             </div>
           </div>
 
-          {/* Expandable Text */}
-          <div
-            className={cn(
-              "flex items-center gap-2 transition-all duration-300 overflow-hidden whitespace-nowrap",
-              isOpen || isHovered ? "max-w-[200px] opacity-100" : "max-w-0 opacity-0"
-            )}
-          >
+          {/* Always Visible Text */}
+          <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
             {isOpen ? (
               <>
                 <span className="text-white font-semibold text-base">Close</span>
