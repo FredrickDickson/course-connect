@@ -52,8 +52,6 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
                   alt="Michael Smith - AI Tutor"
                   className="w-full h-full object-cover"
                 />
-                {/* Sparkle indicator */}
-                <Sparkles className="h-3 w-3 absolute top-0 right-0 text-[#B49A67] animate-pulse" />
               </div>
             </div>
           </div>
@@ -78,11 +76,6 @@ export default function AITutorButton({ lessonContext, className }: AITutorButto
           {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
         </button>
-        
-        {/* Pulse animation ring when closed and not hovered */}
-        {!isOpen && !isHovered && (
-          <div className="absolute inset-0 rounded-full bg-[#5A2633] animate-ping opacity-20 pointer-events-none" />
-        )}
       </div>
 
       {/* AI Tutor Panel */}
