@@ -162,8 +162,12 @@ export default function AITutorPanel({ isOpen, onClose, lessonContext }: AITutor
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#5A2633] to-[#5A2633] text-white rounded-t-lg">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center font-semibold text-lg border-2 border-white/30">
-              MS
+            <div className="h-10 w-10 rounded-full bg-white p-0.5 shadow-inner overflow-hidden">
+              <img 
+                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces" 
+                alt="Michael Smith"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div>
               <h3 className="font-semibold">Michael Smith</h3>
@@ -197,8 +201,12 @@ export default function AITutorPanel({ isOpen, onClose, lessonContext }: AITutor
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#5A2633] to-[#5A2633] flex items-center justify-center text-white font-bold text-2xl border-4 border-[#5A2633]/20 shadow-lg">
-                MS
+              <div className="h-20 w-20 rounded-full bg-white p-1 shadow-lg overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces" 
+                  alt="Michael Smith"
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
               <div>
                 <h4 className="font-semibold text-lg mb-1">Hi! I'm Michael Smith</h4>
