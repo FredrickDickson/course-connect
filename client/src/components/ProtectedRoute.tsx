@@ -9,15 +9,12 @@ type ProtectedRouteProps = {
     requiredRole?: "student" | "instructor" | "admin";
 };
 
-// Routes a student may open before their phone number is on file. Everything
-// else behind ProtectedRoute (checkout, sessions, courses...) requires it, so
-// contact details can't be skipped by leaving onboarding early.
-const CONTACT_EXEMPT_PATHS = ["/onboarding", "/profile"];
-
+// Optional onboarding: users can access all pages immediately after registration.
+// Profile completion is only required when enrolling in courses (enforced in checkout.tsx).
+// This function is kept for backward compatibility but always returns false.
 function needsContactInfo(user: { role: string; phone?: string } | null, location: string) {
-    if (!user || user.role === "admin" || user.role === "instructor") return false;
-    if (CONTACT_EXEMPT_PATHS.some((p) => location === p || location.startsWith(`${p}/`))) return false;
-    return !user.phone;
+    // Optional onboarding - never force users to complete profile
+    return false;
 }
 
 export function ProtectedRoute({

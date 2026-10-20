@@ -49,18 +49,9 @@ export default function AuthCallback() {
           console.log("Auth callback: Profile data:", profileData);
           console.log("Auth callback: Profile error:", profileError);
 
-          // If no profile exists or profile is not completed, go to onboarding
-          const profileComplete = profileData?.profile_completed ?? false;
-
-          console.log("Auth callback: Profile complete:", profileComplete);
-
-          if (!profileData || !profileComplete) {
-            console.log("Auth callback: Redirecting to onboarding");
-            setLocation("/onboarding");
-          } else {
-            console.log("Auth callback: Redirecting to live sessions");
-            setLocation("/sessions");
-          }
+          // Always redirect to home page - profile completion banner will show if needed
+          console.log("Auth callback: Redirecting to home page");
+          setLocation("/home");
         } else {
           // No session, redirect to login
           setLocation("/login");
