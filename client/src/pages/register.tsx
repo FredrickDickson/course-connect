@@ -120,14 +120,11 @@ export default function Register() {
       } else {
         toast({
           title: "Account created successfully!",
-          description: "Welcome to CIMA Learn. Let's get started.",
+          description: "Welcome to CIMA Learn!",
         });
-        // Full-page redirect, not setLocation: /onboarding is a ProtectedRoute,
-        // and a same-SPA navigation can outrace AuthContext picking up the
-        // just-created session, bouncing the new user to /login. login.tsx
-        // uses the same window.location.href pattern for its own redirects
-        // for the same reason.
-        window.location.href = "/onboarding";
+        // Redirect to home instead of forcing onboarding
+        // Users can complete profile later via banner prompt
+        window.location.href = "/home";
       }
     } catch (err) {
       const error = err as Error;

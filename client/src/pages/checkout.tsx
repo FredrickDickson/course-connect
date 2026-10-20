@@ -97,6 +97,19 @@ export default function Checkout() {
     enabled: !!courseId,
   });
 
+  // Check if profile is complete before allowing checkout
+  const isProfileComplete = user && user.firstName && user.lastName && user.country;
+
+  // Redirect to onboarding if profile incomplete
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user && !isProfileComplete) {
+      toast.error("Complete your profile", {
+        description: "Please complete your profile before enrolling in courses"
+      });
+      setLocation("/onboarding?redirect=/checkout/" + courseId);
+    }
+  }, [authLoading, isAuthenticated, user, isProfileComplete, courseId, setLocation]);
+
   // Check existing enrollment
   const { data: existingEnrollment } = useQuery({
     queryKey: ["enrollment-check", courseId, user?.id],

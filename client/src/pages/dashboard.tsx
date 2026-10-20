@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "@/components/ui/loading-state";
 import StudentLayout from "@/components/student-layout";
+import ProfileCompletionBanner from "@/components/profile-completion-banner";
 import { Link, useLocation } from "wouter";
 import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
 import {
@@ -248,6 +249,9 @@ export default function Dashboard() {
 
   return (
     <StudentLayout>
+      {/* Profile Completion Banner */}
+      <ProfileCompletionBanner position="inline" dismissible={true} />
+
       {/* Hero Section - Official CIMA Colors */}
       <section className="mb-12 bg-gradient-to-br from-[#5A2633] to-[#3D1A22] rounded-[24px] p-8 shadow-[0_16px_48px_rgba(90,38,51,0.2)]">
         <div className="space-y-6">

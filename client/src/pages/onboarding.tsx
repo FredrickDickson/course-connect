@@ -681,13 +681,13 @@ export default function Onboarding() {
 
         });
 
-        toast.success("You're all set with Associate access! Redirecting you to the course catalog.");
+        toast.success("You're all set with Associate access!");
 
         const redirect = sessionStorage.getItem("redirectAfterLogin");
 
         sessionStorage.removeItem("redirectAfterLogin");
 
-        setLocation(redirect || "/sessions");
+        setLocation(redirect || "/home");
 
         return;
 
@@ -815,7 +815,7 @@ export default function Onboarding() {
 
       sessionStorage.removeItem("redirectAfterLogin");
 
-      setLocation(redirect || "/sessions");
+      setLocation(redirect || "/home");
 
     } catch (err: any) {
 

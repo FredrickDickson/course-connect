@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import CourseCardStatus, { getCourseStatus, type CourseStatus } from "@/components/course-card-status";
 import { CourseThumbnail } from "@/components/CourseThumbnail";
 import UpcomingSessionsCard from "@/components/live-sessions/upcoming-sessions-card";
+import ProfileCompletionBanner from "@/components/profile-completion-banner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
 import {
@@ -123,6 +124,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background mobile-bottom-spacing">
       <Header />
+      
+      {/* Profile Completion Banner */}
+      {user && <ProfileCompletionBanner position="top" dismissible={true} />}
 
       {/* Hero Section — Executive Portal */}
       <section className="relative flex flex-col md:flex-row items-stretch">
