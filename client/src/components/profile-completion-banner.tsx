@@ -32,10 +32,9 @@ export default function ProfileCompletionBanner({
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Check if user has completed their profile
-  const isProfileComplete = user && 
-    user.firstName && 
-    user.lastName && 
-    user.country;
+  // Only check basic required fields - firstName and lastName are set during registration
+  // Country, phone, etc. are considered "profile completion" items
+  const isProfileComplete = user && user.phone; // Phone is the key field tracked in onboarding
 
   // Check localStorage for dismissed state
   useEffect(() => {
