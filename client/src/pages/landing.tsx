@@ -334,10 +334,10 @@ function HeroSection() {
       })}
       </div>
 
-      {/* Floating Text Card - Montserrat Font with Enhanced Visibility */}
-      <div className="absolute bottom-10 right-10 bg-[#F5F1E8]/95 backdrop-blur-xl rounded-xl p-8 shadow-2xl border-2 border-[#2C2C2C]/20 hidden xl:block">
-        <h3 className="text-4xl font-bold text-[#2C2C2C] tracking-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          Master Dispute<br />Resolution
+      {/* Floating Text - Montserrat Font */}
+      <div className="absolute bottom-16 right-10 hidden xl:block">
+        <h3 className="text-6xl font-light text-[#5A2633] tracking-tight leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
+          Master<br />Dispute<br />Resolution
         </h3>
       </div>
     </section>
