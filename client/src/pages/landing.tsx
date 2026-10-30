@@ -4,7 +4,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import cimaLogo from "/uploads/logo.png";
-import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Handshake, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText, GraduationCap } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle, Clock, Globe, Gavel, Star, Users, Calendar, MapPin, Handshake, TrendingUp, BadgeCheck, Scale, Sparkles, Download, FileText } from "lucide-react";
 
 // Custom inline icon: Engineer hard hat
 const HelmetIcon = (props: any) => (
@@ -305,26 +305,33 @@ function HeroSection() {
         />
       </div>
 
-      {/* CTA Buttons - Bottom Left Corner with Enhanced Visibility */}
-      <div className="absolute bottom-10 left-10 z-10 flex flex-col gap-5">
-        <Link href="/courses">
-          <button className="group bg-[#F5F1E8] text-[#2C2C2C] px-12 py-5 rounded-md font-bold text-lg hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            Explore Courses
-            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </Link>
-        <a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer">
-          <button className="group bg-[#2C2C2C]/80 backdrop-blur-md border-2 border-[#F5F1E8] text-[#F5F1E8] px-12 py-5 rounded-md font-bold text-lg hover:bg-[#2C2C2C] transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            View Pathways
-            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </a>
-        <a href="https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/" target="_blank" rel="noopener noreferrer">
-          <button className="group bg-[#745b22] text-white px-12 py-5 rounded-md font-bold text-lg hover:bg-[#8a6e2a] transition-all shadow-2xl flex items-center justify-center gap-3 whitespace-nowrap" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            <GraduationCap className="w-6 h-6" />
-            Medical Law & Mediation
-          </button>
-        </a>
+      {/* CTA Links - Top Right Corner - Minimal text with thin arrows that extend on hover */}
+      <div className="absolute top-8 right-10 z-10 flex flex-col items-end gap-4">
+      {[
+        { label: 'Explore Courses', href: '/courses', external: false },
+        { label: 'View Pathways', href: 'https://thecima.org/cima-qualification-pathways/', external: true },
+        { label: 'Medical Law & Mediation', href: 'https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/', external: true },
+      ].map((cta) => {
+        const className = "group flex items-center gap-2 text-[#1a1a1a] font-semibold text-base tracking-wide whitespace-nowrap [text-shadow:0_1px_6px_rgba(255,255,255,0.45)] hover:[text-shadow:0_1px_6px_rgba(255,255,255,0.7)] transition-all";
+        const arrow = (
+          <ArrowRight className="w-5 h-5 text-[#1a1a1a] transition-all duration-300 group-hover:translate-x-1" strokeWidth={1.75} />
+        );
+        const content = (
+          <>
+            <span>{cta.label}</span>
+            {arrow}
+          </>
+        );
+        return cta.external ? (
+          <a key={cta.label} href={cta.href} target="_blank" rel="noopener noreferrer" className={className} style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            {content}
+          </a>
+        ) : (
+          <Link key={cta.label} href={cta.href} className={className} style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            {content}
+          </Link>
+        );
+      })}
       </div>
 
       {/* Floating Text Card - Montserrat Font with Enhanced Visibility */}
