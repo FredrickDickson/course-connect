@@ -334,6 +334,9 @@ function HeroSection() {
       })}
       </div>
 
+      {/* Thin Burgundy Line - Full Width */}
+      <div className="absolute bottom-[280px] left-0 right-0 h-[4px] bg-[#5A2633] hidden xl:block"></div>
+
       {/* Floating Text - Montserrat Font */}
       <div className="absolute bottom-16 right-10 hidden xl:block">
         <h3 className="text-6xl font-light text-[#5A2633] tracking-tight leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
