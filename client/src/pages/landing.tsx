@@ -275,13 +275,9 @@ export default function Landing() {
       <main>
         <LiveSessionBanner />
         <HeroSection />
+        <InfoBannerSection />
         <FeaturedCoursesSection />
-        <LearningPathwaysSection />
-        <WhyLearnWithCIMASection />
-        <BrochureDownloadSection />
         <TestimonialsSection />
-        <UpcomingLiveProgramsSection />
-        <FinalCTASection />
         <Footer />
       </main>
     </div>
@@ -347,87 +343,159 @@ function HeroSection() {
   );
 }
 
+// Info Banner Section - Between Hero and Featured Courses
+function InfoBannerSection() {
+  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+
+  return (
+    <section 
+      ref={ref} 
+      className={`py-32 md:py-40 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ backgroundColor: '#5A2633' }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h3 
+            className="text-2xl md:text-3xl lg:text-4xl"
+            style={{ 
+              fontFamily: 'Montserrat, sans-serif', 
+              color: '#F5F1E8',
+              fontWeight: 300,
+              letterSpacing: '0.02em'
+            }}
+          >
+            Self-Paced Professional Courses.
+          </h3>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Featured Courses Section
 function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
-  const { data: courses = [] } = useQuery({
-    queryKey: ["featured-courses-landing"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*, category:categories(*), instructor:users!courses_instructor_id_fkey(first_name, last_name)")
-        .eq("is_published", true)
-        .order("created_at", { ascending: false })
-        .limit(4);
-      if (error) throw error;
-      return data || [];
+  // Self-paced courses
+  const dummyCourses = [
+    {
+      id: 1,
+      date: "Self-Paced Learning",
+      title: "Maritime Mediation",
+      description: "Master the resolution of shipping disputes, cargo claims, charter party conflicts, and maritime commercial disagreements through specialized mediation techniques tailored for the maritime industry.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
     },
-  });
+    {
+      id: 2,
+      date: "Self-Paced Learning",
+      title: "Construction Mediation",
+      description: "Build specialist competence in resolving payment disputes, delay claims, variation orders, defect allegations, and contractual conflicts arising from construction and infrastructure projects through effective mediation strategies.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
+    },
+    {
+      id: 3,
+      date: "Self-Paced Learning",
+      title: "Employment Mediation",
+      description: "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes through effective mediation practices.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
+    },
+    {
+      id: 4,
+      date: "Self-Paced Learning",
+      title: "Law, Practice & Procedure in Mediation",
+      description: "Comprehensive professional training in mediation fundamentals, procedural frameworks, ethical standards, case management techniques, settlement negotiation strategies, and drafting legally binding mediation agreements for dispute resolution practitioners.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
+    },
+    {
+      id: 5,
+      date: "Self-Paced Learning",
+      title: "Law, Practice & Procedure in Arbitration",
+      description: "Comprehensive training in arbitration fundamentals, procedural rules, case management, evidence presentation, and award drafting for legal professionals and practitioners.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
+    }
+  ];
 
   return (
-    <section ref={ref} id="categories" className={`relative py-12 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=2880&h=1000&auto=format&fit=crop&q=100"
-          alt="Modern library with books"
-          className="w-full h-full object-cover opacity-20"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/70 to-white" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">Self-Paced Courses</h2>
-          </div>
-          <Link href="/courses">
-            <button className="text-[#5A2633] font-semibold hover:underline flex items-center gap-2 text-lg font-body">
-              View all
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </Link>
+    <section ref={ref} id="categories" className={`relative py-20 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: '#FBF9F5' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-5xl md:text-6xl mb-6" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300, color: '#182938' }}>
+            Learn at Your Own Pace.<br />
+            Expert-Led ADR Courses<br />
+            Available Anytime, Anywhere.
+          </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {courses.map((course, index: number) => (
-            <Link key={course.id} href={`/course/${course.id}`}>
-              <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full relative">
-                {/* Badge - Fixed positioning */}
-                {index === 0 && (
-                  <div className="absolute top-5 left-5 bg-[#5A2633] text-white px-4 py-2 rounded-md text-sm font-semibold z-20 font-body">
-                    Featured
-                  </div>
-                )}
-                
-                {/* Large Sharp Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <CourseThumbnail
-                    src={course.thumbnail_url}
-                    fallbackSrc="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&auto=format&fit=crop&q=95&sharp=10"
-                    alt={course.title}
-                    className="w-full h-full"
-                    imgClassName="group-hover:scale-125 transition-transform duration-500"
-                  />
+
+        {/* Course Cards Grid - 3 columns */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {dummyCourses.map((course) => (
+            <div
+              key={course.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
+              style={{ borderColor: '#D9D3C9', borderWidth: '1px' }}
+            >
+              {/* Course Image - Full width banner */}
+              <div className="relative w-full h-48 overflow-hidden">
+                <img
+                  src={course.image}
+                  alt={course.title}
+                  className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Card Content */}
+              <div className="p-6 flex flex-col flex-grow">
+                {/* Date */}
+                <div className="flex items-center gap-2 text-sm mb-4" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
+                  <Clock className="w-4 h-4" />
+                  <span>{course.date}</span>
                 </div>
 
-                {/* Minimal Content */}
-                <div className="p-6">
-                  <h3 className="font-semibold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-[#5A2633] transition font-display">
-                    {course.title}
-                  </h3>
-                  <p className="text-base text-gray-700 mb-4 font-body font-medium">
-                    {course.instructor?.first_name} {course.instructor?.last_name}
-                  </p>
-                  <button className="mt-4 w-full bg-[#5A2633] text-white py-3 rounded-md font-semibold hover:bg-[#5A2633] transition text-base font-body">
-                    Enroll Now
-                  </button>
-                </div>
+                {/* Title */}
+                <h4 className="text-xl font-bold mb-3 leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, color: '#252525' }}>
+                  {course.title}
+                </h4>
+
+                {/* Description */}
+                <p className="text-sm mb-6 leading-relaxed flex-grow" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
+                  {course.description}
+                </p>
+
+                {/* Enroll Now Button */}
+                <button 
+                  className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                  style={{ 
+                    fontFamily: 'Montserrat, sans-serif', 
+                    fontWeight: 700,
+                    borderWidth: '2px',
+                    borderColor: '#5A2633',
+                    color: '#5A2633',
+                    backgroundColor: '#5A2633'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#5A2633';
+                    e.currentTarget.style.color = '#F5F1E8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#5A2633';
+                    e.currentTarget.style.color = '#F5F1E8';
+                  }}
+                >
+                  <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
@@ -461,161 +529,31 @@ function SearchSection() {
   );
 }
 
-// Learning Pathways Section
-function LearningPathwaysSection() {
-  const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
-
-  const pathways = [
-    {
-      icon: Scale,
-      title: "Commercial Mediation & Settlement",
-      description:
-        "Develop advanced skills for resolving contractual, corporate and commercial disputes through structured negotiation, mediation and settlement.",
-    },
-    {
-      icon: Users,
-      title: "Employment & Workplace Mediation",
-      description:
-        "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes.",
-    },
-    {
-      icon: HelmetIcon,
-      title: "Construction Mediation",
-      description:
-        "Build specialist competence in resolving payment, delay, variation, property, contractual and project disputes arising from construction and infrastructure projects.",
-    },
-    {
-      icon: Gavel,
-      title: "Mediation Advocacy for Lawyers",
-      description:
-        "Learn to represent clients effectively in mediation through case preparation, opening strategy, negotiation, caucusing, risk assessment and settlement documentation.",
-    },
-    {
-      icon: Sparkles,
-      title: "AI, Online Mediation & Digital Dispute Resolution",
-      description:
-        "Develop practical skills in using AI and digital platforms for dispute analysis, case preparation, negotiation support, online mediation and settlement processes.",
-    },
-  ];
-
-  return (
-    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=2880&h=1000&auto=format&fit=crop&q=100"
-          alt="Professional business planning"
-          className="w-full h-full object-cover opacity-25"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display tracking-tight">Learning Pathways</h2>
-        </div>
-
-        <div className="text-center mb-10">
-          <h3 className="text-3xl font-light text-gray-900 font-display">CIMA Specialist Certificate Programmes</h3>
-        </div>
-
-        <div className="mb-10 text-center">
-          <p className="text-2xl font-light text-gray-900 font-display">Specialist Courses</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {pathways.map((pathway, index) => {
-            const Icon = pathway.icon;
-            return (
-              <div
-                key={index}
-                className="bg-[#5A2633] rounded-[20px] p-8 md:p-10 shadow-[0_12px_28px_rgba(97,0,0,0.18)] border border-[#7f1d1d] min-h-[360px] flex flex-col items-center justify-center text-center hover:translate-y-[-2px] transition-transform duration-300"
-              >
-                <div className="w-20 h-20 bg-[#f5f1f0] rounded-[18px] flex items-center justify-center mb-7 shadow-inner">
-                  <Icon className="w-9 h-9 text-[#5A2633]" />
-                </div>
-
-                <h3 className="text-3xl md:text-[2.1rem] font-semibold text-white leading-tight font-display mb-5">
-                  {pathway.title}
-                </h3>
-
-                <p className="text-lg md:text-xl text-white/90 leading-relaxed font-body max-w-[28rem]">
-                  {pathway.description}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Why Learn With CIMA Section
+// Why Learn With CIMA Section - Replaced with Info Banner
 function WhyLearnWithCIMASection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
 
-  const benefits = [
-    {
-      icon: BadgeCheck,
-      title: "International Faculty",
-    },
-    {
-      icon: Award,
-      title: "Accredited Certificates",
-    },
-    {
-      icon: Clock,
-      title: "Flexible Learning",
-    },
-    {
-      icon: TrendingUp,
-      title: "Hybrid Teaching",
-    },
-    {
-      icon: Globe,
-      title: "Global Community",
-    },
-    {
-      icon: Sparkles,
-      title: "Career Advancement",
-    },
-  ];
-
   return (
-    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=2880&h=1000&auto=format&fit=crop&q=100"
-          alt="Students collaborating and learning"
-          className="w-full h-full object-cover opacity-20"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/80 to-white" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-20">
-          <h2 className="text-5xl font-light text-gray-900 mb-4 font-display">Why Learn With CIMA?</h2>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {benefits.map((benefit, index) => {
-            const Icon = benefit.icon;
-            return (
-              <div key={index} className="text-center p-8 rounded-lg hover:bg-gray-50 transition-all duration-300">
-                <div className="w-20 h-20 bg-[#5A2633]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Icon className="w-10 h-10 text-[#5A2633]" />
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900 font-display">
-                  {benefit.title}
-                </h3>
-              </div>
-            );
-          })}
+    <section 
+      ref={ref} 
+      className={`py-32 md:py-40 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ 
+        background: 'linear-gradient(135deg, #2C3E50 0%, #34495E 100%)'
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h3 
+            className="text-2xl md:text-3xl lg:text-4xl"
+            style={{ 
+              fontFamily: 'Montserrat, sans-serif', 
+              color: '#F5F1E8',
+              fontWeight: 300,
+              letterSpacing: '0.02em'
+            }}
+          >
+            Master Arbitration, Mediation & Negotiation at Your Own Pace
+          </h3>
         </div>
       </div>
     </section>
@@ -787,27 +725,23 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section ref={ref} className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=2880&h=1000&auto=format&fit=crop&q=100"
-          alt="Professional team meeting"
-          className="w-full h-full object-cover opacity-25"
-          loading="lazy"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/70 via-gray-50/75 to-white/80" />
-      </div>
-
+    <section 
+      ref={ref} 
+      className={`relative py-24 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ 
+        background: 'linear-gradient(135deg, #2C3E50 0%, #34495E 100%)'
+      }}
+    >
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16">
-          <h2 className="text-5xl font-light text-gray-900 mb-2 font-display">What Our Learners Say</h2>
+          <h2 className="text-5xl font-light mb-2" style={{ fontFamily: 'Montserrat, sans-serif', color: '#F5F1E8', fontWeight: 300 }}>
+            What Our Learners Say
+          </h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-8 hover:shadow-2xl transition-all duration-300">
+            <div key={index} className="backdrop-blur-sm border rounded-lg p-8 hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(245, 241, 232, 0.2)' }}>
               {/* Stars */}
               <div className="flex gap-1 mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
@@ -816,19 +750,19 @@ function TestimonialsSection() {
               </div>
 
               {/* Quote */}
-              <p className="text-gray-800 mb-8 leading-relaxed text-lg font-body">
+              <p className="mb-8 leading-relaxed text-lg" style={{ fontFamily: 'Montserrat, sans-serif', color: '#F5F1E8', fontWeight: 400 }}>
                 "{testimonial.quote}"
               </p>
 
               {/* Author */}
-              <div className="flex items-center gap-4 border-t border-gray-100 pt-6">
-                <div className="w-14 h-14 rounded-full bg-[#5A2633] flex items-center justify-center text-white font-bold text-lg font-display">
+              <div className="flex items-center gap-4 border-t pt-6" style={{ borderColor: 'rgba(245, 241, 232, 0.2)' }}>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: '#5A2633', color: '#F5F1E8', fontFamily: 'Montserrat, sans-serif', fontWeight: 700 }}>
                   {testimonial.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 font-display">{testimonial.name}</p>
-                  <p className="text-sm text-gray-700 font-body font-medium">{testimonial.role}</p>
-                  <p className="text-sm text-gray-600 font-body">{testimonial.company}</p>
+                  <p className="font-semibold" style={{ fontFamily: 'Montserrat, sans-serif', color: '#F5F1E8' }}>{testimonial.name}</p>
+                  <p className="text-sm font-medium" style={{ fontFamily: 'Montserrat, sans-serif', color: 'rgba(245, 241, 232, 0.8)', fontWeight: 400 }}>{testimonial.role}</p>
+                  <p className="text-sm" style={{ fontFamily: 'Montserrat, sans-serif', color: 'rgba(245, 241, 232, 0.7)', fontWeight: 400 }}>{testimonial.company}</p>
                 </div>
               </div>
             </div>
