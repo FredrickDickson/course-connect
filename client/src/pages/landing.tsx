@@ -301,42 +301,10 @@ function HeroSection() {
         />
       </div>
 
-      {/* CTA Links - Top Right Corner - Minimal text with thin arrows that extend on hover */}
-      <div className="absolute top-8 right-10 z-10 flex flex-col items-end gap-4">
-      {[
-        { label: 'Explore Courses', href: '/courses', external: false },
-        { label: 'View Pathways', href: 'https://thecima.org/cima-qualification-pathways/', external: true },
-        { label: 'Medical Law & Mediation', href: 'https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/', external: true },
-      ].map((cta) => {
-        const className = "group flex items-center gap-2 text-[#1a1a1a] font-semibold text-base tracking-wide whitespace-nowrap [text-shadow:0_1px_6px_rgba(255,255,255,0.45)] hover:[text-shadow:0_1px_6px_rgba(255,255,255,0.7)] transition-all";
-        const arrow = (
-          <ArrowRight className="w-5 h-5 text-[#1a1a1a] transition-all duration-300 group-hover:translate-x-1" strokeWidth={1.75} />
-        );
-        const content = (
-          <>
-            <span>{cta.label}</span>
-            {arrow}
-          </>
-        );
-        return cta.external ? (
-          <a key={cta.label} href={cta.href} target="_blank" rel="noopener noreferrer" className={className} style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {content}
-          </a>
-        ) : (
-          <Link key={cta.label} href={cta.href} className={className} style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {content}
-          </Link>
-        );
-      })}
-      </div>
-
-      {/* Thin Burgundy Line - Full Width */}
-      <div className="absolute bottom-[280px] left-0 right-0 h-[4px] bg-[#5A2633] hidden xl:block"></div>
-
-      {/* Floating Text - Montserrat Font */}
-      <div className="absolute bottom-16 right-10 hidden xl:block">
-        <h3 className="text-6xl font-light text-[#5A2633] tracking-tight leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
-          Master<br />Dispute<br />Resolution
+      {/* Master Dispute Resolution - Top Right Corner */}
+      <div className="absolute top-16 right-10 z-10"><br/>
+        <h3 className="text-6xl md:text-7xl font-light text-[#5A2633] tracking-tight leading-tight text-right" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
+         <br/> Master Dispute<br />Resolution
         </h3>
       </div>
     </section>
@@ -350,13 +318,13 @@ function InfoBannerSection() {
   return (
     <section 
       ref={ref} 
-      className={`py-32 md:py-40 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`py-16 md:py-20 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       style={{ backgroundColor: '#5A2633' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h3 
-            className="text-5xl md:text-6xl lg:text-7xl"
+            className="text-3xl md:text-4xl lg:text-5xl"
             style={{ 
               fontFamily: 'Montserrat, sans-serif', 
               color: '#F5F1E8',
@@ -383,48 +351,54 @@ function FeaturedCoursesSection() {
       date: "Self-Paced Learning",
       title: "Maritime Mediation",
       description: "Master the resolution of shipping disputes, cargo claims, charter party conflicts, and maritime commercial disagreements through specialized mediation techniques tailored for the maritime industry.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20.jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: null
     },
     {
       id: 2,
       date: "Self-Paced Learning",
       title: "Construction Mediation",
       description: "Build specialist competence in resolving payment disputes, delay claims, variation orders, defect allegations, and contractual conflicts arising from construction and infrastructure projects through effective mediation strategies.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (1).jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: null
     },
     {
       id: 3,
       date: "Self-Paced Learning",
       title: "Employment Mediation",
       description: "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes through effective mediation practices.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (2).jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: null
     },
     {
       id: 4,
       date: "Self-Paced Learning",
       title: "Health Care Mediation",
       description: "Develop specialized expertise in resolving medical negligence claims, patient-provider disputes, healthcare professional conflicts, and institutional disagreements through effective mediation practices tailored for the healthcare sector.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (3).jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: "https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/"
     },
     {
       id: 5,
       date: "Self-Paced Learning",
       title: "Law, Practice & Procedure in Mediation",
       description: "Comprehensive professional training in mediation fundamentals, procedural frameworks, ethical standards, case management techniques, settlement negotiation strategies, and drafting legally binding mediation agreements for dispute resolution practitioners.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21.jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: null
     },
     {
       id: 6,
       date: "Self-Paced Learning",
       title: "Law, Practice & Procedure in Arbitration",
       description: "Comprehensive training in arbitration fundamentals, procedural rules, case management, evidence presentation, and award drafting for legal professionals and practitioners.",
-      image: "/uploads/self-paced.jpeg",
-      badge: "ENROLL ANYTIME"
+      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21 (1).jpeg",
+      badge: "ENROLL ANYTIME",
+      externalLink: null
     }
   ];
 
@@ -477,30 +451,60 @@ function FeaturedCoursesSection() {
                 </p>
 
                 {/* Enroll Now Button */}
-                <button 
-                  className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
-                  style={{ 
-                    fontFamily: 'Montserrat, sans-serif', 
-                    fontWeight: 700,
-                    borderWidth: '2px',
-                    borderColor: '#5A2633',
-                    color: '#5A2633',
-                    backgroundColor: '#5A2633'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#5A2633';
-                    e.currentTarget.style.color = '#F5F1E8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#5A2633';
-                    e.currentTarget.style.color = '#F5F1E8';
-                  }}
-                >
-                  <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </button>
+                {course.externalLink ? (
+                  <a 
+                    href={course.externalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                    style={{ 
+                      fontFamily: 'Montserrat, sans-serif', 
+                      fontWeight: 700,
+                      borderWidth: '2px',
+                      borderColor: '#5A2633',
+                      color: '#5A2633',
+                      backgroundColor: '#5A2633'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#5A2633';
+                      e.currentTarget.style.color = '#F5F1E8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#5A2633';
+                      e.currentTarget.style.color = '#F5F1E8';
+                    }}
+                  >
+                    <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                ) : (
+                  <button 
+                    className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                    style={{ 
+                      fontFamily: 'Montserrat, sans-serif', 
+                      fontWeight: 700,
+                      borderWidth: '2px',
+                      borderColor: '#5A2633',
+                      color: '#5A2633',
+                      backgroundColor: '#5A2633'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#5A2633';
+                      e.currentTarget.style.color = '#F5F1E8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#5A2633';
+                      e.currentTarget.style.color = '#F5F1E8';
+                    }}
+                  >
+                    <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -945,11 +949,11 @@ function Footer() {
             <div className="flex items-center gap-3 mb-6">
               <img src="/images/b and w.png" alt="CIMA Learn" className="h-14 w-auto" />
               <div>
-                <p className="text-black font-semibold text-lg font-display">CIMA Learn</p>
-                <p className="text-xs text-gray-700 uppercase tracking-wider font-body">Professional ADR Education</p>
+                <p className="text-black font-semibold text-lg" style={{ fontFamily: 'Montserrat, sans-serif' }}>CIMA Learn</p>
+                <p className="text-xs text-gray-700 uppercase tracking-wider" style={{ fontFamily: 'Montserrat, sans-serif' }}>Professional ADR Education</p>
               </div>
             </div>
-            <p className="text-base text-black leading-relaxed mb-6 font-body max-w-md">
+            <p className="text-base text-black leading-relaxed mb-6 max-w-md" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 400 }}>
               World-class arbitration and mediation education with a focus on real-world application and professional advancement.
             </p>
             <div className="flex gap-4">
@@ -961,48 +965,11 @@ function Footer() {
               </a>
             </div>
           </div>
-
-          {/* Products */}
-          <div>
-            <h3 className="text-black font-semibold mb-5 text-lg font-display">Products</h3>
-            <ul className="space-y-3 text-base font-body">
-              <li><Link href="/courses" className="text-black hover:text-gray-600 transition">All Courses</Link></li>
-              <li><Link href="/course-catalog" className="text-black hover:text-gray-600 transition">Course Bundles</Link></li>
-              <li><a href="https://thecima.org/cima-qualification-pathways/" target="_blank" rel="noopener noreferrer" className="text-black hover:text-gray-600 transition">All Pathways</a></li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="text-black font-semibold mb-5 text-lg font-display">Company</h3>
-            <ul className="space-y-3 text-base font-body">
-              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">About CIMA</Link></li>
-              <li><Link href="/accreditation" className="text-black hover:text-gray-600 transition">Accreditation</Link></li>
-              <li><Link href="/become-instructor" className="text-black hover:text-gray-600 transition">Join our Global Faculty</Link></li>
-              <li><Link href="/contact" className="text-black hover:text-gray-600 transition">Contact Us</Link></li>
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h3 className="text-black font-semibold mb-5 text-lg font-display">Support</h3>
-            <ul className="space-y-3 text-base font-body">
-              <li><Link href="/help-center" className="text-black hover:text-gray-600 transition">Help Center</Link></li>
-              <li><Link href="/technical-support" className="text-black hover:text-gray-600 transition">Technical Support</Link></li>
-              <li><Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy Policy</Link></li>
-              <li><Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms & Conditions</Link></li>
-            </ul>
-          </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-base text-black font-body">© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
-          <div className="flex gap-8 text-base font-body">
-            <Link href="/privacy-policy" className="text-black hover:text-gray-600 transition">Privacy</Link>
-            <Link href="/terms-of-service" className="text-black hover:text-gray-600 transition">Terms</Link>
-            <Link href="/cookie-policy" className="text-black hover:text-gray-600 transition">Cookies</Link>
-          </div>
+          <p className="text-base text-black" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 400 }}>© {new Date().getFullYear()} CIMA Learn. All rights reserved.</p>
         </div>
       </div>
     </footer>
