@@ -405,8 +405,8 @@ function FeaturedCoursesSection() {
     {
       id: 4,
       date: "Self-Paced Learning",
-      title: "Effective Negotiation",
-      description: "Master essential negotiation principles, strategic planning techniques, communication skills, persuasion tactics, and conflict resolution strategies to achieve optimal outcomes in commercial, legal, and interpersonal negotiations.",
+      title: "Health Care Mediation",
+      description: "Develop specialized expertise in resolving medical negligence claims, patient-provider disputes, healthcare professional conflicts, and institutional disagreements through effective mediation practices tailored for the healthcare sector.",
       image: "/uploads/self-paced.jpeg",
       badge: "ENROLL ANYTIME"
     },
