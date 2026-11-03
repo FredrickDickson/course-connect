@@ -303,9 +303,7 @@ function HeroSection() {
 
       {/* Master Dispute Resolution - Top Right Corner */}
       <div className="absolute top-16 right-10 z-10"><br/>
-        <h3 className="text-6xl md:text-7xl font-light text-[#5A2633] tracking-tight leading-tight text-right" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
-         <br/> Master Dispute<br />Resolution
-        </h3>
+        
       </div>
     </section>
   );
@@ -332,7 +330,7 @@ function InfoBannerSection() {
               letterSpacing: '0.02em'
             }}
           >
-            Self-Paced Courses.
+            Master Dispute Resolution.
           </h3>
         </div>
       </div>
