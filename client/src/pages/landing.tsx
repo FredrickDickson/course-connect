@@ -356,7 +356,7 @@ function InfoBannerSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h3 
-            className="text-2xl md:text-3xl lg:text-4xl"
+            className="text-5xl md:text-6xl lg:text-7xl"
             style={{ 
               fontFamily: 'Montserrat, sans-serif', 
               color: '#F5F1E8',
@@ -364,7 +364,7 @@ function InfoBannerSection() {
               letterSpacing: '0.02em'
             }}
           >
-            Self-Paced Professional Courses.
+            Self-Paced Courses.
           </h3>
         </div>
       </div>
@@ -426,9 +426,8 @@ function FeaturedCoursesSection() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl mb-6" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300, color: '#182938' }}>
-            Learn at Your Own Pace.<br />
-            Expert-Led ADR Courses<br />
-            Available Anytime, Anywhere.
+            Learn Anywhere<br />
+            Earn Your Certificate Online<br />
           </h2>
         </div>
 
