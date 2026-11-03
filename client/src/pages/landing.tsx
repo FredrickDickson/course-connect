@@ -405,13 +405,21 @@ function FeaturedCoursesSection() {
     {
       id: 4,
       date: "Self-Paced Learning",
+      title: "Effective Negotiation",
+      description: "Master essential negotiation principles, strategic planning techniques, communication skills, persuasion tactics, and conflict resolution strategies to achieve optimal outcomes in commercial, legal, and interpersonal negotiations.",
+      image: "/uploads/self-paced.jpeg",
+      badge: "ENROLL ANYTIME"
+    },
+    {
+      id: 5,
+      date: "Self-Paced Learning",
       title: "Law, Practice & Procedure in Mediation",
       description: "Comprehensive professional training in mediation fundamentals, procedural frameworks, ethical standards, case management techniques, settlement negotiation strategies, and drafting legally binding mediation agreements for dispute resolution practitioners.",
       image: "/uploads/self-paced.jpeg",
       badge: "ENROLL ANYTIME"
     },
     {
-      id: 5,
+      id: 6,
       date: "Self-Paced Learning",
       title: "Law, Practice & Procedure in Arbitration",
       description: "Comprehensive training in arbitration fundamentals, procedural rules, case management, evidence presentation, and award drafting for legal professionals and practitioners.",
