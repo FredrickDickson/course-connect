@@ -374,7 +374,7 @@ function FeaturedCoursesSection() {
     {
       id: 4,
       date: "Self-Paced Learning",
-      title: "Health Care Mediation",
+      title: "Healthcare Mediation",
       description: "Develop specialized expertise in resolving medical negligence claims, patient-provider disputes, healthcare professional conflicts, and institutional disagreements through effective mediation practices tailored for the healthcare sector.",
       image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (3).jpeg",
       badge: "ENROLL ANYTIME",
@@ -744,7 +744,7 @@ function TestimonialsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-16">
           <h2 className="text-5xl font-light mb-2" style={{ fontFamily: 'Montserrat, sans-serif', color: '#F5F1E8', fontWeight: 300 }}>
-            What Our Learners Say
+            What Learners Say
           </h2>
         </div>
 
