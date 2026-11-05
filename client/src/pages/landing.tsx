@@ -407,7 +407,7 @@ function FeaturedCoursesSection() {
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl mb-6" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300, color: '#182938' }}>
             Learn Anywhere.<br />
-            Earn Your Certificate Online.<br />
+            Earn A Prestigious Certificate Online.<br />
           </h2>
         </div>
 
