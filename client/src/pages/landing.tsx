@@ -712,24 +712,27 @@ function TestimonialsSection() {
   const testimonials = [
     {
       quote: "The course structure is excellent and the quality of teaching is world-class. I'm now working as an international arbitrator.",
-      name: "Kwame Appiah",
-      role: "International Arbitrator",
-      company: "Pinsent Masons",
-      rating: 5
+      name: "Snehal",
+      role: "",
+      company: "India",
+      rating: 5,
+      image: "/images/snehal.jpeg"
     },
     {
       quote: "CIMA Learn allowed me to learn while working full time. The flexible schedule and live sessions were perfect for my career.",
-      name: "Aisha Yusuf",
-      role: "Senior Counsel",
-      company: "Baker McKenzie",
-      rating: 5
+      name: "Diana Kanyuithia",
+      role: "",
+      company: "Kenya",
+      rating: 5,
+      image: "/images/diana.jpeg"
     },
     {
       quote: "A sophisticated programme that bridges theory and real-world practice. Worth every penny for career development.",
-      name: "David Okoro",
-      role: "Partner",
-      company: "Hill Dickinson",
-      rating: 5
+      name: "Saqib Javed",
+      role: "",
+      company: "Pakistan",
+      rating: 5,
+      image: "/images/saqib.jpeg"
     },
   ];
 
@@ -765,9 +768,12 @@ function TestimonialsSection() {
 
               {/* Author */}
               <div className="flex items-center gap-4 border-t pt-6" style={{ borderColor: 'rgba(245, 241, 232, 0.2)' }}>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: '#5A2633', color: '#F5F1E8', fontFamily: 'Montserrat, sans-serif', fontWeight: 700 }}>
-                  {testimonial.name.split(' ').map(n => n[0]).join('')}
-                </div>
+                <img 
+                  src={testimonial.image} 
+                  alt={testimonial.name}
+                  className="w-14 h-14 rounded-full object-cover border-2"
+                  style={{ borderColor: '#F5F1E8' }}
+                />
                 <div>
                   <p className="font-semibold" style={{ fontFamily: 'Montserrat, sans-serif', color: '#F5F1E8' }}>{testimonial.name}</p>
                   <p className="text-sm font-medium" style={{ fontFamily: 'Montserrat, sans-serif', color: 'rgba(245, 241, 232, 0.8)', fontWeight: 400 }}>{testimonial.role}</p>
