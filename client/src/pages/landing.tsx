@@ -290,15 +290,26 @@ function HeroSection() {
 
   return (
     <section ref={ref} className={`relative h-[92vh] flex items-center justify-center overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Ultra-Sharp Background Image - Higher resolution */}
+      {/* Background Video - Autoplay Loop */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="/cl 2.jpg"
-          alt="CIMA Learn Professional Training"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
           className="w-full h-full object-cover"
-          loading="eager"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
+        >
+          <source src="/6985520-uhd_3840_2160_25fps.mp4" type="video/mp4" />
+          {/* Fallback to original image if video doesn't load */}
+          <img
+            src="/cl 2.jpg"
+            alt="CIMA Learn Professional Training"
+            className="w-full h-full object-cover"
+          />
+        </video>
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/20"></div>
       </div>
 
       {/* Master Dispute Resolution - Top Right Corner */}
