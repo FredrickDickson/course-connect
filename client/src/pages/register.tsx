@@ -122,9 +122,9 @@ export default function Register() {
           title: "Account created successfully!",
           description: "Welcome to CIMA Learn!",
         });
-        // Redirect to home instead of forcing onboarding
+        // Redirect to live sessions page after signup
         // Users can complete profile later via banner prompt
-        window.location.href = "/home";
+        window.location.href = "/sessions";
       }
     } catch (err) {
       const error = err as Error;

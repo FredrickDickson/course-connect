@@ -49,9 +49,9 @@ export default function AuthCallback() {
           console.log("Auth callback: Profile data:", profileData);
           console.log("Auth callback: Profile error:", profileError);
 
-          // Always redirect to home page - profile completion banner will show if needed
-          console.log("Auth callback: Redirecting to home page");
-          setLocation("/home");
+          // Always redirect to live sessions page - profile completion banner will show if needed
+          console.log("Auth callback: Redirecting to live sessions page");
+          setLocation("/sessions");
         } else {
           // No session, redirect to login
           setLocation("/login");
