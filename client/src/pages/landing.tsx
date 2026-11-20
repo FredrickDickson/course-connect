@@ -343,7 +343,7 @@ function InfoBannerSection() {
                 letterSpacing: '0.02em'
               }}
             >
-              Best free 60 ADR Courses & Programs.
+              Best 60 ADR Courses & Programs.
             </h3>
             <p 
               className="text-xl md:text-2xl mt-4"
