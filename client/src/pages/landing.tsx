@@ -394,7 +394,7 @@ function FeaturedCoursesSection() {
   // Professional CPD & CLE Programmes organized by sector
   const professionalSectors = [
     {
-      sectionTitle: "CPD Programmes for Legal Professionals",
+      sectionTitle: "CPD for Legal Professionals",
       target: "Ghana Bar Association, General Legal Council and legal practitioners",
       color: "#800020",
       courses: [
@@ -406,7 +406,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Accountancy Professionals",
+      sectionTitle: "CPD for Accountancy Professionals",
       target: "Institute of Chartered Accountants, Ghana",
       color: "#2C3E50",
       courses: [
@@ -418,7 +418,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Taxation Professionals",
+      sectionTitle: "CPD for Taxation Professionals",
       target: "Chartered Institute of Taxation, Ghana",
       color: "#5A2633",
       courses: [
@@ -430,7 +430,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Banking and Financial Professionals",
+      sectionTitle: "CPD for Banking and Financial Professionals",
       target: "Chartered Institute of Bankers, Ghana, and financial institutions",
       color: "#34495E",
       courses: [
@@ -442,7 +442,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Marketing Professionals",
+      sectionTitle: "CPD for Marketing Professionals",
       target: "Chartered Institute of Marketing, Ghana",
       color: "#800020",
       courses: [
@@ -454,7 +454,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Engineering Professionals",
+      sectionTitle: "CPD for Engineering Professionals",
       target: "Ghana Institution of Engineering",
       color: "#2C3E50",
       courses: [
@@ -466,7 +466,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Surveying Professionals",
+      sectionTitle: "CPD for Surveying Professionals",
       target: "Ghana Institution of Surveyors",
       color: "#5A2633",
       courses: [
@@ -478,7 +478,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Planning Professionals",
+      sectionTitle: "CPD for Planning Professionals",
       target: "Ghana Institute of Planning",
       color: "#34495E",
       courses: [
@@ -490,7 +490,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Architectural Professionals",
+      sectionTitle: "CPD for Architectural Professionals",
       target: "Ghana Institute of Architects",
       color: "#800020",
       courses: [
@@ -502,7 +502,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Corporate Directors and Board Members",
+      sectionTitle: "CPD for Corporate Directors and Board Members",
       target: "Institute of Directors, Ghana, and corporate boards",
       color: "#2C3E50",
       courses: [
@@ -514,7 +514,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Teaching and Educational Professionals",
+      sectionTitle: "CPD for Teaching and Educational Professionals",
       target: "National Teaching Council, Ghana Education Service and educational institutions",
       color: "#5A2633",
       courses: [
@@ -526,7 +526,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Medical Professionals",
+      sectionTitle: "CPD for Medical Professionals",
       target: "Medical and Dental Council, Ghana Medical Association, doctors, dentists and hospital administrators",
       color: "#34495E",
       courses: [
@@ -538,7 +538,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Nursing and Midwifery Professionals",
+      sectionTitle: "CPD for Nursing and Midwifery Professionals",
       target: "Nursing and Midwifery Council of Ghana",
       color: "#800020",
       courses: [
@@ -550,7 +550,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Pharmacy Professionals",
+      sectionTitle: "CPD for Pharmacy Professionals",
       target: "Pharmacy Council Ghana and pharmaceutical professional associations",
       color: "#2C3E50",
       courses: [
@@ -562,7 +562,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Allied Health Professionals",
+      sectionTitle: "CPD for Allied Health Professionals",
       target: "Allied Health Professions Council",
       color: "#5A2633",
       courses: [
@@ -574,7 +574,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Psychology and Counselling Professionals",
+      sectionTitle: "CPD for Psychology and Counselling Professionals",
       target: "Ghana Psychology Council",
       color: "#34495E",
       courses: [
@@ -586,7 +586,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Internal Audit Professionals",
+      sectionTitle: "CPD for Internal Audit Professionals",
       target: "Institute of Internal Auditors Ghana",
       color: "#800020",
       courses: [
@@ -598,7 +598,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Procurement and Supply Chain Professionals",
+      sectionTitle: "CPD for Procurement and Supply Chain Professionals",
       target: "Chartered Institute of Procurement & Supply, Ghana Branch, and Ghana Institute of Procurement and Supply",
       color: "#2C3E50",
       courses: [
@@ -610,7 +610,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Insurance Professionals",
+      sectionTitle: "CPD for Insurance Professionals",
       target: "Chartered Insurance Institute of Ghana, insurance brokers and insurance companies",
       color: "#5A2633",
       courses: [
@@ -622,7 +622,7 @@ function FeaturedCoursesSection() {
       ]
     },
     {
-      sectionTitle: "CPD Programmes for Real Estate Professionals",
+      sectionTitle: "CPD for Real Estate Professionals",
       target: "Real Estate Agency Council, estate agents, brokers and property managers",
       color: "#34495E",
       courses: [
