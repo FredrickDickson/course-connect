@@ -331,18 +331,46 @@ function InfoBannerSection() {
       style={{ backgroundColor: '#5A2633' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h3 
-            className="text-3xl md:text-4xl lg:text-5xl"
-            style={{ 
-              fontFamily: 'Montserrat, sans-serif', 
-              color: '#F5F1E8',
-              fontWeight: 300,
-              letterSpacing: '0.02em'
-            }}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+          {/* Text Container */}
+          <div className="flex flex-col">
+            <h3 
+              className="text-4xl md:text-5xl lg:text-6xl"
+              style={{ 
+                fontFamily: 'Montserrat, sans-serif', 
+                color: '#F5F1E8',
+                fontWeight: 700,
+                letterSpacing: '0.02em'
+              }}
+            >
+              Best free ADR Coures & Programs.
+            </h3>
+            <p 
+              className="text-xl md:text-2xl mt-4"
+              style={{ 
+                fontFamily: 'Montserrat, sans-serif', 
+                color: '#F5F1E8',
+                fontWeight: 300,
+                letterSpacing: '0.01em'
+              }}
+            >
+              Build your Dispute Resolution Expertise with CIMA.
+            </p>
+          </div>
+
+          {/* Free Courses Button */}
+          <a 
+            href="https://cima-cpd-global-2026.tiny-wasp-2896.chatgpt.site" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-[#F5F1E8] text-[#5A2633] px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:shadow-xl transition-all duration-300 flex items-center gap-2 whitespace-nowrap"
+            style={{ fontFamily: 'Montserrat, sans-serif' }}
           >
-            Master Dispute Resolution.
-          </h3>
+            <span>Explore Free Courses</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
         </div>
       </div>
     </section>
