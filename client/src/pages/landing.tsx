@@ -349,174 +349,613 @@ function InfoBannerSection() {
   );
 }
 
-// Featured Courses Section
+// Featured Courses Section - CIMA Professional Development Programmes
 function FeaturedCoursesSection() {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   
-  // Self-paced courses
-  const dummyCourses = [
+  // Course images - cycling through available banners
+  const courseImages = [
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20.jpeg",
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (1).jpeg",
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (2).jpeg",
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (3).jpeg",
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21.jpeg",
+    "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21 (1).jpeg"
+  ];
+
+  // Professional CPD & CLE Programmes organized by sector
+  const professionalSectors = [
     {
-      id: 1,
-      date: "Self-Paced Learning",
-      title: "Maritime Mediation",
-      description: "Master the resolution of shipping disputes, cargo claims, charter party conflicts, and maritime commercial disagreements through specialized mediation techniques tailored for the maritime industry.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20.jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: null
+      sectionTitle: "CPD Programmes for Legal Professionals",
+      target: "Ghana Bar Association, General Legal Council and legal practitioners",
+      color: "#800020",
+      courses: [
+        { title: "International Commercial Arbitration: Law, Practice and Procedure", description: "Comprehensive training in international commercial arbitration law, procedural frameworks, and best practices for resolving cross-border commercial disputes." },
+        { title: "Mediation Advocacy and Settlement Negotiation", description: "Master the art of mediation advocacy and develop strategic negotiation techniques to achieve optimal settlement outcomes in dispute resolution." },
+        { title: "Drafting and Enforcing Arbitration Agreements", description: "Learn to draft effective arbitration clauses and agreements, and understand the legal frameworks for their enforcement in domestic and international contexts." },
+        { title: "Arbitral Tribunal Management, Ethics and Procedure", description: "Gain expertise in managing arbitral tribunals, understanding ethical obligations, and navigating procedural requirements in arbitration proceedings." },
+        { title: "Recognition, Enforcement and Setting Aside of Arbitral Awards", description: "Study the legal principles and procedures for recognizing, enforcing, and challenging arbitral awards under national and international law." }
+      ]
     },
     {
-      id: 2,
-      date: "Self-Paced Learning",
-      title: "Construction Mediation",
-      description: "Build specialist competence in resolving payment disputes, delay claims, variation orders, defect allegations, and contractual conflicts arising from construction and infrastructure projects through effective mediation strategies.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (1).jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: null
+      sectionTitle: "CPD Programmes for Accountancy Professionals",
+      target: "Institute of Chartered Accountants, Ghana",
+      color: "#2C3E50",
+      courses: [
+        { title: "Financial Expert Evidence in Commercial Arbitration", description: "Develop skills in providing expert financial evidence in arbitration proceedings, including valuation, damages assessment, and forensic accounting." },
+        { title: "Mediation of Shareholder and Partnership Disputes", description: "Learn specialized mediation techniques for resolving complex shareholder disagreements and partnership conflicts in business contexts." },
+        { title: "Expert Determination of Business Valuation Disputes", description: "Master the process of expert determination in business valuation disputes, including methodologies, standards, and procedural frameworks." },
+        { title: "Negotiating Insolvency and Debt Restructuring Settlements", description: "Gain expertise in negotiating settlements in insolvency proceedings and debt restructuring scenarios, balancing stakeholder interests." },
+        { title: "Resolving Accounting and Audit-Related Professional Disputes", description: "Learn effective dispute resolution strategies for accounting and audit-related professional disagreements and regulatory matters." }
+      ]
     },
     {
-      id: 3,
-      date: "Self-Paced Learning",
-      title: "Employment Mediation",
-      description: "Develop practical expertise in managing employee grievances, executive conflict, workplace relationships and organisational disputes through effective mediation practices.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (2).jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: null
+      sectionTitle: "CPD Programmes for Taxation Professionals",
+      target: "Chartered Institute of Taxation, Ghana",
+      color: "#5A2633",
+      courses: [
+        { title: "Negotiation and Settlement of Tax Controversies", description: "Develop negotiation skills for resolving tax disputes with revenue authorities and achieving favorable settlement outcomes for clients." },
+        { title: "Mediation of Tax Disputes Within Applicable Legal Frameworks", description: "Learn to mediate tax disputes effectively within the constraints of tax law and regulatory requirements." },
+        { title: "Expert Determination of Tax and Accounting Issues", description: "Master the role of expert determination in resolving complex tax and accounting technical disputes." },
+        { title: "Arbitration of Tax-Related Commercial Contract Disputes", description: "Understand arbitration procedures for commercial disputes with tax implications and cross-border tax issues." },
+        { title: "Managing Evidence and Settlement Agreements in Tax Disputes", description: "Learn best practices for managing evidence and drafting settlement agreements in tax controversy resolution." }
+      ]
     },
     {
-      id: 4,
-      date: "Self-Paced Learning",
-      title: "Healthcare Mediation",
-      description: "Develop specialized expertise in resolving medical negligence claims, patient-provider disputes, healthcare professional conflicts, and institutional disagreements through effective mediation practices tailored for the healthcare sector.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.20 (3).jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: "https://cima-medical-law-mediation-course.tiny-wasp-2896.chatgpt.site/"
+      sectionTitle: "CPD Programmes for Banking and Financial Professionals",
+      target: "Chartered Institute of Bankers, Ghana, and financial institutions",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Banking and Customer Complaints", description: "Develop skills in mediating disputes between banks and customers, including service complaints and contractual disagreements." },
+        { title: "Negotiating Loan Restructuring and Debt Settlements", description: "Master negotiation techniques for loan restructuring and debt settlement arrangements in banking and finance." },
+        { title: "Arbitration in Banking and Financial Services", description: "Learn arbitration procedures specific to banking and financial services disputes, including regulatory considerations." },
+        { title: "Fintech, Digital Payments and Cryptocurrency Disputes", description: "Gain expertise in resolving disputes arising from fintech platforms, digital payment systems, and cryptocurrency transactions." },
+        { title: "Online Dispute Resolution for Financial Institutions", description: "Understand ODR platforms and procedures designed for efficient resolution of financial services disputes." }
+      ]
     },
     {
-      id: 5,
-      date: "Self-Paced Learning",
-      title: "Law, Practice & Procedure in Mediation",
-      description: "Comprehensive professional training in mediation fundamentals, procedural frameworks, ethical standards, case management techniques, settlement negotiation strategies, and drafting legally binding mediation agreements for dispute resolution practitioners.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21.jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: null
+      sectionTitle: "CPD Programmes for Marketing Professionals",
+      target: "Chartered Institute of Marketing, Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Advertising and Marketing Contract Disputes", description: "Learn mediation techniques for resolving disputes in advertising agreements and marketing service contracts." },
+        { title: "Negotiating Commercial Sponsorship and Partnership Agreements", description: "Develop negotiation skills for sponsorship deals and marketing partnerships, including dispute prevention strategies." },
+        { title: "Arbitration of Intellectual Property and Licensing Disputes", description: "Master arbitration procedures for intellectual property and licensing disputes in marketing and brand management." },
+        { title: "Consumer Dispute Resolution and Complaint Management", description: "Gain expertise in resolving consumer complaints and disputes arising from marketing activities and consumer protection issues." },
+        { title: "Resolving Digital Marketing and Platform Disputes", description: "Learn to resolve disputes specific to digital marketing, social media platforms, and online advertising." }
+      ]
     },
     {
-      id: 6,
-      date: "Self-Paced Learning",
-      title: "Law, Practice & Procedure in Arbitration",
-      description: "Comprehensive training in arbitration fundamentals, procedural rules, case management, evidence presentation, and award drafting for legal professionals and practitioners.",
-      image: "/self-paced/WhatsApp Image 2026-11-03 at 17.20.21 (1).jpeg",
-      badge: "ENROLL ANYTIME",
-      externalLink: null
+      sectionTitle: "CPD Programmes for Engineering Professionals",
+      target: "Ghana Institution of Engineering",
+      color: "#2C3E50",
+      courses: [
+        { title: "Construction Arbitration under FIDIC Contracts", description: "Comprehensive training in arbitration procedures under FIDIC contract conditions for engineering and construction projects." },
+        { title: "Dispute Boards and Construction Adjudication", description: "Learn the operation of dispute boards and adjudication procedures in construction dispute resolution." },
+        { title: "Mediation of Engineering and Infrastructure Disputes", description: "Develop mediation skills tailored to technical engineering disputes and infrastructure project conflicts." },
+        { title: "Expert Determination of Technical and Engineering Claims", description: "Master expert determination procedures for resolving technical engineering claims and specifications disputes." },
+        { title: "Engineering Expert Witnesses in Arbitration Proceedings", description: "Learn to serve as an expert witness in arbitration, including report writing and testimony best practices." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Surveying Professionals",
+      target: "Ghana Institution of Surveyors",
+      color: "#5A2633",
+      courses: [
+        { title: "Land Boundary Mediation and Customary Dispute Resolution", description: "Specialized training in mediating land boundary disputes and applying customary dispute resolution methods." },
+        { title: "Expert Determination of Property Valuation Disputes", description: "Learn expert determination procedures for resolving property valuation disagreements and assessment disputes." },
+        { title: "Arbitration of Construction Payment and Quantity Surveying Claims", description: "Master arbitration of payment disputes and quantity surveying claims in construction projects." },
+        { title: "Negotiating Land Acquisition and Compensation Settlements", description: "Develop negotiation skills for land acquisition processes and compensation settlement discussions." },
+        { title: "Surveyors as Expert Witnesses in Arbitration", description: "Learn the role of surveyors as expert witnesses, including evidence preparation and cross-examination." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Planning Professionals",
+      target: "Ghana Institute of Planning",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Land-Use and Planning Disputes", description: "Gain expertise in mediating land-use conflicts and planning permission disputes." },
+        { title: "Community Negotiation and Stakeholder Conflict Management", description: "Learn facilitation and negotiation techniques for managing stakeholder conflicts in planning processes." },
+        { title: "Resolving Disputes in Urban Development Projects", description: "Master dispute resolution strategies specific to urban development and regeneration projects." },
+        { title: "Environmental and Infrastructure Dispute Mediation", description: "Develop mediation skills for environmental and infrastructure project disputes." },
+        { title: "Facilitated Dialogue in Planning and Administrative Conflicts", description: "Learn facilitation techniques for planning disputes and administrative decision-making processes." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Architectural Professionals",
+      target: "Ghana Institute of Architects",
+      color: "#800020",
+      courses: [
+        { title: "Arbitration of Architectural and Construction Contracts", description: "Comprehensive training in arbitration of architectural services and construction contract disputes." },
+        { title: "Mediation of Design Variations and Professional Fee Disputes", description: "Learn to mediate disputes over design changes and professional fee disagreements." },
+        { title: "Expert Determination of Architectural Defects and Claims", description: "Master expert determination in architectural defect claims and design liability disputes." },
+        { title: "Multiparty Mediation in Construction Projects", description: "Develop skills in managing multiparty mediations involving architects, contractors, and clients." },
+        { title: "Dispute Avoidance and Resolution in Professional Services Agreements", description: "Learn proactive dispute prevention and resolution strategies in architectural service agreements." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Corporate Directors and Board Members",
+      target: "Institute of Directors, Ghana, and corporate boards",
+      color: "#2C3E50",
+      courses: [
+        { title: "Boardroom Mediation and Corporate Conflict Resolution", description: "Specialized mediation training for boardroom conflicts and corporate governance disputes." },
+        { title: "Arbitration of Shareholder and Corporate Governance Disputes", description: "Learn arbitration procedures for shareholder disputes and corporate governance disagreements." },
+        { title: "Negotiating Executive and Boardroom Settlements", description: "Master negotiation techniques for executive disputes and board-level conflicts." },
+        { title: "Succession and Leadership Dispute Mediation", description: "Gain expertise in mediating succession planning disputes and leadership transition conflicts." },
+        { title: "Designing Corporate Dispute Prevention and Resolution Systems", description: "Learn to design and implement corporate dispute resolution systems and escalation protocols." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Teaching and Educational Professionals",
+      target: "National Teaching Council, Ghana Education Service and educational institutions",
+      color: "#5A2633",
+      courses: [
+        { title: "School-Based Mediation and Conflict Resolution", description: "Learn mediation techniques for resolving conflicts in educational settings, including student and staff disputes." },
+        { title: "Negotiation Skills for Educational Leaders", description: "Develop negotiation skills for educational administrators and leadership roles." },
+        { title: "Mediation of Parent–Teacher and Community Disputes", description: "Master mediation of disputes between parents, teachers, and school communities." },
+        { title: "Workplace Grievance Mediation in Educational Institutions", description: "Learn to mediate workplace grievances and employment disputes in educational settings." },
+        { title: "Peer Mediation and Restorative Conflict Resolution in Schools", description: "Gain expertise in peer mediation programs and restorative justice practices in education." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Medical Professionals",
+      target: "Medical and Dental Council, Ghana Medical Association, doctors, dentists and hospital administrators",
+      color: "#34495E",
+      courses: [
+        { title: "Healthcare Mediation and Patient Complaint Resolution", description: "Specialized training in mediating healthcare disputes and resolving patient complaints." },
+        { title: "Medical Negligence Disputes: Mediation, Negotiation and Settlement", description: "Learn mediation and negotiation strategies for medical negligence claims and malpractice disputes." },
+        { title: "Hospital Dispute Resolution and Clinical Conflict Management", description: "Master dispute resolution in hospital settings, including clinical team conflicts." },
+        { title: "Medico-Legal Arbitration and Expert Witness Practice", description: "Develop skills in medico-legal arbitration and serving as a medical expert witness." },
+        { title: "Healthcare ADR: Designing Institutional Complaints and Dispute Resolution Systems", description: "Learn to design and implement healthcare-specific dispute resolution systems and complaints procedures." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Nursing and Midwifery Professionals",
+      target: "Nursing and Midwifery Council of Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Patient and Family Complaints", description: "Learn mediation techniques for resolving complaints from patients and their families." },
+        { title: "Workplace Mediation for Nursing and Midwifery Professionals", description: "Develop skills in mediating workplace disputes specific to nursing and midwifery practice." },
+        { title: "Negotiation and De-escalation in Healthcare Conflicts", description: "Master negotiation and de-escalation techniques for healthcare conflicts and difficult situations." },
+        { title: "Early Resolution of Clinical Service Complaints", description: "Learn early resolution strategies for clinical service complaints and quality of care issues." },
+        { title: "Facilitated Resolution of Interprofessional Healthcare Disputes", description: "Gain expertise in facilitating resolution of disputes between healthcare professionals." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Pharmacy Professionals",
+      target: "Pharmacy Council Ghana and pharmaceutical professional associations",
+      color: "#2C3E50",
+      courses: [
+        { title: "Mediation of Pharmacy and Patient Complaints", description: "Learn mediation techniques for resolving pharmacy service complaints and patient disputes." },
+        { title: "Arbitration of Pharmaceutical Supply Contracts", description: "Master arbitration procedures for pharmaceutical supply and distribution contract disputes." },
+        { title: "Negotiating Pharmaceutical Procurement Disputes", description: "Develop negotiation skills for pharmaceutical procurement and vendor disputes." },
+        { title: "Mediation of Pharmacy Partnership and Business Disputes", description: "Learn to mediate disputes in pharmacy partnerships and business arrangements." },
+        { title: "Dispute Prevention and Ethical Complaint Resolution in Pharmacy Practice", description: "Gain expertise in preventing disputes and resolving ethical complaints in pharmacy practice." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Allied Health Professionals",
+      target: "Allied Health Professions Council",
+      color: "#5A2633",
+      courses: [
+        { title: "Patient Complaint Mediation for Allied Health Professionals", description: "Specialized mediation training for patient complaints in allied health professions." },
+        { title: "Negotiating Healthcare Service Disputes", description: "Learn negotiation techniques for healthcare service delivery disputes." },
+        { title: "Mediation of Interprofessional Healthcare Conflicts", description: "Master mediation of conflicts between different healthcare professional groups." },
+        { title: "Expert Evidence and Technical Determination in Healthcare Disputes", description: "Develop skills in providing expert evidence and technical determination in healthcare disputes." },
+        { title: "Managing Professional Fee and Service Agreement Disputes", description: "Learn to manage disputes over professional fees and service agreements in healthcare." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Psychology and Counselling Professionals",
+      target: "Ghana Psychology Council",
+      color: "#34495E",
+      courses: [
+        { title: "Psychology of Conflict and Negotiation", description: "Study the psychological principles underlying conflict and negotiation behavior." },
+        { title: "Trauma-Informed Mediation Practice", description: "Learn trauma-informed approaches to mediation and dispute resolution." },
+        { title: "Mediation, Counselling and Professional Boundaries", description: "Understand professional boundaries between mediation and counselling practices." },
+        { title: "Workplace Conflict Coaching and Facilitated Dialogue", description: "Develop skills in conflict coaching and facilitating workplace dialogue." },
+        { title: "Confidentiality, Consent and Ethics in Mediation", description: "Master ethical considerations, confidentiality requirements, and consent in mediation practice." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Internal Audit Professionals",
+      target: "Institute of Internal Auditors Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Corporate Governance and Internal Control Disputes", description: "Learn to mediate disputes related to corporate governance and internal control issues." },
+        { title: "Expert Evidence and Forensic Accounting in Arbitration", description: "Develop skills in providing expert forensic accounting evidence in arbitration." },
+        { title: "Negotiation of Audit Findings and Remedial Action Plans", description: "Master negotiation techniques for discussing audit findings and remediation strategies." },
+        { title: "Managing Audit Committee and Management Conflicts", description: "Learn to manage conflicts between audit committees and management." },
+        { title: "Dispute Prevention through Internal Control and Contract Risk Management", description: "Gain expertise in preventing disputes through effective internal controls and risk management." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Procurement and Supply Chain Professionals",
+      target: "Chartered Institute of Procurement & Supply, Ghana Branch, and Ghana Institute of Procurement and Supply",
+      color: "#2C3E50",
+      courses: [
+        { title: "Arbitration of Procurement and Supply Contracts", description: "Comprehensive training in arbitration of procurement and supply chain contract disputes." },
+        { title: "Mediation of Supplier and Contractor Disputes", description: "Learn mediation techniques for resolving disputes with suppliers and contractors." },
+        { title: "Commercial Negotiation and Contract Renegotiation", description: "Master commercial negotiation skills and contract renegotiation strategies." },
+        { title: "Public Procurement Complaints and Dispute Resolution", description: "Understand public procurement complaint mechanisms and dispute resolution procedures." },
+        { title: "Managing Contract Variations, Payment Claims and Dispute Boards", description: "Learn to manage contract variations, payment disputes, and operate dispute boards." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Insurance Professionals",
+      target: "Chartered Insurance Institute of Ghana, insurance brokers and insurance companies",
+      color: "#5A2633",
+      courses: [
+        { title: "Insurance Claims Mediation and Negotiation", description: "Specialized training in mediating and negotiating insurance claims disputes." },
+        { title: "Reinsurance Arbitration: Law and Practice", description: "Master reinsurance arbitration procedures and industry-specific practices." },
+        { title: "Mediation of Insurance Coverage Disputes", description: "Learn mediation techniques for insurance coverage disputes and policy interpretation conflicts." },
+        { title: "Arbitration of Subrogation and Recovery Claims", description: "Develop expertise in arbitrating subrogation and recovery claim disputes." },
+        { title: "Drafting Effective Dispute Resolution Clauses in Insurance Contracts", description: "Learn to draft clear and enforceable dispute resolution clauses for insurance agreements." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Real Estate Professionals",
+      target: "Real Estate Agency Council, estate agents, brokers and property managers",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Real Estate Sales and Purchase Disputes", description: "Learn mediation techniques for real estate transaction disputes." },
+        { title: "Land Title and Boundary Dispute Resolution", description: "Master dispute resolution strategies for land title and boundary conflicts." },
+        { title: "Arbitration of Estate Agency Commission and Fee Disputes", description: "Develop skills in arbitrating estate agency commission and fee disagreements." },
+        { title: "Landlord–Tenant Negotiation and Mediation", description: "Learn negotiation and mediation techniques for landlord-tenant disputes." },
+        { title: "Negotiating Property Transactions and Preventing Contractual Disputes", description: "Master negotiation of property transactions and dispute prevention strategies." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Banking and Financial Professionals",
+      target: "Chartered Institute of Bankers, Ghana, and financial institutions",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Banking and Customer Complaints", description: "Develop skills in mediating disputes between banks and customers, including service complaints and contractual disagreements." },
+        { title: "Negotiating Loan Restructuring and Debt Settlements", description: "Master negotiation techniques for loan restructuring and debt settlement arrangements in banking and finance." },
+        { title: "Arbitration in Banking and Financial Services", description: "Learn arbitration procedures specific to banking and financial services disputes, including regulatory considerations." },
+        { title: "Fintech, Digital Payments and Cryptocurrency Disputes", description: "Gain expertise in resolving disputes arising from fintech platforms, digital payment systems, and cryptocurrency transactions." },
+        { title: "Online Dispute Resolution for Financial Institutions", description: "Understand ODR platforms and procedures designed for efficient resolution of financial services disputes." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Marketing Professionals",
+      target: "Chartered Institute of Marketing, Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Advertising and Marketing Contract Disputes", description: "Learn mediation techniques for resolving disputes in advertising agreements and marketing service contracts." },
+        { title: "Negotiating Commercial Sponsorship and Partnership Agreements", description: "Develop negotiation skills for sponsorship deals and marketing partnerships, including dispute prevention strategies." },
+        { title: "Arbitration of Intellectual Property and Licensing Disputes", description: "Master arbitration procedures for intellectual property and licensing disputes in marketing and brand management." },
+        { title: "Consumer Dispute Resolution and Complaint Management", description: "Gain expertise in resolving consumer complaints and disputes arising from marketing activities and consumer protection issues." },
+        { title: "Resolving Digital Marketing and Platform Disputes", description: "Learn to resolve disputes specific to digital marketing, social media platforms, and online advertising." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Engineering Professionals",
+      target: "Ghana Institution of Engineering",
+      color: "#2C3E50",
+      courses: [
+        { title: "Construction Arbitration under FIDIC Contracts", description: "Comprehensive training in arbitration procedures under FIDIC contract conditions for engineering and construction projects." },
+        { title: "Dispute Boards and Construction Adjudication", description: "Learn the operation of dispute boards and adjudication procedures in construction dispute resolution." },
+        { title: "Mediation of Engineering and Infrastructure Disputes", description: "Develop mediation skills tailored to technical engineering disputes and infrastructure project conflicts." },
+        { title: "Expert Determination of Technical and Engineering Claims", description: "Master expert determination procedures for resolving technical engineering claims and specifications disputes." },
+        { title: "Engineering Expert Witnesses in Arbitration Proceedings", description: "Learn to serve as an expert witness in arbitration, including report writing and testimony best practices." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Surveying Professionals",
+      target: "Ghana Institution of Surveyors",
+      color: "#5A2633",
+      courses: [
+        { title: "Land Boundary Mediation and Customary Dispute Resolution", description: "Specialized training in mediating land boundary disputes and applying customary dispute resolution methods." },
+        { title: "Expert Determination of Property Valuation Disputes", description: "Learn expert determination procedures for resolving property valuation disagreements and assessment disputes." },
+        { title: "Arbitration of Construction Payment and Quantity Surveying Claims", description: "Master arbitration of payment disputes and quantity surveying claims in construction projects." },
+        { title: "Negotiating Land Acquisition and Compensation Settlements", description: "Develop negotiation skills for land acquisition processes and compensation settlement discussions." },
+        { title: "Surveyors as Expert Witnesses in Arbitration", description: "Learn the role of surveyors as expert witnesses, including evidence preparation and cross-examination." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Planning Professionals",
+      target: "Ghana Institute of Planning",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Land-Use and Planning Disputes", description: "Gain expertise in mediating land-use conflicts and planning permission disputes." },
+        { title: "Community Negotiation and Stakeholder Conflict Management", description: "Learn facilitation and negotiation techniques for managing stakeholder conflicts in planning processes." },
+        { title: "Resolving Disputes in Urban Development Projects", description: "Master dispute resolution strategies specific to urban development and regeneration projects." },
+        { title: "Environmental and Infrastructure Dispute Mediation", description: "Develop mediation skills for environmental and infrastructure project disputes." },
+        { title: "Facilitated Dialogue in Planning and Administrative Conflicts", description: "Learn facilitation techniques for planning disputes and administrative decision-making processes." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Architectural Professionals",
+      target: "Ghana Institute of Architects",
+      color: "#800020",
+      courses: [
+        { title: "Arbitration of Architectural and Construction Contracts", description: "Comprehensive training in arbitration of architectural services and construction contract disputes." },
+        { title: "Mediation of Design Variations and Professional Fee Disputes", description: "Learn to mediate disputes over design changes and professional fee disagreements." },
+        { title: "Expert Determination of Architectural Defects and Claims", description: "Master expert determination in architectural defect claims and design liability disputes." },
+        { title: "Multiparty Mediation in Construction Projects", description: "Develop skills in managing multiparty mediations involving architects, contractors, and clients." },
+        { title: "Dispute Avoidance and Resolution in Professional Services Agreements", description: "Learn proactive dispute prevention and resolution strategies in architectural service agreements." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Corporate Directors and Board Members",
+      target: "Institute of Directors, Ghana, and corporate boards",
+      color: "#2C3E50",
+      courses: [
+        { title: "Boardroom Mediation and Corporate Conflict Resolution", description: "Specialized mediation training for boardroom conflicts and corporate governance disputes." },
+        { title: "Arbitration of Shareholder and Corporate Governance Disputes", description: "Learn arbitration procedures for shareholder disputes and corporate governance disagreements." },
+        { title: "Negotiating Executive and Boardroom Settlements", description: "Master negotiation techniques for executive disputes and board-level conflicts." },
+        { title: "Succession and Leadership Dispute Mediation", description: "Gain expertise in mediating succession planning disputes and leadership transition conflicts." },
+        { title: "Designing Corporate Dispute Prevention and Resolution Systems", description: "Learn to design and implement corporate dispute resolution systems and escalation protocols." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Teaching and Educational Professionals",
+      target: "National Teaching Council, Ghana Education Service and educational institutions",
+      color: "#5A2633",
+      courses: [
+        { title: "School-Based Mediation and Conflict Resolution", description: "Learn mediation techniques for resolving conflicts in educational settings, including student and staff disputes." },
+        { title: "Negotiation Skills for Educational Leaders", description: "Develop negotiation skills for educational administrators and leadership roles." },
+        { title: "Mediation of Parent–Teacher and Community Disputes", description: "Master mediation of disputes between parents, teachers, and school communities." },
+        { title: "Workplace Grievance Mediation in Educational Institutions", description: "Learn to mediate workplace grievances and employment disputes in educational settings." },
+        { title: "Peer Mediation and Restorative Conflict Resolution in Schools", description: "Gain expertise in peer mediation programs and restorative justice practices in education." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Medical Professionals",
+      target: "Medical and Dental Council, Ghana Medical Association, doctors, dentists and hospital administrators",
+      color: "#34495E",
+      courses: [
+        { title: "Healthcare Mediation and Patient Complaint Resolution", description: "Specialized training in mediating healthcare disputes and resolving patient complaints." },
+        { title: "Medical Negligence Disputes: Mediation, Negotiation and Settlement", description: "Learn mediation and negotiation strategies for medical negligence claims and malpractice disputes." },
+        { title: "Hospital Dispute Resolution and Clinical Conflict Management", description: "Master dispute resolution in hospital settings, including clinical team conflicts." },
+        { title: "Medico-Legal Arbitration and Expert Witness Practice", description: "Develop skills in medico-legal arbitration and serving as a medical expert witness." },
+        { title: "Healthcare ADR: Designing Institutional Complaints and Dispute Resolution Systems", description: "Learn to design and implement healthcare-specific dispute resolution systems and complaints procedures." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Nursing and Midwifery Professionals",
+      target: "Nursing and Midwifery Council of Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Patient and Family Complaints", description: "Learn mediation techniques for resolving complaints from patients and their families." },
+        { title: "Workplace Mediation for Nursing and Midwifery Professionals", description: "Develop skills in mediating workplace disputes specific to nursing and midwifery practice." },
+        { title: "Negotiation and De-escalation in Healthcare Conflicts", description: "Master negotiation and de-escalation techniques for healthcare conflicts and difficult situations." },
+        { title: "Early Resolution of Clinical Service Complaints", description: "Learn early resolution strategies for clinical service complaints and quality of care issues." },
+        { title: "Facilitated Resolution of Interprofessional Healthcare Disputes", description: "Gain expertise in facilitating resolution of disputes between healthcare professionals." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Pharmacy Professionals",
+      target: "Pharmacy Council Ghana and pharmaceutical professional associations",
+      color: "#2C3E50",
+      courses: [
+        { title: "Mediation of Pharmacy and Patient Complaints", description: "Learn mediation techniques for resolving pharmacy service complaints and patient disputes." },
+        { title: "Arbitration of Pharmaceutical Supply Contracts", description: "Master arbitration procedures for pharmaceutical supply and distribution contract disputes." },
+        { title: "Negotiating Pharmaceutical Procurement Disputes", description: "Develop negotiation skills for pharmaceutical procurement and vendor disputes." },
+        { title: "Mediation of Pharmacy Partnership and Business Disputes", description: "Learn to mediate disputes in pharmacy partnerships and business arrangements." },
+        { title: "Dispute Prevention and Ethical Complaint Resolution in Pharmacy Practice", description: "Gain expertise in preventing disputes and resolving ethical complaints in pharmacy practice." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Allied Health Professionals",
+      target: "Allied Health Professions Council",
+      color: "#5A2633",
+      courses: [
+        { title: "Patient Complaint Mediation for Allied Health Professionals", description: "Specialized mediation training for patient complaints in allied health professions." },
+        { title: "Negotiating Healthcare Service Disputes", description: "Learn negotiation techniques for healthcare service delivery disputes." },
+        { title: "Mediation of Interprofessional Healthcare Conflicts", description: "Master mediation of conflicts between different healthcare professional groups." },
+        { title: "Expert Evidence and Technical Determination in Healthcare Disputes", description: "Develop skills in providing expert evidence and technical determination in healthcare disputes." },
+        { title: "Managing Professional Fee and Service Agreement Disputes", description: "Learn to manage disputes over professional fees and service agreements in healthcare." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Psychology and Counselling Professionals",
+      target: "Ghana Psychology Council",
+      color: "#34495E",
+      courses: [
+        { title: "Psychology of Conflict and Negotiation", description: "Study the psychological principles underlying conflict and negotiation behavior." },
+        { title: "Trauma-Informed Mediation Practice", description: "Learn trauma-informed approaches to mediation and dispute resolution." },
+        { title: "Mediation, Counselling and Professional Boundaries", description: "Understand professional boundaries between mediation and counselling practices." },
+        { title: "Workplace Conflict Coaching and Facilitated Dialogue", description: "Develop skills in conflict coaching and facilitating workplace dialogue." },
+        { title: "Confidentiality, Consent and Ethics in Mediation", description: "Master ethical considerations, confidentiality requirements, and consent in mediation practice." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Internal Audit Professionals",
+      target: "Institute of Internal Auditors Ghana",
+      color: "#800020",
+      courses: [
+        { title: "Mediation of Corporate Governance and Internal Control Disputes", description: "Learn to mediate disputes related to corporate governance and internal control issues." },
+        { title: "Expert Evidence and Forensic Accounting in Arbitration", description: "Develop skills in providing expert forensic accounting evidence in arbitration." },
+        { title: "Negotiation of Audit Findings and Remedial Action Plans", description: "Master negotiation techniques for discussing audit findings and remediation strategies." },
+        { title: "Managing Audit Committee and Management Conflicts", description: "Learn to manage conflicts between audit committees and management." },
+        { title: "Dispute Prevention through Internal Control and Contract Risk Management", description: "Gain expertise in preventing disputes through effective internal controls and risk management." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Procurement and Supply Chain Professionals",
+      target: "Chartered Institute of Procurement & Supply, Ghana Branch, and Ghana Institute of Procurement and Supply",
+      color: "#2C3E50",
+      courses: [
+        { title: "Arbitration of Procurement and Supply Contracts", description: "Comprehensive training in arbitration of procurement and supply chain contract disputes." },
+        { title: "Mediation of Supplier and Contractor Disputes", description: "Learn mediation techniques for resolving disputes with suppliers and contractors." },
+        { title: "Commercial Negotiation and Contract Renegotiation", description: "Master commercial negotiation skills and contract renegotiation strategies." },
+        { title: "Public Procurement Complaints and Dispute Resolution", description: "Understand public procurement complaint mechanisms and dispute resolution procedures." },
+        { title: "Managing Contract Variations, Payment Claims and Dispute Boards", description: "Learn to manage contract variations, payment disputes, and operate dispute boards." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Insurance Professionals",
+      target: "Chartered Insurance Institute of Ghana, insurance brokers and insurance companies",
+      color: "#5A2633",
+      courses: [
+        { title: "Insurance Claims Mediation and Negotiation", description: "Specialized training in mediating and negotiating insurance claims disputes." },
+        { title: "Reinsurance Arbitration: Law and Practice", description: "Master reinsurance arbitration procedures and industry-specific practices." },
+        { title: "Mediation of Insurance Coverage Disputes", description: "Learn mediation techniques for insurance coverage disputes and policy interpretation conflicts." },
+        { title: "Arbitration of Subrogation and Recovery Claims", description: "Develop expertise in arbitrating subrogation and recovery claim disputes." },
+        { title: "Drafting Effective Dispute Resolution Clauses in Insurance Contracts", description: "Learn to draft clear and enforceable dispute resolution clauses for insurance agreements." }
+      ]
+    },
+    {
+      sectionTitle: "CPD Programmes for Real Estate Professionals",
+      target: "Real Estate Agency Council, estate agents, brokers and property managers",
+      color: "#34495E",
+      courses: [
+        { title: "Mediation of Real Estate Sales and Purchase Disputes", description: "Learn mediation techniques for real estate transaction disputes." },
+        { title: "Land Title and Boundary Dispute Resolution", description: "Master dispute resolution strategies for land title and boundary conflicts." },
+        { title: "Arbitration of Estate Agency Commission and Fee Disputes", description: "Develop skills in arbitrating estate agency commission and fee disagreements." },
+        { title: "Landlord–Tenant Negotiation and Mediation", description: "Learn negotiation and mediation techniques for landlord-tenant disputes." },
+        { title: "Negotiating Property Transactions and Preventing Contractual Disputes", description: "Master negotiation of property transactions and dispute prevention strategies." }
+      ]
     }
   ];
 
+  
   return (
     <section ref={ref} id="categories" className={`relative py-20 overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: '#FBF9F5' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Main Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl mb-6" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300, color: '#182938' }}>
-            Learn Anywhere.<br />
-            Earn A Prestigious Certificate Online.<br />
+          <h2 className="text-4xl md:text-5xl mb-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600, color: '#182938' }}>
+            CIMA Professional Development
           </h2>
+          <p className="text-xl text-gray-600 mb-2" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 400 }}>
+            Institutional CPD & CLE Programmes
+          </p>
+          <p className="text-lg text-gray-500" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
+            Specialised Training in Mediation, Arbitration, Negotiation and Dispute Resolution
+          </p>
+          <p className="text-base text-gray-500 mt-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
+            20 Professional Sectors · 100 Specialised Courses
+          </p>
         </div>
 
-
-        {/* Course Cards Grid - 3 columns */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {dummyCourses.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
-              style={{ borderColor: '#D9D3C9', borderWidth: '1px' }}
-            >
-              {/* Course Image - Full width banner */}
-              <div className="relative w-full h-48 overflow-hidden">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-full object-cover object-center"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Card Content */}
-              <div className="p-6 flex flex-col flex-grow">
-                {/* Date */}
-                <div className="flex items-center gap-2 text-sm mb-4" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
-                  <Clock className="w-4 h-4" />
-                  <span>{course.date}</span>
-                </div>
-
-                {/* Title */}
-                <h4 className="text-xl font-bold mb-3 leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, color: '#252525' }}>
-                  {course.title}
-                </h4>
-
-                {/* Description */}
-                <p className="text-sm mb-6 leading-relaxed flex-grow" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
-                  {course.description}
-                </p>
-
-                {/* Enroll Now Button */}
-                {course.externalLink ? (
-                  <a 
-                    href={course.externalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
-                    style={{ 
-                      fontFamily: 'Montserrat, sans-serif', 
-                      fontWeight: 700,
-                      borderWidth: '2px',
-                      borderColor: '#5A2633',
-                      color: '#5A2633',
-                      backgroundColor: '#5A2633'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#5A2633';
-                      e.currentTarget.style.color = '#F5F1E8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#5A2633';
-                      e.currentTarget.style.color = '#F5F1E8';
-                    }}
-                  >
-                    <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                ) : (
-                  <button 
-                    className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
-                    style={{ 
-                      fontFamily: 'Montserrat, sans-serif', 
-                      fontWeight: 700,
-                      borderWidth: '2px',
-                      borderColor: '#5A2633',
-                      color: '#5A2633',
-                      backgroundColor: '#5A2633'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#5A2633';
-                      e.currentTarget.style.color = '#F5F1E8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#5A2633';
-                      e.currentTarget.style.color = '#F5F1E8';
-                    }}
-                  >
-                    <span style={{ color: '#F5F1E8' }}>ENROLL NOW</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#F5F1E8' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+        {/* Professional Sectors with Course Cards */}
+        {professionalSectors.map((sector, sectorIdx) => {
+          // Assign ONE image per sector - all courses in this section use the same image
+          const sectorImageUrl = courseImages[sectorIdx % courseImages.length];
+          
+          return (
+          <div key={sectorIdx} className="mb-20">
+            {/* Section Header */}
+            <div className="mb-8">
+              <h3 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Montserrat, sans-serif', color: sector.color }}>
+                {sector.sectionTitle}
+              </h3>
             </div>
-          ))}
+
+            {/* Course Cards Grid - 3 columns */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {sector.courses.map((course, courseIdx) => {
+                // All courses in this sector use the same image
+                const imageUrl = sectorImageUrl;
+                
+                return (
+                  <div
+                    key={courseIdx}
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
+                    style={{ borderColor: '#D9D3C9', borderWidth: '1px' }}
+                  >
+                    {/* Course Image Banner */}
+                    <div className="relative w-full h-48 overflow-hidden">
+                      <img
+                        src={imageUrl}
+                        alt={course.title}
+                        className="w-full h-full object-cover object-center"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-6 flex flex-col flex-grow">
+                      {/* Date Badge */}
+                      <div className="flex items-center gap-2 text-sm mb-4" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
+                        <Clock className="w-4 h-4" />
+                        <span>Self-Paced Learning</span>
+                      </div>
+
+                      {/* Course Title */}
+                      <h4 className="text-xl font-bold mb-3 leading-tight" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, color: '#252525' }}>
+                        {course.title}
+                      </h4>
+
+                      {/* Course Description */}
+                      <p className="text-sm mb-6 leading-relaxed flex-grow" style={{ fontFamily: 'Montserrat, sans-serif', color: '#66645F', fontWeight: 400 }}>
+                        {course.description}
+                      </p>
+
+                      {/* Enroll Now Button */}
+                      <button 
+                        className="w-full py-2.5 px-4 rounded font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                        style={{ 
+                          fontFamily: 'Montserrat, sans-serif', 
+                          fontWeight: 700,
+                          backgroundColor: sector.color,
+                          color: '#F5F1E8'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '0.9';
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <span>ENROLL NOW</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          );
+        })}
+
+        {/* Programme Formats Table */}
+        <div className="mt-16 max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+          <h3 className="text-2xl font-bold mb-6 text-center" style={{ fontFamily: 'Montserrat, sans-serif', color: '#182938' }}>
+            CIMA's Institutional Training Formats
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-gray-300">
+                  <th className="text-left py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600 }}>Programme Category</th>
+                  <th className="text-left py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600 }}>Proposed Duration</th>
+                  <th className="text-left py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600 }}>Delivery</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200">
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>CPD Essentials</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>2–3 hours</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Online</td>
+                </tr>
+                <tr className="border-b border-gray-200">
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Professional Masterclass</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>4–6 hours</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Online or hybrid</td>
+                </tr>
+                <tr className="border-b border-gray-200">
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Applied ADR Practicum</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>1–2 days</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Practical simulations</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Institutional Certificate Programme</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>15–25 hours</td>
+                  <td className="py-3 px-4" style={{ fontFamily: 'Montserrat, sans-serif' }}>Blended learning and assessment</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-500 mt-4 text-center italic" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            These durations are proposed training formats. Official CPD/CLE credits remain subject to the requirements and approval of the relevant professional body or regulator.
+          </p>
         </div>
       </div>
     </section>
