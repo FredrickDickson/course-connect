@@ -646,11 +646,8 @@ function FeaturedCoursesSection() {
         {/* Main Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl mb-4" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600, color: '#182938' }}>
-            CIMA Professional Development
-          </h2>
-          <p className="text-xl text-gray-600 mb-2" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 400 }}>
             Institutional CPD & CLE Programmes
-          </p>
+          </h2>
           <p className="text-lg text-gray-500" style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 300 }}>
             Specialised Training in Mediation, Arbitration, Negotiation and Dispute Resolution
           </p>
